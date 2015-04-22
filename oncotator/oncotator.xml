@@ -23,16 +23,16 @@
         #if $prepend
             --prepend
         #end if
-        #if $infer-onps
-            --infer-onps
+        #if $infer_onps
+            --infer_onps
         #end if
         #if $input_type.input_select=='VCF'
             -i VCF
         #else
             -i MAFLITE
         #end if
-        #if $skip-no-alt
-            --skip-no-alt
+        #if $skip_no_alt
+            --skip_no_alt
         #end if
         $input
         $output
@@ -63,10 +63,9 @@
         </conditional>
         <param name="override" type="data" format="tabular" optional="true" label="Transcript override lists" />
         <param name="prepend" type="boolean" optional="true" label="Label fields which aren't exactly TCGAMAF format with i_" />
-        <param name="infer-onps" type="boolean" optional="true" label="Merge adjacent SNPs,DNPs,TNPs,etc if in the same sample" />
-        <param name="skip-no-alt" type="boolean" optional="true" label="Any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered." />
+        <param name="infer_onps" type="boolean" optional="true" label="Merge adjacent SNPs,DNPs,TNPs,etc if in the same sample" />
+        <param name="skip_no_alt" type="boolean" optional="true" label="Any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered." />
     </inputs>
-
     <outputs>
         <data format="maf" name="output" label="OncotatorMAF" from_work_dir="annot_mutations.maf"/>
     </outputs>

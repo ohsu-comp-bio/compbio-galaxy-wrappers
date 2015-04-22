@@ -38,7 +38,7 @@ def create_opts(arg_dict):
         if (option in flag_opts):
             if value == True:
                 args.append("--" + option)
-            elif type(value) != bool:
+            elif type(value) != bool and value != None:
                 args.append("--" + option + " " + str(value))
     return " ".join(args)
 
@@ -47,6 +47,7 @@ def build_cmd(options, input_file, output_file, build):
     return " ".join([
         "oncotator",
         '-v',
+        '--log_name /dev/null',
         input_file,
         output_file,
         build,
