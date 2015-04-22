@@ -1,0 +1,111 @@
+<tool id="oncotator" name="oncotator" version="v1.5.0.0">
+    <description>variant annotation tool</description>
+    <requirements>
+        <requirement type="package">bcbio-gff</requirement>
+        <requirement type="package">biopython</requirement>
+        <requirement type="package">cython</requirement>
+        <requirement type="package">nose</requirement>
+        <requirement type="package">numpy</requirement>
+        <requirement type="package">pandas</requirement>
+        <requirement type="package">shove</requirement>
+        <requirement type="package">sqlalchemy</requirement>
+        <requirement type="package" version="0.7.5">pysam</requirement>
+        <requirement type="package">python-memchached</requirement>
+        <requirement type="package">pyvcf</requirement>
+    </requirements>
+<!--      ./oncotator.py -v -c /home/jac/harmony_point/input/clincical_override.txt --db-dir /home/jac/harmony_point/oncotator/oncotator_v1_ds_Jan262014/ /home/jac/harmony_point/input/test.txt output hg19 --prepend --infer-onps -i MAFLITE --skip-no-alt
+ -->
+    <command interpreter="python">oncotator.py
+        #if $datasource
+            --db-dir $datasource
+        #end if
+        #if $override
+            -c $override
+        #end if
+        #if $prepend
+            --prepend
+        #end if
+        #if $infer-onps
+            --infer-onps
+        #end if
+        #if $input_type
+            -i $input_type
+        #end if
+        #if $skip-no-alt
+            --skip-no-alt
+        #end if
+        $input
+        #output
+        $build
+    </command>
+
+    <inputs>
+        <!-- making this a path to a datasource for now -->
+        <param name="datasource" type="text" label="Datasource: " />
+        <param name="override" type="data" format="tabular" optional="true" label="Transcript override lists" />
+        <param name="prepend" type="boolean" optional="true" label="Label fields which aren't exactly TCGAMAF format with i_" />
+        <param name="infer-onps" type="boolean" optional="true" label="Merge adjacent SNPs,DNPs,TNPs,etc if in the same sample" />
+        <param name="skip-no-alt" type="boolean" optional="true" label="Any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered." />
+    </inputs>
+
+    <outputs>
+        <data format="maf" name="output" label="OncotatorMAF" from_work_dir="annot_mutations.maf"/>
+    </outputs>
+    <stdio>
+        <regex match="INFO" source="stdout" level="log" description="Oncotator stdout" />
+        <exit_code range="1:" level="fatal" />
+    </stdio>
+    <help>
+
+.. class:: infomark
+
+**License**
+
+Copyright (c) 2012 The Broad Institute
+Please view our documentation at http://www.broadinstitute.org/gsa/wiki
+For support, please view our support site at http://getsatisfaction.com/gsa
+
+**What it does**
+
+MuTect is a method developed at the Broad Institute for the reliable
+and accurate identification of somatic point mutations in next generation
+sequencing data of cancer genomes.
+
+
+
+**Input**
+
+Reference Genome:
+
+	Fasta file of ref gnome
+
+Normal Sample:
+
+	bam normal sample
+
+Tumor Sample:
+
+	bam tumor sample
+
+
+Intervals:
+
+	A list of genomic intervals over which to operate.
+
+
+**Output**
+
+Caller Output:
+
+	Detailed caller output
+
+Coverage Output:
+
+	write out coverage in WIGGLE format to this file
+
+VCF Output:
+
+    VCF output of mutation calls
+
+  </help>
+</tool>
