@@ -1,0 +1,3 @@
+[submodule "pcawg_tools"]
+	path = pcawg_tools
+	url = git@github.com:ucscCancer/pcawg_tools.git
