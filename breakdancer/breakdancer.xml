@@ -43,7 +43,7 @@
 	<option value="no" selected="True">No</option>
       </param>
       <when value="yes">
-	<param name="min_length" type="integer" label="Minimum length of a region" help="" value="7" />
+	<param name="min_length" type="integer" label="Minimum length of a region." help="" value="7" />
 	<param name="cutoff" type="integer" label="Cutoff in unit of standard deviation" help="" value="3" />
 	<param name="max_sv" type="integer" label="Maximum SV Size" help="" value="1000000000" />
 	<param name="min_qual" type="integer" label="Minimum alternative mapping quality" help="" value="35" />
