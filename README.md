@@ -24,6 +24,3 @@ You should see pcawg_tools being cloned into that folder, with a final note:
 
 > Submodule path '../pcawg_tools': checked out...
 
-You will most likely want to contribute to this module. To do so, treat the pcwag_tools
-directory as a repository. Branch and submit pull requests as you wish.
-
