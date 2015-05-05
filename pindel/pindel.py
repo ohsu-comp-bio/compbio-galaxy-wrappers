@@ -148,8 +148,9 @@ def getMeanInsertSize(bamFile):
         if not line:
             break
         tmp = line.split("\t")
-        b_sum += abs(long(tmp[8]))
-        b_count +=1
+        if abs(long(tmp[8])) < 10000:
+            b_sum += abs(long(tmp[8]))
+            b_count +=1
     process.wait()
     mean = b_sum / b_count
     print "Using insert size: %d" % (mean)
