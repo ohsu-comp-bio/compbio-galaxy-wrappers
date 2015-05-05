@@ -1,7 +1,6 @@
 # absolute paths should always be used when inputing data
 #setwd("/Volumes/Data/academic/svmlab/ml/cancer_projects/aml/OHSU/data/")
-args <- commandArgs(trailingONLY = TRUE)
-drug_screen <- read.csv("Processed_Drug_Data_beginning_to_10-4-2014_FINAL.csv", stringsAsFactors = FALSE, sep=",", check.names = FALSE)
+drug_screen <- read.csv("drug.csv", stringsAsFactors = FALSE, sep=",", check.names = FALSE)
 AUC_All <- tapply(drug_screen[,"Inhibitor Interpreted Result: Area under the curve"], list(r = drug_screen[,"Specimen: Lab ID"], c = drug_screen[,"Inhibitor Interpreted Result: Drug"]), mean)
 IC50_All <- tapply(drug_screen[,"Inhibitor Interpreted Result: IC50"], list(r = drug_screen[,"Specimen: Lab ID"], c = drug_screen[,"Inhibitor Interpreted Result: Drug"]), mean)
 
@@ -27,7 +26,7 @@ BeatAML_DD_AML$IC50_IC50_Pearson <- cor(IC50_AML, method = "pearson", use = "pai
 BeatAML_DD_AML$IC50_IC50_Spearman <- cor(IC50_AML, method = "spearman", use = "pairwise.complete.obs")
 save(BeatAML_DD_AML, file = "BeatAML_DD_AML.RData")
 
-RNASeq <- read.csv("dset3_OHSU_raw_expression_counts.csv", stringsAsFactors = FALSE, sep="\t", row.names = "gene", check.names = FALSE)
+RNASeq <- read.csv("exp.csv", stringsAsFactors = FALSE, sep=",", row.names = "gene", check.names = FALSE)
 RNASeq <- log2(t(RNASeq) + 1)
 
 common_patients_All <- intersect(rownames(IC50_All), rownames(RNASeq))
