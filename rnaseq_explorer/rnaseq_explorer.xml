@@ -1,0 +1,27 @@
+<tool id="rnaseq_explorer" name="RNASeq Explorer" version="">
+  <command interpreter="python">rnaseq_explorer.py
+    -d #for $d, $inputDrugFile in enumerate($inputDrugFiles):
+     "${inputDrugFile.inputDrugFile}"
+    #end for
+    -e #for $e, $inputExpFile in enumerate($inputExpFiles):
+     "${inputExpFile.inputExpFile}"
+    #end for
+  </command>
+  <inputs>
+    <repeat name="inputDrugFiles" title="Drug Response file(s)" min="1" help="">
+      <param format="csv" name="inputDrugFile" type="data" label="drug file" help=""/>
+    </repeat>
+    <repeat name="inputExpFiles" title="Raw Counts / FPKM Data" min="1" help="">
+      <param format="csv" name="inputExpFile" type="data" label="expression file" help=""/>
+    </repeat>
+  </inputs>
+
+  <outputs>
+    <data format="bam" name="DD_All" label="DD_All" from_work_dir="BeatAML_DD_All.RData"/>
+    <data format="bam" name="DD_AML" label="DD_AML" from_work_dir="BeatAML_DD_AML.RData"/>
+    <data format="bam" name="DG_All" label="DG_All" from_work_dir="BeatAML_DG_All.RData"/>
+    <data format="bam" name="DG_AML" label="DG_AML" from_work_dir="BeatAML_DG_AML.RData"/>
+  </outputs>
+
+
+</tool>

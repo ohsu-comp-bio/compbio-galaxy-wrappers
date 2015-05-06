@@ -43,11 +43,12 @@ def consolidate_drug(file_list):
 	new_f.close()
 
 def prepare_data():
-	cmd = 'Rscript prepare_data.R'
+	cmd = 'R -e "shiny::runApp(port=8002)"'
 	logging.info("RUNNING: %s" % (cmd))
 	print 'running', cmd
 	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	stdout, stderr = p.communicate()
+	print stdout
 	if len(stderr):
 		print stderr
 	return p.returncode
