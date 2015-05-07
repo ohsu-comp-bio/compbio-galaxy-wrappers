@@ -74,6 +74,11 @@ BeatAML_DG_AML$IC50_RNASeq_Pearson <- cor(IC50_AML, RNASeq_AML, method = "pearso
 BeatAML_DG_AML$IC50_RNASeq_Spearman <- cor(IC50_AML, RNASeq_AML, method = "spearman", use = "pairwise.complete.obs")
 # save(BeatAML_DG_AML, file = "BeatAML_DG_AML.RData")
 
+input_genes <- c("CTLA-4", "Galectin-9", "PD-L1", "PD-L2", "PD1", "TIM-3", "VISTA", "LAG3", "TNFRSF4", "CD3G", "ARG1", "ARG2")
+
+colors <- colorRampPalette(c("#67001F", "#B2182B", "#D6604D", "#F4A582", "#FDDBC7", "#FFFFFF", "#D1E5F0", "#92C5DE", "#4393C3", "#2166AC", "#053061"))
+corr_colors <- rev(colors(201))
+
 server <- function(input, output){
 	output$dg_corr_legend <- renderPlot({
     legend(x = "center", legend = c("-1.00", "-0.50", "+0.50", "+1.00"), col = c(corr_colors[1], corr_colors[51], corr_colors[151], corr_colors[200]), pch = c(19, 19), pt.cex = c(8, 5, 5, 8), cex = 2, horiz = TRUE, box.lwd = 0)
