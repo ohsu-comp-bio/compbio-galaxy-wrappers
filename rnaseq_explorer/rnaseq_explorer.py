@@ -4,6 +4,9 @@ from argparse import ArgumentParser
 import pandas as pd
 import subprocess
 import logging
+import rpy2.robjects as robjects
+
+# import pandas.rpy.common as com
 
 def explorer_argparse():
 	
@@ -15,32 +18,26 @@ def explorer_argparse():
 	
 	return args
 
-# read column style expression
-def consolidate_exp(file_list):
-	new_ = []
-	frame = pd.DataFrame()
+def read_exp(file_list):
+	master = robjects.DataFrame({})
 	for f in file_list:
-		with open(f) as this_file:
-			df = pd.read_csv(this_file)
-			if len(new_) == 0:
-				new_.append(df)
-			else:
-				del df['gene']
-				new_.append(df)
-	frame = pd.concat(new_, axis=1)
-	frame.to_csv("exp.csv", mode='w', index=False)
+		if len(master) == 0:
+			master = robjects.DataFrame.from_csvfile(f, sep=",", header = True)
+		else:
+			df = robjects.DataFrame.from_csvfile(f, sep=",", header = True)
+			sub = df.rx(robjects.IntVector(range(2,len(df)+1)))
+			master = robjects.DataFrame.cbind(master, sub)
+	return master
 
-# read row style expression
-def consolidate_drug(file_list):
-	new_ = []
-	new_f = open("drug.csv", "w")
-	new_f.write("Patient: Patient ID,Specimen: Lab ID,Heme Malignancy: Diagnosis,Heme Malignancy: Specific Diagnosis,Inhibitor Panel Run: Inhibitor Panel,Inhibitor Panel Run: Run Type,Inhibitor Interpreted Result: Drug,Inhibitor Interpreted Result: Replicant,Inhibitor Interpreted Result: IC10,Inhibitor Interpreted Result: IC25,Inhibitor Interpreted Result: IC50,Inhibitor Interpreted Result: IC75,Inhibitor Interpreted Result: IC90,Inhibitor Interpreted Result: Area under the curve,Inhibitor Interpreted Result: Model Curve")
+def read_drug(file_list):
+	master = robjects.DataFrame({})
 	for f in file_list:
-		with open(f) as this_file:
-			for line in this_file:
-				if 'Lab ID' not in line:
-					new_f.write(line)
-	new_f.close()
+		if len(master) == 0:
+			master = robjects.DataFrame.from_csvfile(f, sep=",", header = True)
+		else:
+			df = robjects.DataFrame.from_csvfile(f, sep = ",", header = True)
+			master = robjects.DataFrame.rbind(master, df)
+	return master
 
 def prepare_data():
 	cmd = 'R -e "shiny::runApp(port=8002)"'
@@ -55,6 +52,5 @@ def prepare_data():
 
 if __name__ == "__main__":
 	args = explorer_argparse()
-	consolidate_exp(args.exp_files)
-	consolidate_drug(args.drug_files)
-	prepare_data()
+	RNASeq = read_exp(args.exp_files)
+	drug_screen = read_drug(args.drug_files)
