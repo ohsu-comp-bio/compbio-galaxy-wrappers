@@ -6,7 +6,10 @@ import subprocess
 import logging
 import rpy2.robjects as robjects
 
-# import pandas.rpy.common as com
+# functions
+r = robjects.r
+tapply = r.tapply
+mean = r.mean
 
 def explorer_argparse():
 	
@@ -38,6 +41,11 @@ def read_drug(file_list):
 			df = robjects.DataFrame.from_csvfile(f, sep = ",", header = True)
 			master = robjects.DataFrame.rbind(master, df)
 	return master
+#disease, sensitivity, function
+def drug_gene_correlation(drug_screen):
+	auc_c = drug_screen.rx(14)
+	auc_l_d = robjects.Vector()
+	
 
 def prepare_data():
 	cmd = 'R -e "shiny::runApp(port=8002)"'
@@ -53,4 +61,5 @@ def prepare_data():
 if __name__ == "__main__":
 	args = explorer_argparse()
 	RNASeq = read_exp(args.exp_files)
-	drug_screen = read_drug(args.drug_files)
+	drug = read_drug(args.drug_files)
+	drug_gene_correlation(drug)
