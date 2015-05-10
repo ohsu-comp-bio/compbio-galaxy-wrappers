@@ -1,11 +1,15 @@
 <tool id="rnaseq_explorer" name="RNASeq Explorer" version="">
   <command interpreter="python">rnaseq_explorer.py
     -d #for $d, $inputDrugFile in enumerate($inputDrugFiles):
-     "${inputDrugFile.inputDrugFile}"
+     ${inputDrugFile.inputDrugFile}
     #end for
     -e #for $e, $inputExpFile in enumerate($inputExpFiles):
-     "${inputExpFile.inputExpFile}"
+     ${inputExpFile.inputExpFile}
     #end for
+    -a $corr.algorithm
+    -s $drug.sensitivity
+    -o1 $output1
+    -o2 $output2
   </command>
   <inputs>
     <repeat name="inputDrugFiles" title="Drug Response file(s)" min="1" help="">
@@ -14,13 +18,23 @@
     <repeat name="inputExpFiles" title="Raw Counts / FPKM Data" min="1" help="">
       <param format="csv" name="inputExpFile" type="data" label="expression file" help=""/>
     </repeat>
+    <conditional name="drug">
+      <param name="sensitivity" type="select" label="Drug Sensitivity Measurement" >
+          <option value="AUC" select="true">AUC</option>
+          <option value="IC50" select="true">IC50</option>
+      </param>
+    </conditional>
+    <conditional name="corr">
+      <param name="algorithm" type="select" label="Correlation Measurement" >
+          <option value="pearson" select="true">Pearson</option>
+          <option value="spearman" select="true">Spearman</option>
+      </param>
+    </conditional>
   </inputs>
 
   <outputs>
-    <data format="bam" name="DD_All" label="DD_All" from_work_dir="BeatAML_DD_All.RData"/>
-    <data format="bam" name="DD_AML" label="DD_AML" from_work_dir="BeatAML_DD_AML.RData"/>
-    <data format="bam" name="DG_All" label="DG_All" from_work_dir="BeatAML_DG_All.RData"/>
-    <data format="bam" name="DG_AML" label="DG_AML" from_work_dir="BeatAML_DG_AML.RData"/>
+    <data format="pdf" name="output1" label="Drug Gene Correlation Plot"/>
+    <data format="pdf" name="output2" label="Drug Drug Correlation Plot"/>
   </outputs>
 
 
