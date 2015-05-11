@@ -1,4 +1,9 @@
 <tool id="rnaseq_explorer" name="RNASeq Explorer" version="">
+  <requirements>
+      <requirement type="package">corrplot</requirement>
+      <requirement type="package">pheatmap</requirement>
+      <requirement type="package">pandas</requirement>
+  </requirements>
   <command interpreter="python">rnaseq_explorer.py
     -d #for $d, $inputDrugFile in enumerate($inputDrugFiles):
      ${inputDrugFile.inputDrugFile}
