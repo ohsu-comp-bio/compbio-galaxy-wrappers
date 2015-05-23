@@ -47,7 +47,9 @@ class FastQCRunner(object):
         
         # Check whether a given file compression format is valid
         # This prevents uncompression of already uncompressed files
-        infname = self.opts.inputfilename
+#        infname = self.opts.inputfilename
+### Workaround to deal with handling of gzipped FASTQ's.
+        infname = self.opts.input
         linf = infname.lower()
         trimext = False
         # decompression at upload currently does NOT remove this now bogus ending - fastqc will barf
@@ -97,6 +99,7 @@ class FastQCRunner(object):
         command_line.append('--extract') # to access the output text file
         command_line.append(self.fastqinfilename)
         command_line.append('-f %s' % opts.informat)
+        command_line.append('-t ${GALAXY_SLOTS:-4}')
         self.command_line = ' '.join(command_line)
 
     def copy_output_file_to_dataset(self):
