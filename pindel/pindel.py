@@ -85,7 +85,10 @@ def pindel(reference, configFile, args, tempDir, chrome=None):
         cmd += ' --input_SV_Calls_for_assembly %s ' %(args.input_SV_Calls_for_assembly)
 
     if args.exclude is not None:
-        cmd += '--exclude %s' % (args.exclude)
+        cmd += '-J %s' % (args.exclude)
+
+    if args.include is not None:
+        cmd += '-j %s' % (args.include)
 
     if args.detect_DD:
         cmd += ' -q '
@@ -97,6 +100,7 @@ def pindel(reference, configFile, args, tempDir, chrome=None):
     if args.DD_REPORT_DUPLICATION_READS:
         cmd += ' --DD_REPORT_DUPLICATION_READS '
 
+    print(cmd)
     return (cmd, pindelTempDir)
 
 
@@ -204,6 +208,7 @@ def __main__():
     parser.add_argument('--DD_REPORT_DUPLICATION_READS', dest='DD_REPORT_DUPLICATION_READS', action='store_true', default=False)
 
     parser.add_argument("-J", "--exclude", dest="exclude", default=None)
+    parser.add_argument("-j", "--include", dest="include", default=None)
 
     parser.add_argument('-z', '--input_SV_Calls_for_assembly', dest='input_SV_Calls_for_assembly', action='store_true', default=False)
 

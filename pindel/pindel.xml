@@ -96,21 +96,25 @@
   #end if
 
   <!-- Miscellaneous parameters -->
-  #if str($options_miscellaneous) == "yes":
-  #if $breakdancer.checking == "yes":
-  -input1 $breakdancer.input1
+  #if str($options_miscellaneous.options_miscellaneous_selector) == "yes":
+  #if str($options_miscellaneous.breakdancer.checking) == "yes":
+  -input1 $options_miscellaneous.breakdancer.input1
   #end if
 
-  #if $IndelCorrection:
+  #if $options_miscellaneous.IndelCorrection:
   -C
   #end if
 
-  #if $input_SV_Calls_for_assembly.checking == "yes":
-  -z $input_SV_Calls_for_assembly.input_SV_Calls
+  #if str($options_miscellaneous.input_SV_Calls_for_assembly.checking) == "yes":
+  -z $options_miscellaneous.input_SV_Calls_for_assembly.input_SV_Calls
   #end if
 
+  #if str($options_miscellaneous.include_list) != "None":
+  -j $options_miscellaneous.include_list
+  #end if
+  
   #if str($options_miscellaneous.exclude_list) != "None":
-  --exclude ${options_miscellaneous.exclude_list}
+  -J $options_miscellaneous.exclude_list
   #end if
 
   #end if
@@ -265,7 +269,9 @@
 	  </when>
 	<when value="no" />
 	</conditional>
+
       <param name="exclude_list" type="data" format="bed" label="Exclude File" help="Locations to exclude, like centromeres" optional="True"/>
+      <param name="include_list" type="data" format="bed" label="Include File" help="Limit processing to these genomic regions." optional="True"/>
 
       <!-- <param name="genotyping" type="boolean" truevalue="true" falsevalue="false" checked="no" label="genotyping" help="genotype variants if -i is also used." /> -->
       </when>
