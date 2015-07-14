@@ -58,8 +58,9 @@ def cmd_builder(arg_dict, workdir):
 		arg_dict['output1'],
 		arg_dict['output2']])
 
-def cmd_runner(args, workdir):
-	cmd = "Rscript " + workdir + "/rnaseq_explorer.R " + args
+def cmd_runner(args, scriptdir):
+	cmd = "Rscript " + scriptdir + "/rnaseq_explorer.R " + args
+	# print 'running with this command', cmd
 	logging.info("RUNNING: %s" % (cmd))
 	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	stdout, stderr = p.communicate()
@@ -67,6 +68,10 @@ def cmd_runner(args, workdir):
 
 if __name__ == "__main__":
 	args = explorer_argparse()
-	wrkdir = os.path.dirname(os.path.realpath(__file__))
+	one_file = vars(args)['exp_files'][0]
+	scriptdir = os.path.dirname(os.path.realpath(__file__))
+	wrkdir = os.path.dirname(os.path.realpath(one_file))
+	# print 'the path to the file should be here', wrkdir
 	cmd_args = cmd_builder(vars(args), wrkdir)
-	cmd_runner(cmd_args, wrkdir)
+	# print 'running with these arguments', cmd_args
+	cmd_runner(cmd_args, scriptdir)
