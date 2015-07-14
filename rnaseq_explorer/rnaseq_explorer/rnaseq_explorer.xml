@@ -1,0 +1,46 @@
+<tool id="rnaseq_explorer" name="RNASeq Explorer" version="">
+  <requirements>
+      <requirement type="package">corrplot</requirement>
+      <requirement type="package">pheatmap</requirement>
+      <requirement type="package">pandas</requirement>
+  </requirements>
+  <command interpreter="python">rnaseq_explorer.py
+    -d #for $d, $inputDrugFile in enumerate($inputDrugFiles):
+     ${inputDrugFile.inputDrugFile}
+    #end for
+    -e #for $e, $inputExpFile in enumerate($inputExpFiles):
+     ${inputExpFile.inputExpFile}
+    #end for
+    -a $corr.algorithm
+    -s $drug.sensitivity
+    -o1 $output1
+    -o2 $output2
+  </command>
+  <inputs>
+    <repeat name="inputDrugFiles" title="Drug Response file(s)" min="1" help="">
+      <param format="csv" name="inputDrugFile" type="data" label="drug file" help=""/>
+    </repeat>
+    <repeat name="inputExpFiles" title="Raw Counts / FPKM Data" min="1" help="">
+      <param format="csv" name="inputExpFile" type="data" label="expression file" help=""/>
+    </repeat>
+    <conditional name="drug">
+      <param name="sensitivity" type="select" label="Drug Sensitivity Measurement" >
+          <option value="AUC" select="true">AUC</option>
+          <option value="IC50" select="true">IC50</option>
+      </param>
+    </conditional>
+    <conditional name="corr">
+      <param name="algorithm" type="select" label="Correlation Measurement" >
+          <option value="pearson" select="true">Pearson</option>
+          <option value="spearman" select="true">Spearman</option>
+      </param>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="pdf" name="output1" label="Drug Gene Correlation Plot"/>
+    <data format="pdf" name="output2" label="Drug Drug Correlation Plot"/>
+  </outputs>
+
+
+</tool>
