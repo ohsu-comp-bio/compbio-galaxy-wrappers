@@ -1,0 +1,24 @@
+<tool id="add_af" name="Add allele frequencies to VCF" version="0.1" >
+  <description>Pindel files do not contain the AF field in the SAMPLE columns.  This script will add it.
+  This script will also include a descriptor in the header for AF.</description>
+  <command interpreter="python">
+    add_af.py $input_vcf $output_vcf
+  </command>
+
+  <inputs>   
+    <param name="input_vcf" type="data" format="vcf" required="true" label="Input VCF" help="Pindel VCF without the AF field." />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="Output VCF" help="Pindel VCF containing the AF field in the SAMPLE column." />
+  </outputs>
+
+  <tests>
+  </tests>
+
+  <help>
+    Add AF field to VCF.
+  </help>
+
+</tool>
+
