@@ -1,0 +1,20 @@
+<tool id="remove_rare_ref_calls" name="Remove SeattleSeq Rare Ref Calls" version="0.1" >
+  <description>Remove calls added to SeattleSeq output that are not called in VCF.</description>
+  <command interpreter="python">remove_rare_ref_calls.py
+    $input $output
+  </command>
+
+  <inputs>   
+    <param name="input" format="tabular" type="data" label="Input TSV" />
+  </inputs>
+
+  <outputs>
+    <data format="tabular" name="output" label="Output TSV" />
+  </outputs>
+  <tests>
+  </tests>
+  <help>
+    Remove calls added to SeattleSeq output that are not called in VCF.
+  </help>
+</tool>
+
