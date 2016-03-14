@@ -1,0 +1,21 @@
+<tool id="split_mult_alleles_vcf" name="Split Multiple Alterate Alleles VCF" version="0.1" >
+  <description>Where multiple alleles are listed by commas in a VCF, make each a separate entry.</description>
+  <command interpreter="python">split_mult_alleles_vcf.py
+    $input $output $output_alt
+  </command>
+
+  <inputs>   
+    <param name="input" format="vcf" type="data" label="Input VCF" />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output" label="Output VCF" />
+    <data format="vcf" name="output_alt" label="Output Alternate VCF" />
+  </outputs>
+  <tests>
+  </tests>
+  <help>
+    Where multiple alleles are listed by commas in a VCF, make each a separate entry.  Place separate entries in new file.
+  </help>
+</tool>
+
