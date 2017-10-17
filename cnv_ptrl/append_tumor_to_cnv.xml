@@ -1,0 +1,25 @@
+<tool id="append_tumor_to_cnv" name="Append Tumor Data to CNV Normals" version="0.1.0" >
+  <description>Add tumor sample count data to pre-built counts table of normals.  Then take the updated data and run a depth-based CNV analysis.</description>
+  <command interpreter="python">append_tumor_to_cnv.py
+    $amplicons $counts_in $samples_in $counts_out $samples_out $probes $sample_id
+  </command>
+
+  <inputs>   
+    <param name="amplicons" format="txt" type="data" label="Amplicons File" />
+    <param name="counts_in" format="csv" type="data" label="Counts CSV" />
+    <param name="samples_in" format="txt" type="data" label="Samples File" />
+    <param name="probes" format="txt" type="data" label="ProbeQC" />
+    <param name="sample_id" type="text" label="Sample ID" />
+  </inputs>
+
+  <outputs>
+    <data format="csv" name="counts_out" label="Counts Output CSV" />
+    <data format="txt" name="samples_out" label="Samples Output File" />
+  </outputs>
+  <tests>
+  </tests>
+  <help>
+    Add tumor sample count data to pre-built counts table of normals.  Then take the updated data and run a depth-based CNV analysis.
+  </help>
+</tool>
+

@@ -1,0 +1,23 @@
+<tool id="ptrl_cnv" name="PTRL Copy Number Analysis" version="0.1.0" >
+  <description>Run the depth-based copy number analysis as used by PTRL.</description>
+  <command interpreter="python">cna-analysis-25Apr14.py
+    $amplicons $samples $counts $cnv_pdf $cnv_txt
+  </command>
+
+  <inputs>   
+    <param name="amplicons" format="txt" type="data" label="Amplicons File" />
+    <param name="samples" format="txt" type="data" label="Samples File" />
+    <param name="counts" format="csv" type="data" label="Counts CSV" />
+  </inputs>
+
+  <outputs>
+    <data format="txt" name="cnv_txt" label="CNV Text Output" />
+    <data format="pdf" name="cnv_pdf" label="CNV PDF Output" />
+  </outputs>
+  <tests>
+  </tests>
+  <help>
+    Run the depth-based copy number analysis as used by PTRL.
+  </help>
+</tool>
+
