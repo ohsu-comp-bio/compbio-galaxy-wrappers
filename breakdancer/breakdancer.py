@@ -8,8 +8,7 @@ from argparse import ArgumentParser
 import logging
 import subprocess
 
-### Hard coded SAMTOOLS location.
-SAMTOOLS = "/mnt/lustre1/CompBio/bin/samtools"
+VERSION='1.4.5.1'
 
 def bd_argparse():
     parser = ArgumentParser(description='Run BreakDancer')
@@ -50,7 +49,8 @@ def find_stats(bam_file):
 
     bam_stats = []
 
-    cmd = SAMTOOLS + " view -bh " + bam_file + " | head -100000 | " + SAMTOOLS + " stats - | grep ^SN | cut -f 2- | grep 'insert size\|maximum length'"
+#    cmd = SAMTOOLS + " view -bh " + bam_file + " | head -100000 | " + SAMTOOLS + " stats - | grep ^SN | cut -f 2- | grep 'insert size\|maximum length'"
+    cmd = "samtools-1.3.1 view -h " + bam_file + " | head -100000 | samtools-1.3.1  stats - | grep ^SN | cut -f 2- | grep 'insert size\|maximum length'"
     print(cmd)
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -67,6 +67,7 @@ def find_stats(bam_file):
 
 def build_cmd(options, config):
 
+#    start_cmds = EXACLINICAL_BIN + "breakdancer-max " + options['config_file']
     start_cmds = "breakdancer-max " + options['config_file']
     for arg, value in options.items():
         if arg == "f":
@@ -96,6 +97,8 @@ def execute(cmd):
 ### Create the config file that BreakDancer will need.
 
 def writeTemp(outfile, normal_stats, tumor_stats, input_normal, input_tumor):
+
+    print(tumor_stats)
 
     outfile.write("map:" + input_tumor + "\tmean:" + tumor_stats[1] + "\tstd:" + tumor_stats[2] + "\treadlen:" + tumor_stats[0] + "\tsample:tumor\texe:samtools view\n")
     outfile.write("map:" + input_normal + "\tmean:" + normal_stats[1] + "\tstd:" + normal_stats[2] + "\treadlen:" + normal_stats[0] + "\tsample:normal\texe:samtools view\n")
