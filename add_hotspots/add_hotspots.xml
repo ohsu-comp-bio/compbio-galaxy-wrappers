@@ -1,0 +1,25 @@
+<tool id="add_hotspots" name="Add Hotspots" version="0.1.0" >
+  <description>Add hotspots from VCF to another VCF and annotate as such.</description>
+
+  <version_command></version_command>
+
+  <command><![CDATA[
+  python $__tool_directory__/add_hotspots.py "${input_vcf}" "${hotspots}" "${output}"
+  ]]></command>
+
+  <inputs>
+    <param name="input_vcf" type="data" format="vcf" label="Input VCF" help="VCF file to be annotated." />
+    <param name="hotspots" type="data" format="vcf" label="Hotspots VCF" help="Hotspots VCF to annotate with." />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output" label="${tool.name} on ${on_string}: Annotated VCF" help="" />
+  </outputs>
+
+  <tests></tests>
+
+  <help></help>
+
+  <citations></citations>
+
+</tool>
