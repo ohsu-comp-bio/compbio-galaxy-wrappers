@@ -1,0 +1,26 @@
+<tool id="annotate_vcf_with_bed" name="Annotate VCF With BED" version="0.1.0" >
+  <description>Use regions defined in a BED file to annotate a VCF FILTER column.</description>
+
+  <version_command></version_command>
+
+  <command><![CDATA[
+  python $__tool_directory__/annotate_vcf_with_bed.py "${input_bed}" "${input_vcf}" "${output}" "${anno}"
+  ]]></command>
+
+  <inputs>
+    <param name="input_bed" type="data" format="bed" label="Input BED" help="BED file containing a list of regions you would annotate aganist." />
+    <param name="input_vcf" type="data" format="vcf" label="Input VCF" help="VCF file to be annotated." />
+    <param name="anno" type="text" label="Annotation" help="Annotation string to be included in the output VCF." />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output" label="${tool.name} on ${on_string}: Annotated VCF" help="" />
+  </outputs>
+
+  <tests></tests>
+
+  <help></help>
+
+  <citations></citations>
+
+</tool>
