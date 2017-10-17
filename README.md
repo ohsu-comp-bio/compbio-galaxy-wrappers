@@ -2,6 +2,20 @@
 
 A suite of galaxy wrapped tools.
 
+* add_af: 
+Add the AF and DP annotations to the SAMPLE column in a VCF.  NOTE: This is an old piece of code that needs to be split up in to its component parts and rewritten.
+* add_hotspots:
+If you have forced variant calls at specific genomic loci, this will allow you to merge the hotspots VCF with a non-hotspots VCF.  Mainly used to handle collisions, and to apply FILTER column annotations.
+* annotate_vcf_with_bed:
+Given a basic BED file, annotate any instances of VCF variants overlapping regions defined in said BED file.  FILTER column annotation will be applied.
+* breakdancer:
+Detect structural variants. (https://github.com/genome/breakdancer) (http://breakdancer.sourceforge.net/)
+
+
+
+
+### From Jaclyn:
+
 This directory contains a pointer to UCSC's pcawg_tools repository. 
 
 To set up this repository correctly, you will need to add a submodule to your repo.
