@@ -1,0 +1,27 @@
+<tool id="break_mutect_vcf_triallelic" name="VCF triallelic_site Split" version="0.1.0" >
+  <description>Split a VCF file that contains a triallelic_site flag in to two separate VCF files, one containing these entries, and one not containing these entries.</description>
+
+  <version_command>python break_mutect_vcf_triallelic.py --version</version_command>
+
+  <command interpreter="python">break_mutect_vcf_triallelic.py $input_vcf $output_vcf $output_vcf_tri $output_int</command>
+
+  <inputs>   
+    <param name="input_vcf" type="data" format="vcf" required="true" label="Input VCF" help="Input VCF file containing triallelic_site flagged calls." />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="Output VCF" help="Output VCF containing only those entries with NO triallelic_site flag." />
+    <data format="vcf" name="output_vcf_tri" label="Output VCF triallelic_site" help="Output VCF containing only those entries with the triallelic_site flag." />
+    <data format="gatk_interval" name="output_int" label="Output Interval List" help="Output interval_list file containing only those entries with the triallelic_site flag." />
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+    Split a VCF file that contains a triallelic_site flag in to two separate VCF files, one containing these entries, and one not containing these entries.  This tool will also create an interval_list file for input in to GATK that describes all entries containing the triallelic_site flag.  This is essentially a workaround for a known issue. http://gatkforums.broadinstitute.org/gatk/discussion/8386/mutect2-and-alternate-allele-calls
+  </help>
+
+  <citations></citations>
+
+</tool>
+
