@@ -10,7 +10,8 @@ If you have forced variant calls at specific genomic loci, this will allow you t
 Given a basic BED file, annotate any instances of VCF variants overlapping regions defined in said BED file.  FILTER column annotation will be applied.
 * breakdancer:
 Detect structural variants. (https://github.com/genome/breakdancer) (http://breakdancer.sourceforge.net/)
-
+* cnv_ptrl:
+Wrappers for CNV calling in amplicon sequencing data. (http://jmd.amjpathol.org/article/S1525-1578(14)00203-7/pdf)
 
 
 
