@@ -1,0 +1,59 @@
+<tool id="xhmm_normalize" name="xhmm normalize" version="1.0">
+
+  <description>
+    Apply PCA factors in order to normalize read depth matrix
+  </description>
+
+  <command>
+    ln -s $PC_LOADINGS "./xhmm_pca_out.txt.PC_LOADINGS.txt";
+    ln -s $PC_SD "./xhmm_pca_out.txt.PC_SD.txt";
+    ln -s $PC "./xhmm_pca_out.txt.PC.txt";
+    xhmm --normalize
+    --readDepths $readDepths
+    --PCAfiles "./xhmm_pca_out.txt"
+    --PCnormalizeMethod $PCnormalizeMethod
+    --numPCtoRemove $numPCtoRemove
+    --PVE_mean_factor $PVE_mean_factor
+    --PVE_contrib $PVE_contrib
+    --normalizeOutput "./xhmm_normalize_out.txt"
+    2&gt; "log.txt"
+  </command>
+
+  <inputs>
+    <param name="readDepths" type="data" format="txt" label="mean centered data" />
+    <param name="PC_LOADINGS" type="data" format="txt" label="PCA Loadings output" />
+    <param name="PC_SD" type="data" format="txt" label="PCA SD" />
+    <param name="PC" type="data" format="txt" label="PC output" />
+    <param name="PCnormalizeMethod" type="select" label="Method to choose which prinicipal components are removed for data normalization" >
+      <option value="PVE_mean" selected="True">PVE_mean</option>
+      <option value="PVE_contrib">PVE_contrib</option>
+      <option value="numPCtoRemove">numPCtoRemove</option>
+    </param>
+    <param name="numPCtoRemove" type="integer" value="20" label="Number of highest principal components to filter out" />
+    <param name="PVE_mean_factor" type="float" value="0.7" label="Remove all principal components that individually explain more variance than this factor times the average (in the original PCA-ed data)" />
+    <param name="PVE_contrib" type="integer" value="50" label="Remove the smallest number of principal components that explain this percent of the variance (in the original PCA-ed data) " />
+  </inputs>
+
+  <outputs>
+    <data name="normalizeOutput" format="txt" label="${tool.name} on ${on_string}: Normalized read-depth matrix output file" from_work_dir="xhmm_normalize_out.txt"/>
+    <data name="logfile" format="txt" label="${tool.name} on ${on_string}: Log file" from_work_dir="log.txt"/>
+  </outputs>
+  
+  <help>
+
+**What it does**
+
+This tool uses XHMM_ to apply PCA factors and  normalize the read depth matrix.
+
+.. _XHMM: http://atgu.mgh.harvard.edu/xhmm/index.shtml
+
+------
+
+**Citation**
+
+For the underlying tool, please cite:
+
+Menachem Fromer and Shaun M. Purcell. Using XHMM software to detect copy number variation in whole-exome sequencing data. In Current Protocols in Human Genetics. John Wiley and Sons, Inc., 2014
+
+  </help>
+</tool>

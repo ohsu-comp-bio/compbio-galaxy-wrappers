@@ -1,0 +1,45 @@
+<tool id="xhmm_prepareTargets" name="xhmm prepareTargets" version="1.0">
+
+  <description>
+    Sort all target intervals, merge overlapping ones, and print the resulting interval list
+  </description>
+
+  <command>
+    xhmm --prepareTargets
+    --targets $input
+    --mergedtargets "./xhmm_prepareTargets_out.txt"
+  </command>
+
+  <inputs>
+    <param name="input" type="data" format="txt" label="Input targets list" />
+  </inputs>
+
+  <outputs>
+    <data name="output" format="txt" label="${tool.name} on ${on_string}: Output targets list" from_work_dir="xhmm_prepareTargets_out.txt"/>
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="input" value="EXOME.interval_list" ftype="txt" />
+      <output name="output" file="mergedEXOME.interval_list_out" />
+    </test>
+
+  </tests>
+  <help>
+
+**What it does**
+
+This tool uses XHMM_ to sort all target intervals, merge overlapping ones, and print the resulting interval list
+
+.. _XHMM: http://atgu.mgh.harvard.edu/xhmm/index.shtml
+
+------
+
+**Citation**
+
+For the underlying tool, please cite:
+
+Menachem Fromer and Shaun M. Purcell. Using XHMM software to detect copy number variation in whole-exome sequencing data. In Current Protocols in Human Genetics. John Wiley and Sons, Inc., 2014
+
+  </help>
+</tool>

@@ -1,0 +1,49 @@
+<tool id="xhmm_discover" name="xhmm discover" version="1.0">
+
+  <description>
+    Discover CNVs from normalized read depth matrix
+  </description>
+
+  <command><![CDATA[
+    echo $sample > sample_file.txt &&
+    xhmm --discover
+    --paramFile $paramFile
+    --readDepths $readDepths
+    --origReadDepths $origReadDepths
+    --discoverSomeQualThresh $qualThresh
+    --xcnv "./xhmm_discover_out.xcnv"
+    --keepSampleIDs sample_file.txt
+    2&> "log.txt"
+  ]]></command>
+
+  <inputs>
+    <param name="paramFile" type="data" format="txt" label="(Initial) model parameters file" />
+    <param name="readDepths" type="data" format="txt" label="Matrix of normalized read-depths to use for CNV annotation, where rows (samples) and columns (targets) are labeled" />
+    <param name="origReadDepths" type="data" format="txt" label="Matrix of unnormalized read-depths to use for CNV annotation, where rows (samples) and columns (targets) are labeled" />
+    <param name="qualThresh" type="integer" value="30" label="Quality threshold for discovering a CNV in a sample" />
+    <param name="sample" type="text"  label="Sample ID" />
+  </inputs>
+
+  <outputs>
+    <data name="xcnv" format="txt" label="${tool.name} on ${on_string}: CNV output file" from_work_dir="xhmm_discover_out.xcnv" />
+    <data name="logfile" format="txt" label="${tool.name} on ${on_string}: Log file" from_work_dir="log.txt"/>
+  </outputs>
+  
+  <help>
+
+**What it does**
+
+This tool uses XHMM_ to discover CNVs from normalized read depth matrix
+
+.. _XHMM: http://atgu.mgh.harvard.edu/xhmm/index.shtml
+
+------
+
+**Citation**
+
+For the underlying tool, please cite:
+
+Menachem Fromer and Shaun M. Purcell. Using XHMM software to detect copy number variation in whole-exome sequencing data. In Current Protocols in Human Genetics. John Wiley and Sons, Inc., 2014
+
+  </help>
+</tool>

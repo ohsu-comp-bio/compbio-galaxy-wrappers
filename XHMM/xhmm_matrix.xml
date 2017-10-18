@@ -1,0 +1,188 @@
+<tool id="xhmm_matrix" name="xhmm matrix" version="1.0">
+
+  <description>
+    Process (filter, center, etc.) a read depth matrix and output the resulting
+    matrix.  Note that first all excluded samples and targets are removed.  And,
+    sample statistics used for filtering are calculated only *after* filtering
+    out relevant targets.
+  </description>
+
+  <command>
+    xhmm --matrix
+    --readDepths $input1
+    #if $excludeTargets.show_excludeTargets:
+    --excludeTargets $input2
+    #end if
+    #if $excludeSamples.show_excludeSamples:
+    --excludeSamples $input3
+    #end if
+    #if $excludeChromosomeTargets.show_excludeChromosomeTargets:
+    --excludeChromosomeTargets $input4
+    #end if
+    #if $advanced_params.show_advanced:
+    #if $advanced_params.input5:
+    --minTargetSize $advanced_params.input5
+    #end if
+    #if $advanced_params.input6:
+    --maxTargetSize $advanced_params.input6
+    #end if
+    #if $advanced_params.input7:
+    --minMeanTargetRD $advanced_params.input7
+    #end if
+    #if $advanced_params.input8:
+    --maxMeanTargetRD $advanced_params.input8
+    #end if
+    #if $advanced_params.input9:
+    --minSdTargetRD $advanced_params.input9
+    #end if
+    #if $advanced_params.input10:
+    --maxSdTargetRD $advanced_params.input10
+    #end if
+    #if $advanced_params.input11:
+    --minMeanSampleRD $advanced_params.input11
+    #end if
+    #if $advanced_params.input12:
+    --maxMeanSampleRD $advanced_params.input12
+    #end if
+    #if $advanced_params.input13:
+    --minSdSampleRD $advanced_params.input13
+    #end if
+    #if $advanced_params.input14:
+    --maxSdSampleRD $advanced_params.input14
+    #end if
+    #end if
+    #if $scaleDataBySum.scaleDataBySum_selector:
+    --scaleDataBySum
+    --scaleDataBySumType $scaleDataBySum.scaleByType
+    --scaleDataBySumFactor $scaleDataBySum.scaleByFactor
+    #end if
+    #if $log10.log10_selector:
+    --log10 $log10.log10pseudoCount
+    #end if
+    #if $centerData.centerData_selector:
+    --centerData
+    --centerType $centerData.centerType
+    --zScoreData
+    #end if
+    #if $outputExcludedTargets.outputExcludedTargets_selector:
+    --outputExcludedTargets "./xhmm_matrix_out.txt.filtered_targets.txt"
+    #end if
+    #if $outputExcludedSamples.outputExcludedSamples_selector:
+    --outputExcludedSamples "./xhmm_matrix_out.txt.filtered_samples.txt"
+    #end if
+    -o "./xhmm_matrix_out.txt"
+    2&gt; "log.txt"
+  </command>
+
+  <inputs>
+    <param name="input1" type="data" format="txt" label="Merged GATK read depths matrix file" />    
+
+    <conditional name="excludeTargets">
+      <param name="show_excludeTargets" type="boolean" checked="False" label="Exclude targets" />
+      <when value="true">
+        <param name="input2" type="data" format="txt" label="File(s) of target(s) to exclude" optional="True"/>
+      </when>
+    </conditional>
+
+    <conditional name="excludeChromosomeTargets">
+      <param name="show_excludeChromosomeTargets" type="boolean" checked="False" label="Exclude target chromosome(s)" />
+      <when value="true">
+        <param name="input4" type="text" format="txt" label="Target chromosome(s) to exclude" optional="True"/>
+      </when>
+    </conditional>
+    
+    <conditional name="excludeSamples">
+      <param name="show_excludeSamples" type="boolean" checked="False" label="Exclude samples" />
+      <when value="true">
+        <param name="input3" type="data" label="File(s) of samples to exclude" optional="True"/>
+      </when>
+    </conditional>
+
+    <conditional name="scaleDataBySum">
+      <param name="scaleDataBySum_selector" type="boolean" checked="False" label="Scale read-depth matrix values by sample- or target- sums" help="as per --scaleDataBySumType) [i.e., divide by row or column sums], but multiply by factor specificied by --scaleDataBySumFactor" />
+      <when value="true">
+        <param name="scaleByType" type="select" label="Scale the data within this dimension" >
+          <option value="target" selected="True">target</option>
+          <option value="sample">sample</option>
+        </param>
+        <param name="scaleByFactor" type="float" value="1000000" label="Multiply data by this factor during scaling" />
+      </when>  
+    </conditional>
+
+    <conditional name="log10">
+      <param name="log10_selector" type="boolean" checked="False" label="Convert matrix to log10 values" />
+      <when value="true">
+        <param name="log10pseudoCount" type="float" value="0" label="Add pseudocount" help="Denote the original matrix value as x and this parameter's pseudocount value as v (say, 0.5). The matrix value used is then log10(max(x, 0) + v)" />
+      </when>
+    </conditional>
+
+    <conditional name="centerData">
+      <param name="centerData_selector" type="boolean" checked="False" label="Output sample- or target- centered read-depth matrix" />
+      <when value="true">
+        <param name="centerType" type="select" label="Center the data around this dimension" >
+          <option value="target" selected="True">target</option>
+          <option value="sample">sample</option>
+        </param>
+        <param name="zScoreData" type="boolean" checked="False" label="Normalize by standard deviation" />
+      </when>
+    </conditional>
+
+    <conditional name="advanced_params">
+      <param name="show_advanced" type="boolean" checked="False" label="Show additional parameters" />
+      <when value="true">
+        <param name="input5" type="integer" value="0" label="Minimum size of target (in bp) to process" optional="True"/>
+        <param name="input6" type="integer" label="Maximum size of target (in bp) to process" optional="True"/>
+        <param name="input7" type="float" label="Minimum per-target mean RD to require for target to be processed" optional="True"/>
+        <param name="input8" type="float" label="Maximum per-target mean RD to require for target to be processed" optional="True"/>
+        <param name="input9" type="float" value = "0" label="Minimum per-target standard deviation RD to require for target to be processed" optional="True"/>
+        <param name="input10" type="float" label="Maximum per-target standard deviation RD to require for target to be processed" optional="True"/>
+        <param name="input11" type="float" label="Minimum per-sample mean RD to require for sample to be processed" optional="True"/>
+        <param name="input12" type="float" label="Maximum per-sample mean RD to require for sample to be processed" optional="True"/>
+        <param name="input13" type="float" value = "0" label="Minimum per-sample standard deviation RD to require for sample to be processed" optional="True"/>
+        <param name="input14" type="float" label="Maximum per-sample standard deviation RD to require for sample to be processed" optional="True"/>
+      </when>
+    </conditional>
+    <conditional name="outputExcludedTargets">
+      <param name="outputExcludedTargets_selector" type="select" display="radio" label="Output excluded targets to a file">
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+      </param>
+    </conditional>
+
+    <conditional name="outputExcludedSamples">
+      <param name="outputExcludedSamples_selector" type="select" display="radio" label="Output excluded samples to a file">
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+      </param>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data name="outputFile" format="txt" label="${tool.name} on ${on_string}: Processed read-depth matrix output file" from_work_dir="xhmm_matrix_out.txt"/>
+    <data name="excludedTargets" format="txt" label="${tool.name} on ${on_string}: Excluded targets" from_work_dir="xhmm_matrix_out.txt.filtered_targets.txt">
+      <filter>outputExcludedTargets['outputExcludedTargets_selector']=="true"</filter>
+    </data>
+    <data name="excludedSamples" format="txt" label="${tool.name} on ${on_string}: Excluded samples" from_work_dir="xhmm_matrix_out.txt.filtered_samples.txt">
+      <filter>outputExcludedSamples['outputExcludedSamples_selector']=="true"</filter>
+    </data>
+    <data name="logfile" format="txt" label="${tool.name} on ${on_string}: Log file" from_work_dir="log.txt"/>
+  </outputs>
+
+  <help>
+
+**What it does**
+
+This tool uses XHMM_ to process (filter, center, etc.) a read depth matrix and output the resulting matrix.  Note that first all excluded samples and targets are removed. And, sample statistics used for filtering are calculated only *after* filtering out relevant targets.
+
+.. _XHMM: http://atgu.mgh.harvard.edu/xhmm/index.shtml
+
+------
+
+**Citation**
+
+For the underlying tool, please cite:
+
+Menachem Fromer and Shaun M. Purcell. Using XHMM software to detect copy number variation in whole-exome sequencing data. In Current Protocols in Human Genetics. John Wiley and Sons, Inc., 2014
+
+  </help>
+</tool>

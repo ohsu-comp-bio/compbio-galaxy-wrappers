@@ -1,0 +1,105 @@
+<tool id="xhmm_mergeGATKdepths" name="xhmm mergeGATKdepths" version="1.0">
+
+  <description>
+    Merge the output from GATK into a single read depth matrix of samples (rows) by
+    targets (columns)
+  </description>
+
+  <command><![CDATA[
+    xhmm
+    --mergeGATKdepths
+    #if $GATKdepthsSource.GATKdepths == "list":
+    --GATKdepthsList ${GATKdepthsList}
+    #else if $GATKdepthsSource.GATKdepths == "preset":  
+
+    #if str($GATKdepthsSource.preset_selector) == "trusightone_female":
+    --GATKdepths `find /home/exacloud/clinical/RichardsLab/ngs/cnv/TruSightOne_FEMALE -type f | tr "\n" "," | sed "s/,$/\n/g"`
+    #else if str($GATKdepthsSource.preset_selector) == "trusightone_male":
+    --GATKdepths `find /home/exacloud/clinical/RichardsLab/ngs/cnv/TruSightOne_MALE -type f | tr "\n" "," | sed "s/,$/\n/g"`
+    #else if str($GATKdepthsSource.preset_selector) == "agilentcre_v1_female":
+    --GATKdepths `find /home/exacloud/clinical/RichardsLab/ngs/cnv/AgilentCRE_V1_FEMALE -type f | tr "\n" "," | sed "s/,$/\n/g"`
+    #else if str($GATKdepthsSource.preset_selector) == "agilentcre_v1_male":
+    --GATKdepths `find /home/exacloud/clinical/RichardsLab/ngs/cnv/AgilentCRE_V1_MALE -type f | tr "\n" "," | sed "s/,$/\n/g"`
+    #end if
+
+    ##else if $GATKdepthsSource.GATKdepths == "history":
+    ##for $b, $GATKdepth in enumerate( $GATKdepths ):
+    ##--GATKdepths ${GATKdepth.inputGATKdepths}
+    ##end for   
+    #end if
+
+    #if $advanced.advanced_selector == "advanced":
+    --sampleIDmap $advanced.input3
+    --fromID $advanced.input4
+    --toID $advanced.input5
+    --columnSuffix $advanced.input6
+    --rdprecision $advanced.input7
+    #end if
+    -o "./xhmm_mergeGATKepths_out.txt"
+    2> "log.txt"
+  ]]></command>
+
+  <inputs>
+    <conditional name="GATKdepthsSource">
+      <param name="GATKdepths" type="select" label="Select GATKdepths the source for the GATKdepths">
+        <option value="preset">Select from pre-set directories</option>
+        <option value="list">Select a file from history with list of GATKdepths paths</option>
+        <option value="history">Select GATKdepths from history</option>
+      </param>
+        <when value="preset">
+            <param name="preset_selector" type="select" label="Select from one of the preset directories">
+                <option value="trusightone_male">TruSightOne_MALE</option>
+                <option value="trusightone_female">TruSightOne_FEMALE</option>
+                <option value="agilentcre_v1_male">AgilentCRE_V1_MALE</option>
+                <option value="agilentcre_v1_female">AgilentCRE_V1_FEMALE</option>
+            </param>
+        </when>
+        <when value="list">
+            <param name="GATKdepthsList" type="data" format="txt" label="Select file containing list of GATKdepths paths"/>
+        </when>
+<!--
+        <when value="history">
+            <repeat name="GATKdepths" title="GATK depth" min="1">
+                <param name="inputGATKdepths" type="data" label="GATK sample_interval_summary output file" />
+            </repeat>
+        </when>
+-->
+    </conditional>
+    <conditional name="advanced">
+      <param name="advanced_selector" type="select" label="Select default or advanced parameters">
+        <option value="default">Default</option>
+        <option value="advanced">Advanced</option>
+      </param>
+      <when value="advanced"> 
+        <param name="input3" type="data" format="txt" label="A file containing mappings of sample names \to new samples names" />
+        <param name="input4" type="integer" value="" label="Column number of OLD sample IDs to map" />
+        <param name="input5" type="integer" value="" label="Column number of NEW sample IDs to map" />
+        <param name="input6" type="text" value="" label="Suffix of columns to be used for merging" />
+        <param name="input7" type="integer" value="" label="Decimal precision of read depths output" />
+      </when>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data name="outputFile" format="txt" label="${tool.name} on ${on_string}: Read-depth matrix output file" from_work_dir="xhmm_mergeGATKepths_out.txt"/>
+    <data name="logFile" format="txt" label="${tool.name}: Log file" from_work_dir="log.txt"/>
+  </outputs>
+
+  <help>
+
+**What it does**
+
+This tool uses XHMM_ to merge the output from GATK into a single read depth matrix of samples (rows) by targets
+
+.. _XHMM: http://atgu.mgh.harvard.edu/xhmm/index.shtml
+
+------
+
+**Citation**
+
+For the underlying tool, please cite:
+
+Menachem Fromer and Shaun M. Purcell. Using XHMM software to detect copy number variation in whole-exome sequencing data. In Current Protocols in Human Genetics. John Wiley and Sons, Inc., 2014
+
+  </help>
+</tool>

@@ -1,0 +1,43 @@
+<tool id="xhmm_pca" name="xhmm PCA" version="1.0">
+
+  <description>
+    Run PCA to create normalization factors for read depth matrix
+  </description>
+
+  <command>
+    xhmm --PCA
+    --readDepths $readDepths
+    --PCAfiles "./xhmm_pca_out.txt"
+    2&gt; "log.txt"
+  </command>
+
+  <inputs>
+    <param name="readDepths" type="data" format="txt" label="mean centered data" />
+  </inputs>
+
+  <outputs>
+    <!-- <data name="PCAfiles" format="txt" label="${tool.name} on ${on_string}: PCA output" from_work_dir="xhmm_pca_out.txt"/> -->
+    <data name="PC_LOADINGS" format="txt" label="${tool.name} on ${on_string}: PCA Loadings output" from_work_dir="xhmm_pca_out.txt.PC_LOADINGS.txt"/>
+    <data name="PC_SD" format="txt" label="${tool.name} on ${on_string}: PCA SD output" from_work_dir="xhmm_pca_out.txt.PC_SD.txt"/>
+    <data name="PC" format="txt" label="${tool.name} on ${on_string}: PC output" from_work_dir="xhmm_pca_out.txt.PC.txt"/>
+    <data name="logfile" format="txt" label="${tool.name} on ${on_string}: Log file" from_work_dir="log.txt"/>
+  </outputs>
+  
+  <help>
+
+**What it does**
+
+This tool uses XHMM_ to run PCA to create normalization factors for read depth matrix.
+
+.. _XHMM: http://atgu.mgh.harvard.edu/xhmm/index.shtml
+
+------
+
+**Citation**
+
+For the underlying tool, please cite:
+
+Menachem Fromer and Shaun M. Purcell. Using XHMM software to detect copy number variation in whole-exome sequencing data. In Current Protocols in Human Genetics. John Wiley and Sons, Inc., 2014
+
+  </help>
+</tool>
