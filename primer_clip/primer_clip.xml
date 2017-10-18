@@ -1,0 +1,31 @@
+<tool id="primer_clip" name="Primer Clipper" version="0.1.0" >
+    <description>Clip primer sequences from a BAM file based on locations of these sequences at defined in an extended BED file.</description>
+
+    <version_command></version_command>
+
+    <command detect_errors="exit_code"><![CDATA[
+    ln -f -s "${bamfile}" input.bam &&
+    picard SortSam I=input.bam O=input_sorted.sam SO=queryname &&
+    uniq input_sorted.sam input_sorted_uniq.sam &&
+    python $__tool_directory__/primer_clip.py
+    --bed "${input_bed}"
+    --bamfile input_sorted_uniq.sam
+    --outfile "${outfile}"
+    ]]></command>
+
+    <inputs>
+        <param name="input_bed" type="data" format="bed" label="Input BED" help="Contains primer definitions file." />
+        <param name="bamfile" type="data" format="bam" label="Input BAM" help="BAM file that will lose the primer sequences." />
+    </inputs>
+
+    <outputs>
+        <data format="sam" name="outfile" label="${tool.name} on ${on_string}: Output BAM" help="Output in BAM format, primer sequences have been clipped." />
+    </outputs>
+
+    <tests></tests>
+
+    <help>Clip primer sequences from a BAM file based on locations of these sequences at defined in an extended BED file.</help>
+
+    <citations></citations>
+
+</tool>
