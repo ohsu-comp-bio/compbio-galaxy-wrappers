@@ -1,0 +1,23 @@
+<tool id="recoord_iont" name="Match VCF Coordinates">
+    <description>Modify coordinates in a VCF produced by TorrentSuite to be compatible with the currently
+    available Galaxy reference genome (hg19).</description>
+    <command interpreter="bash">
+        recoord_iont.sh $input_vcf $output_vcf $input_bam $output_sam
+    </command>
+
+    <inputs>
+        <param format="vcf" name="input_vcf" type="data" label="TorrentSuite VCF"/>  
+	<param format="bam" name="input_bam" type="data" label="TorrentSuite BAM"/>
+    </inputs>
+
+    <outputs>
+        <data format="vcf" name="output_vcf" type="data" label="Compatible VCF"/>
+	<data format="sam" name="output_sam" type="data" label="Compatible SAM"/>
+    </outputs>
+
+    <tests>
+    </tests>
+
+    <help>
+    </help>
+</tool>
