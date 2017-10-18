@@ -1,0 +1,45 @@
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.1.4" >
+  <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
+
+  <version_command>python $__tool_directory__/sample_metrics.py --version</version_command>
+
+  <command><![CDATA[
+    python $__tool_directory__/sample_metrics.py
+    --probeqc_after '${probeqc}'
+    #if $umi.umi_sel == 'umi_yes':
+      --probeqc_before '${probeqc_before_umi}'
+    #end if
+    --picard_summary '${picard_metrics}'
+    --outfile '${output}'
+    --outfile_txt '${output_txt}'
+
+]]></command>
+
+  <inputs>
+      <param name="probeqc" type="data" format="txt" required="true" label="ProbeQC Metrics" help="ProbeQC metrics file, as produced by the intervalqc_v2 script.  If you intend on producing UMI metrics, this would be the coverage QC AFTER UMI deduplication." />
+      <param name="picard_metrics" type="data" format="txt" label="Picard Alignment Summary Metrics" help="Alignment summary metrics produced by the Picard CollectAlignmentSummaryMetrics tool." />
+      <conditional name="umi">
+          <param label="Assess UMI deduplication" name="umi_sel" type="select">
+              <option value="umi_yes">Yes</option>
+              <option value="umi_no">No</option>
+          </param>
+          <when value="umi_yes">
+              <param name="probeqc_before_umi" type="data" format="txt" label="ProbeQC Metrics Pre-UMI" truevalue="--probeqc_before" help="ProbeQC metrics file produced before any UMI deduplication takes place.  Optional." />
+          </when>
+      </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="txt" name="output" label="${tool.name} on ${on_string}: json" help="JSON version of sample level metrics output." />
+    <data format="txt" name="output_txt" label="${tool.name} on ${on_string}: txt" help="TXT version of sample level metrics output." />
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+      Metrics calculated at the sample level, for use in CGD and for additional QC.
+  </help>
+
+  <citations></citations>
+
+</tool>
