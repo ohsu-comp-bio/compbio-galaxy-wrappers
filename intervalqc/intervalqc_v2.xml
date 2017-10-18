@@ -1,0 +1,35 @@
+<tool id="intervalqc_v2" name="QC Coverage Metrics" version="1.0.2" >
+  <description> Create QC metrics from GATK DepthOfCoverage per locus output.</description>
+  <command interpreter="python">intervalqc_v2.py
+    $gff $bed $doc_0 $doc_30 $outfile_gene $outfile_probe $depth $picard_metrics 
+    
+    #if $transcripts:
+    --transcripts $transcripts
+    #end if
+
+  </command>
+
+  <inputs>   
+    <param name="gff" type="data" format="gff" label="Gene definitions (GFF3)" />
+    <param name="bed" type="data"  format="bed" label="Probe List (intervals)" />
+    <param name="doc_0" type="data" format="tabular" label="DepthOfCoverage per locus mbq0" />
+    <param name="doc_30" type="data"  format="tabular" label="DepthOfCoverage per locus mbq30" />
+    <param name="depth" type="text" label="Depth cutoffs" help="Coverage metrics will be based off of these values, separated by spaces."/>
+    <param name="picard_metrics" type="data" format="txt" label="Picard Alignment Summary Metrics" help="CollectASMetrics from Picard."/>
+    <param name="transcripts" type="data" format="txt" optional="true" label="RefSeq Transcript List" help="Input a list of RefSeq transcripts."/>
+  </inputs>
+
+  <outputs>
+    <data format="txt" name="outfile_gene" label="DepthOfCoverage Gene QC Stats" />
+    <data format="txt" name="outfile_probe" label="DepthOfCoverage Probe QC Stats" />
+  </outputs>
+
+
+  <tests>
+
+  </tests>
+  <help>
+    Calculates Q30% and percentages of depths above a certain threshold on both the genomic interval and gene levels.  Outputs are gene and probe tsv's to be imported in to CGD.
+  </help>
+</tool>
+
