@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-### Remove the rare reference calls from SeattleSeq tsv writeGenotypes output.
-### These should not be sent to CGD, they are not called in the VCF.
-
 import argparse
 
 RARE_REFS = [("1","169519049"),("7","6026775"),("13","32929387"),("14","75513883")]
@@ -35,13 +32,15 @@ def parseSeattleSeqTSV(handle, handle_out):
             sline = line.rstrip('\n').split('\t')
             chrom = sline[0]
             pos = sline[1]
+            ref = sline[3]
+            alt = sline[4]
             depth = sline[8]
 
-            if compareCoords(chrom, pos) == False and depth != FAKE_DEPTH:
+            if compareCoords(chrom, pos) == False and depth != FAKE_DEPTH and len(alt) < 256 and len(ref) < 256:
                 handle_out.write(line)
             else:
                 print("Coordinate " + chrom + ":" + pos + " found in input, removing.")
-    
+
     handle_out.close()
 
 
