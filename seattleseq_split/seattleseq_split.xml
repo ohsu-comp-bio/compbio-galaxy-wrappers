@@ -1,0 +1,24 @@
+<tool id="seattleseq_split" name="Split a writeGenotypes TSV on multiallelic sites." version="0.1" >
+  <description>Split the writeGenotypes carrierAll TSV by multiallelic sites so they can properly be reannotated.</description>
+  <command interpreter="python">seattleseq_split.py
+    $infile $outfile_main $outfile_alt
+  </command>
+
+  <inputs>   
+    <param name="infile" format="tabular" type="data" label="Input TSV from writeGenotypes." />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="outfile_main" label="Large output file." />
+    <data format="vcf" name="outfile_alt" label="Small output file." />
+  </outputs>
+
+  <tests>
+  </tests>
+
+  <help>
+    Split a writeGenotypes TSV on multiallelic sites.
+  </help>
+
+</tool>
+
