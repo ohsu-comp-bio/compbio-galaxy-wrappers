@@ -1,0 +1,175 @@
+<tool id="umi_tools_dedup" name="UMI-tools dedup" version="0.5.0.2">
+  <description>Tools for dealing with Unique Molecular Identifiers</description>
+  <requirements></requirements>
+  <stdio>
+    <exit_code range="1:" />
+  </stdio>
+  <version_command>umi_tools dedup --version</version_command>
+
+  <command><![CDATA[
+   ln -f -s "${input_bam}" input.bam &&
+   samtools index input.bam &&
+   umi_tools dedup
+  -I input.bam
+  -S "${output_bam}"
+  -L "${output_log}"
+
+  #if $run_stats:
+    --output-stats="${output_stats}"
+  #end if
+
+  --method "${method}"
+  #if $chrom:
+    --chrom="${chrom}"
+  #end if
+
+  #if $read_length:
+    --read-length
+  #end if
+
+  #if $paired:
+    --paired
+  #end if
+
+  ]]></command>
+
+  <inputs>
+    <param name="input_bam" type="data" format="sam,bam" label="Input BAM" help="Utilize UMI to deduplicate this input BAM file."/>
+    <param name="run_stats" type="boolean" checked="false" label="Produce Stats Output" help="If selected, the tool will also produce stats output.  Note: For some of the selected methods, this step can take a very long time."/>
+    <param name="chrom" type="text" label="Chromosome [1-22, X, Y, MT]" help="Restrict to one chromosome"/>
+    <param argument="--method" type="select" label="method to use for umi grouping" help="count can be run with multiple methods to identify group of reads with the same (or similar) UMI(s), from which a single read is returned. All methods start by identifying the reads with the same mapping position.">
+      <option value="unique">unique</option>
+      <option value="percentile">percentile</option>
+      <option value="cluster">cluster</option>
+      <option value="adjacency">adjacency</option>
+      <option value="directional" selected="true">directional</option>
+    </param>
+    <param name="read_length" type="boolean" value="False" label="Read Length Helps Duplicate Identification" help="use read length in addition to position and UMI to identify possible duplicates"/>
+    <param name="paired" type="boolean" value="False" label="Data is Paired" help="paired BAM"/>
+  </inputs>
+
+  <outputs>
+    <data format="bam" name="output_bam" label="${tool.name} on ${on_string}: output.bam"/>
+    <data format="txt" name="output_stats" label="${tool.name} on ${on_string}: stats.txt">
+      <filter>run_stats</filter>
+    </data>
+    <data format="txt" name="output_log" label="${tool.name} on ${on_string}: output.log"/>
+  </outputs>
+
+  <help><![CDATA[
+Tools for dealing with Unique Molecular Identifiers (https://github.com/CGATOxford/UMI-tools)
+
+Purpose
+-------
+
+The purpose of this command is to deduplicate BAM files based
+on the first mapping co-ordinate and the UMI attached to the read.
+It is assumed that the FASTQ files were processed with extract_umi.py
+before mapping and thus the UMI is the last word of the read name. e.g:
+
+@HISEQ:87:00000000_AATT
+
+where AATT is the UMI sequeuence.
+
+If you have used an alternative method which does not separate the
+read id and UMI with a "_", such as bcl2fastq which uses ":", you can
+specify the separator with the option "--umi-separator=<sep>",
+replacing <sep> with e.g ":".
+
+Alternatively, if your UMIs are encoded in a tag, you can specify this
+by setting the option --extract-umi-method=tag and set the tag name
+with the --umi-tag option. For example, if your UMIs are encoded in
+the 'UM' tag, provide the following options:
+"--extract-umi-method=tag --umi-tag=UM"
+
+By default, reads are considered identical if they have the same start
+coordinate, are on the same strand, and have the same UMI. Optionally,
+splicing status can be considered (see below).
+
+The start postion of a read is considered to be the start of its alignment
+minus any soft clipped bases. A read aligned at position 500 with
+cigar 2S98M will be assumed to start at postion 498.
+
+Methods
+-------
+
+dedup can be run with multiple methods to identify group of reads with
+the same (or similar) UMI(s), from which a single read is
+returned. All methods start by identifying the reads with the same
+mapping position.
+
+The simpliest methods, unique and percentile, group reads with
+the exact same UMI. The network-based methods, cluster, adjacency and
+directional, build networks where nodes are UMIs and edges connect UMIs
+with an edit distance <= threshold (usually 1). The groups of reads
+are then defined from the network in a method-specific manner. For all
+the network-based methods, a single read is returned with the most
+abundant UMI in each read group. For details about how the read is
+selected, see 'Selecting the representative read' below.
+
+  "unique"
+      Reads group share the exact same UMI
+
+  "percentile"
+      Reads group share the exact same UMI. UMIs with counts < 1% of the
+      median counts for UMIs at the same position are ignored.
+
+  "cluster"
+      Identify clusters of connected UMIs (based on hamming distance
+      threshold). Each network is a read group
+
+  "adjacency"
+      Cluster UMIs as above. For each cluster, select the node(UMI)
+      with the highest counts. Visit all nodes one edge away. If all
+      nodes have been visted, stop. Otherise, repeat with remaining
+      nodes until all nodes have been visted. Each step
+      defines a read group.
+
+  "directional"
+      Identify clusters of connected UMIs (based on hamming distance
+      threshold) and umi A counts >= (2* umi B counts) - 1. Each
+      network is a read group.
+
+Selecting the representative read
+---------------------------------
+
+The following criteria are applied to select the read that will be retained
+from a group of duplicated reads:
+
+  1. The read with the lowest number of mapping coordinates (see --multimapping-detection-method option)
+  2. The read with the highest mapping quality
+
+Otherwise a read is chosen at random.
+  
+Options:
+
+-h, --help                                         show this help message and exit
+--version                                          show program's version number and exit
+-i, --in-sam                                       Input file is in sam format [default=False]
+-o, --out-sam                                      Output alignments in sam format [default=False]
+--ignore-umi                                       Ignore UMI and dedup only on position
+--umi-separator=UMI_SEP                            separator between read id and UMI
+--umi-tag=UMI_TAG                                  tag containing umi
+--extract-umi-method=GET_UMI_METHOD                where is the read UMI encoded? [default=read_id]
+--subset=SUBSET                                    Use only a fraction of reads, specified by subset
+--spliced-is-unique                                Treat a spliced read as different to an unspliced one [default=False]
+--soft-clip-threshold=SOFT                         number of bases clipped from 5' end beforeread is counted as spliced [default=4]
+--edit-distance-threshold=THRESHOLD                Edit distance theshold at which to join two UMIs when clustering. [default=1]
+--chrom=CHROM                                      Restrict to one chromosome
+--paired                                           paired BAM. [default=False]
+--method=METHOD                                    method to use for umi deduping [default=directional]
+--output-stats=STATS                               Specify location to output stats
+--further-stats                                    Output further stats
+--whole-contig                                     Read whole contig before outputting bundles: guarantees that no readsare missed, but increases memory usage
+--multimapping-detection-method=DETECTION_METHOD   Some aligners identify multimapping using bam tags. Setting this option to NH, X0 or XT will use these tags when selecting the best read amongst reads with the same position and umi [default=none]
+--mapping-quality=MAPPING_QUALITY                  Minimum mapping quality for a read to be retained [default=0]
+--read-length                                      use read length in addition to position and UMI to identify possible duplicates [default=False]
+--per-contig                                       dedup per contig, e.g for transcriptome where contig = gene
+--per-gene                                         Deduplicate per gene,e.g for transcriptome where contig = transcript must also provide a transript to gene map with--gene-transcript-map [default=False]
+--gene-transcript-map=GENE_TRANSCRIPT_MAP          file mapping transcripts to genes (tab separated)
+--gene-tag=GENE_TAG                                Deduplicate per gene where gene isdefined by this bam tag [default=none]
+  ]]></help>
+  <citations>
+    <citation type="doi">10.1101/gr.209601.116</citation>
+  </citations>
+</tool>

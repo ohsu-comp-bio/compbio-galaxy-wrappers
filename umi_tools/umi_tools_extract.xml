@@ -1,0 +1,97 @@
+<tool id="umi_tools_extract" name="UMI-tools extract" version="0.4.3.1">
+  <description>Tools for dealing with Unique Molecular Identifiers</description>
+
+  <requirements></requirements>
+
+  <stdio>
+    <exit_code range="1:" />
+  </stdio>
+
+  <version_command>umi_tools extract --version</version_command>
+
+  <command><![CDATA[
+  umi_tools extract
+  -I "${read_type.input_fq}"
+  -p "${read_type.bc_pattern}"
+  -S "${output_fq}"
+
+  #if str( $read_type.read_type_selector ) == "paired":
+  --read2-in "${read_type.input_fq_2}"
+    #if $read_type.bc_pattern_2:
+    --bc-pattern2 "${read_type.bc_pattern_2}"
+    #end if
+  --read2-out "${output_fq_2}"
+  #end if
+
+  #if $three_prime:
+  --3prime
+  #end if
+
+  #if $qual_filt:
+  --quality-filter-threshold="${qual_filt}"
+  #end if
+
+  --quality-encoding="${qual_encode}"
+  -L "${log_out}"
+
+  ]]></command>
+
+  <inputs>
+    <conditional name="read_type">
+      <param name="read_type_selector" type="select" label="Choose paired or single-end read sequencing.">
+        <option value="paired">Paired End</option>
+        <option value="single">Single End</option>
+      </param>
+      <when value="paired">
+	<param name="input_fq" type="data" format="fastq" label="Input FASTQ R1" help="Extract UMI sequence from this input R1 FASTQ formatted file."/>
+	<param name="input_fq_2" type="data" format="fastq" label="Input FASTQ R2" help="Extract UMI sequence from this input R2 FASTQ formatted file."/>
+	<param name="bc_pattern" type="text" size="26" value="NNNNNNNNNNNN" label="Barcode Pattern" help="Barcode pattern. Ns are random bases X's fixed"/>
+	<param name="bc_pattern_2" type="text" size="26" label="Barcode Pattern" help="Barcode pattern for read 2. Ns are random bases X's fixed"/>
+      </when>
+      <when value="single">
+	<param name="input_fq" type="data" format="fastq" label="Input FASTQ" help="Extract UMI sequence from this input FASTQ formatted file."/>
+	<param name="bc_pattern" type="text" size="26" value="NNNNNNNNNNNN" label="Barcode Pattern" help="Barcode pattern. Ns are random bases X's fixed"/>
+      </when>
+    </conditional>
+
+    <param name="three_prime" type="boolean" label="3' UMI" help="barcode is on 3' end of read"/>
+    <param name="qual_filt" type="integer" value="0" label="Quality Filter Threshold" help="Remove reads where any UMI base quality score falls below this threshold"/>
+    <param name="qual_encode" type="select" label="Quality Encoding" help="Quality score encoding. Choose from phred33[33-77] phred64 [64-106] or solexa [59-106]">
+      <option value="phred33" selected="True">phred33</option>
+      <option value="phred64">phred64</option>
+      <option value="solexa">solexa</option>
+    </param>
+  </inputs>
+
+  <outputs>
+    <data format_source="input_fq" name="output_fq" label="${tool.name} on ${on_string}: output.fq"/>
+    <data format_source="input_fq_2" name="output_fq_2" label="${tool.name} on ${on_string}: output2.fq">
+      <filter>read_type['read_type_selector'] == "paired"</filter>
+    </data>
+    <data name="log_out" format="txt" label="${tool.name} on ${on_string}: log.txt"/>
+  </outputs>
+
+  <help><![CDATA[
+  Tools for dealing with Unique Molecular Identifiers
+  (https://github.com/CGATOxford/UMI-tools)
+
+  Extract UMI barcode from a read and add it to the read name, leaving any sample barcode in place. Can deal with paired end reads and UMIs split across the paired ends.
+  
+  Options:
+  
+  -h, --help                                           show this help message and exit
+  --version                                            show program's version number and exit
+  --split-barcode                                      barcode is split across read pair
+  -p PATTERN, --bc-pattern=PATTERN                     Barcode pattern. Ns are random bases X's fixed
+  --bc-pattern2=PATTERN2                               Barcode pattern. Ns are random bases X's fixed
+  --read2-in=READ2_IN                                  file name for read pairs
+  --3prime                                             barcode is on 3' end of read
+  --read2-out=READ2_OUT                                file to output processed paired read to
+  --quality-filter-threshold=QUALITY_FILTER_THRESHOLD  Remove reads where any UMI base quality score falls below this threshold
+  --quality-encoding=QUALITY_ENCODING                  Quality score encoding. Choose from phred33[33-77] phred64 [64-106] or solexa [59-106]
+  --supress-stats                                      Suppress the writing of stats to the log
+  ]]></help>
+  <citations>
+    <citation type="doi">10.1101/gr.209601.116</citation>
+  </citations>
+</tool>
