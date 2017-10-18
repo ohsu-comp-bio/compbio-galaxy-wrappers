@@ -1,0 +1,27 @@
+
+<tool id="zip_and_send" name="Zip pipeline output then send to CGD." version="0.1" >
+  <description>Zip output files from exome pipeline and send them to CGD.</description>
+  <command interpreter="python">zip_and_send.py
+    $fastqc $gene_qc $int_qc $vcf $seattle_seq -o "${output.creating_job.history.name}"
+  </command>
+
+  <inputs>   
+    <param name="fastqc" type="data" format="html" label="FastQC" />
+    <param name="gene_qc" type="data" format="txt" label="Gene level QC metrics" />
+    <param name="int_qc" type="data"  format="txt" label="Interval level QC metrics" />
+    <param name="vcf" type="data"  format="vcf" label="VCF" />
+    <param name="seattle_seq" type="data"  format="tsv" label="SeattleSeq" />
+  </inputs>
+
+  <outputs>
+    <data format="zip" name="output" label="Signifies completion of transfer to CGD." />
+  </outputs>
+
+  <tests>
+
+  </tests>
+  <help>
+    This tool will zip the necessary output files with the history id as the filename, and then prepare the command line for cgd_client.
+  </help>
+</tool>
+
