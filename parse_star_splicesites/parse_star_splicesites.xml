@@ -1,0 +1,41 @@
+<tool id="parse_star_splicesites" name="Filter STAR Splicesites Output" version="0.1.0" >
+    <description>This tool will accept a STAR SJ.out.tab file as input and filter it based on whether the splicesite is biologically standard.</description>
+
+    <version_command>python $__tool_directory__/parse_star_splicesites.py --version</version_command>
+
+  <command><![CDATA[
+    python $__tool_directory__/parse_star_splicesites.py
+    '${star_infile}'
+    '${gff}'
+    '${output}'
+    #if $refseq_genes:
+    --refseq_genes '${refseq_genes}'
+    #end if
+    #if $min_count:
+    --min_count '${min_count}'
+    #end if
+]]></command>
+
+  <inputs>
+      <param name="star_infile" type="data" format="interval" optional="false" label="Input STAR Splicesites" help="Input file from STAR process that contains splice site information (SJ.out.tab)." />
+      <param name="gff" type="data" format="gff" optional="false" label="RefSeq GFF3" help="A GFF3 formatted file, RefSeq for out purposes, to grab transcript definitions." />
+      <param name="refseq_genes" type="data" format="txt" optional="true" label="RefSeq Genes" help="List of RefSeq IDs to look for." />
+      <param name="min_count" type="integer" optional="true" label="Minimum Count" value="0" help="Only provide to output if there are at least this many counts." />
+  </inputs>
+
+  <outputs>
+    <data format="txt" name="output" label="${tool.name} on ${on_string}: txt" help="Formatted and annotated STAR splicesites file." />
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+      This tool will accept a STAR SJ.out.tab file as input and filter it based on whether the splicesite is biologically standard.  It will then annotate the site with additional exon number and gene identifier information.
+      For additional information on the splicesites file from STAR, please see their manual (https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf).
+  </help>
+
+  <citations>
+      <citation type="doi">10.1093/bioinformatics/bts635</citation>
+  </citations>
+
+</tool>
