@@ -1,0 +1,22 @@
+<tool id="sort_vcf" name="Sort VCF" version="0.1" >
+  <description>Sort a VCF according to contig list as defined by CHROMS.</description>
+  <command interpreter="python">sort_vcf.py
+    $input $output
+  </command>
+
+  <inputs>   
+    <param name="input" type="data" format="vcf" label="Unsorted VCF" help="BAM to be sorted according to CHROMS variable." />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output" label="${tool.name} on ${on_string}: Sorted VCF" />
+  </outputs>
+
+  <tests>
+
+  </tests>
+  <help>
+
+  </help>
+</tool>
+
