@@ -1,0 +1,26 @@
+<tool id="tsv_to_vcf" name="Coordiantes to VCF." version="0.1" >
+  <description>Convert genomic coordinates to VCF format.</description>
+  <command interpreter="python">tsv_to_vcf.py
+    $chromosome $position $ref_allele $alt_allele $gene_name $output_vcf $output_gene $output_doc
+  </command>
+
+  <inputs>   
+    <param name="chromosome" type="text" label="Select Chromosome(s) [1-22, X, Y]: " help="Separate multiple entries with commas." />
+    <param name="position" type="text" label="Genomic coordinate(s) of variant: " />
+    <param name="ref_allele" type="text" label="Reference allele(s): " />
+    <param name="alt_allele" type="text" label="Alternate allele(s): " />
+    <param name="gene_name" type="text" label="Gene Name(s): " />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="VCF Output SVW" />
+    <data format="tabular" name="output_gene" label="Gene List Output SVW" />
+    <data format="tabular" name="output_doc" label="DOC Output SVW" />
+  </outputs>
+  <tests>
+  </tests>
+  <help>
+    Tool to convert coordinates to VCF format for use it workflows.
+  </help>
+</tool>
+
