@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 import logging
-import argparse, os, shutil, subprocess, sys, tempfile, time, shlex
+import argparse, os, shutil, subprocess, sys, tempfile, time, shlex, re
+import datetime
 from multiprocessing import Pool
 import vcf
 
@@ -10,7 +11,7 @@ def execute(cmd, output=None):
     # function to execute a cmd and report if an error occur
     print(cmd)
     try:
-        process = subprocess.Popen(args=shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         stdout,stderr = process.communicate()
     except Exception, e: # une erreur de ma commande : stderr
         sys.stderr.write("problem doing : %s\n%s\n" %(cmd, e))
@@ -30,15 +31,11 @@ def indexBam(workdir, inputFastaFile, inputBamFile, bam_number, inputBamFileInde
         cmd = "samtools faidx %s" %(inputFastaLink)
         execute(cmd)
     inputBamLink = os.path.join(os.path.abspath(workdir), "sample_%d.bam" % (bam_number) )
-    if os.path.isfile(inputBamLink):  ### JHL: Check to ensure file does not already exist, leading to wrapper error.
-        os.remove(inputBamLink)
     os.symlink(inputBamFile, inputBamLink)
     if inputBamFileIndex is None:
         cmd = "samtools index %s" %(inputBamLink)
         execute(cmd)
     else:
-        if os.path.isfile(inputBamLink + ".bai"):
-            os.remove(inputBamLink + ".bai")
         os.symlink(inputBamFileIndex, inputBamLink + ".bai")
     return inputFastaLink, inputBamLink
 
@@ -60,40 +57,59 @@ def pindel(reference, configFile, args, tempDir, chrome=None):
         pindel_file_base = tempDir + "/pindel_" + chrome
 
     cmd = "pindel -f %s -i %s -o %s " %(reference, configFile, pindel_file_base )
-    cmd += " --number_of_threads %d --max_range_index %d --window_size %d --sequencing_error_rate %f --sensitivity %f" %(args.number_of_threads, args.max_range_index, args.window_size, args.sequencing_error_rate, args.sensitivity)
-    cmd += " -u %f -n %d -a %d -m %d -v %d -d %d -B %d -A %d -M %d " %(args.maximum_allowed_mismatch_rate, args.NM, args.additional_mismatch, args.min_perfect_match_around_BP, args.min_inversion_size, args.min_num_matched_bases, args.balance_cutoff, args.anchor_quality, args.minimum_support_for_event)
 
-    if chrome is not None:
-        cmd += "-c %s " % (chrome)
-
-    if args.report_long_insertions:
-        cmd += ' --report_long_insertions '
-    if args.report_duplications:
-        cmd += ' --report_duplications '
-    if args.report_inversions:
-        cmd += ' --report_inversions '
-    if args.report_breakpoints:
-        cmd += ' --report_breakpoints '
-
-    if args.report_close_mapped_reads:
-        cmd += ' --report_close_mapped_reads '
-    if args.report_only_close_mapped_reads:
-        cmd += ' --report_only_close_mapped_reads '
-    if args.report_interchromosomal_events:
-        cmd += ' --report_interchromosomal_events '
-    if args.IndelCorrection:
-        cmd += ' --IndelCorrection '
-    if args.NormalSamples:
-        cmd += ' --NormalSamples '
     if args.input_SV_Calls_for_assembly:
         cmd += ' --input_SV_Calls_for_assembly %s ' %(args.input_SV_Calls_for_assembly)
 
+    if args.breakdancer:
+        cmd += ' --breakdancer %s ' %(args.breakdancer)
+
     if args.exclude is not None:
-        cmd += '--exclude %s' % (args.exclude)
+        cmd += ' --exclude %s' % (args.exclude)
+
     if args.include is not None:
-        cmd += '--include %s' % (args.include)
-    if args.breakdancer is not None:
-        cmd += '--breakdancer %s' % (args.breakdancer)
+        cmd += ' --include %s' % (args.include)
+
+    opt_list = [
+        ["number_of_threads", "%d"],
+        ["max_range_index", "%d"],
+        ["window_size", "%d"],
+        ["sequencing_error_rate", "%f"],
+        ["sensitivity", "%f"],
+        ["maximum_allowed_mismatch_rate", "%f"],
+        ["NM", "%d"],
+        ["additional_mismatch", "%d"],
+        ["min_perfect_match_around_BP", "%d"],
+        ["min_inversion_size", "%d"],
+        ["min_num_matched_bases", "%d"],
+        ["balance_cutoff", "%d"],
+        ["anchor_quality", "%d"],
+        ["minimum_support_for_event", "%d"]
+    ]
+    
+    for o, f in opt_list:
+        if getattr(args, o) is not None:
+            cmd += (" --%s %s" % (o, f)) % (getattr(args,o))
+
+    if chrome is not None:
+        cmd += " -c '%s' " % (chrome)
+
+    flag_list = [
+        "report_long_insertions",
+        "report_duplications",
+        "report_inversions",
+        "report_breakpoints",
+        "report_close_mapped_reads",
+        "report_only_close_mapped_reads",
+        "report_interchromosomal_events",
+        "IndelCorrection",
+        "NormalSamples",
+        "DD_REPORT_DUPLICATION_READS"
+    ]
+
+    for f in flag_list:
+        if getattr(args, f):
+            cmd += (" --%s" % (f))
 
     if args.detect_DD:
         cmd += ' -q '
@@ -102,8 +118,6 @@ def pindel(reference, configFile, args, tempDir, chrome=None):
         cmd += ' --MIN_DD_CLUSTER_SIZE '+str(args.MIN_DD_CLUSTER_SIZE)
         cmd += ' --MIN_DD_BREAKPOINT_SUPPORT '+str(args.MIN_DD_BREAKPOINT_SUPPORT)
         cmd += ' --MIN_DD_MAP_DISTANCE '+str(args.MIN_DD_MAP_DISTANCE)
-    if args.DD_REPORT_DUPLICATION_READS:
-        cmd += ' --DD_REPORT_DUPLICATION_READS '
 
     return (cmd, pindel_file_base )
 
@@ -115,7 +129,8 @@ def move(avant, apres):
 
 def pindel2vcf(inputFastaFile, refName, pindel_file, vcf_file):
     date = str(time.strftime('%d/%m/%y',time.localtime()))
-    cmd = "pindel2vcf -p %s -r %s -R %s -d %s -v %s" % (pindel_file, inputFastaFile, refName, date, vcf_file)
+    cmd = "pindel2vcf -p %s -r %s -R %s -d %s -v %s -he 0.05 -ho 0.95 -G" % (pindel_file, inputFastaFile, refName, date, vcf_file)
+    # Added hard-coded parameters. JHL
     return cmd
 
 
@@ -128,7 +143,7 @@ def which(cmd):
     return res
 
 
-def get_bam_seq(inputBamFile, min_size=1):
+def get_bam_seq(inputBamFile, min_size): ### Changed min_size to 40mil. JHL
     samtools = which("samtools")
     cmd = [samtools, "idxstats", inputBamFile]
     process = subprocess.Popen(args=cmd, stdout=subprocess.PIPE)
@@ -136,7 +151,7 @@ def get_bam_seq(inputBamFile, min_size=1):
     seqs = []
     for line in stdout.split("\n"):
         tmp = line.split("\t")
-        if len(tmp) == 4 and int(tmp[2]) >= min_size:
+        if len(tmp) == 4 and int(tmp[1]) >= min_size:
             seqs.append(tmp[0])
     return seqs
 
@@ -156,7 +171,10 @@ def getMeanInsertSize(bamFile):
             b_sum += abs(long(tmp[8]))
             b_count +=1
     process.wait()
-    mean = b_sum / b_count
+    if b_count == 0:
+        mean = 200
+    else:
+        mean = b_sum / b_count
     print "Using insert size: %d" % (mean)
     return mean
 
@@ -175,31 +193,34 @@ def __main__():
     parser.add_argument('-t', dest='sampleTags', default=[], action="append", help='the sample tag')
     parser.add_argument('-o1', dest='outputRaw', help='the output raw', default=None)
     parser.add_argument('-o2', dest='outputVcfFile', help='the output vcf', default=None)
-    parser.add_argument('--number_of_threads', dest='number_of_threads', type=int, default='1')
+    parser.add_argument('-o3', dest='outputSomaticVcfFile', help='the output somatic filtered vcf', default=None)
+    
+    parser.add_argument('--number_of_threads', dest='number_of_threads', type=int, default=2)
     parser.add_argument('--number_of_procs', dest='procs', type=int, default=1)
+    parser.add_argument('--breakdancer', dest='breakdancer')
 
-    parser.add_argument('-x', '--max_range_index', dest='max_range_index', type=int, default='4')
-    parser.add_argument('--window_size', dest='window_size', type=int, default='5')
-    parser.add_argument('--sequencing_error_rate', dest='sequencing_error_rate', type=float, default='0.01')
-    parser.add_argument('--sensitivity', dest='sensitivity', default='0.95', type=float)
+    parser.add_argument('-x', '--max_range_index', dest='max_range_index', type=int, default=None)
+    parser.add_argument('--window_size', dest='window_size', type=int, default=None)
+    parser.add_argument('--sequencing_error_rate', dest='sequencing_error_rate', type=float, default=None)
+    parser.add_argument('--sensitivity', dest='sensitivity', default=None, type=float)
     parser.add_argument('--report_long_insertions', dest='report_long_insertions', action='store_true', default=False)
     parser.add_argument('--report_duplications', dest='report_duplications', action='store_true', default=False)
     parser.add_argument('--report_inversions', dest='report_inversions', action='store_true', default=False)
     parser.add_argument('--report_breakpoints', dest='report_breakpoints', action='store_true', default=False)
-    parser.add_argument('-u', '--maximum_allowed_mismatch_rate', dest='maximum_allowed_mismatch_rate', type=float, default='0.02')
+    parser.add_argument('-u', '--maximum_allowed_mismatch_rate', dest='maximum_allowed_mismatch_rate', type=float, default=None)
     parser.add_argument('--report_close_mapped_reads', dest='report_close_mapped_reads', action='store_true', default=False)
     parser.add_argument('--report_only_close_mapped_reads', dest='report_only_close_mapped_reads', action='store_true', default=False)
     parser.add_argument('--report_interchromosomal_events', dest='report_interchromosomal_events', action='store_true', default=False)
     parser.add_argument('--IndelCorrection', dest='IndelCorrection', action='store_true', default=False)
     parser.add_argument('--NormalSamples', dest='NormalSamples', action='store_true', default=False)
-    parser.add_argument('-a', '--additional_mismatch', dest='additional_mismatch', type=int, default='1')
-    parser.add_argument('-m', '--min_perfect_match_around_BP', dest='min_perfect_match_around_BP', type=int, default='3')
-    parser.add_argument('-v', '--min_inversion_size', dest='min_inversion_size', type=int, default='50')
-    parser.add_argument('-d', '--min_num_matched_bases', dest='min_num_matched_bases', type=int, default='30')
-    parser.add_argument('-B', '--balance_cutoff', dest='balance_cutoff', type=int, default='0')
-    parser.add_argument('-A', '--anchor_quality', dest='anchor_quality', type=int, default='0')
-    parser.add_argument('-M', '--minimum_support_for_event', dest='minimum_support_for_event', type=int, default='3')
-    parser.add_argument('-n', '--NM', dest='NM', type=int, default='2')
+    parser.add_argument('-a', '--additional_mismatch', dest='additional_mismatch', type=int, default=None)
+    parser.add_argument('-m', '--min_perfect_match_around_BP', dest='min_perfect_match_around_BP', type=int, default=None)
+    parser.add_argument('-v', '--min_inversion_size', dest='min_inversion_size', type=int, default=None)
+    parser.add_argument('-d', '--min_num_matched_bases', dest='min_num_matched_bases', type=int, default=None)
+    parser.add_argument('-B', '--balance_cutoff', dest='balance_cutoff', type=int, default=None)
+    parser.add_argument('-A', '--anchor_quality', dest='anchor_quality', type=int, default=None)
+    parser.add_argument('-M', '--minimum_support_for_event', dest='minimum_support_for_event', type=int, default=None)
+    parser.add_argument('-n', '--NM', dest='NM', type=int, default=None)
     parser.add_argument('--detect_DD', dest='detect_DD', action='store_true', default=False)
     parser.add_argument('--MAX_DD_BREAKPOINT_DISTANCE', dest='MAX_DD_BREAKPOINT_DISTANCE', type=int, default='350')
     parser.add_argument('--MAX_DISTANCE_CLUSTER_READS', dest='MAX_DISTANCE_CLUSTER_READS', type=int, default='100')
@@ -208,9 +229,13 @@ def __main__():
     parser.add_argument('--MIN_DD_MAP_DISTANCE', dest='MIN_DD_MAP_DISTANCE', type=int, default='8000')
     parser.add_argument('--DD_REPORT_DUPLICATION_READS', dest='DD_REPORT_DUPLICATION_READS', action='store_true', default=False)
 
+    parser.add_argument('--somatic_vaf', type=float, default=0.08)
+    parser.add_argument('--somatic_cov', type=int, default=20)
+    parser.add_argument('--somatic_hom', type=int, default=6)
+
     parser.add_argument("-J", "--exclude", dest="exclude", default=None)
     parser.add_argument("-j", "--include", dest="include", default=None)
-    parser.add_argument("--breakdancer", dest="breakdancer", default=None)
+    parser.add_argument('--min_chrom_size', dest='min_chrom_size', type=int, default='1')
 
     parser.add_argument('-z', '--input_SV_Calls_for_assembly', dest='input_SV_Calls_for_assembly', action='store_true', default=False)
 
@@ -259,7 +284,7 @@ def __main__():
             else:
                 meanInsertSize=insertSize
             meanInsertSizes.append( meanInsertSize )
-            for seq in get_bam_seq(inputBamFile):
+            for seq in get_bam_seq(inputBamFile, args.min_chrom_size):
                 seq_hash[seq] = True
         seqs = seq_hash.keys()
         configFile = config(newInputFiles, meanInsertSizes, sampleTags, tempDir)
@@ -295,10 +320,40 @@ def __main__():
 
         if args.outputRaw is not None:
             shutil.copy(os.path.join(args.workdir, "pindel_all"), args.outputRaw)
+
         if args.outputVcfFile is not None:
             cmd = pindel2vcf(inputFastaFile, args.inputFastaName, os.path.join(args.workdir, "pindel_all"), args.outputVcfFile)
             execute(cmd)
-
+        
+        if args.outputSomaticVcfFile is not None:
+            with open(os.path.join(args.workdir, "pindel_somatic"), "w") as handle:
+                for p in pindel_files:
+                    if p.endswith("_D"):
+                        with open(p) as ihandle:
+                            for line in ihandle:
+                                if re.search("ChrID", line):
+                                    handle.write(line)
+                for p in pindel_files:
+                    if p.endswith("_SI"):
+                        with open(p) as ihandle:
+                            for line in ihandle:
+                                if re.search("ChrID", line):
+                                    handle.write(line)
+            
+            with open(os.path.join(args.workdir, "somatic.indel.filter.config"), "w") as handle:
+                handle.write("indel.filter.input = %s\n" % os.path.join(args.workdir, "pindel_somatic"))
+                handle.write("indel.filter.vaf = %s\n" % (args.somatic_vaf))
+                handle.write("indel.filter.cov = %s\n" % (args.somatic_cov))
+                handle.write("indel.filter.hom = %s\n" % (args.somatic_hom))
+                handle.write("indel.filter.pindel2vcf = %s\n" % (which("pindel2vcf")))
+                handle.write("indel.filter.reference =  %s\n" % (inputFastaFile))
+                handle.write("indel.filter.referencename = %s\n" % (args.inputFastaName))
+                handle.write("indel.filter.referencedate = %s\n" % (datetime.datetime.now().strftime("%Y%m%d")) )
+                handle.write("indel.filter.output = %s\n" % (args.outputSomaticVcfFile))
+            
+            execute("%s /home/exacloud/clinical/RichardsLab/bin/somatic_indelfilter.pl %s" % (which("perl"), os.path.join(args.workdir, "somatic.indel.filter.config")) )
+            
+                
 
     finally:
         if not args.no_clean and os.path.exists(tempDir):
