@@ -1,0 +1,27 @@
+<tool id="add_nfsv4_permissions.xml" name="Give access to another group or user." version="0.1" >
+
+  <description>Users importing data files in to Galaxy are given control over their files.  However, a user may want
+    to additionally share this data file with another user.  This tool will allow this.
+  </description>
+
+  <command interpreter="bash">add_nfsv4_permissions.sh
+    $user_or_group $user_or_group_id $galaxy_file $output
+  </command>
+  
+  <inputs>
+    <param name="user_or_group" type="select" label="User or group access?">
+      <option value="user">user</option>
+      <option value="group">group</option>
+    </param>
+    <param name="user_or_group_id" type="text" label="User or group name?" />
+    <param name="galaxy_file" type="data" label="Filename: " />    
+  </inputs>
+  
+  <outputs>
+    <data format="text" name="output" label="Stderr from access change." />
+  </outputs>
+
+  <help>Remember, these are filesystem permissions, not Galaxy permissions.  You must know the user name (OHSU e-mail ID) or access group name (your group name on exacloud perhaps) to properly use this tool.
+  </help>
+
+</tool>
