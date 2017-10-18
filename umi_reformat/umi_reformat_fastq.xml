@@ -1,0 +1,23 @@
+<tool id="umi_reformat_fastq" name="UMI to FASTQ" version="0.3.0" >
+  <description>Set UMI on FASTQ header.</description>
+
+  <command interpreter="python">umi_reformat_fastq.py $input_r1 $input_r2 $output_r1 $output_r2</command>
+
+  <inputs>   
+    <param name="input_r1" type="data" format="fastq" required="true" label="Input FASTQ R1" help="Input FASTQ R1" />
+    <param name="input_r2" type="data" format="fastq" required="true" label="Input FASTQ R2" help="Input FASTQ R2" />
+  </inputs>
+
+  <outputs>
+    <data format="fastq" name="output_r1" label="${tool.name} on ${on_string}" help="Output FASTQ R1" />
+    <data format="fastq" name="output_r2" label="${tool.name} on ${on_string}" help="Output FASTQ R2" />
+  </outputs>
+
+  <help>
+    Set UMI on FASTQ header.
+  </help>
+
+  <citations></citations>
+
+</tool>
+
