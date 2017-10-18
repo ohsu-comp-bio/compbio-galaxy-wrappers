@@ -1,4 +1,4 @@
-<tool id="oncotator" name="Oncotator" version="v1.5.0.0">
+<tool id="oncotator" name="Oncotator" version="v1.9.2.0.1">
     <description>variant annotation tool</description>
     <requirements>
         <requirement type="package">bcbio-gff</requirement>
@@ -14,36 +14,38 @@
         <requirement type="package">pyvcf</requirement>
     </requirements>
     <command interpreter="python">oncotator.py
-        #if $datasource
-            --db-dir $datasource
-        #end if
-        #if $override
-            -c $override
-        #end if
-        #if $prepend
-            --prepend
-        #end if
-        #if $infer_onps
-            --infer_onps
-        #end if
-        #if $input_type.input_select=='VCF'
-            -i VCF
-        #else
-            -i MAFLITE
-        #end if
-        #if $skip_no_alt
-            --skip_no_alt
-        #end if
-        $input
-        $output
-        #if $build.build_select=='hg19'
-            hg19
-        #end if
+      #if $datasource
+      --db-dir $datasource
+      #else
+      --db-dir \${ONCO_DB}
+      #end if
+      #if $override
+      -c $override
+      #end if
+      #if $prepend
+      --prepend
+      #end if
+      #if $infer_onps
+      --infer_onps
+      #end if
+      #if $input_type.input_select=='VCF'
+      -i VCF
+      #else
+      -i MAFLITE
+      #end if
+      #if $skip_no_alt
+      --skip_no_alt
+      #end if
+      $input
+      $output
+      #if $build.build_select=='hg19'
+      hg19
+      #end if
     </command>
 
     <inputs>
         <!-- making this a path to a datasource for now -->
-        <param name="datasource" type="text" label="Datasource: " />
+	<param name="datasource" type="text" label="Datasource: " help="Not including a PATH here will default to the ONCO_DB environmental variable defined in the Galaxy env script."/>
         <conditional name="input_type">
             <param name="input_select" type="select" label="Input format: " >
                 <option value="VCF" select="true">VCF</option>

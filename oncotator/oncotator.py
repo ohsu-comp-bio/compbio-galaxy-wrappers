@@ -1,19 +1,28 @@
 #!/usr/bin/env python
-# Wrapper for oncotator v1.5.0.0
+
+# USAGE: Galaxy wrapper for Oncotator.
+# CODED BY: Jaclyn Smith and John Letaw
 
 from argparse import ArgumentParser
 import logging
-import subprocess
+import argparse
+import os
+import sys
 
-# this should be the path to the oncotator datasource
-#DEFAULT_DB_DIR = '/home/jac/harmony_point/oncotator/oncotator_v1_ds_Jan262014'
+# Including this because is it quite useful...
+# https://docs.python.org/2/library/subprocess.html
+# https://github.com/google/python-subprocess32
+if os.name == 'posix' and sys.version_info[0] < 3:
+    import subprocess32 as subprocess
+else:
+    import subprocess
+
+VERSION = '1.9.2.0.1'
 
 def oncotator_argparse():
     parser = ArgumentParser(description='Run Oncotator')
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: 5]", default=5)
     parser.add_argument('-i', '--input_format', type=str, default="MAFLITE", choices=['VCF', 'SEG_FILE', 'MAFLITE'], help='Input format.  Note that MAFLITE will work for any tsv file with appropriate headers, so long as all of the required headers (or an alias -- see maflite.config) are present.  [default: %s]' % "MAFLITE")
-    # parser.add_argument('--db-dir', dest='dbDir', default=DEFAULT_DB_DIR,
-    #                     help='Main annotation database directory. [default: %s]' % DEFAULT_DB_DIR)
     parser.add_argument('--db-dir', dest='db-dir', help='Main annotation database directory.')
     parser.add_argument('input_file', type=str, help='Input file to be annotated.  Type is specified through options.')
     parser.add_argument('output_file', type=str, help='Output file name of annotated file.')
@@ -23,6 +32,7 @@ def oncotator_argparse():
     parser.add_argument('--infer-onps', dest="infer-onps", action='store_true', help="Will merge adjacent SNPs,DNPs,TNPs,etc if they are in the same sample.  This assumes that the input file is position sorted.  This may cause problems with VCF -> VCF conversion, and does not guarantee input order is maintained.")
     parser.add_argument('-c', '--canonical-tx-file', dest="canonical-tx-file", type=str, help="Simple text file with list of transcript IDs (one per line) to always select where possible for variants.  Transcript IDs must match the ones used by the transcript provider in your datasource (e.g. gencode ENST00000123456).  If more than one transcript can be selected for a variant, uses the method defined by --tx-mode to break ties.  Using this list means that a transcript will be selected from this list first, possibly superseding a best-effect.  Note that transcript version number is not considered, whether included in the list or not.")
     parser.add_argument('--workdir', default='/tmp')
+    parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     # Process arguments
     args = parser.parse_args()
     
