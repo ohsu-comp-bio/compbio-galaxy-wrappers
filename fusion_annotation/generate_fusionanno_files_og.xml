@@ -1,0 +1,70 @@
+<tool id="generate_fusionanno_files" name="Fusion Annotation" version="0.1.0.0">
+  <description>Create annotation files for fusion annotation. Run Oncotator and get sequence context.</description>
+  <requirements></requirements>
+  <stdio>
+    <exit_code range="1:" />
+  </stdio>
+  <version_command>generate_fusionanno_files.py --version</version_command>
+  <command interpreter="python">
+    generate_fusionanno_files.py 
+      $starfusion
+      #if $refGenomeSource.genomeSource == "history":
+      $refGenomeSource.ownFile
+      #else:
+      "${refGenomeSource.index.fields.path}"
+      #end if 
+      #if $datasource:
+      $datasource
+      #else:
+      \${ONCO_DB}
+      #end if
+   </command>
+  <inputs>
+      <param name="starfusion" type="data" format="tabular" label="STAR-Fusion result: star-fusion.fusion_candidates.final.abridged.FFPM" />
+      <conditional name="refGenomeSource">
+          <param name="genomeSource" type="select" label="Will you select a reference genome from your history or use a built-in index?" help="Built-ins were indexed using default options">
+              <option value="indexed">Use a built-in index</option>
+              <option value="history">Use one from the history</option>
+          </param>
+          <when value="indexed">
+              <param name="index" type="select" label="Select a reference genome" help="If your genome of interest is not listed, contact the Galaxy team">
+              <options from_data_table="bwa_indexes">
+                  <filter type="sort_by" column="2"/>
+                  <validator type="no_options" message="No indexes are available for the selected input dataset"/>
+              </options>
+              </param>
+          </when>
+          <when value="history">
+              <param name="ownFile" type="data" format="fasta" metadata_name="dbkey" label="Select the reference genome" />
+          </when>  <!-- history -->
+      </conditional>  <!-- refGenomeSource -->
+      <param name="datasource" type="text" label="Datasource: " help="Path to Oncotator Database directory. Not including a PATH here will default to the ONCO_DB environmental variable defined in the Galaxy env script."/>
+  </inputs>
+  <outputs>
+       <data format="tabular" name="left_brkpnt" label="${tool.name} on ${on_string}: left_brkpnt.maf" from_work_dir="left_brkpnt.maf" />
+       <data format="tabular" name="right_brkpnt" label="${tool.name} on ${on_string}: right_brkpnt.maf" from_work_dir="right_brkpnt.maf" />
+       <data format="tabular" name="oncotated_left_output" label="${tool.name} on ${on_string}: oncotated_left_output" from_work_dir="oncotated_left_output" />
+       <data format="tabular" name="oncotated_right_output" label="${tool.name} on ${on_string}: oncotated_right_output" from_work_dir="oncotated_right_output" />
+       <data format="tabular" name="left_sequence" label="${tool.name} on ${on_string}: left_sequence.txt" from_work_dir= "left_sequence.txt" />
+       <data format="tabular" name="right_sequence" label="${tool.name} on ${on_string}: right_sequence.txt" from_work_dir= "right_sequence.txt" />
+  </outputs>
+
+  <help>
+Tool for annotating STAR-Fusion results
+---------------------------------------
+Takes abridged star_fusion results and runs the donor (left gene) and acceptor (right gene) of the fusion breakpoint as MAFlite files into Oncotator (as single nt deletions), and gDNA sequence up (donor) and down (acceptor) from the fusion gene-to-gene breakpoint.
+
+# Input
+Input should be the final, abridged, FFPM from STAR-Fusion. Should be called star-fusion.fusion_candidates.final.abridged.FFPM.
+
+
+# Output
+ * left_brkpnt.maf : MAF-lite files for donor (left gene) fusion breakpoint
+ * right_brkpnt.maf :  MAF-lite files for acceptor (right gene) fusion breakpoint 
+ * oncotated_left : entire Oncotator output from left gene breakpoint 
+ * right_output : entire Oncotator output from right gene breakpoint
+ * left_sequence.txt : sequence of breakpoint up-strand of the left gene breakpoint
+ * right_sequence.txt : sequence of breakpoint down-strand of right gene breakpoint
+
+  </help>
+</tool>
