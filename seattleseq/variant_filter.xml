@@ -1,0 +1,42 @@
+<tool id="variant_filter" name="Variant Filter" version="1.0.0" >
+    <description>Filter Whole Exome or CSER variants</description>
+    <command interpreter="Rscript"> 
+	#if $mode.select == "exome"
+		variant_filter.R ${mode.select} ${file} ${clinvar} ${cser_database} ${mode.freq} ${gene_list} ${output}
+	#else if $mode.select == "cser"
+		variant_filter.R ${mode.select} ${file} ${clinvar} ${cser_database} ${mode.ethnicity} ${output}
+	#end if
+    </command>
+
+    <inputs>
+	<conditional name="mode">
+		<param name="select" type="select" label="Please select Exome or CSER">
+			<option value="cser">CSER</option>
+			<option value="exome">Exome</option>
+		</param>
+		<when value="exome">
+			<param name="file" format="data" type="data" label="SeattleSeq tsv file"/>
+			<param name="clinvar" format="txt" type="data" label="ClinVar database file"/>
+			<param name="cser_database" format="xls" type="data" label="CSER database file"/>
+	       		<param name="freq" type="text" label="Allele frequency cutoff" value="1"/> 
+			<param name="gene_list" format="data" type="data" label="Gene list"/>
+		</when>
+		<when value="cser">
+			<param name="file" format="data" type="data" label="SeattleSeq carrierAll text file"/>
+			<param name="clinvar" format="txt" type="data" label="ClinVar database file"/>
+			<param name="cser_database" format="xls" type="data" label="CSER database file"/>
+			<param name="ethnicity" type="text" label="Ethnicity of sample using 1000 Genomes abbreviation" value="EUR"/>	       		
+		</when>	
+	</conditional>
+    </inputs>
+    
+    <outputs>
+        <data format="xls" name="output" type="data" label="Filtered variants - Excel worksheet"/>
+    </outputs>
+
+    <tests>
+    </tests>
+
+    <help>
+    </help>
+</tool>
