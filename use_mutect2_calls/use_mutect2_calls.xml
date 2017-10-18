@@ -1,0 +1,29 @@
+<tool id="use_mutect2_calls" name="Mutect2 Call Filter" version="0.3.0" >
+    <description>Filter or remove variants from a sample VCF based on a Mutect2 VCF.</description>
+
+    <version_command></version_command>
+
+    <command><![CDATA[
+    python $__tool_directory__/use_mutect2_calls.py
+    "${pon}" "${infile}" "${hotspots}" "${outfile}" "${outfile_mutect}" "${outfile_indels}"
+    ]]></command>
+
+    <inputs>
+        <param name="pon" type="data" format="vcf" label="M2 Calls" help="" />
+        <param name="infile" type="data" format="vcf" label="Input VCF" help="" />
+        <param name="hotspots" type="data" format="vcf" label="Input Hotspot VCF" help="" />
+    </inputs>
+
+    <outputs>
+        <data format="vcf" name="outfile" label="${tool.name} on ${on_string}" help="" />
+        <data format="vcf" name="outfile_mutect" label="${tool.name} on ${on_string}: MuTect2 Hotspot Calls" help="" />
+        <data format="vcf" name="outfile_indels" label="${tool.name} on ${on_string}: Mutect2 Indels" help="" />
+    </outputs>
+
+    <tests></tests>
+
+    <help>Filter or remove variants from a sample VCF based on a Mutect2 VCF.</help>
+
+    <citations></citations>
+
+</tool>
