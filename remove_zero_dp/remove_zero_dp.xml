@@ -1,0 +1,22 @@
+<tool id="remove_zero_dp" name="Remove DP=0 entries" version="0.1" >
+  <description>Remove VCF entries that contain DP=0 in the SAMPLE field.</description>
+  <command interpreter="python">remove_zero_dp.py
+    $input_vcf $output_vcf
+  </command>
+
+  <inputs>   
+    <param name="input_vcf" type="data" format="vcf" label="Input VCF" help="Input VCF potentially containing DP=0 sample entries." />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="Output VCF containing no SAMPLE DP=0 entries" />
+  </outputs>
+
+  <tests>
+
+  </tests>
+  <help>
+
+  </help>
+</tool>
+
