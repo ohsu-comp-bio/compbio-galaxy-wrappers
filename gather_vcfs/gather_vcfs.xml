@@ -1,0 +1,29 @@
+<tool id="gather_vcfs" name="Gather VCF" version="0.1.1" >
+  <description>Gather VCFs together from different interval sets in to one VCF.</description>
+
+  <version_command></version_command>
+
+  <command interpreter="python">
+    gather_vcfs.py
+    #for $i, $this_in in enumerate( $input_repeat ):
+    "${this_in.input}"
+    #end for
+    "${output_vcf}"
+  </command>
+
+  <inputs>   
+    <repeat name="input_repeat" title="Input File(s)" help="Some number of input VCF files to concatenate.">
+      <param name="input" type="data" format="vcf" label="Input VCF" />
+    </repeat>
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}" help="Output VCF from multiple VCFs." />
+  </outputs>
+
+  <tests></tests>
+  <help></help>
+  <citations></citations>
+
+</tool>
+
