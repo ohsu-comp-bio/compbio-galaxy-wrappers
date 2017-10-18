@@ -1,0 +1,30 @@
+<tool id="merge_vcf_ad" name="Merge VCF on AD" version="0.1.1" >
+  <description>Merge two VCF's created by different parameters on the AD field.</description>
+
+  <version_command></version_command>
+
+  <command interpreter="python">merge_vcf_ad.py 
+    #for $i, $s in enumerate( $vcf_repeat )
+    '${s.input_vcf}'
+    #end for    
+    $output_vcf
+  </command>
+
+  <inputs>   
+    <repeat name="vcf_repeat" title="Input VCFs">
+      <param name="input_vcf" type="data" format="vcf" required="true" label="Input VCF" help="Input VCF" />
+    </repeat>
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="Output merge_vcf_ad VCF" help="Output VCF" />
+  </outputs>
+
+  <tests></tests>
+
+  <help></help>
+
+  <citations></citations>
+
+</tool>
+
