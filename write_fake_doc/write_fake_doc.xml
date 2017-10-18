@@ -1,0 +1,21 @@
+<tool id="write_fake_doc" name="Create Fake Depth Of Coverage" version="0.1" >
+  <description></description>
+  <command interpreter="python">write_fake_doc.py
+    $output
+  </command>
+
+  <inputs>   
+  </inputs>
+
+  <outputs>
+    <data format="txt" name="output" label="Fake DOC" />
+  </outputs>
+
+  <tests>
+  </tests>
+
+  <help>
+  </help>
+
+</tool>
+
