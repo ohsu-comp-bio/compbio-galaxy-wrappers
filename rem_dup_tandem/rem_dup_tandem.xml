@@ -1,0 +1,22 @@
+<tool id="rem_dup_tandem" name="Remove DUP:TANDEM tag." version="0.1" >
+  <description>Remove DUP:TANDEM tag from Pindel VCF.  This is causing issues in both SeattleSeq and Oncotator.</description>
+  <command interpreter="python">rem_dup_tandem.py
+    $input_vcf $output_vcf
+  </command>
+
+  <inputs>   
+    <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="Output VCF" />
+  </outputs>
+
+  <tests>
+
+  </tests>
+  <help>
+
+  </help>
+</tool>
+
