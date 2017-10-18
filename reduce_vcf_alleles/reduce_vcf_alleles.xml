@@ -1,0 +1,32 @@
+<tool id="reduce_vcf_alleles" name="Normalize VCF REF and ALT Alleles" version="0.1.1" >
+  <description>VCF's created by FreeBayes, among others, do not consistently write REF and ALT alleles to the output file.  This script will reduce these representations down in a consistent manner, and will allow annotations to be applied to variants correctly.</description>
+
+  <version_command>/home/groups/clinical/Galaxy/galaxy-dist/tools/jhl_tools/reduce_vcf_alleles.py --version</version_command>
+
+  <command interpreter="python">
+    reduce_vcf_alleles.py $input_vcf $output_vcf
+  </command>
+
+  <inputs>   
+    <param name="input_vcf" type="data" format="vcf" required="true" label="Input VCF" help="Input VCF, generally from FreeBayes, that will have REF and ALT allele strings reduced." />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="Output VCF" help="Output VCF contaning reduced representations of the REF and ALT alleles." />
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="input_vcf" value="reduce_vcf_alleles_test_input.vcf" ftype="vcf" />
+      <output name="output_vcf" file="reduce_vcf_alleles_test_output.vcf" ftype="vcf"/>
+    </test>
+  </tests>
+
+  <help>
+    VCF's created by FreeBayes, among others, do not consistently write REF and ALT alleles to the output file.  This script will reduce these representations down in a consistent manner, and will allow annotations to be applied to variants correctly.
+  </help>
+
+  <citations></citations>
+
+</tool>
+
