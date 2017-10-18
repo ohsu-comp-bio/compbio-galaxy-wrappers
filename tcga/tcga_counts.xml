@@ -1,0 +1,127 @@
+<tool id="tcga_counts" name="TCGA Expression Analysis" version="1.0.1">
+  <description>TCGA mRNA Analysis Pipeline</description>
+
+  <command><![CDATA[
+  #set index_path = $refGenomeSource.index.fields.path
+  #set inter_path = 'temp_genome'
+
+  mkdir $inter_path
+
+  &&
+  
+  /home/groups/clinical/installedTest/STAR-2.4.2a/STAR
+  --genomeDir $index_path
+  --readFilesIn "${input_fq_1}" "${input_fq_2}"
+  --runThreadN \${GALAXY_SLOTS:-4}
+  --outFilterMultimapScoreRange 1
+  --outFilterMultimapNmax 20
+  --outFilterMismatchNmax 10
+  --alignIntronMax 500000
+  --alignMatesGapMax 1000000
+  --sjdbScore 2
+  --alignSJDBoverhangMin 1
+  --genomeLoad NoSharedMemory
+  --outFilterMatchNminOverLread 0.33
+  --outFilterScoreMinOverLread 0.33
+  --sjdbOverhang 100
+  --outSAMstrandField intronMotif
+  --outSAMtype None
+  --outSAMmode None
+  --readFilesCommand zcat
+
+  &&
+
+  /home/groups/clinical/installedTest/STAR-2.4.2a/STAR
+  --runMode genomeGenerate
+  --genomeDir $inter_path
+  --genomeFastaFiles /home/groups/clinical/CorlessLab/tcga/GRCh38.d1.vd1.fa
+  --sjdbOverhang 100
+  --runThreadN \${GALAXY_SLOTS:-4}
+  --sjdbFileChrStartEnd "SJ.out.tab"
+
+  &&
+  
+  /home/groups/clinical/installedTest/STAR-2.4.2a/STAR
+  --genomeDir $inter_path
+  --readFilesIn "${input_fq_1}" "${input_fq_2}"
+  --runThreadN \${GALAXY_SLOTS:-4}
+  --outFilterMultimapScoreRange 1
+  --outFilterMultimapNmax 20
+  --outFilterMismatchNmax 10
+  --alignIntronMax 500000
+  --alignMatesGapMax 1000000
+  --sjdbScore 2
+  --alignSJDBoverhangMin 1
+  --genomeLoad NoSharedMemory
+  --limitBAMsortRAM 0
+  --outFilterMatchNminOverLread 0.33
+  --outFilterScoreMinOverLread 0.33
+  --sjdbOverhang 100
+  --outSAMstrandField intronMotif
+  --outSAMattributes NH HI NM MD AS XS
+  --outSAMunmapped Within
+  --outSAMtype BAM SortedByCoordinate
+  --outSAMheaderHD @HD VN:1.4
+  --readFilesCommand zcat
+
+  &&
+
+  samtools view -F 4 Aligned.sortedByCoord.out.bam |
+  htseq-count -m intersection-nonempty -i gene_id -r pos -s no - /home/groups/clinical/CorlessLab/tcga/gencode.v22.annotation.gtf > "${out_counts}" 2>"{out_log}"
+  
+  ]]></command>
+
+  <inputs>
+    <!-- Genome source. -->
+    <conditional name="refGenomeSource">
+      <param name="genomeSource" type="select" label="Will you select a reference genome from your history or use a built-in STAR genome index?" help="Built-ins were indexed using default options.">
+        <option value="indexed" seleted="true">Use a built-in STAR genome index</option>
+        <option value="history">Use one from the history</option>
+      </param>
+      <when value="indexed">
+        <param name="index" type="select" label="Select the reference genome">
+          <options from_data_table="star_indexes">
+            <validator type="no_options" message="No genome indexes are available" />
+          </options>
+        </param>
+      </when>
+      <when value="history">
+        <param name="genomeFasta" type="data" format="fasta" metadata_name="dbkey" label="Select the reference genome" />
+        <param name="gtfFile" type="data" format="tabular" metadata_name="dbkey" label="Select GTF file with annotations" />
+        <param name="chrPrefix" type="select" label="Prefix for chromosome names in a GTF file" help="e.g. ’chr’ for using ENSMEBL annotations with UCSC geneomes" >
+          <option value="-" selected="True">None</option>
+          <option value="chr">chr</option>
+        </param>
+        <param name="featureExon" type="text" value="exon" label="Feature type in GTF file to be used as exons for building transcripts" />
+        <param name="tagExonParentTranscript" type="text" value="transcript_id" label="Tag name to be used as exons’ transcript-parents" />
+        <param name="tagExonParentGene" type="text" value="gene_id" label="Tag name to be used as exons’ gene-parents" />
+        <param name="sjOverhang" type="integer" min="1" value="100" label="Length of the donor/acceptor sequence on each side of the junctions, ideally = (mate length - 1)" />
+      </when>
+    </conditional>
+    
+    <param format="fastq" name="input_fq_1" type="data" label="RNA-Seq FASTQ file, forward reads" help="Nucleotide-space: Must have Sanger-scaled quality values with ASCII offset 33" />
+    <param format="fastq" name="input_fq_2" type="data" label="RNA-Seq FASTQ file, reverse reads" help="Nucleotide-space: Must have Sanger-scaled quality values with ASCII offset 33" />
+  </inputs>
+
+
+  <outputs>
+    <data format="bam" name="output_bam" label="${tool.name} on ${on_string}: Mapped Reads" from_work_dir="Aligned.sortedByCoord.out.bam" />
+    <data format="txt" name="out_counts" label="${tool.name} on ${on_string}: Counts Table" />
+    <data format="txt" name="out_log" label="${tool.name} on ${on_string}: Log" />
+  </outputs>
+
+
+  <help>
+    The GDC mRNA quantification analysis pipeline measures gene level expression in HT-Seq raw read count, Fragments per Kilobase of transcript per Million mapped reads (FPKM), and FPKM-UQ (upper quartile normalization). These values are generated through this pipeline by first aligning reads to the GRCh38 reference genome and then by quantifying the mapped reads. To facilitate harmonization across samples, all RNA-Seq reads are treated as unstranded during analyses.
+    
+    https://docs.gdc.cancer.gov/Data/Bioinformatics_Pipelines/Expression_mRNA_Pipeline/
+  </help>
+
+  <citations>
+    <citation type="doi">10.1093/bioinformatics/bts635</citation>
+    <citation type="doi">10.1093/bioinformatics/btu638</citation>
+    <citation type="doi">10.1093/bioinformatics/btp352</citation>
+    <citation type="doi">10.1093/bioinformatics/btr509</citation>
+  </citations>
+  
+</tool>
