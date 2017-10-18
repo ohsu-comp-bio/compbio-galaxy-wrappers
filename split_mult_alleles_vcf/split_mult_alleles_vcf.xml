@@ -1,7 +1,7 @@
-<tool id="split_mult_alleles_vcf" name="Split Multiple Alterate Alleles VCF" version="0.1" >
+<tool id="split_mult_alleles_vcf" name="Split Multiple Alterate Alleles VCF" version="0.2.3" >
   <description>Where multiple alleles are listed by commas in a VCF, make each a separate entry.</description>
   <command interpreter="python">split_mult_alleles_vcf.py
-    $input $output $output_alt
+    $input $output
   </command>
 
   <inputs>   
@@ -9,8 +9,7 @@
   </inputs>
 
   <outputs>
-    <data format="vcf" name="output" label="Output VCF" />
-    <data format="vcf" name="output_alt" label="Output Alternate VCF" />
+    <data format="vcf" name="output" label="Output split_mult_alleles_vcf VCF" />
   </outputs>
   <tests>
   </tests>
