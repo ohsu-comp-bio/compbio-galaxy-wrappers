@@ -1,0 +1,182 @@
+<tool id="exomiser" name="Exomiser v7.2.1" version="0.3.2" >
+  <description>A Tool to Annotate and Prioritize Exome Variants</description>
+  <command interpreter="python">exomiser.py
+    '$vcf'
+    '$outfile_html'
+    '$outfile_vcf'
+    '$outfile_tab_gene'
+    '$outfile_tab_variant'
+    "\${JAVA8_PATH}"
+    "\${EXOMISER_JAR}"
+    --out-format "HTML,VCF,TAB-GENE,TAB-VARIANT"
+
+    #if $in_opt.prioritiser:
+    --prioritiser '${in_opt.prioritiser}'
+    #end if
+    #if $in_opt.inheritance_mode:
+    --inheritance-mode '${in_opt.inheritance_mode}'
+    #end if
+    #if $in_opt.hpo_ids:
+    --hpo-ids '${in_opt.hpo_ids}'
+    #end if
+    #if $in_opt.settings_file:
+    --settings-file '${in_opt.settings_file}'
+    #end if
+    #if $in_opt.restrict_interval:
+    --restrict-interval '${in_opt.restrict_interval}'
+    #end if
+    #if $in_opt.ped:
+    --ped '${in_opt.ped}'
+    #end if
+    #if $in_opt.full_analysis:
+    --full-analysis
+    #end if
+
+    #if $out_opt.num_genes:
+    --num-genes '${out_opt.num_genes}'
+    #end if
+    #if $out_opt.output_pass_variants_only:
+    --output-pass-variants-only
+    #end if
+
+    #if $filt.keep_off_target:
+    --keep-off-target
+    #end if
+    #if $filt.keep_non_pathogenic:
+    --keep-non-pathogenic
+    #end if
+    #if $filt.remove_known_variants:
+    --remove-known-variants
+    #end if
+    #if $filt.max_freq:
+    --max-freq '${filt.max_freq}'
+    #end if
+    #if $filt.min_qual:
+    --min-qual '${filt.min_qual}'
+    #end if
+
+    #if $pedigree.proband_id:
+    --proband_id '${pedigree.proband_id}'
+    #end if
+    #if $pedigree.proband_sex:
+    --proband_sex '${pedigree.proband_sex}'
+    #end if
+    #if $pedigree.mother_id:
+    --mother_id '${pedigree.mother_id}'
+    #end if
+    #if $pedigree.father_id:
+    --father_id '${pedigree.father_id}'
+    #end if
+    #if $pedigree.proband_aff:
+    --proband_aff
+    #end if
+    #if $pedigree.mother_aff:
+    --mother_aff
+    #end if
+    #if $pedigree.father_aff:
+    --father_aff
+    #end if
+
+    #if $adv.candidate_gene:
+    --candidate-gene '${adv.candidate_gene}'
+    #end if
+    #if $adv.disease_id:
+    --disease-id '${adv.disease_id}'
+    #end if
+    #if $adv.genes_to_keep:
+    --genes-to-keep '${adv.genes_to_keep}'
+    #end if
+    #if $adv.seed_genes:
+    --seed-genes '${adv.seed_genes}'
+    #end if
+    #if $adv.hiphive_params:
+    --hiphive-params '${adv.hiphive_params}'
+    #end if
+
+  </command>
+
+  <inputs>   
+    <param name="vcf" type="data" format="vcf" label="Input VCF" help="Path to VCF file with mutations to be analyzed. Can be either for an individual or a family." />
+
+    <section name="in_opt" title="Input Options" expanded="False" >
+      <param name="prioritiser" type="select" optional="true" label="Prioritiser" help="Name of the prioritiser used to score the genes. http://exomiser.github.io/Exomiser/manual/7/quickstart/#prioritisers">
+	<option value="hiphive" selected="true">hiPHIVE</option>
+	<option value="phive">PHIVE</option>
+	<option value="phenix">Phenix (Requires "HPO IDs" from "Input Options")</option>
+	<option value="exomewalker">ExomeWalker (Requires "Seed Genes" option from "Advanced Options")</option>
+      </param>
+      <param name="inheritance_mode" type="select" optional="true" label="Inheritance Mode" help="Filter variants for inheritance pattern (AR, AD, X)" >
+	<option value="ar">AR</option>
+	<option value="ad">AD</option>
+	<option value="x">X</option>
+      </param>
+      <param name="hpo_ids" type="text" optional="true" label="HPO IDs" help="Comma separated list of HPO IDs for the sample being sequenced e.g. HP:0000407,HP:0009830,HP:0002858" />
+      <param name="settings_file" type="data" format="txt" optional="true" label="Settings File" help="Path to settings file. Any settings specified in the file will be overidden by parameters added on the command-line." />
+      <param name="restrict_interval" type="text" optional="true" label="Restrict to Interval" help="Restrict to region/interval (e.g., 2:12345-67890)" />
+      <param name="ped" type="data" format="txt" optional="true" label="Pedigree File" help="Path to pedigree (ped) file. Required if the vcf file is for a family." />
+      <param name="full_analysis" type="boolean" optional="true" label="Full Analysis" help="Run the analysis such that all variants are run through all filters. This will take longer, but give more complete results. Default is false." />
+    </section>
+    
+    <section name="out_opt" title="Output Options" expanded="False" >
+      <param name="num_genes" type="integer" optional="true" label="Number of Output Genes" help="Number of genes to show in output" />
+      <param name="output_pass_variants_only" type="boolean" optional="true" label="Output Pass Variants Only" help="Only write out PASS variants in TSV and VCF files." />
+    </section>
+
+    <section name="filt" title="Filtering Options" expanded="False" >
+      <param name="keep_off_target" type="boolean" optional="true" label="Keep Off Target Reads" help="Keep the off-target variants that are normally removed by default. These are defined as intergenic, intronic, upstream, downstream or intronic ncRNA variants. This setting can optionally take a true/false argument. Not including the argument is equivalent to specifying 'true'." />
+      <param name="keep_non_pathogenic" type="boolean" optional="true" label="Keep Non-Pathogenic" help="Keep the predicted non-pathogenic variants that are normally removed by default. These are defined as syonymous, intergenic, intronic, upstream, downstream or intronic ncRNA variants. This setting can optionally take a true/false argument. Not including the argument is equivalent to specifying 'true'." />
+      <param name="remove_known_variants" type="boolean" optional="true" label="Remove Known Variants" help="Filter out all variants with an entry in dbSNP/ESP/ExAC (regardless of frequency)." />
+      <param name="min_qual" type="integer" optional="true" label="Minimum Quality" help="Mimimum quality threshold for variants as specifed in VCF 'QUAL' column. Default: 0" />
+      <param name="max_freq" type="float" optional="true" label="Maximum Frequency" help="Maximum frequency threshold for variants to be retained. e.g. 100.00 will retain all variants. Default: 100.00" />
+    </section>
+
+    <section name="pedigree" title="Pedigree Options" expanded="False">
+      <param name="proband_id" type="text" optional="true" label="Proband ID" help="Sample ID for the proband data." />
+      <param name="proband_sex" type="select" optional="true" label="Proband Sex" help="Sex of proband." >
+    	<option value="male">Male</option>
+    	<option value="female">Female</option>
+      </param>
+      <param name="mother_id" type="text" optional="true" label="Mother ID" help="Sample ID for the mother data." />
+      <param name="father_id" type="text" optional="true" label="Father ID" help="Sample ID for the father data." />
+      <param name="proband_aff" type="boolean" optional="true" label="Proband Affected" help="Proband affected status." />
+      <param name="mother_aff" type="boolean" optional="true" label="Mother Affected" help="Mother affected status." />
+      <param name="father_aff" type="boolean" optional="true" label="Father Affected" help="Father affected status." />
+    </section>
+
+    <section name="adv" title="Advanced Options" expanded="False">
+      <param name="candidate_gene" type="text" optional="true" label="Candidate Gene (HGNC)" help="Gene symbol of known or suspected gene association e.g. FGFR2" />
+      <param name="disease_id" type="text" optional="true" label="Disease ID (OMIM)" help="OMIM ID for disease being sequenced. e.g. OMIM:101600" />
+      <param name="genes_to_keep" type="text" optional="true" label="Filtered Genes (Entrez)" help="Comma separated list of seed genes (Entrez gene IDs) for filtering" />
+      <param name="seed_genes" type="text" optional="true" label="Seed Genes (Entrez)" help="Comma separated list of seed genes (Entrez gene IDs) for random walk" />
+      <param name="hiphive_params" type="text" optional="true" label="hiPHIVE Parameters" help="Comma separated list of optional parameters for hiphive: human, mouse, fish, ppi. e.g. --hiphive-params=human or --hiphive-params=human,mouse,ppi" />
+    </section>
+
+  </inputs>
+
+  <outputs>
+    <data format="html" name="outfile_html" label="${tool.name} on ${on_string} HTML" />
+    <data format="vcf" name="outfile_vcf" label="${tool.name} on ${on_string} VCF" />
+    <data format="tabular" name="outfile_tab_gene" label="${tool.name} on ${on_string} TAB-GENE" />
+    <data format="tabular" name="outfile_tab_variant" label="${tool.name} on ${on_string} TAB-VARIANT" />
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+The Exomiser is a Java program that finds potential disease-causing variants from whole-exome or whole-genome sequencing data.
+
+Starting from a VCF file and a set of phenotypes encoded using the Human Phenotype Ontology (HPO) it will annotate, filter and prioritise likely causative variants. The program does this based on user-defined criteria such as a variant's predicted pathogenicity, frequency of occurrence in a population and also how closely the given phenotype matches the known phenotype of diseased genes from human and model organism data.
+
+The functional annotation of variants is handled by Jannovar and uses UCSC KnownGene transcript definitions and hg19 genomic coordinates.
+
+Variants are prioritised according to user-defined criteria on variant frequency, pathogenicity, quality, inheritance pattern, and model organism phenotype data. Predicted pathogenicity data is extracted from the dbNSFP resource. Variant frequency data is taken from the 1000 Genomes, ESP and ExAC datasets. Subsets of these frequency and pathogenicity data can be defined to further tune the analysis. Cross-species phenotype comparisons come from our PhenoDigm tool powered by the OWLTools OWLSim algorithm.
+
+The Exomiser was developed by the Computational Biology and Bioinformatics group at the Institute for Medical Genetics and Human Genetics of the Charité - Universitätsmedizin Berlin, the Mouse Informatics Group at the Sanger Institute and other members of the Monarch initiative.
+  </help>
+
+  <citations>
+    <citation type="doi">10.1101/gr.160325.113</citation>
+  </citations>
+
+</tool>
+
