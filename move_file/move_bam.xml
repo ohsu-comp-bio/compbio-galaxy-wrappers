@@ -1,0 +1,41 @@
+<tool id="move_bam" name="Print Reads BAM to Warm Storage" version="0.2.1" >
+  <description>Move a Print Reads BAM file to warm storage.</description>
+  <command interpreter="python">move_bam.py
+
+    --galaxy_url $galaxy_url
+    --history_id $history_id
+    --sample_id $sample_id
+    --bam_path $bam_path
+    --run_id $run_id
+    --output $output
+    --input $dummy_input
+
+  </command>
+
+  <inputs>   
+    <param name="dummy_input" type="data" format="bam" label="Dummy BAM Input" help="The input BAM will let this process know when to begin." />
+    <param name="galaxy_url" type="text" value="https://exaclinical.ohsu.edu/galaxy" label="Galaxy URL" help="URL of the Galaxy instance." argument="--galaxy_url" />
+    <param name="history_id" type="text" label="History ID" help="Galaxy history id, defined after a Galaxy history is created." argument="--history_id" />
+    <param name="sample_id" type="text" label="Sample ID" help="Illumina SampleSheet sample id.  This will be used to create the BAM and BAI files." argument="--sample_id" />
+    <param name="bam_path" type="text" value="/home/exacloud/clinical/BAM/" label="BAM Destination Path" help="Root path where BAM files will be deposited.  A subdirectory corresponding to the run_id will be created in this directory." argument="--bam_path" />
+    <param name="run_id" type="text" label="Illumina Run ID" help="Run ID from SampleSheet, as is passed to the CGD." argument="--run_id" />
+    <param name="sample_type" type="select" label="Sample Type" help="Choose from the following sample types, mainly to distinguish the tumor from normal when moving BAM files.">
+      <option value="TUMOR">Tumor</option>
+      <option value="NORMAL">Normal</option>
+      <option value="NONE">Not a paired sample</option>
+    </param>
+
+  </inputs>
+
+  <outputs>
+    <data format="text" name="output" label="Dummy Output for BAM Copy Operation" />
+  </outputs>
+
+  <tests>
+
+  </tests>
+  <help>
+
+  </help>
+</tool>
+

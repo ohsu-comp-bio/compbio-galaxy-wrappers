@@ -1,0 +1,24 @@
+<tool id="move_file" name="Move Galaxy Dataset" version="0.1.0" >
+  <description>Move a file (Galaxy dataset) to some location on the file system.</description>
+
+  <version_command></version_command>
+
+  <command><![CDATA[
+    rsync -iv -a "${input_file}" "${move_location}" > ${output_log}
+  ]]></command>
+
+  <inputs>   
+    <param name="input_file" type="data" label="Input File to Move" help="Move this input file to some location on the file system." />
+    <param name="move_location" type="text" label="PATH" value="/home/groups/clinical/RichardsLab/ngs/cnv/doc_counts" help="Move the file to this location." />
+  </inputs>
+
+  <outputs>
+    <data format="txt" name="output_log" label="${tool.name} on ${on_string}" help="" />
+  </outputs>
+
+  <tests></tests>
+  <help>Move a file (Galaxy dataset) to some location on the file system.</help>
+  <citations></citations>
+
+</tool>
+
