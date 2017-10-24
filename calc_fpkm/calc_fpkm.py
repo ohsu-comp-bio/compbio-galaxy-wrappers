@@ -187,7 +187,7 @@ class HtseqReader(object):
         Calculate Transcripts per Million normalized counts.
         :return:
         """
-        gene_len = len(set(self.gtf.gene_coords[ensg_id]))
+        gene_len = len(set(self.gtf.gene_coords[ensg_id])) /1000.0
         return float((count/gene_len)/(self.rpk_total/1000000.0))
 
 
