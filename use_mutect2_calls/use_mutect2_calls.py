@@ -167,8 +167,8 @@ def write_m2_vcf(filename, outfile, just_wrote, hotspots):
                     handle_out.write("##reference=/opt/installed/galaxy_genomes/hg19/Homo_sapiens_assembly19.fasta")
                     check = False
                 elif line.startswith("##FILTER") and filtered:
-                    outfile.write("##FILTER=<ID=m2,Description=\"Variant found in MuTect2.\">\n")
-                    outfile.write("##FILTER=<ID=m2_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
+                    handle_out.write("##FILTER=<ID=m2,Description=\"Variant found in MuTect2.\">\n")
+                    handle_out.write("##FILTER=<ID=m2_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
                     filtered = False
 
     handle_out.close()
