@@ -191,11 +191,16 @@ def main():
                         handle_out.write('\t'.join(line))
                         handle_out.write('\n')
             else:
-                handle_out.write(line)
                 handle_outr.write(line)
                 if line.startswith("##FILTER") and check:
+                    handle_out.write(line)
                     handle_out.write("##FILTER=<ID=strand_hotspot,Description=\"Variant would be filtered but is seen in the hotspots file.\">\n")
                     check = False
+                elif "Number=R" in line:
+                    nline = line.replace("Number=R", "Number=A")
+                    handle_out.write(nline)
+                else:
+                    handle_out.write(line)
 
     handle_out.close()
     handle_outr.close()
