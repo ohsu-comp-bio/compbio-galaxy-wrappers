@@ -8,7 +8,7 @@
 from __future__ import print_function
 import argparse
 
-VERSION = '0.4.0'
+VERSION = '0.4.1'
 
 def supply_args():
     """
@@ -142,6 +142,7 @@ def main():
 
     hotspots = hotspots_grab(args.hotspots)
     cosmic_vars = cosmic_grab(args.cosmic)
+    check = True
 
     with handle_vcf as vcf:
         for line in vcf:
@@ -192,6 +193,9 @@ def main():
             else:
                 handle_out.write(line)
                 handle_outr.write(line)
+                if line.startswith("##FILTER") and check:
+                    handle_out.write("##FILTER=<ID=strand_hotspot,Description=\"Variant would be filtered but is seen in the hotspots file.\">\n")
+                    check = False
 
     handle_out.close()
     handle_outr.close()
