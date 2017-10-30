@@ -10,7 +10,7 @@ import argparse
 import pysam
 import re
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 
 def supply_args():
@@ -54,7 +54,16 @@ def soft_clip_offset(entry):
 
 def cigar_adj(change, cigar):
     """
-
+    Op BAM Description ConsumesQuery ConsumesReference
+    M 0 alignment match (can be a sequence match or mismatch) yes yes
+    I 1 insertion to the reference yes no
+    D 2 deletion from the reference no yes
+    N 3 skipped region from the reference no yes
+    S 4 soft clipping (clipped sequences present in SEQ) yes no
+    H 5 hard clipping (clipped sequences NOT present in SEQ) no no
+    P 6 padding (silent deletion from padded reference) no no
+    = 7 sequence match yes yes
+    X 8 sequence mismatch yes yes
     :return:
     """
     soft_clip = 0
@@ -79,7 +88,10 @@ def cigar_adj(change, cigar):
         # no/yes deletions
             elif field == 2 or field == 3:
                 change -= value
-        # no/no (5 or 6) and soft clipping
+            # soft clipping
+            elif field == 4:
+                new_cigar.append([field, value])
+            # no/no (5 or 6)
             else:
                 new_cigar.append([field, value])
         else:
@@ -261,6 +273,29 @@ def val_r2(line2, primer_coords, samfile):
     return line2, samfile
 
 
+def fix_cigar(cigar):
+    """
+    This code is getting ugly.  If the CIGAR string contains two of the same type of field after another, merge.
+    69M20S39S should be 69M59S
+    :return:
+    """
+    new_cigar = []
+    for i in range(len(cigar)):
+        entry = cigar[i]
+        field = entry[0]
+        value = entry[1]
+        if i == 0:
+            new_cigar.append(list(entry))
+        else:
+            if field == new_cigar[-1][0]:
+                new_cigar[-1][1] += value
+            elif value != 0:
+                new_cigar.append(list(entry))
+
+    new_cigar = [tuple(x) for x in new_cigar]
+    return new_cigar
+
+
 def main():
     args = supply_args()
     samfile = open(args.bamfile, 'rU')
@@ -339,8 +374,8 @@ def main():
 
                         line2[7] = line1[3]
 
-                        line1[5] = cigar_for_writing(cigar)
-                        line2[5] = cigar_for_writing(l2_cigar)
+                        line1[5] = cigar_for_writing(fix_cigar(cigar))
+                        line2[5] = cigar_for_writing(fix_cigar(l2_cigar))
                         if check_len(cigar) and check_len(l2_cigar):
                             outfile.write('\t'.join(line1))
                             outfile.write('\n')
@@ -355,18 +390,22 @@ def main():
                              check_remove = (pnext - tlen) - coord
                              if check_remove < 50 and check_remove >= 5:
                                  to_remove = check_remove
-                         cigar = cigar_adj(to_remove, cigar[::-1])
-                         line2_cigar_adj = to_remove - (pos - l2_pos)
-                         if line2_cigar_adj <= to_remove and line2_cigar_adj > 0:
-                             l2_cigar = cigar_adj(line2_cigar_adj, l2_cigar[::-1])
-
-                         line1[5] = cigar_for_writing(cigar[::-1])
-                         line2[5] = cigar_for_writing(l2_cigar[::-1])
-                         if check_len(cigar) and check_len(l2_cigar):
-                             outfile.write('\t'.join(line1))
-                             outfile.write('\n')
-                             outfile.write('\t'.join(line2))
-                             outfile.write('\n')
+                             else:
+                                 to_remove = 0
+                         if to_remove != 0:
+                             cigar = cigar_adj(to_remove, cigar[::-1])
+                             line2_cigar_adj = to_remove - (pos - l2_pos)
+                             if line2_cigar_adj <= to_remove and line2_cigar_adj > 0:
+                                 l2_cigar = cigar_adj(line2_cigar_adj, l2_cigar[::-1])
+                                 line2[5] = cigar_for_writing(fix_cigar(l2_cigar[::-1]))
+                             else:
+                                 line2[5] = cigar_for_writing(fix_cigar(l2_cigar))
+                             line1[5] = cigar_for_writing(fix_cigar(cigar[::-1]))
+                             if check_len(cigar) and check_len(l2_cigar):
+                                 outfile.write('\t'.join(line1))
+                                 outfile.write('\n')
+                                 outfile.write('\t'.join(line2))
+                                 outfile.write('\n')
 
             i += 1
 
