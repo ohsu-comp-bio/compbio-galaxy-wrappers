@@ -8,7 +8,7 @@
 from __future__ import print_function
 import argparse
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
 def supply_args():
     """
@@ -151,6 +151,7 @@ def write_m2_vcf(filename, outfile, just_wrote, hotspots):
     """
     handle_out = open(outfile, 'w')
     check = True
+    filtered = True
     with open(filename, 'rU') as infile:
         for line in infile:
             if not line.startswith('#'):
@@ -165,6 +166,10 @@ def write_m2_vcf(filename, outfile, just_wrote, hotspots):
                 if check:
                     handle_out.write("##reference=/opt/installed/galaxy_genomes/hg19/Homo_sapiens_assembly19.fasta")
                     check = False
+                elif line.startswith("##FILTER") and filtered:
+                    outfile.write("##FILTER=<ID=m2,Description=\"Variant found in MuTect2.\">\n")
+                    outfile.write("##FILTER=<ID=m2_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
+                    filtered = False
 
     handle_out.close()
 

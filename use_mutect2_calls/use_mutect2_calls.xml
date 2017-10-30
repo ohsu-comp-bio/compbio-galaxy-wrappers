@@ -1,4 +1,4 @@
-<tool id="use_mutect2_calls" name="Mutect2 Call Filter" version="0.3.0" >
+<tool id="use_mutect2_calls" name="Mutect2 Call Filter" version="0.3.1" >
     <description>Filter or remove variants from a sample VCF based on a Mutect2 VCF.</description>
 
     <version_command></version_command>
