@@ -8,7 +8,7 @@
 from __future__ import print_function
 import argparse
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
 def supply_args():
     """
@@ -65,6 +65,7 @@ def write_new_vcf(args, drop_list, annot_list, hotspots):
     :return:
     """
     outfile = open(args.outfile, 'w')
+    check = True
     with open(args.infile, 'rU') as infile:
         for line in infile:
             if not line.startswith('#'):
@@ -83,6 +84,10 @@ def write_new_vcf(args, drop_list, annot_list, hotspots):
 
             else:
                 outfile.write(line)
+                if line.startswith("##FILTER") and check:
+                    outfile.write("##FILTER=<ID=PON,Description=\"Variant found in panel of normals in 2 to 4 samples.\">\n")
+                    outfile.write("##FILTER=<ID=PON_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
+                    check = False
 
     outfile.close()
 
