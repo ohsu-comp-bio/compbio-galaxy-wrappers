@@ -116,6 +116,7 @@ def write_new_vcf(args, annot, indels, outfile_indels):
 
     for entry in indels:
         if (entry[0], entry[1], entry[3], entry[4]) not in just_wrote:
+            entry[6] = 'm2_indel'
             outfile_indels.write('\t'.join(entry))
             outfile_indels.write('\n')
 
