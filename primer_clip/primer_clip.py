@@ -340,7 +340,8 @@ def main():
                 if line1[0] != line2[0]:
                     print(line1)
                     print(line2)
-                    raise Exception("Reads 1 and 2 don't match, ouch!")
+                    print("Reads 1 and 2 don't match, ouch!")
+                    continue
 
                 pos = int(line1[3])
                 cigar = change_cigar_format(line1[5])
