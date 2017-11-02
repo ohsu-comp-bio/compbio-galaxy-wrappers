@@ -167,7 +167,7 @@ def main():
                     srr = int(srr)
 
                     if geno != '1/1':
-                        if saf > 10 and sar > 10 and srf > 0 and srr > 0:
+                        if saf >= 10 and sar >= 10 and srf > 0 and srr > 0:
 #                            if not ((saf*1.0/sar) > 1.2 and (srf*1.0/srr) < 0.8): 
 #                                if not ((saf*1.0/sar) < 0.8 and (srf*1.0/srr) > 1.2): 
                             if all_bal =='0' and adj_alts(saf, sar, srf, srr):
@@ -177,9 +177,10 @@ def main():
                                 handle_out.write('\t'.join(line))
                                 handle_out.write('\n')
                         elif (chrom, pos, ref, alt) in hotspots:
-                            line[6] = replace_filter(line[6], 'strand_hotspot')
-                            handle_out.write('\t'.join(line))
-                            handle_out.write('\n')
+                            pass
+                            # line[6] = replace_filter(line[6], 'strand_hotspot')
+                            # handle_out.write('\t'.join(line))
+                            # handle_out.write('\n')
                         elif (chrom, pos, ref, alt) in cosmic_vars:
                             line[2] = cosmic_vars[(chrom, pos, ref, alt)]
                             handle_outr.write('\t'.join(line))
@@ -194,7 +195,7 @@ def main():
                 handle_outr.write(line)
                 if line.startswith("##FILTER") and check:
                     handle_out.write(line)
-                    handle_out.write("##FILTER=<ID=strand_hotspot,Description=\"Variant would be filtered but is seen in the hotspots file.\">\n")
+                    # handle_out.write("##FILTER=<ID=strand_hotspot,Description=\"Variant would be filtered but is seen in the hotspots file.\">\n")
                     check = False
                 elif "Number=R" in line:
                     nline = line.replace("Number=R", "Number=A")
