@@ -77,16 +77,17 @@ def write_new_vcf(args, drop_list, annot_list, hotspots):
                     outfile.write('\t'.join(sline))
                     outfile.write('\n')
                 else:
-                    if uniq_key in hotspots:
-                        sline[6] = replace_filter(sline[6], 'PON_hotspot')
-                        outfile.write('\t'.join(sline))
-                        outfile.write('\n')
+                    pass
+                    # if uniq_key in hotspots:
+                    #     sline[6] = replace_filter(sline[6], 'PON_hotspot')
+                    #     outfile.write('\t'.join(sline))
+                    #     outfile.write('\n')
 
             else:
                 outfile.write(line)
                 if line.startswith("##FILTER") and check:
                     outfile.write("##FILTER=<ID=PON,Description=\"Variant found in panel of normals in 2 to 4 samples.\">\n")
-                    outfile.write("##FILTER=<ID=PON_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
+                    # outfile.write("##FILTER=<ID=PON_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
                     check = False
 
     outfile.close()
