@@ -89,6 +89,7 @@ def write_new_vcf(args, annot, indels, outfile_indels):
     """
     outfile = open(args.outfile, 'w')
     just_wrote = []
+    filtered = True
     with open(args.infile, 'rU') as infile:
         for line in infile:
             if not line.startswith('#'):
@@ -102,7 +103,11 @@ def write_new_vcf(args, annot, indels, outfile_indels):
                     outfile.write('\t'.join(sline))
                     outfile.write('\n')
                     just_wrote.append(uniq_key)
+                # No, make this an argument.
                 elif af >= 0.2:
+                    outfile.write(line)
+                    just_wrote.append(uniq_key)
+                elif af >= 0.08 and (len(sline[3]) > 1 or len(sline[4]) > 1):
                     outfile.write(line)
                     just_wrote.append(uniq_key)
                 elif 'hotspot' in sline[6]:
@@ -113,6 +118,10 @@ def write_new_vcf(args, annot, indels, outfile_indels):
 #                    outfile.write(line)
             else:
                 outfile.write(line)
+                if line.startswith("##FILTER") and filtered:
+                    outfile.write("##FILTER=<ID=m2,Description=\"Variant found in MuTect2.\">\n")
+#                    outfile.write("##FILTER=<ID=m2_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
+                    filtered = False
 
     for entry in indels:
         if (entry[0], entry[1], entry[3], entry[4]) not in just_wrote:
