@@ -35,6 +35,8 @@ def parse_m2(args, mutect_out):
     """
     annot = {}
     indels = []
+    filtered = True
+    check = True
     with open(args.mutect2, 'rU') as pon:
         for line in pon:
             if not line.startswith('#'):
@@ -51,6 +53,12 @@ def parse_m2(args, mutect_out):
                     indels.append(line)
             else:
                 mutect_out.write(line)
+                if check:
+                    mutect_out.write("##reference=/opt/installed/galaxy_genomes/hg19/Homo_sapiens_assembly19.fasta")
+                    check = False
+                if line.startswith("##FILTER") and filtered:
+                    mutect_out.write("##FILTER=<ID=m2,Description=\"Variant found in MuTect2.\">\n")
+                    filtered = False
 
     return annot, indels
 
@@ -96,36 +104,39 @@ def write_new_vcf(args, annot, indels, outfile_indels):
                 sline = line.rstrip('\n').split('\t')
                 uniq_key = (sline[0], sline[1], sline[3], sline[4])
                 af = float(sline[7].split(';')[0].split('=')[1])
-                if uniq_key in annot:
-                    sline[6] = replace_filter(sline[6], 'm2')
-                    tlod_str = 'TLOD=' + annot[uniq_key]
-                    sline[7] = ';'.join([sline[7], tlod_str])
-                    outfile.write('\t'.join(sline))
-                    outfile.write('\n')
-                    just_wrote.append(uniq_key)
-                # No, make this an argument.
-                elif af >= 0.2:
-                    outfile.write(line)
-                    just_wrote.append(uniq_key)
-                elif af >= 0.08 and (len(sline[3]) > 1 or len(sline[4]) > 1):
-                    outfile.write(line)
-                    just_wrote.append(uniq_key)
-                elif 'hotspot' in sline[6]:
-                    outfile.write(line)
-                    just_wrote.append(uniq_key)
-                else:
-                    pass
-#                    outfile.write(line)
+                if len(sline[3]) == 1 and len(sline[4]) == 1:
+                    if uniq_key in annot:
+                        sline[6] = replace_filter(sline[6], 'm2')
+                        tlod_str = 'TLOD=' + annot[uniq_key]
+                        sline[7] = ';'.join([sline[7], tlod_str])
+                        outfile.write('\t'.join(sline))
+                        outfile.write('\n')
+                        just_wrote.append(uniq_key)
+                    # No, make this an argument.
+                    elif af >= 0.2:
+                        outfile.write(line)
+                        just_wrote.append(uniq_key)
+                    elif af >= 0.08 and (len(sline[3]) > 1 or len(sline[4]) > 1):
+                        outfile.write(line)
+                        just_wrote.append(uniq_key)
+                        print(line)
+                    elif 'hotspot' in sline[6]:
+                        outfile.write(line)
+                        just_wrote.append(uniq_key)
+                    else:
+                        pass
+    #                    outfile.write(line)
             else:
                 outfile.write(line)
                 if line.startswith("##FILTER") and filtered:
                     outfile.write("##FILTER=<ID=m2,Description=\"Variant found in MuTect2.\">\n")
+                    outfile.write("##INFO=<ID=TLOD,Number=A,Type=Float,Description=\"Tumor LOD score\">")
 #                    outfile.write("##FILTER=<ID=m2_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
                     filtered = False
 
     for entry in indels:
         if (entry[0], entry[1], entry[3], entry[4]) not in just_wrote:
-            entry[6] = 'm2_indel'
+            entry[6] = 'm2'
             outfile_indels.write('\t'.join(entry))
             outfile_indels.write('\n')
 
@@ -168,9 +179,10 @@ def write_m2_vcf(filename, outfile, just_wrote, hotspots):
                 line = line.rstrip('\n').split('\t')
                 uniq_key = (line[0], line[1], line[3], line[4])
                 if uniq_key in hotspots and uniq_key not in just_wrote:
-                    line[6] = replace_filter(line[6], 'm2_hotspot')
-                    handle_out.write('\t'.join(line))
-                    handle_out.write('\n')
+                    pass
+                    # line[6] = replace_filter(line[6], 'm2_hotspot')
+                    # handle_out.write('\t'.join(line))
+                    # handle_out.write('\n')
             else:
                 handle_out.write(line)
                 if check:
@@ -178,7 +190,7 @@ def write_m2_vcf(filename, outfile, just_wrote, hotspots):
                     check = False
                 elif line.startswith("##FILTER") and filtered:
                     handle_out.write("##FILTER=<ID=m2,Description=\"Variant found in MuTect2.\">\n")
-                    handle_out.write("##FILTER=<ID=m2_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
+                    # handle_out.write("##FILTER=<ID=m2_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
                     filtered = False
 
     handle_out.close()
