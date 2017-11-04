@@ -49,7 +49,7 @@ def parse_m2(args, mutect_out):
                 tlod = find_info_val(format, 'TLOD')
                 annot[(coord, pos, ref, alt)] = tlod
 
-                if float(tlod) > 50.0 and (len(ref) > 1 or len(alt) > 1):
+                if float(tlod) > 40.0 and (len(ref) > 1 or len(alt) > 1):
                     indels.append(line)
             else:
                 mutect_out.write(line)
