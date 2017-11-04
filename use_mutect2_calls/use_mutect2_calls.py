@@ -130,7 +130,7 @@ def write_new_vcf(args, annot, indels, outfile_indels):
                 outfile.write(line)
                 if line.startswith("##FILTER") and filtered:
                     outfile.write("##FILTER=<ID=m2,Description=\"Variant found in MuTect2.\">\n")
-                    outfile.write("##INFO=<ID=TLOD,Number=A,Type=Float,Description=\"Tumor LOD score\">")
+                    outfile.write("##INFO=<ID=TLOD,Number=A,Type=Float,Description=\"Tumor LOD score\">\n")
 #                    outfile.write("##FILTER=<ID=m2_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
                     filtered = False
 
