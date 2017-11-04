@@ -252,7 +252,7 @@ def main():
                                     ',')[i]
                                 new_field = ','.join([this_samp_ad_ref,
                                                   this_samp_ad_alt])
-                            elif field == 'AO' or field == 'QA':
+                            elif field == 'AO' or field == 'QA' or field == 'AF':
                                 new_field = broke_samp[field].split(',')[i-1]
                             elif field == 'GL' or field == 'PL':
                                 new_field = collect_gls(gl_ind, broke_samp,
