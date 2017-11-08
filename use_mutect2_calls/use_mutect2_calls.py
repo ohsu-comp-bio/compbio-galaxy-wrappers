@@ -8,7 +8,7 @@
 from __future__ import print_function
 import argparse
 
-VERSION = '0.3.1'
+VERSION = '0.3.2'
 
 def supply_args():
     """
@@ -119,13 +119,16 @@ def write_new_vcf(args, annot, indels, outfile_indels):
                     elif af >= 0.08 and (len(sline[3]) > 1 or len(sline[4]) > 1):
                         outfile.write(line)
                         just_wrote.append(uniq_key)
-                        print(line)
                     elif 'hotspot' in sline[6]:
                         outfile.write(line)
                         just_wrote.append(uniq_key)
                     else:
                         pass
     #                    outfile.write(line)
+                else:
+                    if uniq_key not in annot and af > 0.2:
+                        outfile.write(line)
+                        just_wrote.append(uniq_key)
             else:
                 outfile.write(line)
                 if line.startswith("##FILTER") and filtered:
@@ -186,7 +189,7 @@ def write_m2_vcf(filename, outfile, just_wrote, hotspots):
             else:
                 handle_out.write(line)
                 if check:
-                    handle_out.write("##reference=/opt/installed/galaxy_genomes/hg19/Homo_sapiens_assembly19.fasta")
+                    handle_out.write("##reference=/opt/installed/galaxy_genomes/hg19/Homo_sapiens_assembly19.fasta\n")
                     check = False
                 elif line.startswith("##FILTER") and filtered:
                     handle_out.write("##FILTER=<ID=m2,Description=\"Variant found in MuTect2.\">\n")
