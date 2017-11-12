@@ -1,4 +1,4 @@
-<tool id="xhmm_mergeGATKdepths" name="xhmm mergeGATKdepths" version="1.0.1">
+<tool id="xhmm_mergeGATKdepths" name="xhmm mergeGATKdepths" version="1.0.2">
 
   <description>
     Merge the output from GATK into a single read depth matrix of samples (rows) by
