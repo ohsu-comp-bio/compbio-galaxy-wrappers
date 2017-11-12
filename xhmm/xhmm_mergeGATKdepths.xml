@@ -1,4 +1,4 @@
-<tool id="xhmm_mergeGATKdepths" name="xhmm mergeGATKdepths" version="1.0">
+<tool id="xhmm_mergeGATKdepths" name="xhmm mergeGATKdepths" version="1.0.1">
 
   <description>
     Merge the output from GATK into a single read depth matrix of samples (rows) by
@@ -8,24 +8,37 @@
   <command><![CDATA[
     xhmm
     --mergeGATKdepths
+
     #if $GATKdepthsSource.GATKdepths == "list":
     --GATKdepthsList ${GATKdepthsList}
-    #else if $GATKdepthsSource.GATKdepths == "preset":  
-
-    #if str($GATKdepthsSource.preset_selector) == "trusightone_female":
-    --GATKdepths `find /home/exacloud/clinical/RichardsLab/ngs/cnv/TruSightOne_FEMALE -type f | tr "\n" "," | sed "s/,$/\n/g"`
-    #else if str($GATKdepthsSource.preset_selector) == "trusightone_male":
-    --GATKdepths `find /home/exacloud/clinical/RichardsLab/ngs/cnv/TruSightOne_MALE -type f | tr "\n" "," | sed "s/,$/\n/g"`
-    #else if str($GATKdepthsSource.preset_selector) == "agilentcre_v1_female":
-    --GATKdepths `find /home/exacloud/clinical/RichardsLab/ngs/cnv/AgilentCRE_V1_FEMALE -type f | tr "\n" "," | sed "s/,$/\n/g"`
-    #else if str($GATKdepthsSource.preset_selector) == "agilentcre_v1_male":
-    --GATKdepths `find /home/exacloud/clinical/RichardsLab/ngs/cnv/AgilentCRE_V1_MALE -type f | tr "\n" "," | sed "s/,$/\n/g"`
     #end if
 
-    ##else if $GATKdepthsSource.GATKdepths == "history":
-    ##for $b, $GATKdepth in enumerate( $GATKdepths ):
-    ##--GATKdepths ${GATKdepth.inputGATKdepths}
-    ##end for   
+    #if $GATKdepthsSource.GATKdepths == "file_path":
+    --GATKdepths `ls -1 $GATKdepthsSource.file_path_name/*.dat | tr "\n" "," | sed "s/,$/\n/g"`
+    #end if
+
+    #if $GATKdepthsSource.GATKdepths == "history":
+      #for $b, $GATKdepth in enumerate( $GATKdepths ):
+        --GATKdepths ${GATKdepth.inputGATKdepths}
+      #end for
+    #end if
+
+    #if $GATKdepthsSource.GATKdepths == "preset":
+      #if str($GATKdepthsSource.preset_selector) == "trusightone_female":
+        --GATKdepths `find /home/exacloud/clinical/RichardsLab/ngs/cnv/TruSightOne_FEMALE -type f | tr "\n" "," | sed "s/,$/\n/g"`
+      #end if
+
+      #if str($GATKdepthsSource.preset_selector) == "trusightone_male":
+        --GATKdepths `find /home/exacloud/clinical/RichardsLab/ngs/cnv/TruSightOne_MALE -type f | tr "\n" "," | sed "s/,$/\n/g"`
+      #end if
+
+      #if str($GATKdepthsSource.preset_selector) == "agilentcre_v1_female":
+        --GATKdepths `find /home/exacloud/clinical/RichardsLab/ngs/cnv/AgilentCRE_V1_FEMALE -type f | tr "\n" "," | sed "s/,$/\n/g"`
+      #end if
+
+      #if str($GATKdepthsSource.preset_selector) == "agilentcre_v1_male":
+        --GATKdepths `find /home/exacloud/clinical/RichardsLab/ngs/cnv/AgilentCRE_V1_MALE -type f | tr "\n" "," | sed "s/,$/\n/g"`
+      #end if
     #end if
 
     #if $advanced.advanced_selector == "advanced":
@@ -35,35 +48,51 @@
     --columnSuffix $advanced.input6
     --rdprecision $advanced.input7
     #end if
-    -o "./xhmm_mergeGATKepths_out.txt"
-    2> "log.txt"
+
+    -o "${outputFile}"
+    2> "${logFile}"
   ]]></command>
 
   <inputs>
+    <conditional name="dummy_source">
+      <param name="dummy_file" type="select" label="Send a dummy input file, to instruct this process to start.">
+        <option value="send_dummy">Send Dummy File</option>
+        <option value="no_dummy">Do Not Send Dummy File</option>
+      </param>
+        <when value="send_dummy">
+          <param name="dummy" type="data" format="txt" label="Accept this dummy file." optional="false" />
+        </when>
+    </conditional>
     <conditional name="GATKdepthsSource">
       <param name="GATKdepths" type="select" label="Select GATKdepths the source for the GATKdepths">
         <option value="preset">Select from pre-set directories</option>
+        <option value="file_path">Select a filesystem path.</option>
         <option value="list">Select a file from history with list of GATKdepths paths</option>
         <option value="history">Select GATKdepths from history</option>
       </param>
         <when value="preset">
-            <param name="preset_selector" type="select" label="Select from one of the preset directories">
-                <option value="trusightone_male">TruSightOne_MALE</option>
-                <option value="trusightone_female">TruSightOne_FEMALE</option>
-                <option value="agilentcre_v1_male">AgilentCRE_V1_MALE</option>
-                <option value="agilentcre_v1_female">AgilentCRE_V1_FEMALE</option>
+          <param name="preset_selector" type="select" label="Select from one of the preset directories">
+            <option value="trusightone_male">TruSightOne_MALE</option>
+            <option value="trusightone_female">TruSightOne_FEMALE</option>
+            <option value="agilentcre_v1_male">AgilentCRE_V1_MALE</option>
+            <option value="agilentcre_v1_female">AgilentCRE_V1_FEMALE</option>
             </param>
         </when>
+
+        <when value="file_path">
+          <param name="file_path_name" type="text" label="Enter absolute path here." />
+        </when>
+
         <when value="list">
             <param name="GATKdepthsList" type="data" format="txt" label="Select file containing list of GATKdepths paths"/>
         </when>
-<!--
+
         <when value="history">
             <repeat name="GATKdepths" title="GATK depth" min="1">
                 <param name="inputGATKdepths" type="data" label="GATK sample_interval_summary output file" />
             </repeat>
         </when>
--->
+
     </conditional>
     <conditional name="advanced">
       <param name="advanced_selector" type="select" label="Select default or advanced parameters">
@@ -81,8 +110,8 @@
   </inputs>
 
   <outputs>
-    <data name="outputFile" format="txt" label="${tool.name} on ${on_string}: Read-depth matrix output file" from_work_dir="xhmm_mergeGATKepths_out.txt"/>
-    <data name="logFile" format="txt" label="${tool.name}: Log file" from_work_dir="log.txt"/>
+    <data name="outputFile" format="txt" label="${tool.name} on ${on_string}: Read-depth matrix output file" />
+    <data name="logFile" format="txt" label="${tool.name}: Log file" />
   </outputs>
 
   <help>
