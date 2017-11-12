@@ -15,7 +15,7 @@ sys.path.append('/home/groups/clinical/users/letaw/jhl_tools')
 from file_types.gatk_intervals import ProbeQcRead
 from file_types.picard import AlignSummaryMetrics
 
-VERSION = '0.1.4'
+VERSION = '0.1.5'
 
 
 def supply_args():
@@ -180,7 +180,7 @@ def main():
     # Calculate on target reads, or amplicon efficiency
     this_picard = AlignSummaryMetrics(args.picard_summary)
     if total_cov_before:
-        on_target = add_on_target(this_picard.metrics, total_cov_before)
+        on_target = add_on_target(this_picard.metrics, total_cov)
     else:
         on_target = add_on_target(this_picard.metrics, total_cov)
     sample_metrics['on_target'] = on_target
