@@ -1,18 +1,27 @@
-<tool id="xhmm_discover" name="xhmm discover" version="1.0">
+<tool id="xhmm_discover" name="xhmm discover" version="1.1.0">
 
   <description>
     Discover CNVs from normalized read depth matrix
   </description>
 
   <command><![CDATA[
-    echo $sample > sample_file.txt &&
-    xhmm --discover
-    --paramFile $paramFile
-    --readDepths $readDepths
-    --origReadDepths $origReadDepths
-    --discoverSomeQualThresh $qualThresh
-    --xcnv "./xhmm_discover_out.xcnv"
-    --keepSampleIDs sample_file.txt
+    #if str( $send_sample.send_sample_sel ) == "send":
+      echo ${send_sample.sample} > sample_file.txt &&
+      xhmm --discover
+      --paramFile $paramFile
+      --readDepths $readDepths
+      --origReadDepths $origReadDepths
+      --discoverSomeQualThresh $qualThresh
+      --xcnv "./xhmm_discover_out.xcnv"
+      --keepSampleIDs sample_file.txt
+    #else
+      xhmm --discover
+      --paramFile $paramFile
+      --readDepths $readDepths
+      --origReadDepths $origReadDepths
+      --discoverSomeQualThresh $qualThresh
+      --xcnv "./xhmm_discover_out.xcnv"
+    #end if
     2&> "log.txt"
   ]]></command>
 
@@ -21,7 +30,15 @@
     <param name="readDepths" type="data" format="txt" label="Matrix of normalized read-depths to use for CNV annotation, where rows (samples) and columns (targets) are labeled" />
     <param name="origReadDepths" type="data" format="txt" label="Matrix of unnormalized read-depths to use for CNV annotation, where rows (samples) and columns (targets) are labeled" />
     <param name="qualThresh" type="integer" value="30" label="Quality threshold for discovering a CNV in a sample" />
-    <param name="sample" type="text"  label="Sample ID" />
+    <conditional name="send_sample">
+      <param name="send_sample_sel" type="select" label="Only produce output for given sample">
+        <option value="send" selected="True">Input Sample ID</option>
+        <option value="nosend">Don't input Sample ID</option>
+      </param>
+      <when value="send">
+        <param name="sample" type="text" label="Sample ID" />
+      </when>
+    </conditional>
   </inputs>
 
   <outputs>
