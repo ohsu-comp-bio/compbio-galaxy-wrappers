@@ -1,0 +1,25 @@
+<tool id="xhmm_annotate" name="Annotate XHMM Output" version="0.0.1">
+
+  <description>
+    Isolate sample data from xhmm genotype matrix and grab entries that look interesting.  Annotate these with whatever we want.
+  </description>
+
+  <command><![CDATA[
+  python $__tool_directory__/xhmm_annotate.py ${xhmm_geno} ${probeqc} ${sample} ${outfile_vcf} ${outfile_tbl}
+  ]]></command>
+
+  <inputs>
+    <param name="xhmm_geno" type="data" format="vcf" label="Input from XHMM genotype step" />
+    <param name="probeqc" type="data" format="txt" label="Input from Probe QC step" />
+    <param name="sample" type="text" label="Sample ID" />
+  </inputs>
+
+  <outputs>
+    <data name="outfile_vcf" format="vcf" label="${tool.name} on ${on_string}: VCF output file" />
+    <data name="outfile_tbl" format="txt" label="${tool.name} on ${on_string}: Table output file" />
+  </outputs>
+
+  <help>
+    Isolate sample data from xhmm genotype matrix and grab entries that look interesting.  Annotate these with whatever we want.
+  </help>
+</tool>
