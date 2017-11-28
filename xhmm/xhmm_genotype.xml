@@ -1,24 +1,37 @@
-<tool id="xhmm_genotype" name="xhmm genotype" version="1.0">
+<tool id="xhmm_genotype" name="xhmm genotype" version="1.1.0">
 
   <description>
     Genotype list of CNVs from normalized read depth matrix
   </description>
 
   <command><![CDATA[
-    echo $sample > sample_file.txt &&
-    xhmm --genotype
-    --paramFile $paramFile
-    --readDepths $readDepths
-    --origReadDepths $origReadDepths
-    --gxcnv $cnvFile
-    #if $refGenomeSource.genomeSource == "history":
-    --referenceFASTA $refGenomeSource.ownFile
-    #else:
-    --referenceFASTA "${refGenomeSource.index.fields.path}"
+    #if str( $send_sample.send_sample_sel ) == "send":
+      echo ${send_sample.sample} > sample_file.txt &&
+      xhmm --genotype
+      --paramFile $paramFile
+      --readDepths $readDepths
+      --origReadDepths $origReadDepths
+      --gxcnv $cnvFile
+      #if $refGenomeSource.genomeSource == "history":
+      --referenceFASTA $refGenomeSource.ownFile
+      #else:
+      --referenceFASTA "${refGenomeSource.index.fields.path}"
+      #end if
+          --vcf "./xhmm_genotype_out.vcf"
+      --keepSampleIDs sample_file.txt
+    #else
+      xhmm --genotype
+      --paramFile $paramFile
+      --readDepths $readDepths
+      --origReadDepths $origReadDepths
+      --gxcnv $cnvFile
+      #if $refGenomeSource.genomeSource == "history":
+      --referenceFASTA $refGenomeSource.ownFile
+      #else:
+      --referenceFASTA "${refGenomeSource.index.fields.path}"
+      #end if
+          --vcf "./xhmm_genotype_out.vcf"
     #end if
-    ##--referenceFASTA $refFASTA
-    --vcf "./xhmm_genotype_out.vcf"
-    --keepSampleIDs sample_file.txt
     2&> "log.txt"
   ]]></command>
 
@@ -45,7 +58,16 @@
         <param name="ownFile" type="data" format="fasta" metadata_name="dbkey" label="Select the reference genome" />
       </when>  <!-- history -->
     </conditional>  <!-- refGenomeSource -->
-    <param name="sample" type="text"  label="Sample ID" />
+    <conditional name="send_sample">
+      <param name="send_sample_sel" type="select" label="Only produce output for given sample">
+        <option value="send" selected="True">Input Sample ID</option>
+        <option value="nosend">Don't input Sample ID</option>
+      </param>
+      <when value="send">
+        <param name="sample" type="text" label="Sample ID" />
+      </when>
+    </conditional>
+
   </inputs>
 
   <outputs>
