@@ -1,0 +1,27 @@
+<tool id="replace_filt" name="VCF FILTER Add or Replace" version="0.1.0" >
+    <description>Replace or add a FILTER annotation to every record in the input VCF.</description>
+
+    <version_command></version_command>
+
+    <command><![CDATA[
+    python $__tool_directory__/replace_filt.py
+    "${infile}" "${outfile}" "${annot}" "${str_size}"
+    ]]></command>
+
+    <inputs>
+        <param name="infile" type="data" format="vcf" label="Input VCF" help="" />
+        <param name="annot" type="text" label="FILTER Annotation" help="FILTER annotation to include in VCF entries." />
+        <param name="str_size" type="integer" value="16" label="Max Length" help="Maximum size of the FILTER annotation to be added." />
+    </inputs>
+
+    <outputs>
+        <data format="vcf" name="outfile" label="${tool.name} on ${on_string}" help="Output VCF" />
+    </outputs>
+
+    <tests></tests>
+
+    <help>Replace or add a FILTER annotation to every record in the input VCF.  FILTER string will be appended if the value is not "PASS" or ".".  String should be smaller than the max length specified, and should be made up of alphanumeric characters.</help>
+
+    <citations></citations>
+
+</tool>
