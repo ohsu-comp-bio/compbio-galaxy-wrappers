@@ -30,8 +30,6 @@ def main():
     with open(args.seattleseq, 'rU') as infile:
         for line in infile:
             sline = line.rstrip('\n').split('\t')
-            print(sum(y is not -1 for y in [x.find('Gtype') for x in sline]))
-            print(len([x.find('Qual') for x in sline]))
             if sum(y is not -1 for y in [x.find('Gtype') for x in sline]) == 2 and \
                sum(y is not -1 for y in [x.find('Qual') for x in sline]) == 2 and \
                not check:
