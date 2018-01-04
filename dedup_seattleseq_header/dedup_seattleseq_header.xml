@@ -1,0 +1,25 @@
+<tool id="dedup_seattleseq_header" name="Deduplicate SeattleSeq Headers" version="0.1.0" >
+    <description>Remove duplicate columns in the SeattleSeq tsv output.</description>
+
+    <version_command></version_command>
+
+    <command><![CDATA[
+    python $__tool_directory__/dedup_seattleseq_header.py
+    "${infile}" "${outfile}"
+    ]]></command>
+
+    <inputs>
+        <param name="infile" type="data" format="tabular" label="Input TSV" help="" />
+    </inputs>
+
+    <outputs>
+        <data format="tabular" name="outfile" label="${tool.name} on ${on_string}" help="Output TSV" />
+    </outputs>
+
+    <tests></tests>
+
+    <help>Remove duplicate columns in the SeattleSeq tsv output.  This is to deal with SeattleSeq bug creating duplicate headers in NTC sample TSVs.</help>
+
+    <citations></citations>
+
+</tool>
