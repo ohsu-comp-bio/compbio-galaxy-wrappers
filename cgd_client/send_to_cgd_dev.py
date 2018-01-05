@@ -20,7 +20,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.4.1'
+VERSION = '1.2.4.2'
 
 
 def supply_args():
@@ -100,7 +100,7 @@ def run_cmd(cmd):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
     print(stdout)
-    if stderr:
+    if stderr or json.loads(stdout)['errors']:
         raise Exception(stderr)
 #        eprint(stderr)
     return stdout
