@@ -20,7 +20,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.4.2'
+VERSION = '1.2.4.3'
 
 
 def supply_args():
@@ -100,9 +100,12 @@ def run_cmd(cmd):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
     print(stdout)
-    if stderr or json.loads(stdout)['errors']:
+    if stderr:
         raise Exception(stderr)
-#        eprint(stderr)
+    elif type(json.loads(stdout)) is list:
+        pass
+    elif json.loads(stdout)['errors']:
+        raise Exception(json.loads(stdout)['errors'])
     return stdout
 
 
@@ -168,16 +171,21 @@ def prepare_reported(outfile, regions, stdout):
     :return:
     """
     for entry in json.loads(stdout):
-        chrom = entry['chromosome'][3:]
-        pos = entry['positionStart']
-        ref = entry['referenceBase']
-        alt = entry['variantBase']
-        empty = '.'
-        outfile.write('\t'.join([chrom, str(pos), empty, ref, alt, empty, empty, empty]))
-        outfile.write('\n')
+        if json.loads(stdout):
+            chrom = entry['chromosome'][3:]
+            pos = entry['positionStart']
+            ref = entry['referenceBase']
+            alt = entry['variantBase']
+            empty = '.'
+            outfile.write('\t'.join([chrom, str(pos), empty, ref, alt, empty, empty, empty]))
+            outfile.write('\n')
 
-        start = pos - 1
-        regions.write('\t'.join([chrom, str(start), str(pos)]))
+            start = pos - 1
+            regions.write('\t'.join([chrom, str(start), str(pos)]))
+            regions.write('\n')
+
+    if not json.loads(stdout):
+        regions.write('\t'.join(['1', '0', '1']))
         regions.write('\n')
 
     outfile.close()
@@ -196,7 +204,6 @@ def main():
         vcf = open(args.report_vcf, 'w')
         regions = open(args.report_bed, 'w')
         write_vcf_header(vcf)
-        print(stdout)
         prepare_reported(vcf, regions, stdout)
 
     # Write and output log.  This is necessary so that Galaxy knows the process is over.

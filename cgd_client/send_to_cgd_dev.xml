@@ -1,4 +1,4 @@
-<tool id="send_to_cgd_dev" name="CGD Client" version="1.2.4.2" >
+<tool id="send_to_cgd_dev" name="CGD Client" version="1.2.4.3" >
 
     <description>Send a pipeline output file to the CGD via cgd_client.jar.  Files that can be sent are the interval and
         gene metrics files, VCF, SeattleSeq output, and FastQC output.</description>
