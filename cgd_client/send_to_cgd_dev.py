@@ -170,22 +170,23 @@ def prepare_reported(outfile, regions, stdout):
 
     :return:
     """
+    empty = '.'
     for entry in json.loads(stdout):
         if json.loads(stdout):
             chrom = entry['chromosome'][3:]
             pos = entry['positionStart']
             ref = entry['referenceBase']
             alt = entry['variantBase']
-            empty = '.'
             outfile.write('\t'.join([chrom, str(pos), empty, ref, alt, empty, empty, empty]))
             outfile.write('\n')
-
             start = pos - 1
             regions.write('\t'.join([chrom, str(start), str(pos)]))
             regions.write('\n')
 
     if not json.loads(stdout):
-        regions.write('\t'.join(['1', '0', '1']))
+        outfile.write('\t'.join(['1', '3', empty, 'T', 'C', empty, empty, empty]))
+        outfile.write('\n')
+        regions.write('\t'.join(['1', '1', '2']))
         regions.write('\n')
 
     outfile.close()
