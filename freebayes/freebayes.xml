@@ -1,4 +1,4 @@
-<tool id="freebayes" name="FreeBayes" version="1.0.2.29--1">
+<tool id="freebayes" name="FreeBayes" version="1.0.2.29--2">
     <description> - bayesian genetic variant detector</description>
     <requirements>
         <requirement type="package" version="1.0.2.29">freebayes</requirement>
@@ -7,7 +7,9 @@
         <requirement type="package" version="20160622">parallel</requirement>
     </requirements>
     <stdio>
-        <exit_code range="1:" />
+        <exit_code range="1:" level="fatal" description="Exit code greater than 1 indicates failure." />
+        <regex match="ERROR" source="stderr" level="fatal" description="Generic ERROR message from FreeBayes." />
+        <regex match="Rebuild samtools index" source="stderr" level="fatal" description="Error denoting samtools index should be rebuilt." />
     </stdio>
     <command>
 <![CDATA[
