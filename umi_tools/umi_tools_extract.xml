@@ -1,4 +1,4 @@
-<tool id="umi_tools_extract" name="UMI-tools extract" version="0.4.3.1">
+<tool id="umi_tools_extract" name="UMI-tools extract" version="0.5.3.0">
   <description>Tools for dealing with Unique Molecular Identifiers</description>
 
   <requirements></requirements>

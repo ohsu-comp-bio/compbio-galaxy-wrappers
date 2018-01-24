@@ -1,4 +1,4 @@
-<tool id="umi_tools_dedup" name="UMI-tools dedup" version="0.5.0.2">
+<tool id="umi_tools_dedup" name="UMI-tools dedup" version="0.5.3.1">
   <description>Tools for dealing with Unique Molecular Identifiers</description>
   <requirements></requirements>
   <stdio>
@@ -14,8 +14,10 @@
   -S "${output_bam}"
   -L "${output_log}"
 
-  #if $run_stats:
-    --output-stats="${output_stats}"
+  #set stub = "stats"
+
+  #if "${run_stats}":
+    --output-stats="${stub}"
   #end if
 
   --method "${method}"
@@ -50,7 +52,13 @@
 
   <outputs>
     <data format="bam" name="output_bam" label="${tool.name} on ${on_string}: output.bam"/>
-    <data format="txt" name="output_stats" label="${tool.name} on ${on_string}: stats.txt">
+    <data format="tabular" name="output_stats_ed" label="${tool.name} on ${on_string}: stats_edit_distance" from_work_dir="stats_edit_distance.tsv">
+      <filter>run_stats</filter>
+    </data>
+    <data format="tabular" name="output_stats_umi_pos" label="${tool.name} on ${on_string}: stats_per_umi_per_position" from_work_dir="stats_per_umi_per_position.tsv">
+      <filter>run_stats</filter>
+    </data>
+    <data format="tabular" name="output_stats_umi" label="${tool.name} on ${on_string}: stats_per_umi" from_work_dir="stats_per_umi.tsv">
       <filter>run_stats</filter>
     </data>
     <data format="txt" name="output_log" label="${tool.name} on ${on_string}: output.log"/>
