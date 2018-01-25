@@ -10,7 +10,7 @@ import argparse
 import pysam
 import re
 
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 
 
 def supply_args():
@@ -109,39 +109,6 @@ def cigar_adj(change, cigar):
         pass
 
     return new_cigar
-
-
-# def cigar_adj(change, cigar):
-#     """
-#     Take a CIGAR representation [(), ()] and a number of change bases.
-#     Give a new CIGAR that clips at beginning change bases.
-#     4 = softclip
-#     5 = hardclip
-#     """
-#
-#     tally = 0
-#     new_cigar = []
-#     dels = 0
-#     add_to_hard = 0
-#     for entry in cigar:
-#         field = entry[0]
-#         value = entry[1]
-#         remain = change - tally
-#         if field == 4 and cigar.index(entry) == 0:
-#             add_to_hard += value
-#         elif value <= remain:
-#             tally += value
-#             if field == 2:
-#                 dels += value
-#         else:
-#             if field != 2:
-#                 new_cigar.append((field, value - remain))
-#                 tally = change
-#
-#     to_hardclip = change-dels+add_to_hard
-#     if to_hardclip != 0:
-#         new_cigar.insert(0, (5, to_hardclip))
-#     return new_cigar, to_hardclip
 
 
 def change_cigar_format(cigar):
@@ -306,9 +273,9 @@ def main():
     i = 0
     with samfile as sam:
         for entry in sam:
-            if i % 100000 == 0:
+            if i % 1000000 == 0:
                     print(str(i) + " read pairs processed.")
-
+            to_remove = 0
             if entry.startswith('@'):
                 outfile.write(entry)
             else:
@@ -355,7 +322,8 @@ def main():
                 flag = int(line1[1])
                 chrom = str(line1[2])
 
-                if (flag & 0x10 == 0):
+                # If first read is mapped to fwd strand.
+                if not (flag & 0x10):
                     seqloc = (chrom, xrange(pos + sco, pos + tlen))
                     primer_choices = set(primer_coords[seqloc[0]][
                                 '1']).intersection(set(seqloc[1]))
