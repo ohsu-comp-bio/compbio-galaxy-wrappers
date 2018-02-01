@@ -17,7 +17,11 @@
     </template>
 
     <xml name="bam_req_params">
-        <param name="input" type="data" format="sam,bam" label="Input BAM or SAM file to sort" help="Required." />
+        <param name="input" type="data" format="sam,bam" label="Input BAM or SAM file" help="Required." />
+    </xml>
+
+    <xml name="bam_req_params_output">
+        <data format="bam" name="output" label="${tool.name} on ${on_string}: BAM"/>
     </xml>
 
     <template name="bam_opt_opts">
