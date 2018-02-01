@@ -11,7 +11,7 @@
         gatk SortSam
         #include source=$bam_req_opts#
        --SORT_ORDER "${sort_order}"
-        && sleep 10
+        #include source=$bam_opt_opts#
     ]]></command>
 
     <inputs>
@@ -21,6 +21,7 @@
             <option value="duplicate">duplicate</option>
             <option value="queryname">queryname</option>
         </param>
+        <expand macro="bam_opt_params" />
     </inputs>
 
     <outputs>
@@ -52,6 +53,8 @@
     position, orientation, and mate's unclipped 5-prime position.)
 
     Usage example: gatk SortSam I=input.bam O=sorted.bam SORT_ORDER=coordinate
+
+    @PICARD_HELP@
     ]]></help>
 
     <expand macro="citations" />

@@ -12,12 +12,72 @@
     </token>
 
     <template name="bam_req_opts">
-        --INPUT ${input}
-        --OUTPUT ${output}
+        -I ${input}
+        -O ${output}
     </template>
 
     <xml name="bam_req_params">
-        <param name="input" type="data" format="sam,bam" label="Input BAM or SAM file to sort." help="Required." />
+        <param name="input" type="data" format="sam,bam" label="Input BAM or SAM file to sort" help="Required." />
+    </xml>
+
+    <template name="bam_opt_opts">
+        #if $picard_common.arguments_file:
+        --arguments_file ${picard_common.arguments_file}
+        #end if
+        --COMPRESSION_LEVEL ${picard_common.compression_level}
+        --CREATE_MD5_FILE ${picard_common.create_md5_file}
+        #if $picard_common.ga4gh_client_secrets:
+        --GA4GH_CLIENT_SECRETS ${picard_common.ga4gh_client_secrets}
+        #end if
+        --MAX_RECORDS_IN_RAM ${picard_common.max_records_in_ram}
+        #if $picard_common.reference_source.reference_source_selector != "history":
+        --REFERENCE_SEQUENCE ${picard_common.reference_source.reference_sequence.fields.path}
+        #end if
+        --USE_JDK_DEFLATER ${picard_common.use_jdk_deflater}
+        --USE_JDK_INFLATER ${picard_common.use_jdk_inflater}
+        --VALIDATION_STRINGENCY ${picard_common.validation_stringency}
+        --VERBOSITY ${picard_common.verbosity}
+    </template>
+
+    <xml name="bam_opt_params">
+        <section name="picard_common" title="Common Picard Options (Only change these if you know what you're doing.)" expanded="False">
+            <param name="arguments_file" type="data" format="txt" optional="true" label="Arguments file" help="Read one or more arguments files and add them to the command line." />
+            <param name="compression_level" type="integer" size="1" value="1" min="1" max="9" label="Compression Level" help="Compression level for all compressed files created (e.g. BAM and VCF)." />
+            <param name="create_md5_file" type="boolean" label="Create MD5?" checked="false" help="Whether to create an MD5 digest for any BAM or FASTQ files created." />
+            <param name="ga4gh_client_secrets" type="data" format="json" optional="true" label="GA4GH Client Secrets" help="Google Genomics API client_secrets.json file." />
+            <param name="max_records_in_ram" type="integer" size="10" value="500000" min="1" label="Max Records in RAM" help="When writing files that need to be sorted, this will specify the number of records stored in RAM before spilling to disk. Increasing this number reduces the number of file handles needed to sort the file, and increases the amount of RAM needed." />
+
+            <conditional name="reference_source">
+                <param name="reference_source_selector" type="select" label="Choose the source for the reference list">
+                    <option value="cached">Locally cached</option>
+                    <option value="history">History</option>
+                </param>
+                <when value="cached">
+                    <param name="reference_sequence" type="select" label="Reference" help="Reference sequence file." >
+                        <options from_data_table="picard_indexes" >
+                            <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file" />
+                        </options>
+                    </param>
+                </when>
+                <when value="history">
+                    <param name="reference_sequence" type="data" format="fasta" label="Reference" help="Reference sequence file." />
+                </when>
+            </conditional>
+
+            <param name="use_jdk_deflater" type="boolean" label="Use JDK Deflater?" checked="false" help="Use the JDK Deflater instead of the Intel Deflater for writing compressed output." />
+            <param name="use_jdk_inflater" type="boolean" label="Use JDK Inflater?" checked="false" help="Use the JDK Inflater instead of the Intel Inflater for reading compressed input." />
+            <param name="validation_stringency" type="select" label="Validation Stringency" help="Validation stringency for all SAM files read by this program.  Setting stringency to SILENT can improve performance when processing a BAM file in which variable-length data (read, qualities, tags) do not otherwise need to be decoded.">
+                <option value="STRICT" selected="true">STRICT</option>
+                <option value="LENIENT">LENIENT</option>
+                <option value="SILENT">SILENT</option>
+            </param>
+            <param name="verbosity" type="select" label="Logging Verbosity" help="Control verbosity of logging." >
+                <option value="INFO" selected="true">INFO</option>
+                <option value="ERROR">ERROR</option>
+                <option value="WARNING">WARNING</option>
+                <option value="DEBUG">DEBUG</option>
+            </param>
+        </section>
     </xml>
 
     <xml name="citations">
@@ -31,5 +91,29 @@
 
     <token name="@VERSION@">4.0.0.0</token>
     <token name="@CMD_BEGIN@">gatk ${tool.name}</token>
+
+    <token name="@PICARD_HELP@">
+    Q: A Picard tool that sorts its output SAM/BAM file is taking a very long time and/or running out of memory. What can I do?
+
+    A: Picard tools that sort their output (e.g. SortSam, MergeSamFiles if the inputs are not all sorted in the same order as
+    the output) will run faster when given more RAM, and told to store more alignment records in memory before writing to a
+    temporary file. You can give the program more memory by increasing the size of the Java heap with the -Xmx argument. If
+    your operating system imposes a hard memory limit on a process, a rule of thumb is to set the -Xmx value no higher than
+    2GB less than the hard memory limit. Even if your system does not set a hard memory limit, if you set the -Xmx value much
+    greater than the available RAM on the computer, excessive swapping will hurt performance. The Picard MAX_RECORDS_IN_RAM
+    option controls the number of records to store in RAM before writing to a temporary file when producing sorted output. The
+    optimal setting for this option depends on a number of factors, including:
+
+        1. Read length
+        2. Tag content, e.g. OQ and E2 tags can be large
+        3. SAM input generally has larger memory footprint than BAM input, but if validation stringency is not silent, then BAM can actually be larger
+        4. Setting variable-length attributes onto a record read from a BAM file can expand its memory footprint even if validation stringency is silent
+        5. Different Picard tools have varying RAM requirements separate from the RAM needed for sorting.
+
+    A rule of thumb for reads of ~100bp is to set MAX_RECORDS_IN_RAM to be 250,000 reads per each GB given to the -Xmx parameter for SortSam.
+    Thanks to Keiran Raine for performing the experiments to arrive at these numbers.
+
+    http://broadinstitute.github.io/picard/faq.html
+    </token>
 
 </macros>
