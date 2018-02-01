@@ -8,14 +8,38 @@
     @VERSION_CMD@
 
     <command detect_errors="exit_code"><![CDATA[
-        gatk MarkDuplicates
+        @CMD_BEGIN@ MarkDuplicates
         #include source=$bam_req_opts#
-       --METRICS_FILE "${metrics_file}"
+        --METRICS_FILE "${metrics_file}"
+        #if $markduplicates_opt.assume_sort_order:
+        --ASSUME_SORT_ORDER ${markduplicates_opt.assume_sort_order}
+        #end if
+        --DUPLICATE_SCORING_STRATEGY "${markduplicates_opt.duplicate_scoring_strategy}"
+        --REMOVE_DUPLICATES "${markduplicates_opt.remove_duplicates}"
+        --REMOVE_SEQUENCING_DUPLICATES "${markduplicates_opt.remove_sequencing_duplicates}"
+        --OPTICAL_DUPLICATE_PIXEL_DISTANCE "${markduplicates_opt.optical_duplicate_pixel_distance}"
         #include source=$bam_opt_opts#
     ]]></command>
 
     <inputs>
         <expand macro="bam_req_params" />
+        <section name="markduplicates_opt" title="Other MarkDuplicates Parameters" expanded="False">
+            <param name="assume_sort_order" type="select" label="Assume Sort Order" help="If not null, assume that the input file has this order even if the header says otherwise." >
+                <option value="unsorted" selected="true">UNSORTED</option>
+                <option value="queryname">QUERYNAME</option>
+                <option value="coordinate">COORDINATE</option>
+                <option value="duplicate">DUPLICATE</option>
+                <option value="unknown">UNKNOWN</option>
+            </param>
+            <param name="duplicate_scoring_strategy" type="select" label="Duplicate Scoring Strategy" help="The scoring strategy for choosing the non-duplicate among candidates." >
+                <option value="SUM_OF_BASE_QUALITIES" selected="true">SUM_OF_BASE_QUALITIES</option>
+                <option value="TOTAL_MAPPED_REFERENCE_LENGTH">TOTAL_MAPPED_REFERENCE_LENGTH</option>
+                <option value="RANDOM">RANDOM</option>
+            </param>
+            <param name="optical_duplicate_pixel_distance" type="integer" size="7" value="100" min="0" label="Optical Duplicate Pixel Distance" help="The maximum offset between two duplicate clusters in order to consider them optical duplicates. The default is appropriate for unpatterned versions of the Illumina platform. For the patterned flowcell models, 2500 is moreappropriate. For other platforms and models, users should experiment to find what works best." />
+            <param name="remove_duplicates" type="boolean" label="Remove Duplicates?" checked="false" help="If true do not write duplicates to the output file instead of writing them with appropriate flags set." />
+            <param name="remove_sequencing_duplicates" type="boolean" label="Remove Sequencing Duplicates?" checked="false" help="If true remove 'optical' duplicates and other duplicates that appear to have arisen from the sequencing process instead of the library preparation process, even if REMOVE_DUPLICATES is false. If REMOVE_DUPLICATES is true, all duplicates are removed and this option is ignored." />
+        </section>
         <expand macro="bam_opt_params" />
     </inputs>
 

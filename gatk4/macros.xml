@@ -94,7 +94,7 @@
     </xml>
 
     <token name="@VERSION@">4.0.0.0</token>
-    <token name="@CMD_BEGIN@">gatk ${tool.name}</token>
+    <token name="@CMD_BEGIN@">gatk --java-options "-Xmx28g"</token>
 
     <token name="@PICARD_HELP@">
     Q: A Picard tool that sorts its output SAM/BAM file is taking a very long time and/or running out of memory. What can I do?
