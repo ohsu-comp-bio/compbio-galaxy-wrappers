@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<macros>
+
+    <xml name="requirements">
+        <requirements>
+            <requirement type="package" version="@VERSION@">gatk4</requirement>
+        </requirements>
+    </xml>
+
+    <token name="@VERSION_CMD@">
+        <version_command>echo "@VERSION@"</version_command>
+    </token>
+
+    <template name="bam_req_opts">
+        --INPUT ${input}
+        --OUTPUT ${output}
+    </template>
+
+    <xml name="bam_req_params">
+        <param name="input" type="data" format="sam,bam" label="Input BAM or SAM file to sort." help="Required." />
+    </xml>
+
+    <xml name="citations">
+        <citations>
+            <citation type="doi">10.1101/gr.107524.110</citation>
+            <citation type="doi">10.1038/ng.806</citation>
+            <citation type="doi">10.1002/0471250953.bi1110s43</citation>
+            <citation type="doi">10.1101/201178</citation>
+        </citations>
+    </xml>
+
+    <token name="@VERSION@">4.0.0.0</token>
+    <token name="@CMD_BEGIN@">gatk ${tool.name}</token>
+
+</macros>

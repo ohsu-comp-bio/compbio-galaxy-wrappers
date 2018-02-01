@@ -1,0 +1,59 @@
+<tool id="gatk4_sortsam" name="SortSam" version="@VERSION@.0">
+    <description>SortSam (Picard) - Sorts a SAM or BAM file</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code"><![CDATA[
+        gatk SortSam
+        #include source=$bam_req_opts#
+       --SORT_ORDER "${sort_order}"
+        && sleep 10
+    ]]></command>
+
+    <inputs>
+        <expand macro="bam_req_params" />
+        <param name="sort_order" type="select" label="Sort order of output file." help="Required.">
+            <option value="coordinate">coordinate</option>
+            <option value="duplicate">duplicate</option>
+            <option value="queryname">queryname</option>
+        </param>
+    </inputs>
+
+    <outputs>
+        <data format="bam" name="output" />
+    </outputs>
+
+    <help><![CDATA[
+    This tool sorts the input SAM or BAM file by coordinate, queryname (QNAME), or some other property of the SAM record.
+    The SortOrder of a SAM/BAM file is found in the SAM file header tag @HD in the field labeled SO.  For a coordinate
+    sorted SAM/BAM file, read alignments are sorted first by the reference sequence name (RNAME) field using the reference
+    sequence dictionary (@SQ tag).  Alignments within these subgroups are secondarily sorted using the left-most mapping
+    position of the read (POS).  Subsequent to this sorting scheme, alignments are listed arbitrarily.  For queryname-sorted
+    alignments, all alignments are grouped using the queryname field but the alignments are not necessarily sorted within
+    these groups.  Reads having the same queryname are derived from the same template.
+
+    queryname: (Sorts according to the readname. This will place read-pairs and other derived
+    reads (secondary and supplementary) adjacent to each other. Note that the readnames are
+    compared lexicographically, even though they may include numbers. In paired reads, Read1
+    sorts before Read2.)
+
+    coordinate: (Sorts primarily according to the SEQ and POS fields of the record. The
+    sequence will sorted according to the order in the sequence dictionary, taken from from
+    the header of the file. Within each reference sequence, the reads are sorted by the
+    position. Unmapped reads whose mates are mapped will be placed near their mates. Unmapped
+    read-pairs are placed after all the mapped reads and their mates.)
+
+    duplicate: (Sorts the reads so that duplicates reads are adjacent. Required that the
+    mate-cigar (MC) tag is present. The resulting will be sorted by library, unclipped 5-prime
+    position, orientation, and mate's unclipped 5-prime position.)
+
+    Usage example: gatk SortSam I=input.bam O=sorted.bam SORT_ORDER=coordinate
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>
