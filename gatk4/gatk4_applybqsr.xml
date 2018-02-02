@@ -1,0 +1,31 @@
+<tool id="gatk4_applybqsr" name="ApplyBQSR" version="@VERSION@.0" profile="17.09">
+    <description>- Apply base quality score recalibration</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ ApplyBQSR
+        #include source=$bam_req_opts#
+        #include source=$gatk_req_opts#
+    ]]></command>
+
+    <inputs>
+        <expand macro="bam_req_params" />
+        <expand macro="gatk_req_params" />
+        <section name="applybqsr_opt" title="Other ApplyBQSR Parameters" expanded="False" />
+    </inputs>
+
+    <outputs>
+        <expand macro="bam_req_params_output" />
+    </outputs>
+
+    <help><![CDATA[
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>
