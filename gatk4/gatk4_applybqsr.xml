@@ -11,11 +11,13 @@
         @CMD_BEGIN@ ApplyBQSR
         #include source=$bam_req_opts#
         #include source=$gatk_req_opts#
+        --bqsr-recal-file "${bqsr_recal_file}"
     ]]></command>
 
     <inputs>
         <expand macro="bam_req_params" />
         <expand macro="gatk_req_params" />
+        <param name="bqsr_recal_file" type="data" format="gatk_recal" label="BQSR Recalibration File" help="Input recalibration table for BQSR." />
         <section name="applybqsr_opt" title="Other ApplyBQSR Parameters" expanded="False" />
     </inputs>
 
@@ -24,6 +26,7 @@
     </outputs>
 
     <help><![CDATA[
+    Apply a linear base quality recalibration model trained with the BaseRecalibrator tool.
     ]]></help>
 
     <expand macro="citations" />
