@@ -1,5 +1,5 @@
 <tool id="gatk4_sortsam" name="SortSam" version="@VERSION@.0" profile="17.09">
-    <description>SortSam (Picard) - Sorts a SAM or BAM file</description>
+    <description>- SortSam (Picard) - Sorts a SAM or BAM file</description>
 
     <macros>
         <import>macros.xml</import>

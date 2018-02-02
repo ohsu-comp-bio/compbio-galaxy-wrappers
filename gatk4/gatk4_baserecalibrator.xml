@@ -1,0 +1,33 @@
+<tool id="gatk4_baserecalibrator" name="BaseRecalibrator" version="@VERSION@.0" profile="17.09">
+    <description>- Generates recalibration table for Base Quality Score Recalibration (BQSR)</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ BaseRecalibrator
+        #include source=$bam_req_opts#
+        #include source=$gatk_req_opts#
+        --known-sites "${known_sites}"
+    ]]></command>
+
+    <inputs>
+        <expand macro="bam_req_params" />
+        <expand macro="gatk_req_params" />
+        <param name="known_sites" type="data" format="vcf" optional="true" label="Known Sites" help="One or more databases of known polymorphic sites used to exclude regions around known polymorphisms from analysis." />
+        <section name="baserecalibrator_opt" title="Other BaseRecalibrator Parameters" expanded="False" />
+    </inputs>
+
+    <outputs>
+        <expand macro="bam_req_params_output" />
+    </outputs>
+
+    <help><![CDATA[
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>

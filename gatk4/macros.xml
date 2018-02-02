@@ -87,8 +87,8 @@
     </xml>
 
     <template name="gatk_req_opts">
-        #if $gatk_common.reference_source.reference_source_selector != "history":
-        --reference ${gatk_common.reference_source.reference_sequence.fields.path}
+        #if $reference_source.reference_source_selector != "history":
+        --reference ${reference_source.reference_sequence.fields.path}
         #end if
     </template>
 

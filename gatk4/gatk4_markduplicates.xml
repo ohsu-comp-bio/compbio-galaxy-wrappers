@@ -1,5 +1,5 @@
 <tool id="gatk4_markduplicates" name="MarkDuplicates" version="@VERSION@.0" profile="17.09">
-    <description>MarkDuplicates (Picard) - Identifies duplicate reads</description>
+    <description>- MarkDuplicates (Picard) - Identifies duplicate reads</description>
 
     <macros>
         <import>macros.xml</import>
