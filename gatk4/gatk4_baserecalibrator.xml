@@ -8,10 +8,12 @@
     @VERSION_CMD@
 
     <command detect_errors="exit_code"><![CDATA[
+        ln -s "${known_sites}" "known.vcf" &&
+        gatk IndexFeatureFile --feature-file "known.vcf" &&
         @CMD_BEGIN@ BaseRecalibrator
         #include source=$bam_req_opts#
         #include source=$gatk_req_opts#
-        --known-sites "${known_sites}"
+        --known-sites "known.vcf"
     ]]></command>
 
     <inputs>
@@ -22,7 +24,7 @@
     </inputs>
 
     <outputs>
-        <expand macro="bam_req_params_output" />
+        <data format="gatk_recal" name="output" label="${tool.name} on ${on_string}: GATK_RECAL"/>
     </outputs>
 
     <help><![CDATA[
