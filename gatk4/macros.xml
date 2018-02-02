@@ -11,6 +11,25 @@
         <version_command>echo "@VERSION@"</version_command>
     </token>
 
+    <xml name="ref_sel">
+        <conditional name="reference_source">
+            <param name="reference_source_selector" type="select" label="Choose the source for the reference list">
+                <option value="cached">Locally cached</option>
+                <option value="history">History</option>
+            </param>
+            <when value="cached">
+                <param name="reference_sequence" type="select" label="Reference" help="Reference sequence file." >
+                    <options from_data_table="picard_indexes" >
+                        <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file" />
+                    </options>
+                </param>
+            </when>
+            <when value="history">
+                <param name="reference_sequence" type="data" format="fasta" label="Reference" help="Reference sequence file." />
+            </when>
+        </conditional>
+    </xml>
+
     <template name="bam_req_opts">
         -I ${input}
         -O ${output}
@@ -50,24 +69,7 @@
             <param name="create_md5_file" type="boolean" label="Create MD5?" checked="false" help="Whether to create an MD5 digest for any BAM or FASTQ files created." />
             <param name="ga4gh_client_secrets" type="data" format="json" optional="true" label="GA4GH Client Secrets" help="Google Genomics API client_secrets.json file." />
             <param name="max_records_in_ram" type="integer" size="10" value="500000" min="1" label="Max Records in RAM" help="When writing files that need to be sorted, this will specify the number of records stored in RAM before spilling to disk. Increasing this number reduces the number of file handles needed to sort the file, and increases the amount of RAM needed." />
-
-            <conditional name="reference_source">
-                <param name="reference_source_selector" type="select" label="Choose the source for the reference list">
-                    <option value="cached">Locally cached</option>
-                    <option value="history">History</option>
-                </param>
-                <when value="cached">
-                    <param name="reference_sequence" type="select" label="Reference" help="Reference sequence file." >
-                        <options from_data_table="picard_indexes" >
-                            <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file" />
-                        </options>
-                    </param>
-                </when>
-                <when value="history">
-                    <param name="reference_sequence" type="data" format="fasta" label="Reference" help="Reference sequence file." />
-                </when>
-            </conditional>
-
+            <expand macro="ref_sel" />
             <param name="use_jdk_deflater" type="boolean" label="Use JDK Deflater?" checked="false" help="Use the JDK Deflater instead of the Intel Deflater for writing compressed output." />
             <param name="use_jdk_inflater" type="boolean" label="Use JDK Inflater?" checked="false" help="Use the JDK Inflater instead of the Intel Inflater for reading compressed input." />
             <param name="validation_stringency" type="select" label="Validation Stringency" help="Validation stringency for all SAM files read by this program.  Setting stringency to SILENT can improve performance when processing a BAM file in which variable-length data (read, qualities, tags) do not otherwise need to be decoded.">
@@ -82,6 +84,16 @@
                 <option value="DEBUG">DEBUG</option>
             </param>
         </section>
+    </xml>
+
+    <template name="gatk_req_opts">
+        #if $gatk_common.reference_source.reference_source_selector != "history":
+        --reference ${gatk_common.reference_source.reference_sequence.fields.path}
+        #end if
+    </template>
+
+    <xml name="gatk_req_params">
+        <expand macro="ref_sel" />
     </xml>
 
     <xml name="citations">
