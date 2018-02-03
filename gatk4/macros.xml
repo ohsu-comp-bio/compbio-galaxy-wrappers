@@ -96,6 +96,16 @@
         <expand macro="ref_sel" />
     </xml>
 
+    <template name="gatk_ival_opts">
+        #for $value, $interval in enumerate($intervals):
+            --intervals ${value}.interval_list
+        #end for
+    </template>
+
+    <xml name="gatk_opt_params">
+        <param name="intervals" type="data" format="gatk_interval" multiple="true" optional="true" label="Intervals" help="One or more genomic intervals over which to operate." />
+    </xml>
+
     <xml name="citations">
         <citations>
             <citation type="doi">10.1101/gr.107524.110</citation>

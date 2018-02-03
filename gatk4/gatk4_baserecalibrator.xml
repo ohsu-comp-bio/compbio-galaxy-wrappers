@@ -8,18 +8,24 @@
     @VERSION_CMD@
 
     <command detect_errors="exit_code"><![CDATA[
-        ln -s "${known_sites}" "known.vcf" &&
-        gatk IndexFeatureFile --feature-file "known.vcf" &&
+        ln -s ${input} input.bam &&
+        samtools index input.bam &&
+        #for $value, $interval in enumerate($intervals):
+            ln -s ${interval} ${value}.interval_list &&
+        #end for
         @CMD_BEGIN@ BaseRecalibrator
-        #include source=$bam_req_opts#
+        -I input.bam
+        -O ${output}
         #include source=$gatk_req_opts#
-        --known-sites "known.vcf"
+        --known-sites "${known_sites}"
+        #include source=$gatk_ival_opts#
     ]]></command>
 
     <inputs>
         <expand macro="bam_req_params" />
         <expand macro="gatk_req_params" />
-        <param name="known_sites" type="data" format="vcf" optional="true" label="Known Sites" help="One or more databases of known polymorphic sites used to exclude regions around known polymorphisms from analysis." />
+        <param name="known_sites" type="data" format="vcf,vcf_bgzip" optional="true" label="Known Sites" help="One or more databases of known polymorphic sites used to exclude regions around known polymorphisms from analysis." />
+        <expand macro="gatk_opt_params" />
         <section name="baserecalibrator_opt" title="Other BaseRecalibrator Parameters" expanded="False" />
     </inputs>
 

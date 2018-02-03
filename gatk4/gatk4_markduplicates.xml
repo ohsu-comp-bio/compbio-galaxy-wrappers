@@ -9,10 +9,13 @@
 
     <command detect_errors="exit_code"><![CDATA[
         @CMD_BEGIN@ MarkDuplicates
-        #include source=$bam_req_opts#
+        #for $input in $inputs:
+            -I "${input}"
+        #end for
+        -O ${output}
         --METRICS_FILE "${metrics_file}"
         #if $markduplicates_opt.assume_sort_order:
-        --ASSUME_SORT_ORDER ${markduplicates_opt.assume_sort_order}
+            --ASSUME_SORT_ORDER ${markduplicates_opt.assume_sort_order}
         #end if
         --DUPLICATE_SCORING_STRATEGY "${markduplicates_opt.duplicate_scoring_strategy}"
         --REMOVE_DUPLICATES "${markduplicates_opt.remove_duplicates}"
@@ -22,7 +25,7 @@
     ]]></command>
 
     <inputs>
-        <expand macro="bam_req_params" />
+        <param name="inputs" type="data_collection" collection_type="list" label="Input File(s)" format="bam" help="Input file(s) to be deduplicated." />
         <section name="markduplicates_opt" title="Other MarkDuplicates Parameters" expanded="False">
             <param name="assume_sort_order" type="select" label="Assume Sort Order" help="If not null, assume that the input file has this order even if the header says otherwise." >
                 <option value="unsorted" selected="true">UNSORTED</option>
