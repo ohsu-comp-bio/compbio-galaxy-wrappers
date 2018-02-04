@@ -25,11 +25,7 @@ def parseProbeQC(probeqc_file, probes):
             if "TOTAL" not in line:
                 line = line.rstrip('\n').split('\t')
                 chrom = sex_chrom_switch(line[0])
-                # The "+1" will be removed after fixing templates to correct coordinates.
-                # RIGHT
                 start = int(line[1])
-                # WRONG
-#                start = int(line[1])+1
                 stop = line[2]
                 avgd = line[5].split('.')[0]
         
@@ -70,10 +66,18 @@ def parse_cnv_amplicons(handle_amps):
     return cnv_amps
 
 
+def remove_numeric(sample_id):
+    """
+    Remove leading numeric characters, the CNV program doesn't like them.
+    """
+    return sample_id.lstrip('0123456789.- ')
+
+
 def convert_sample_id(sample_id):
     """
     Convert hyphens to dots in sample_id's.
     """
+    sample_id = remove_numeric(sample_id)
     new_sample_id = '.'.join(sample_id.split('-')) + '.tumor'
     return new_sample_id
 
