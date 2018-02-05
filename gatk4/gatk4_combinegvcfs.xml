@@ -1,0 +1,39 @@
+<tool id="gatk4_combinegvcfs" name="CombineGVCFs" version="@VERSION@.0" profile="17.09">
+    <description>Merges one or more HaplotypeCaller GVCF files into a single GVCF with appropriate annotations</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ CombineGVCFs
+        #for $input in $inputs:
+            -I "${input}"
+        #end for
+	-O ${output}
+        #include source=$gatk_req_opts#
+        ##include source=$gakt_common_opts#
+
+    ]]></command>
+
+    <inputs>
+        <param name="inputs" type="data_collection" collection_type="list" label="Input File(s)" format="vcf" help="Input GVCF file(s) to be combined." />
+        <expand macro="ref_sel"/>
+        <section name="combinegvcfs_opt" title="Optional CombineGVCFs Parameters" expanded="False">
+        </section>
+        <section name="combinegvcfs_advanced" title="Advanced CombineGVCFs Parameters" expanded="False">
+        </section>
+    </inputs>
+
+    <outputs>
+        <data format="vcf" name="output" label="${tool.name} on ${on_string}: CombineGVCFs"/>
+    </outputs>
+
+    <help><![CDATA[
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>

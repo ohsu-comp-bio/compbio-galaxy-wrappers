@@ -1,0 +1,41 @@
+<tool id="gatk4_mutect2" name="Mutect2" version="@VERSION@.0" profile="17.09">
+    <description>Call somatic SNVs and indels via local assembly of haplotypes</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code"><![CDATA[
+        ln -s ${input} input.bam &&
+        samtools index input.bam &&
+        @CMD_BEGIN@ Mutect2
+        -I input.bam
+        -O ${output}
+	--tumor-sample ${tumor_sample}
+        #include source=$gatk_req_opts#
+        ##include source=$gakt_common_opts#
+
+    ]]></command>
+
+    <inputs>
+        <expand macro="bam_req_params"/>
+	<param name="tumor_sample" type="text" label="BAM sample name of tumor"/>
+        <expand macro="ref_sel"/>
+        <section name="mutect2_opt" title="Optional Mutect2 Parameters" expanded="False">
+        </section>
+        <section name="mutect2_advanced" title="Advanced Mutect2 Parameters" expanded="False">
+        </section>
+    </inputs>
+
+    <outputs>
+        <data format="vcf" name="output" label="${tool.name} on ${on_string}: Mutect2"/>
+    </outputs>
+
+    <help><![CDATA[
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>
