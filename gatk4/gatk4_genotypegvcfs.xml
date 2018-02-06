@@ -9,15 +9,15 @@
 
     <command detect_errors="exit_code"><![CDATA[
         @CMD_BEGIN@ GenotypeGVCFs
-	-V ${vcf}
-	-O ${output}
+	    -V ${input}
+	    -O ${output}
         #include source=$gatk_req_opts#
         ##include source=$gakt_common_opts#
 
     ]]></command>
 
     <inputs>
-        <expand macro="bam_req_params"/>
+        <param name="input" type="data" format="vcf" label=" A gVCF file containing variants." help="Required." />
         <expand macro="ref_sel"/>
         <section name="genotypegvcfs_opt" title="Optional GenotypeGVCFs Parameters" expanded="False">
         </section>
@@ -26,7 +26,7 @@
     </inputs>
 
     <outputs>
-        <data format="vcf" name="output" label="${tool.name} on ${on_string}: GenotypeGVCFs"/>
+        <data format="vcf" name="output" label="${tool.name} on ${on_string}: VCF"/>
     </outputs>
 
     <help><![CDATA[

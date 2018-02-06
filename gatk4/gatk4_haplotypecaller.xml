@@ -8,27 +8,35 @@
     @VERSION_CMD@
 
     <command detect_errors="exit_code"><![CDATA[
-        ln -s ${input} input.bam &&
-        samtools index input.bam &&
+        #for $value, $interval in enumerate($intervals):
+            ln -s ${interval} ${value}.interval_list &&
+        #end for
         @CMD_BEGIN@ HaplotypeCaller
-	-I input.bam
-	-O ${output}
+	    -I ${input}
+	    -O ${output}
         #include source=$gatk_req_opts#
-        ##include source=$gakt_common_opts#
+        #include source=$gatk_ival_opts#
+        --emit-ref-confidence "${haplotypecaller_opt.emit_ref_confidence}"
 
     ]]></command>
 
     <inputs>
         <expand macro="bam_req_params"/>
         <expand macro="ref_sel"/>
+        <expand macro="gatk_opt_params"/>
         <section name="haplotypecaller_opt" title="Optional Haplotype Caller Parameters" expanded="False">
+            <param name="emit_ref_confidence" type="select" label="Reference Confidence Mode" help="Mode for emitting reference confidence scores.">
+                <option value="NONE" selected="true">NONE</option>
+                <option value="BP_RESOLUTION">BP_RESOLUTION</option>
+                <option value="GVCF">GVCF</option>
+            </param>
         </section>
         <section name="haplotypecaller_advanced" title="Advanced Haplotype Caller Parameters" expanded="False">
         </section>
     </inputs>
 
     <outputs>
-        <data format="vcf" name="output" label="${tool.name} on ${on_string}: HaplotypeCaller"/>
+        <data format="vcf" name="output" label="${tool.name} on ${on_string}: VCF"/>
     </outputs>
 
     <help><![CDATA[
