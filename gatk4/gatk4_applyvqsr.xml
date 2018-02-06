@@ -1,0 +1,35 @@
+<tool id="gatk4_applyvqsr" name="ApplyVQSR" version="@VERSION@.0" profile="17.09">
+    <description>- Apply a score cutoff to filter variants based on a recalibration table</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ ApplyVQSR
+        -V '${input}'
+        -O '${output}'
+        #include source=$gatk_req_opts#
+        --recal-file "${recal_file}"
+    ]]></command>
+
+    <inputs>
+        <param name="input" format="vcf" label="Input VCF" help="One or more VCF files containing variants." />
+        <expand macro="gatk_req_params" />
+        <param name="recal_file" type="data" format="gatk_recal" label="VQSR Recalibration File" help="The input recal file used by ApplyRecalibration." />
+        <section name="applybqsr_opt" title="Other ApplyBQSR Parameters" expanded="False" />
+    </inputs>
+
+    <outputs>
+       <data format="vcf" name="output" label="${tool.name} on ${on_string}: VCF"/>
+    </outputs>
+
+    <help><![CDATA[
+    Apply a linear base quality recalibration model trained with the BaseRecalibrator tool.
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>

@@ -1,0 +1,70 @@
+<tool id="gatk4_variantrecalibrator" name="VariantRecalibrator" version="@VERSION@.0" profile="17.09">
+    <description>- Build a recalibration model to score variant quality for filtering purposes</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ VariantRecalibrator
+	    -V ${input}
+	    -O ${output}
+	    --tranches-file '${tranches_file}'
+
+        #for $annot in str( $use_annotation ).split( ',' ):
+            --use-annotation $annot
+        #end for
+
+        --resource hapmap,known=false,training=true,truth=true,prior=15.0:${hapmap}
+        --resource omni,known=false,training=true,truth=true,prior=12.0:${omni}
+        --resource 1000G,known=false,training=true,truth=false,prior=10.0:${thou_g}
+        --resource dbsnp,known=true,training=false,truth=false,prior=2.0:${dbsnp}
+
+        --mode '${variantrecalibrator_opt.mode}'
+
+        #include source=$gatk_req_opts#
+
+    ]]></command>
+
+    <inputs>
+        <param name="input" type="data" format="vcf" label="Input VCF" optional="false" help="One or more VCF files containing variants." />
+        <param name="hapmap" type="data" format="vcf_bgzip" label="HapMap" help="HapMap Confident Calls" />
+        <param name="omni" type="data" format="vcf_bgzip" label="Omni" help="Omni Confident Calls" />
+        <param name="thou_g" type="data" format="vcf_bgzip" label="1000 Genomes" help="1000 Genomes Confident Calls" />
+        <param name="dbsnp" type="data" format="vcf_bgzip" label="dbSNP" help="dbSNP Confident Calls" />
+        <expand macro="gatk_req_params"/>
+        <param name="use_annotation" type="select" multiple="true" label="Annotation(s)" help="The names of the annotations which should used for calculations. This argument must be specified at least once." display="checkboxes">
+            <option value="QD">QD</option>
+            <option value="MQ">MQ (RMS Mapping Quality)</option>
+            <option value="MQRankSum">MQRankSum (Z-score From Wilcoxon rank sum test of Alt vs. Ref read mapping qualities)</option>
+            <option value="ReadPosRankSum">ReadPosRankSum (Z-score from Wilcoxon rank sum test of Alt vs. Ref read position bias)</option>
+            <option value="FS">FS (Phred-scaled p-value using Fisher's exact test to detect strand bias)</option>
+            <option value="SOR">SOR (Symmetric Odds Ratio of 2x2 contingency table to detect strand bias)</option>
+            <option value="DP">DP (Approximate read depth; some reads may have been filtered)</option>
+            <option value="InbreedingCoeff">InbreedingCoeff (Inbreeding coefficient as estimated from the genotype likelihoods per-sample when compared against the Hardy-Weinberg expectation)</option>
+        </param>
+        <section name="variantrecalibrator_opt" title="Optional VariantRecalibrator Parameters" expanded="False">
+            <param name="mode" type="select" label="Recalibration Mode" help="Recalibration mode to employ." >
+                <option value="SNP" selected="true">SNP</option>
+                <option value="INDEL">INDEL</option>
+                <option value="BOTH">BOTH</option>
+            </param>
+        </section>
+        <section name="variantrecalibrator_advanced" title="Advanced VariantRecalibrator Parameters" expanded="False">
+        </section>
+    </inputs>
+
+    <outputs>
+        <data format="gatk_recal" name="output" label="${tool.name} on ${on_string}: GATK_RECAL"/>
+        <data format="gatk_tranche" name="tranches_file" label="${tool.name} on ${on_string}: GATK_TRANCHE"/>
+    </outputs>
+
+    <help><![CDATA[
+    Build a recalibration model to score variant quality for filtering purposes.
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>
