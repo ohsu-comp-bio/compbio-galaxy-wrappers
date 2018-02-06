@@ -16,7 +16,7 @@
     ]]></command>
 
     <inputs>
-        <param name="input" format="vcf" label="Input VCF" help="One or more VCF files containing variants." />
+        <param name="input" type="data" format="vcf" label="Input VCF" help="One or more VCF files containing variants." />
         <expand macro="gatk_req_params" />
         <param name="recal_file" type="data" format="gatk_recal" label="VQSR Recalibration File" help="The input recal file used by ApplyRecalibration." />
         <section name="applybqsr_opt" title="Other ApplyBQSR Parameters" expanded="False" />

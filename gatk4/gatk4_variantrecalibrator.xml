@@ -17,10 +17,21 @@
             --use-annotation $annot
         #end for
 
-        --resource hapmap,known=false,training=true,truth=true,prior=15.0:${hapmap}
+        #if $hapmap:
+            --resource hapmap,known=false,training=true,truth=true,prior=15.0:${hapmap}
+        #end if
+        #if $omni:
         --resource omni,known=false,training=true,truth=true,prior=12.0:${omni}
+        #end if
+        #if $thou_g:
         --resource 1000G,known=false,training=true,truth=false,prior=10.0:${thou_g}
+        #end if
+        #if $dbsnp:
         --resource dbsnp,known=true,training=false,truth=false,prior=2.0:${dbsnp}
+        #end if
+        #if $mills:
+        --resource:mills,known=false,training=true,truth=true,prior=12.0:${mills}
+        #end if
 
         --mode '${variantrecalibrator_opt.mode}'
 
@@ -30,10 +41,11 @@
 
     <inputs>
         <param name="input" type="data" format="vcf" label="Input VCF" optional="false" help="One or more VCF files containing variants." />
-        <param name="hapmap" type="data" format="vcf_bgzip" label="HapMap" help="HapMap Confident Calls" />
-        <param name="omni" type="data" format="vcf_bgzip" label="Omni" help="Omni Confident Calls" />
-        <param name="thou_g" type="data" format="vcf_bgzip" label="1000 Genomes" help="1000 Genomes Confident Calls" />
-        <param name="dbsnp" type="data" format="vcf_bgzip" label="dbSNP" help="dbSNP Confident Calls" />
+        <param name="hapmap" type="data" format="vcf_bgzip" label="HapMap" optional="true" help="HapMap Confident Calls" />
+        <param name="omni" type="data" format="vcf_bgzip" label="Omni" optional="true" help="Omni Confident Calls" />
+        <param name="thou_g" type="data" format="vcf_bgzip" label="1000 Genomes" optional="true" help="1000 Genomes Confident Calls" />
+        <param name="dbsnp" type="data" format="vcf_bgzip" label="dbSNP" optional="true" help="dbSNP Confident Calls" />
+        <param name="mills" type="data" format="vcf_bgzip" label="Mills Indels" optional="true" help="Mills Confident Calls" />
         <expand macro="gatk_req_params"/>
         <param name="use_annotation" type="select" multiple="true" label="Annotation(s)" help="The names of the annotations which should used for calculations. This argument must be specified at least once." display="checkboxes">
             <option value="QD">QD</option>
