@@ -12,6 +12,7 @@
 	    -V ${input}
 	    -O ${output}
 	    --tranches-file '${tranches_file}'
+        --rscript-file '${rscript_file}'
 
         #for $annot in str( $use_annotation ).split( ',' ):
             --use-annotation $annot
@@ -71,6 +72,7 @@
     <outputs>
         <data format="gatk_recal" name="output" label="${tool.name} on ${on_string}: GATK_RECAL"/>
         <data format="gatk_tranche" name="tranches_file" label="${tool.name} on ${on_string}: GATK_TRANCHE"/>
+        <data format="rdata" name="rscript_file" label="${tool.name} on ${on_string}: RDATA"/>
     </outputs>
 
     <help><![CDATA[
