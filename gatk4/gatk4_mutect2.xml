@@ -22,9 +22,10 @@
             #for $normal_input in $supply_normal.normal_inputs:
                 -I "${normal_input}"
             #end for
-    	    --normal-sample "${normal_sample}"
+    	    --normal-sample "${supply_normal.normal_sample}"
         #end if
         -O ${output}
+        --native-pair-hmm-threads "\${GALAXY_SLOTS:-1}"
 
         #include source=$gatk_req_opts#
         #include source=$gatk_ival_opts#
