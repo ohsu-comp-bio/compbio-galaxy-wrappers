@@ -1,0 +1,74 @@
+<tool id="gatk4_collectmultiplemetrics" name="CollectMultipleMetrics" version="@VERSION@.0" profile="17.09">
+    <description>- Collect multiple classes of metrics</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ CollectMultipleMetrics
+        #include source=$bam_req_opts#
+        --DB_SNP '${dbsnp}'
+        --INTERVALS '${intervals}'
+        #for $prog in str( $programs ).split( ',' ):
+            --PROGRAM $prog
+        #end for
+        #include source=$bam_opt_opts#
+    ]]></command>
+
+    <inputs>
+        <expand macro="bam_req_params" />
+        <param name="intervals" type="data" format="gatk_interval" label="Interval List" help="An optional list of intervals to restrict analysis to. Only pertains to some of the PROGRAMs." />
+        <param name="dbsnp" type="data" format="vcf" label="dbSNP" help="VCF format dbSNP file, used to exclude regions around known polymorphisms from analysis by some PROGRAMs." />
+        <param name="programs" type="select" multiple="true" label="Metrics Program(s)" help="Set of metrics programs to apply during the pass through the SAM file.  This argument may be specified 0 or more times." >
+            <option value="CollectAlignmentSummaryMetrics" selected="true">CollectAlignmentSummaryMetrics</option>
+            <option value="CollectBaseDistributionByCycle" selected="true">CollectBaseDistributionByCycle</option>
+            <option value="CollectGcBiasMetrics">CollectGcBiasMetrics</option>
+            <option value="CollectInsertSizeMetrics" selected="true">CollectInsertSizeMetrics</option>
+            <option value="CollectSequencingArtifactMetrics">CollectSequencingArtifactMetrics</option>
+            <option value="CollectQualityYieldMetrics">CollectQualityYieldMetrics</option>
+            <option value="MeanQualityByCycle" selected="true">MeanQualityByCycle</option>
+            <option value="QualityScoreDistribution" selected="true">QualityScoreDistribution</option>
+            <option value="RnaSeqMetrics">RnaSeqMetrics</option>
+        </param>
+        <expand macro="bam_opt_params" />
+    </inputs>
+
+    <outputs>
+        <expand macro="bam_req_params_output" />
+    </outputs>
+
+    <help><![CDATA[
+    This tool sorts the input SAM or BAM file by coordinate, queryname (QNAME), or some other property of the SAM record.
+    The SortOrder of a SAM/BAM file is found in the SAM file header tag @HD in the field labeled SO.  For a coordinate
+    sorted SAM/BAM file, read alignments are sorted first by the reference sequence name (RNAME) field using the reference
+    sequence dictionary (@SQ tag).  Alignments within these subgroups are secondarily sorted using the left-most mapping
+    position of the read (POS).  Subsequent to this sorting scheme, alignments are listed arbitrarily.  For queryname-sorted
+    alignments, all alignments are grouped using the queryname field but the alignments are not necessarily sorted within
+    these groups.  Reads having the same queryname are derived from the same template.
+
+    queryname: (Sorts according to the readname. This will place read-pairs and other derived
+    reads (secondary and supplementary) adjacent to each other. Note that the readnames are
+    compared lexicographically, even though they may include numbers. In paired reads, Read1
+    sorts before Read2.)
+
+    coordinate: (Sorts primarily according to the SEQ and POS fields of the record. The
+    sequence will sorted according to the order in the sequence dictionary, taken from from
+    the header of the file. Within each reference sequence, the reads are sorted by the
+    position. Unmapped reads whose mates are mapped will be placed near their mates. Unmapped
+    read-pairs are placed after all the mapped reads and their mates.)
+
+    duplicate: (Sorts the reads so that duplicates reads are adjacent. Required that the
+    mate-cigar (MC) tag is present. The resulting will be sorted by library, unclipped 5-prime
+    position, orientation, and mate's unclipped 5-prime position.)
+
+    Usage example: gatk SortSam I=input.bam O=sorted.bam SORT_ORDER=coordinate
+
+    @PICARD_HELP@
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>
