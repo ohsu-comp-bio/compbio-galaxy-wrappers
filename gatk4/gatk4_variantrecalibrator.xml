@@ -12,7 +12,6 @@
 	    -V ${input}
 	    -O ${output}
 	    --tranches-file '${tranches_file}'
-        --rscript-file '${rscript_file}'
 
         #for $annot in str( $use_annotation ).split( ',' ):
             --use-annotation $annot
@@ -31,7 +30,7 @@
         --resource dbsnp,known=true,training=false,truth=false,prior=2.0:${dbsnp}
         #end if
         #if $mills:
-        --resource:mills,known=false,training=true,truth=true,prior=12.0:${mills}
+        --resource mills,known=false,training=true,truth=true,prior=12.0:${mills}
         #end if
 
         --mode '${variantrecalibrator_opt.mode}'
@@ -72,7 +71,6 @@
     <outputs>
         <data format="gatk_recal" name="output" label="${tool.name} on ${on_string}: GATK_RECAL"/>
         <data format="gatk_tranche" name="tranches_file" label="${tool.name} on ${on_string}: GATK_TRANCHE"/>
-        <data format="rdata" name="rscript_file" label="${tool.name} on ${on_string}: RDATA"/>
     </outputs>
 
     <help><![CDATA[
