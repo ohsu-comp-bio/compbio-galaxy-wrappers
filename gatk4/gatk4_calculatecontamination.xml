@@ -1,0 +1,38 @@
+<tool id="gatk4_calculatecontamination" name="CalculateContamination" version="@VERSION@.0" profile="17.09">
+    <description>- Calculate the fraction of reads coming from cross-sample contamination.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ CalculateContamination
+        -I "${input}"
+        -O "${output}"
+        #if $calculatecontamination_opt.matched_normal:
+            --matched-normal "${calculatecontamination_opt.matched_normal}"
+        #end if
+
+    ]]></command>
+
+    <inputs>
+	    <param name="input" type="data" format="tabular" optional="false" label="Input Table" help="The input table."/>
+        <section name="calculatecontamination_opt" title="Optional CalculateContamination Parameters" expanded="False">
+    	    <param name="matched_normal" type="data" format="tabular" optional="true" label="Normal Input Table" help="The matched normal input table."/>
+        </section>
+        <section name="calculatecontamination_advanced" title="Advanced CalculateContamination Parameters" expanded="False" />
+    </inputs>
+
+    <outputs>
+        <data format="tabular" name="output" label="${tool.name} on ${on_string}: TABLE"/>
+    </outputs>
+
+    <help><![CDATA[
+    Calculate the fraction of reads coming from cross-sample contamination.
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>

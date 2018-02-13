@@ -1,0 +1,50 @@
+<tool id="gatk4_getpileupsummaries" name="GetPileupSummaries" version="@VERSION@.0" profile="17.09">
+    <description>- Tabulates pileup metrics for inferring contamination.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code"><![CDATA[
+        #for $value, $interval in enumerate($intervals):
+            ln -s ${interval} ${value}.interval_list &&
+        #end for
+        @CMD_BEGIN@ GetPileupSummaries
+
+        #for $tumor_input in $tumor_inputs:
+            -I "${tumor_input}"
+        #end for
+
+        #for $variant in $variants:
+            -V "${variant}"
+        #end for
+
+        -O "gps.table"
+
+        #include source=$gatk_req_opts#
+        #include source=$gatk_ival_opts#
+
+    ]]></command>
+
+    <inputs>
+	    <param name="tumor_inputs" type="data" format="sam,bam" optional="false" label="Tumor Input" multiple="true" help="BAM/SAM/CRAM file containing reads" />
+        <param name="variants" type="data" format="vcf,vcf_bgzip" optional="false" label="Variant File(s)" multiple="true" help="One or more VCF files containing variants." />
+        <expand macro="ref_sel" />
+        <expand macro="gatk_opt_params" />
+        <section name="getpileupsummaries_opt" title="Optional GetPileupSummaries Parameters" expanded="False" />
+        <section name="getpileupsummaries_advanced" title="Advanced GetPileupSummaries Parameters" expanded="False" />
+    </inputs>
+
+    <outputs>
+        <data format="tabular" name="output" label="${tool.name} on ${on_string}: TABLE" from_work_dir="./gps.table" />
+    </outputs>
+
+    <help><![CDATA[
+    Tabulates pileup metrics for inferring contamination.
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>
