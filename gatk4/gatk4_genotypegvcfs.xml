@@ -1,5 +1,5 @@
 <tool id="gatk4_genotypegvcfs" name="GenotypeGVCFs" version="@VERSION@.0" profile="17.09">
-    <description>Perform joint genotyping on one or more samples pre-called with HaplotypeCaller</description>
+    <description>- Perform joint genotyping on one or more samples pre-called with HaplotypeCaller</description>
 
     <macros>
         <import>macros.xml</import>
@@ -7,22 +7,22 @@
 
     @VERSION_CMD@
 
-    <command detect_errors="exit_code"><![CDATA[
+    <command detect_errors="exit_code">
+        #include source=$gatk_ival_prep#
         @CMD_BEGIN@ GenotypeGVCFs
+        <![CDATA[
 	    -V ${input}
 	    -O ${output}
         #include source=$gatk_req_opts#
-        ##include source=$gakt_common_opts#
-
+        #include source=$gatk_ival_opts#
     ]]></command>
 
     <inputs>
         <param name="input" type="data" format="vcf" label=" A gVCF file containing variants." help="Required." />
-        <expand macro="ref_sel"/>
-        <section name="genotypegvcfs_opt" title="Optional GenotypeGVCFs Parameters" expanded="False">
-        </section>
-        <section name="genotypegvcfs_advanced" title="Advanced GenotypeGVCFs Parameters" expanded="False">
-        </section>
+        <expand macro="gatk_req_params" />
+        <expand macro="gatk_opt_params" />
+        <section name="genotypegvcfs_opt" title="Optional GenotypeGVCFs Parameters" expanded="False" />
+        <section name="genotypegvcfs_advanced" title="Advanced GenotypeGVCFs Parameters" expanded="False" />
     </inputs>
 
     <outputs>
@@ -30,6 +30,8 @@
     </outputs>
 
     <help><![CDATA[
+    Perform joint genotyping on a single-sample GVCF from HaplotypeCaller or a multi-sample GVCF from CombineGVCFs or
+    GenomicsDBImport.
     ]]></help>
 
     <expand macro="citations" />

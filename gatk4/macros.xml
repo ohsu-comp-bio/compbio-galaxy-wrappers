@@ -96,9 +96,19 @@
         <expand macro="ref_sel" />
     </xml>
 
+    <template name="gatk_ival_prep"><![CDATA[
+        #for $value, $interval in enumerate($intervals):
+            #if $interval:
+                ln -s ${interval} ${value}.interval_list &&
+            #end if
+        #end for
+    ]]></template>
+
     <template name="gatk_ival_opts">
         #for $value, $interval in enumerate($intervals):
-            --intervals ${value}.interval_list
+            #if $interval:
+                --intervals ${value}.interval_list
+            #end if
         #end for
     </template>
 
