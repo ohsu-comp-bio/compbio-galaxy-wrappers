@@ -1,0 +1,39 @@
+<tool id="gatk4_selectvariants" name="SelectVariants" version="@VERSION@.0" profile="17.09">
+    <description>- Select a subset of variants from a VCF file</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ SelectVariants
+        -V "${input}"
+        -O "${output}"
+        --exclude-filtered "${selectvariants_opt.exclude_filtered}"
+        #include source=$gatk_req_opts#
+    ]]></command>
+
+    <inputs>
+        <param name="input" type="data" format="vcf,vcf_bgzip" label="Input Variants" help="A VCF file containing variants." />
+        <expand macro="gatk_req_params" />
+        <section name="selectvariants_opt" title="Other SelectVariants Parameters" expanded="False" >
+            <param name="exclude_filtered" type="boolean" checked="false" label="Exclude Filtered?" help="Don't include filtered sites" />
+        </section>
+        <section name="selectvariants_advanced" title="Advanced SelectVariants Parameters" expanded="False" />
+    </inputs>
+
+    <outputs>
+        <data format="vcf" name="output" label="${tool.name} on ${on_string}: VCF"/>
+    </outputs>
+
+    <help><![CDATA[
+    This tool makes it possible to select a subset of variants based on various criteria in order to facilitate certain
+    analyses. Examples include comparing and contrasting cases vs. controls, extracting variant or non-variant loci that
+    meet certain requirements, or troubleshooting some unexpected results, to name a few.
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>
