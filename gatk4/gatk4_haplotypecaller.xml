@@ -7,10 +7,9 @@
 
     @VERSION_CMD@
 
-    <command detect_errors="exit_code"><![CDATA[
-        #for $value, $interval in enumerate($intervals):
-            ln -s ${interval} ${value}.interval_list &&
-        #end for
+    <command detect_errors="exit_code">
+        #include source=$gatk_ival_prep#
+    <![CDATA[
         @CMD_BEGIN@ HaplotypeCaller
 	    -I ${input}
 	    -O ${output}
@@ -18,6 +17,12 @@
         #include source=$gatk_ival_opts#
         --emit-ref-confidence "${haplotypecaller_opt.emit_ref_confidence}"
 
+        ## Output options
+        #if $output_opt.activity_profile_out:
+            --activity-profile-out ${activity_profile_output}
+        #end if
+        --add-output-sam-program-record "${output_opt.add_output_sam_program_record}"
+        --add-output-vcf-command-line "${output_opt.add_output_vcf_command_line}"
     ]]></command>
 
     <inputs>
@@ -31,12 +36,20 @@
                 <option value="GVCF">GVCF</option>
             </param>
         </section>
-        <section name="haplotypecaller_advanced" title="Advanced Haplotype Caller Parameters" expanded="False">
+        <section name="output_opt" title="Output Options" expanded="false">
+            <param name="activity_profile_out" type="boolean" checked="false" label="Activity Profile Output?" help="Output the raw activity profile results in IGV format." />
+            <param name="add_output_sam_program_record" type="boolean" checked="true" label="PG Tag in BAM Output?" help="If true, adds a PG tag to created SAM/BAM/CRAM files." />
+            <param name="add_output_vcf_command_line" type="boolean" checked="true" label="Command Line Header in VCF Output?" help="If true, adds a command line header line to created VCF files." />
         </section>
+        <section name="haplotypecaller_advanced" title="Advanced Haplotype Caller Parameters" expanded="False" />
     </inputs>
 
     <outputs>
         <data format="vcf" name="output" label="${tool.name} on ${on_string}: VCF"/>
+        <data format="tsv" name="activity_profile_output" label="${tool.name} on ${on_string}: ACTIVITY PROFILE TSV" >
+            <filter>output_opt['activity_profile_out']</filter>
+        </data>
+
     </outputs>
 
     <help><![CDATA[
