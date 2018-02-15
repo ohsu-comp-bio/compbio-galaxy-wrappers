@@ -3,6 +3,7 @@
 
     <macros>
         <import>macros.xml</import>
+        <import>gatk4_annotation_macros.xml</import>
     </macros>
 
     @VERSION_CMD@
@@ -13,9 +14,21 @@
         @CMD_BEGIN@ HaplotypeCaller
 	    -I ${input}
 	    -O ${output}
+
+	    ## Parallel processing options
+	    --native-pair-hmm-threads "\${GALAXY_SLOTS:-1}"
+	    --native-pair-hmm-use-double-precision "false"
+
         #include source=$gatk_req_opts#
         #include source=$gatk_ival_opts#
         --emit-ref-confidence "${haplotypecaller_opt.emit_ref_confidence}"
+        --genotyping-mode "${haplotypecaller_opt.geno_mode_sel.genotyping_mode}"
+
+        #if str( $haplotypecaller_opt.geno_mode_sel.genotyping_mode ) == "GENOTYPE_GIVEN_ALLELES":
+            #if $haplotypecaller_opt.geno_mode_sel.alleles:
+                --alleles "${haplotypecaller_opt.geno_mode_sel.alleles}"
+            #end if
+        #end if
 
         ## Output options
         #if $output_opt.activity_profile_out:
@@ -23,31 +36,96 @@
         #end if
         --add-output-sam-program-record "${output_opt.add_output_sam_program_record}"
         --add-output-vcf-command-line "${output_opt.add_output_vcf_command_line}"
+        --annotate-with-num-discovered-alleles "${output_opt.annotate_with_num_discovered_alleles}"
+        #include source=$annotation_list_opts#
+        #include source=$annotation_group_list_opts#
+        #if $output_opt.assembly_region_out:
+            --assembly-region-out ${assembly_region_output}
+        #end if
+        #if $output_opt.graph_output:
+            --graph-output ${graph_output}
+        #end if
+        --output-mode "${output_opt.output_mode}"
+
+        ## Algorithmic options
+        --base-quality-score-threshold "${algorithm_params.base_quality_score_threshold}"
+        --contamination-fraction-to-filter "${algorithm_params.contamination_fraction_to_filter}"
+        --heterozygosity "${algorithm_params.heterozygosity}"
+        --heterozygosity-stdev "${algorithm_params.heterozygosity_stdev}"
+        --indel-heterozygosity "${algorithm_params.indel_heterozygosity}"
+        --max-reads-per-alignment-start "${algorithm_params.max_reads_per_alignment_start}"
+        --min-base-quality-score "${algorithm_params.min_base_quality_score}"
+
+        ## Resource file inputs
+        #if $resource_inputs.dbsnp:
+            --dbsnp "${resource_inputs.dbsnp}"
+        #end if
+
     ]]></command>
 
     <inputs>
         <expand macro="bam_req_params"/>
         <expand macro="ref_sel"/>
         <expand macro="gatk_opt_params"/>
+
         <section name="haplotypecaller_opt" title="Optional Haplotype Caller Parameters" expanded="False">
             <param name="emit_ref_confidence" type="select" label="Reference Confidence Mode" help="Mode for emitting reference confidence scores.">
                 <option value="NONE" selected="true">NONE</option>
                 <option value="BP_RESOLUTION">BP_RESOLUTION</option>
                 <option value="GVCF">GVCF</option>
             </param>
+            <conditional name="geno_mode_sel">
+                <param name="genotyping_mode" type="select" label="Genotyping Mode" help="Specifies how to determine the alternate alleles to use for genotyping.">
+                    <option value="DISCOVERY" selected="true">DISCOVERY</option>
+                    <option value="GENOTYPE_GIVEN_ALLELES">GENOTYPE_GIVEN_ALLELES</option>
+                </param>
+                <when value="GENOTYPE_GIVEN_ALLELES">
+                    <param name="alleles" type="data" format="vcf,vcf_bgzip" optional="true" label="Defined Allele VCF" help="The set of alleles at which to genotype when --genotyping_mode is GENOTYPE_GIVEN_ALLELES." />
+                </when>
+            </conditional>
         </section>
+
         <section name="output_opt" title="Output Options" expanded="false">
             <param name="activity_profile_out" type="boolean" checked="false" label="Activity Profile Output?" help="Output the raw activity profile results in IGV format." />
             <param name="add_output_sam_program_record" type="boolean" checked="true" label="PG Tag in BAM Output?" help="If true, adds a PG tag to created SAM/BAM/CRAM files." />
             <param name="add_output_vcf_command_line" type="boolean" checked="true" label="Command Line Header in VCF Output?" help="If true, adds a command line header line to created VCF files." />
+            <param name="annotate_with_num_discovered_alleles" type="boolean" checked="false" label="Alternate Alleles Annotation?" help="If provided, we will annotate records with the number of alternate alleles that were discovered (but not necessarily genotyped) at a given site." />
+            <expand macro="annotation_list_params"/>
+            <expand macro="annotation_group_list_params"/>
+            <param name="assembly_region_out" type="boolean" checked="false" label="Assembly Region Output?" help="Output the assembly region to this IGV formatted file." />
+            <param name="graph_output" type="boolean" checked="false" label="Graph Output?" help="Write debug assembly graph information to this file." />
+            <param name="output_mode" type="select" label="Output Mode" help="Specifies which type of calls we should output." >
+                <option value="EMIT_VARIANTS_ONLY" selected="true">EMIT_VARIANTS_ONLY</option>
+                <option value="EMIT_ALL_CONFIDENT_SITES">EMIT_ALL_CONFIDENT_SITES</option>
+                <option value="EMIT_ALL_SITES">EMIT_ALL_SITES</option>
+            </param>
         </section>
-        <section name="haplotypecaller_advanced" title="Advanced Haplotype Caller Parameters" expanded="False" />
+
+        <section name="algorithm_params" title="Algorithmic Parameters" expanded="false" >
+            <param name="base_quality_score_threshold" type="integer" value="18" min="0" label="Base Quality Score Threshold" help="Base qualities below this threshold will be reduced to the minimum (6)." />
+            <param name="contamination_fraction_to_filter" type="float" value="0.0" min="0.0" label="Contamination Fraction" help="Fraction of contamination in sequencing data (for all samples) to aggressively remove." />
+            <param name="heterozygosity" type="float" value="0.001" min="0.0" label="Heterozygosity" help="Heterozygosity value used to compute prior likelihoods for any locus.  See the GATKDocs for full details on the meaning of this population genetics concept." />
+            <param name="heterozygosity_stdev" type="float" value="0.01" min="0.0" label="Heterozygosity Standard Deviation" help="Standard deviation of eterozygosity for SNP and indel calling." />
+            <param name="indel_heterozygosity" type="float" value="0.000125" min="0.0" label="Indel Heterozygosity" help="Heterozygosity for indel calling.  See the GATKDocs for heterozygosity for full details on the meaning of this population genetics concept." />
+            <param name="max_reads_per_alignment_start" type="integer" value="50" min="0" label="Max Reads Per Alignment Start" help="Maximum number of reads to retain per alignment start position. Reads above this threshold will be downsampled. Set to 0 to disable." />
+            <param name="min_base_quality_score" type="integer" value="10" min="0" label="Min Base Quality Score" help="Minimum base quality required to consider a base for calling." />
+        </section>
+
+        <section name="resource_inputs" title="Resource File Input Options" expanded="false" >
+            <param name="dbsnp" type="data" format="vcf,vcf_bgzip" optional="true" label="dbSNP" help="dbSNP file." />
+        </section>
     </inputs>
 
     <outputs>
         <data format="vcf" name="output" label="${tool.name} on ${on_string}: VCF"/>
         <data format="tsv" name="activity_profile_output" label="${tool.name} on ${on_string}: ACTIVITY PROFILE TSV" >
             <filter>output_opt['activity_profile_out']</filter>
+        </data>
+        <data format="tsv" name="assembly_region_output" label="${tool.name} on ${on_string}: ASSEMBLY REGION TSV" >
+            <filter>output_opt['assembly_region_out']</filter>
+        </data>
+        <data format="tsv" name="graph_output" label="${tool.name} on ${on_string}: GRAPH TSV" >
+            <filter>output_opt['graph_output']</filter>
         </data>
 
     </outputs>

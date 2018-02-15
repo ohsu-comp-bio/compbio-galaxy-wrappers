@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<macros>
+
+    <template name="annotation_list_opts">
+        #for $annot in str( $output_opt.annotations ).split( ',' ):
+            #if $output_opt.annotations:
+                --annotation $annot
+            #end if
+        #end for
+    </template>
+
+    <template name="annotation_group_list_opts">
+        #for $annotgr in str( $output_opt.annotation_groups ).split( ',' ):
+            #if $output_opt.annotation_groups:
+                --annotation-group $annotgr
+            #end if
+        #end for
+    </template>
+
+    <xml name="annotation_list_params">
+        <param name="annotations" type="select" multiple="true" label="Annotation(s)" help="One or more specific annotations to add to variant calls." >
+            <option value="AS_BaseQualityRankSumTest">AS_BaseQualityRankSumTest</option>
+            <option value="AS_FisherStrand">AS_FisherStrand</option>
+            <option value="AS_InbreedingCoeff">AS_InbreedingCoeff</option>
+            <option value="AS_MappingQualityRankSumTest">AS_MappingQualityRankSumTest</option>
+            <option value="AS_QualByDepth">AS_QualByDepth</option>
+            <option value="AS_RMSMappingQuality">AS_RMSMappingQuality</option>
+            <option value="AS_ReadPosRankSumTest">AS_ReadPosRankSumTest</option>
+            <option value="AS_StrandOddsRatio">AS_StrandOddsRatio</option>
+            <option value="BaseQuality">BaseQuality</option>
+            <option value="BaseQualityRankSumTest">BaseQualityRankSumTest</option>
+            <option value="ChromosomeCounts">ChromosomeCounts</option>
+            <option value="ClippingRankSumTest">ClippingRankSumTest</option>
+            <option value="Coverage">Coverage</option>
+            <option value="DepthPerAlleleBySample">DepthPerAlleleBySample</option>
+            <option value="DepthPerSampleHC">DepthPerSampleHC</option>
+            <option value="ExcessHet">ExcessHet</option>
+            <option value="FisherStrand">FisherStrand</option>
+            <option value="FragmentLength">FragmentLength</option>
+            <option value="GenotypeSummaries">GenotypeSummaries</option>
+            <option value="InbreedingCoeff">InbreedingCoeff</option>
+            <option value="LikelihoodRankSumTest">LikelihoodRankSumTest</option>
+            <option value="MappingQuality">MappingQuality</option>
+            <option value="MappingQualityRankSumTest">MappingQualityRankSumTest</option>
+            <option value="MappingQualityZero">MappingQualityZero</option>
+            <option value="OxoGReadCounts">OxoGReadCounts</option>
+            <option value="PossibleDeNovo">PossibleDeNovo</option>
+            <option value="QualByDepth">QualByDepth</option>
+            <option value="RMSMappingQuality">RMSMappingQuality</option>
+            <option value="ReadPosRankSumTest">ReadPosRankSumTest</option>
+            <option value="ReadPosition">ReadPosition</option>
+            <option value="ReferenceBases">ReferenceBases</option>
+            <option value="SampleList">SampleList</option>
+            <option value="StrandArtifact">StrandArtifact</option>
+            <option value="StrandBiasBySample">StrandBiasBySample</option>
+            <option value="StrandOddsRatio">StrandOddsRatio</option>
+            <option value="TandemRepeat">TandemRepeat</option>
+            <option value="UniqueAltReadCount">UniqueAltReadCount</option>
+        </param>
+    </xml>
+
+    <xml name="annotation_group_list_params">
+        <param name="annotation_groups" type="select" multiple="true" label="Annotation Group(s)" help="One or more groups of annotations to apply to variant calls." >
+            <option value="StandardAnnotation" selected="true">StandardAnnotation</option>
+            <option value="StandardHCAnnotation" selected="true">StandardHCAnnotation</option>
+        </param>
+    </xml>
+
+
+</macros>
