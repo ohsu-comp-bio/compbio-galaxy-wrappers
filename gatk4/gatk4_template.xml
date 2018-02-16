@@ -1,0 +1,67 @@
+<tool id="gatk4_" name="" version="@VERSION@.0" profile="17.09">
+    <description>- </description>
+
+    <macros>
+        <import>macros.xml</import>
+        <import>gatk4_annotation_macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code">
+        #include source=$gatk_ival_prep#
+    <![CDATA[
+        ## Wish this could be tool.name!
+        @CMD_BEGIN@
+
+        #include source=$bam_req_opts#
+        #include source=$gatk_req_opts#
+        #include source=$gatk_ival_opts#
+
+	    ## Parallel processing options, move these to macro
+	    --native-pair-hmm-threads "\${GALAXY_SLOTS:-1}"
+	    --native-pair-hmm-use-double-precision "false"
+
+        ## Algorithmic options
+
+        ## Output options
+
+        ## Program options
+
+        ## Resource file inputs
+
+    ]]></command>
+
+    <inputs>
+        <expand macro="bam_req_params"/>
+        <expand macro="gatk_req_params"/>
+        <expand macro="gatk_ival_params"/>
+
+        <section name="algorithm_params" title="Algorithmic Parameters" expanded="false" >
+        </section>
+
+        <section name="output_opt" title="Output Options" expanded="false">
+            <expand macro="read_filter_params"/>
+        </section>
+
+        <section name="program_opt" title="Program Options" expanded="false">
+        </section>
+
+        <section name="resource_inputs" title="Resource File Input Options" expanded="false" >
+        </section>
+
+        <expand macro="gatk_common_params" />
+
+
+    </inputs>
+
+    <outputs>
+        <data format="" name="output" label="${tool.name} on ${on_string}: "/>
+    </outputs>
+
+    <help><![CDATA[
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>
