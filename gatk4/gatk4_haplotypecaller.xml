@@ -1,5 +1,5 @@
 <tool id="gatk4_haplotypecaller" name="HaplotypeCaller" version="@VERSION@.0" profile="17.09">
-    <description>HaplotypeCaller - Call germline SNPs and indels via local re-assembly of haplotypes</description>
+    <description>- Call germline SNPs and indels via local re-assembly of haplotypes</description>
 
     <macros>
         <import>macros.xml</import>
@@ -11,24 +11,84 @@
     <command detect_errors="exit_code">
         #include source=$gatk_ival_prep#
     <![CDATA[
+        ## Wish this could be tool.name!
         @CMD_BEGIN@ HaplotypeCaller
-	    -I ${input}
-	    -O ${output}
 
-	    ## Parallel processing options
+        #include source=$bam_req_opts#
+        #include source=$gatk_req_opts#
+        #include source=$gatk_ival_opts#
+
+	    ## Parallel processing options, move these to macro
 	    --native-pair-hmm-threads "\${GALAXY_SLOTS:-1}"
 	    --native-pair-hmm-use-double-precision "false"
 
-        #include source=$gatk_req_opts#
-        #include source=$gatk_ival_opts#
-        --emit-ref-confidence "${haplotypecaller_opt.emit_ref_confidence}"
-        --genotyping-mode "${haplotypecaller_opt.geno_mode_sel.genotyping_mode}"
-
-        #if str( $haplotypecaller_opt.geno_mode_sel.genotyping_mode ) == "GENOTYPE_GIVEN_ALLELES":
-            #if $haplotypecaller_opt.geno_mode_sel.alleles:
-                --alleles "${haplotypecaller_opt.geno_mode_sel.alleles}"
+        ## Algorithmic options
+        --active-probability-threshold "${algorithm_params.active_probability_threshold}"
+        --allow-non-unique-kmers-in-ref "${algorithm_params.allow_non_unique_kmers_in_ref}"
+        --assembly-region-padding "${algorithm_params.assembly_region_padding}"
+        --base-quality-score-threshold "${algorithm_params.base_quality_score_threshold}"
+        --contamination-fraction-to-filter "${algorithm_params.contamination_fraction_to_filter}"
+        #if $algorithm_params.contamination_fraction_per_sample_file:
+            --contamination-fraction-per-sample-file "${algorithm_params.contamination_fraction_per_sample_file}"
+        #end if
+        --consensus "${algorithm_params.consensus}"
+        --disable-optimizations "${algorithm_params.disable_optimizations}"
+        --do-not-run-physical-phasing "${algorithm_params.do_not_run_physical_phasing}"
+        --do-not-recover-dangling-branches "${algorithm_params.do_not_recover_dangling_branches}"
+        --dont-trim-active-regions "${algorithm_params.dont_trim_active_regions}"
+        --dont-increase-kmer-sizes-for-cycles "${algorithm_params.dont_increase_kmer_sizes_for_cycles}"
+        --dont-use-soft-clipped-bases "${algorithm_params.dont_use_soft_clipped_bases}"
+        --emit-ref-confidence "${algorithm_params.emit_ref_confidence}"
+        --error-correct-kmers "${algorithm_params.error_correct_kmers}"
+        --error-correct-reads "${algorithm_params.error_correct_reads}"
+        --genotyping-mode "${algorithm_params.geno_mode_sel.genotyping_mode}"
+        #if str( $algorithm_params.geno_mode_sel.genotyping_mode ) == "GENOTYPE_GIVEN_ALLELES":
+            #if $algorithm_params.geno_mode_sel.alleles:
+                --alleles "${algorithm_params.geno_mode_sel.alleles}"
+                --use-alleles-trigger "${algorithm_params.geno_mode_sel.use_alleles_trigger}"
             #end if
         #end if
+        #for $i, $v in enumerate( $algorithm_params.bands ):
+            --gvcf-gq-bands "${v.gvcf_gq_bands}"
+        #end for
+        --heterozygosity "${algorithm_params.heterozygosity}"
+        --heterozygosity-stdev "${algorithm_params.heterozygosity_stdev}"
+        --indel-heterozygosity "${algorithm_params.indel_heterozygosity}"
+        #for $i, $v in enumerate( $algorithm_params.priors ):
+            --input-prior "${v.input_prior}"
+        #end for
+        --indel-size-to-eliminate-in-ref-model "${algorithm_params.indel_size_to_eliminate_in_ref_model}"
+        --just-determine-active-regions "${algorithm_params.just_determine_active_regions}"
+        --kmer-length-for-read-error-correction "${algorithm_params.kmer_length_for_read_error_correction}"
+        #for $i, $v in enumerate( $algorithm_params.kmers ):
+            --kmer-size "${v.kmer_size}"
+        #end for
+        --max-assembly-region-size "${algorithm_params.max_assembly_region_size}"
+        --max-disc-ar-extension "${algorithm_params.max_disc_ar_extension}"
+        --max-genotype-count "${algorithm_params.max_genotype_count}"
+        --max-gga-ar-extension "${algorithm_params.max_gga_ar_extension}"
+        --max-num-haplotypes-in-population "${algorithm_params.max_num_haplotypes_in_population}"
+        --max-prob-propagation-distance "${algorithm_params.max_prob_propagation_distance}"
+        --max-reads-per-alignment-start "${algorithm_params.max_reads_per_alignment_start}"
+        --min-assembly-region-size "${algorithm_params.min_assembly_region_size}"
+        --min-base-quality-score "${algorithm_params.min_base_quality_score}"
+        --min-dangling-branch-length "${algorithm_params.min_dangling_branch_length}"
+        --min-observations-for-kmer-to-be-solid "${algorithm_params.min_observations_for_kmer_to_be_solid}"
+        --min-pruning "${algorithm_params.min_pruning}"
+        --num-pruning-samples "${algorithm_params.num_pruning_samples}"
+        #if $algorithm_params.p_nonref_model:
+            --p-nonref-model "${algorithm_params.p_nonref_model}"
+        #end if
+        --pair-hmm-gap-continuation-penalty "${algorithm_params.pair_hmm_gap_continuation_penalty}"
+        --padding-around-indels "${algorithm_params.padding_around_indels}"
+        --padding-around-snps "${algorithm_params.padding_around_snps}"
+        --pcr-indel-model "${algorithm_params.pcr_indel_model}"
+        --phred-scaled-global-read-mismapping-rate "${algorithm_params.phred_scaled_global_read_mismapping_rate}"
+        --sample-ploidy "${algorithm_params.sample_ploidy}"
+        --standard-min-confidence-threshold-for-calling "${algorithm_params.standard_min_confidence_threshold_for_calling}"
+        --use-new-qual-calculator "${algorithm_params.use_new_qual_calculator}"
+        --use-filtered-reads-for-annotations "${algorithm_params.use_filtered_reads_for_annotations}"
+
 
         ## Output options
         #if $output_opt.activity_profile_out:
@@ -36,44 +96,85 @@
         #end if
         --add-output-sam-program-record "${output_opt.add_output_sam_program_record}"
         --add-output-vcf-command-line "${output_opt.add_output_vcf_command_line}"
+        --all-site-pls "${output_opt.all_site_pls}"
         --annotate-with-num-discovered-alleles "${output_opt.annotate_with_num_discovered_alleles}"
         #include source=$annotation_list_opts#
         #include source=$annotation_group_list_opts#
+        #for $i, $v in enumerate( $output_opt.annot_exc ):
+            --annotations-to-exclude "${v.annotations_to_exclude}"
+        #end for
         #if $output_opt.assembly_region_out:
             --assembly-region-out ${assembly_region_output}
+        #end if
+        --capture-assembly-failure-bam "${output_opt.capture_assembly_failure_bam}"
+        --debug-graph-transformations "${output_opt.debug_graph_transformations}"
+        --dont-genotype "${output_opt.dont_genotype}"
+        #if $output_opt.exact_calls_log:
+            --exactCallsLog "${exact_calls_log_output}"
         #end if
         #if $output_opt.graph_output:
             --graph-output ${graph_output}
         #end if
+        #if $output_opt.keep_rg:
+            --keep-rg "${output_opt.keep_rg}"
+        #end if
+        --max-alternate-alleles "${output_opt.max_alternate_alleles}"
         --output-mode "${output_opt.output_mode}"
+        #include source=$read_filter_opts#
+        #if $output_opt.sample_name:
+            --sample-name "${output_opt.sample_name}"
+        #end if
 
-        ## Algorithmic options
-        --base-quality-score-threshold "${algorithm_params.base_quality_score_threshold}"
-        --contamination-fraction-to-filter "${algorithm_params.contamination_fraction_to_filter}"
-        --heterozygosity "${algorithm_params.heterozygosity}"
-        --heterozygosity-stdev "${algorithm_params.heterozygosity_stdev}"
-        --indel-heterozygosity "${algorithm_params.indel_heterozygosity}"
-        --max-reads-per-alignment-start "${algorithm_params.max_reads_per_alignment_start}"
-        --min-base-quality-score "${algorithm_params.min_base_quality_score}"
+
+        ## Program options
+        --debug "${program_opt.debug}"
+        --disable-sequence-dictionary-validation "${program_opt.disable_sequence_dictionary_validation}"
+        --disable-bam-index-caching "${program_opt.disable_bam_index_caching}"
+        --likelihood-calculation-engine "${program_opt.likelihood_calculation_engine}"
+        --pair-hmm-implementation "${program_opt.pair_hmm_implementation}"
+        --seconds-between-progress-updates "${program_opt.seconds_between_progress_updates}"
+        --smith-waterman "${program_opt.smith_waterman}"
+        #if $program_opt.tmp_dir:
+            --TMP_DIR "${program_opt.tmp_dir}"
+        #end if
+
 
         ## Resource file inputs
         #if $resource_inputs.dbsnp:
             --dbsnp "${resource_inputs.dbsnp}"
+        #end if
+        #if $resource_inputs.comp:
+            --comp "${resource_inputs.comp}"
         #end if
 
     ]]></command>
 
     <inputs>
         <expand macro="bam_req_params"/>
-        <expand macro="ref_sel"/>
-        <expand macro="gatk_opt_params"/>
+        <expand macro="gatk_req_params"/>
+        <expand macro="gatk_ival_params"/>
 
-        <section name="haplotypecaller_opt" title="Optional Haplotype Caller Parameters" expanded="False">
+        <section name="algorithm_params" title="Algorithmic Parameters" expanded="false" >
+            <param name="active_probability_threshold" type="float" value="0.002" min="0.0" label="Active Probability Threshold" help="Minimum probability for a locus to be considered active." />
+            <param name="allow_non_unique_kmers_in_ref" type="boolean" checked="false" label="Allow Non-Unique Kmers?" help="Allow graphs that have non-unique kmers in the reference." />
+            <param name="assembly_region_padding" type="integer" value="100" min="0" label="Assemby Region Padding" help="Number of additional bases of context to include around each assembly region." />
+            <param name="base_quality_score_threshold" type="integer" value="18" min="0" label="Base Quality Score Threshold" help="Base qualities below this threshold will be reduced to the minimum (6)." />
+            <param name="consensus" type="boolean" checked="false" label="1000G Consensus Mode?" help="1000 Genomes consensus mode." />
+            <param name="contamination_fraction_to_filter" type="float" value="0.0" min="0.0" label="Contamination Fraction" help="Fraction of contamination in sequencing data (for all samples) to aggressively remove." />
+            <param name="contamination_fraction_per_sample_file" type="data" format="tsv" optional="true" label="Sample Contamination File" help="Tab-separated File containing fraction of contamination in sequencing data (per sample) to aggressively remove. Format should be '[SampleID][TAB][Contamination]' (Contamination is double) per line; No header." />
+            <param name="disable_optimizations" type="boolean" checked="false" label="Disable Optimizations?" help="Don't skip calculations in ActiveRegions with no variants." />
+            <param name="do_not_run_physical_phasing" type="boolean" checked="false" label="Disable Phasing?" help="Disable physical phasing." />
+            <param name="do_not_recover_dangling_branches" type="boolean" checked="false" label="Disable Dangling Head and Tail Recovery?" help="Disable dangling head and tail recovery." />
+            <param name="dont_increase_kmer_sizes_for_cycles" type="boolean" checked="false" label="Disable Kmer Size Iteration?" help="Disable iterating over kmer sizes when graph cycles are detected." />
+            <param name="dont_trim_active_regions" type="boolean" checked="false" label="Do Not Trim Active Regions?" help="If specified, we will not trim down the active region from the full region (active + extension) to just the active interval for genotyping." />
+            <param name="dont_use_soft_clipped_bases" type="boolean" checked="false" label="Do Not Analyze Soft Clipped Bases?" help="Do not analyze soft clipped bases in the reads." />
             <param name="emit_ref_confidence" type="select" label="Reference Confidence Mode" help="Mode for emitting reference confidence scores.">
                 <option value="NONE" selected="true">NONE</option>
                 <option value="BP_RESOLUTION">BP_RESOLUTION</option>
                 <option value="GVCF">GVCF</option>
             </param>
+            <param name="error_correct_kmers" type="boolean" checked="false" label="Error Correct Kmers?" help="Use an exploratory algorithm to error correct the kmers used during assembly." />
+            <param name="error_correct_reads" type="boolean" checked="false" label="Error Correct Reads?" help="Use an exploratory algorithm to error correct the kmers used during assembly." />
             <conditional name="geno_mode_sel">
                 <param name="genotyping_mode" type="select" label="Genotyping Mode" help="Specifies how to determine the alternate alleles to use for genotyping.">
                     <option value="DISCOVERY" selected="true">DISCOVERY</option>
@@ -81,39 +182,126 @@
                 </param>
                 <when value="GENOTYPE_GIVEN_ALLELES">
                     <param name="alleles" type="data" format="vcf,vcf_bgzip" optional="true" label="Defined Allele VCF" help="The set of alleles at which to genotype when --genotyping_mode is GENOTYPE_GIVEN_ALLELES." />
+                    <param name="use_alleles_trigger" type="boolean" checked="false" label="Use Additional Trigger?" help="Use additional trigger on variants found in an external alleles file." />
                 </when>
             </conditional>
+            <repeat name="bands" title="gVCF GQ Band Sizes">
+                <param name="gvcf_gq_bands" type="integer" value="1" min="1" max="100" optional="true" label="gVCF GQ Band Size" help="Exclusive upper bounds for reference confidence GQ bands (must be in [1, 100] and specified in increasing order)." />
+            </repeat>
+            <param name="heterozygosity" type="float" value="0.001" min="0.0" label="Heterozygosity" help="Heterozygosity value used to compute prior likelihoods for any locus.  See the GATKDocs for full details on the meaning of this population genetics concept." />
+            <param name="heterozygosity_stdev" type="float" value="0.01" min="0.0" label="Heterozygosity Standard Deviation" help="Standard deviation of eterozygosity for SNP and indel calling." />
+            <param name="indel_heterozygosity" type="float" value="0.000125" min="0.0" label="Indel Heterozygosity" help="Heterozygosity for indel calling.  See the GATKDocs for heterozygosity for full details on the meaning of this population genetics concept." />
+            <repeat name="priors" title="Input Priors">
+                <param name="input_prior" type="float" value="0.0" min="0.0" max="1.0" optional="true" label="Input Prior" help="By default, the prior specified with the argument --heterozygosity/-hets is used for variant discovery at a particular locus, using an infinite sites model, see e.g. Waterson (1975) or Tajima (1996). This model asserts that the probability of having a population of k variant sites in N chromosomes is proportional to theta/k, for 1=1:N There are instances where using this prior might not be desireable, e.g. for population studies where prior might not be appropriate, as for example when the ancestral status of the reference allele is not known. By using this argument, user can manually specify priors to be used for calling as a vector for doubles, with the following restriciotns: a) User must specify 2N values, where N is the number of samples. b) Only diploid calls supported. c) Probability values are specified in double format, in linear space. d) No negative values allowed. e) Values will be added and Pr(AC=0) will be 1-sum, so that they sum up to one. f) If user-defined values add to more than one, an error will be produced. If user wants completely flat priors, then user should specify the same value (=1/(2*N+1)) 2*N times,e.g. -inputPrior 0.33 -inputPrior 0.33 for the single-sample diploid case. " />
+            </repeat>
+            <param name="indel_size_to_eliminate_in_ref_model" type="integer" value="10" min="0" label="Reference Model Indel Size" help="The size of an indel to check for in the reference model." />
+            <param name="just_determine_active_regions" type="boolean" checked="false" label="Just Determine Active Regions?" help="Just determine ActiveRegions, don't perform assembly or calling." />
+            <param name="kmer_length_for_read_error_correction" type="integer" min="0" value="25" label="Kmer Length For Error Correction" help="Use an exploratory algorithm to error correct the kmers used during assembly." />
+            <repeat name="kmers" title="Kmer Sizes">
+                <param name="kmer_size" type="integer" value="10" min="0" optional="true" label="Kmer Size" help="Kmer size to use in the read threading assembler." />
+            </repeat>
+            <param name="max_assembly_region_size" type="integer" value="300" min="0" label="Max Assembly Region" help="Maximum size of an assembly region." />
+            <param name="max_disc_ar_extension" type="integer" value="25" min="0" label="Max Active Region Extension Discovery Mode" help="The maximum extent into the full active region extension that we're willing to go in genotyping our events for discovery." />
+            <param name="max_gga_ar_extension" type="integer" value="300" min="0" label="Max Active Region Extension GGA Mode" help="The maximum extent into the full active region extension that we're willing to go in genotyping our events for GGA mode." />
+            <param name="max_genotype_count" type="integer" value="1024" min="0" label="Max Genotype Count" help="Maximum number of genotypes to consider at any site." />
+            <param name="max_num_haplotypes_in_population" type="integer" value="128" min="0" label="Max Haplotypes" help="Maximum number of haplotypes to consider for your population." />
+            <param name="max_prob_propagation_distance" type="integer" value="50" min="0" label="Max Probability Mass Propogation" help=" pper limit on how many bases away probability mass can be moved around when calculating the boundaries between active and inactive assembly regions." />
+            <param name="max_reads_per_alignment_start" type="integer" value="50" min="0" label="Max Reads Per Alignment Start" help="Maximum number of reads to retain per alignment start position. Reads above this threshold will be downsampled. Set to 0 to disable." />
+            <param name="min_assembly_region_size" type="integer" value="50" min="0" label="Min Assembly Region Size" help="Minimum size of an assembly region." />
+            <param name="min_base_quality_score" type="integer" value="10" min="0" label="Min Base Quality Score" help="Minimum base quality required to consider a base for calling." />
+            <param name="min_dangling_branch_length" type="integer" value="4" min="0" label="Min Dangling Branch Length" help="Minimum length of a dangling branch to attempt recovery" />
+            <param name="min_observations_for_kmer_to_be_solid" type="integer" value="20" min="0" label="Min Kmer Observations" help="A k-mer must be seen at least these times for it considered to be solid." />
+            <param name="min_pruning" type="integer" value="2" min="0" label="Min Pruning" help="Minimum support to not prune paths in the graph." />
+            <param name="num_pruning_samples" type="integer" value="1" min="0" label="Number Pruning Samples" help="Number of samples that must pass the minPruning threshold." />
+            <param name="p_nonref_model" type="select" optional="true" label="Non-Ref Probability Calculation Model" help="Non-reference probability calculation model to employ." >
+                <option value="EXACT_INDEPENDENT">EXACT_INDEPENDENT</option>
+                <option value="EXACT_REFERENCE">EXACT_REFERENCE</option>
+                <option value="EXACT_ORIGINAL">EXACT_ORIGINAL</option>
+                <option value="EXACT_GENERAL_PLOIDY">EXACT_GENERAL_PLOIDY</option>
+            </param>
+            <param name="pair_hmm_gap_continuation_penalty" type="integer" value="10" min="0" label="Continuation Penalty" help="Flat gap continuation penalty for use in the Pair HMM." />
+            <param name="padding_around_indels" type="integer" value="150" min="0" label="Indel Padding" help="Include at least this many bases around an event for calling indels." />
+            <param name="padding_around_snps" type="integer" value="20" min="0" label="SNP Padding" help="Include at least this many bases around an event for calling snps." />
+            <param name="pcr_indel_model" type="select" label="PCR Indel Model" help="The PCR indel model to use." >
+                <option value="CONSERVATIVE" selected="true">CONSERVATIVE</option>
+                <option value="AGGRESSIVE">AGGRESSIVE</option>
+                <option value="HOSTILE">HOSTILE</option>
+                <option value="NONE">NONE</option>
+            </param>
+            <param name="phred_scaled_global_read_mismapping_rate" type="integer" value="45" min="0" label="Mismapping Rate" help="The global assumed mismapping rate for reads." />
+            <param name="sample_ploidy" type="integer" value="2" min="1" label="Sample Ploidy" help="Ploidy (number of chromosomes) per sample. For pooled data, set to (Number of samples in each pool * Sample Ploidy)." />
+            <param name="standard_min_confidence_threshold_for_calling" type="float" value="10.0" min="0.0" label="Standard Call Confidence" help="The minimum phred-scaled confidence threshold at which variants should be called." />
+            <param name="use_filtered_reads_for_annotations" type="boolean" checked="false" label="Annotate With Contamination Reads?" help="Use the contamination-filtered read maps for the purposes of annotating variants." />
+            <param name="use_new_qual_calculator" type="boolean" checked="false" label="New AF Model?" help="If provided, we will use the new AF model instead of the so-called exact model." />
         </section>
 
         <section name="output_opt" title="Output Options" expanded="false">
             <param name="activity_profile_out" type="boolean" checked="false" label="Activity Profile Output?" help="Output the raw activity profile results in IGV format." />
             <param name="add_output_sam_program_record" type="boolean" checked="true" label="PG Tag in BAM Output?" help="If true, adds a PG tag to created SAM/BAM/CRAM files." />
             <param name="add_output_vcf_command_line" type="boolean" checked="true" label="Command Line Header in VCF Output?" help="If true, adds a command line header line to created VCF files." />
+            <param name="all_site_pls" type="boolean" checked="false" label="Annotate with PLs?" help="Annotate all sites with PLs." />
             <param name="annotate_with_num_discovered_alleles" type="boolean" checked="false" label="Alternate Alleles Annotation?" help="If provided, we will annotate records with the number of alternate alleles that were discovered (but not necessarily genotyped) at a given site." />
             <expand macro="annotation_list_params"/>
             <expand macro="annotation_group_list_params"/>
+            <repeat name="annot_exc" title="Excluded Annotations">
+                <param name="annotations_to_exclude" type="text" label="Annotation To Exclude" help="One or more specific annotations to exclude from variant calls." />
+            </repeat>
             <param name="assembly_region_out" type="boolean" checked="false" label="Assembly Region Output?" help="Output the assembly region to this IGV formatted file." />
+            <param name="bam_output" type="boolean" checked="false" label="BAM Output?" help="File to which assembled haplotypes should be written." />
+            <param name="bam_writer_type" type="select" label="BAM Haplotype Writer" help="Which haplotypes should be written to the BAM." >
+                <option value="CALLED_HAPLOTYPES" selected="true">CALLED_HAPLOTYPES</option>
+                <option value="ALL_POSSIBLE_HAPLOTYPES">ALL_POSSIBLE_HAPLOTYPES</option>
+            </param>
+            <param name="capture_assembly_failure_bam" type="boolean" checked="false" label="Assembly Failure BAM?" help="Write a BAM called assemblyFailure.bam capturing all of the reads that were in the active region when the assembler failed for any reason." />
+            <param name="debug_graph_transformations" type="boolean" checked="false" label="Debug Graph Transformations?" help="Write DOT formatted graph files out of the assembler for only this graph size." />
+            <param name="dont_genotype" type="boolean" checked="false" label="Don't Genotype?" help="Perform assembly but do not genotype variants." />
+            <param name="exact_calls_log" type="boolean" checked="false" label="Exact Calls Output?" help="Undocumented option." />
             <param name="graph_output" type="boolean" checked="false" label="Graph Output?" help="Write debug assembly graph information to this file." />
+            <param name="keep_rg" type="text" optional="true" label="Read Group To Keep" help="Only use reads from this read group when making calls (but use all reads to build the assembly)." />
+            <param name="max_alternate_alleles" type="integer" value="6" min="0" label="Max Alternate Alleles" help="Maximum number of alternate alleles to genotype" />
             <param name="output_mode" type="select" label="Output Mode" help="Specifies which type of calls we should output." >
                 <option value="EMIT_VARIANTS_ONLY" selected="true">EMIT_VARIANTS_ONLY</option>
                 <option value="EMIT_ALL_CONFIDENT_SITES">EMIT_ALL_CONFIDENT_SITES</option>
                 <option value="EMIT_ALL_SITES">EMIT_ALL_SITES</option>
             </param>
+            <expand macro="read_filter_params"/>
+            <param name="sample_name" type="text" optional="true" label="Sample Name" help="Name of single sample to use from a multi-sample bam." />
         </section>
 
-        <section name="algorithm_params" title="Algorithmic Parameters" expanded="false" >
-            <param name="base_quality_score_threshold" type="integer" value="18" min="0" label="Base Quality Score Threshold" help="Base qualities below this threshold will be reduced to the minimum (6)." />
-            <param name="contamination_fraction_to_filter" type="float" value="0.0" min="0.0" label="Contamination Fraction" help="Fraction of contamination in sequencing data (for all samples) to aggressively remove." />
-            <param name="heterozygosity" type="float" value="0.001" min="0.0" label="Heterozygosity" help="Heterozygosity value used to compute prior likelihoods for any locus.  See the GATKDocs for full details on the meaning of this population genetics concept." />
-            <param name="heterozygosity_stdev" type="float" value="0.01" min="0.0" label="Heterozygosity Standard Deviation" help="Standard deviation of eterozygosity for SNP and indel calling." />
-            <param name="indel_heterozygosity" type="float" value="0.000125" min="0.0" label="Indel Heterozygosity" help="Heterozygosity for indel calling.  See the GATKDocs for heterozygosity for full details on the meaning of this population genetics concept." />
-            <param name="max_reads_per_alignment_start" type="integer" value="50" min="0" label="Max Reads Per Alignment Start" help="Maximum number of reads to retain per alignment start position. Reads above this threshold will be downsampled. Set to 0 to disable." />
-            <param name="min_base_quality_score" type="integer" value="10" min="0" label="Min Base Quality Score" help="Minimum base quality required to consider a base for calling." />
+        <section name="program_opt" title="Program Options" expanded="false">
+            <param name="debug" type="boolean" checked="false" label="Active Region Debugging?" help="Print out very verbose debug information about each triggering active region." />
+            <param name="disable_sequence_dictionary_validation" type="boolean" checked="false" label="Disable Sequence Dictionary Validation?" help="If specified, do not check the sequence dictionaries from our inputs for compatibility. Use at your own risk!" />
+            <param name="disable_bam_index_caching" type="boolean" checked="false" label="Disable BAM Index Caching?" help="If true, don't cache bam indexes, this will reduce memory requirements but may harm performance if many intervals are specified.  Caching is automatically disabled if there are no intervals specified." />
+            <param name="likelihood_calculation_engine" type="select" label="Likelihood Calculation Engine" help="What likelihood calculation engine to use to calculate the relative likelihood of reads vs haplotypes." >
+                <option value="PairHMM" selected="true">PairHMM</option>
+                <option value="Random">Random</option>
+            </param>
+            <param name="pair_hmm_implementation" type="select" label="Pair HMM Implementation" help="The PairHMM implementation to use for genotype likelihood calculations." >
+                <option value="FASTEST_AVAILABLE" selected="true">FASTEST_AVAILABLE</option>
+                <option value="EXACT">EXACT</option>
+                <option value="ORIGINAL">ORIGINAL</option>
+                <option value="LOGLESS_CACHING">LOGLESS_CACHING</option>
+                <option value="AVX_LOGLESS_CACHING">AVX_LOGLESS_CACHING</option>
+                <option value="AVX_LOGLESS_CACHING_OMP">AVX_LOGLESS_CACHING_OMP</option>
+                <option value="EXPERIMENTAL_FPGA_LOGLESS_CACHING">EXPERIMENTAL_FPGA_LOGLESS_CACHING</option>
+            </param>
+            <param name="seconds_between_progress_updates" type="float" label="Seconds Between Progress Updates" value="10.0" min="0.0" help="Output traversal statistics every time this many seconds elapse." />
+            <param name="smith_waterman" type="select" label="Smith-Waterman Implementation" help="Which Smith-Waterman implementation to use, generally FASTEST_AVAILABLE is the right choice." >
+                <option value="FASTEST_AVAILABLE" selected="true">FASTEST_AVAILABLE</option>
+                <option value="AVX_ENABLED">AVX_ENABLED</option>
+                <option value="JAVA">JAVA</option>
+            </param>
+            <param name="tmp_dir" type="text" label="Temporary Directory" optional="true" help="Force temporary files to be written to this directory.  Otherwise, they will be written to the Galaxy working directory, which is usually fine." />
         </section>
 
         <section name="resource_inputs" title="Resource File Input Options" expanded="false" >
+            <param name="comp" type="data" format="vcf,vcf_bgzip" optional="true" label="Comparison VCF" help="Comparison VCF file(s)." />
             <param name="dbsnp" type="data" format="vcf,vcf_bgzip" optional="true" label="dbSNP" help="dbSNP file." />
         </section>
+
+        <expand macro="gatk_common_params" />
+
+
     </inputs>
 
     <outputs>
@@ -123,6 +311,18 @@
         </data>
         <data format="tsv" name="assembly_region_output" label="${tool.name} on ${on_string}: ASSEMBLY REGION TSV" >
             <filter>output_opt['assembly_region_out']</filter>
+        </data>
+        <data format="bam" name="bam_output_output" label="${tool.name} on ${on_string}: BAM" >
+            <filter>output_opt['bam_output']</filter>
+        </data>
+        <data format="bam" name="capture_assembly_failure_bam_output" label="${tool.name} on ${on_string}: Assembly Failure BAM" from_work_dir="./assemblyFailure.bam">
+            <filter>output_opt['capture_assembly_failure_bam']</filter>
+        </data>
+        <data format="txt" name="debug_graph_transformations_output" label="${tool.name} on ${on_string}: Graph Transformations DOT">
+            <filter>output_opt['debug_graph_transformations']</filter>
+        </data>
+        <data format="txt" name="exact_calls_log_output" label="${tool.name} on ${on_string}: EXACT CALLS TXT" >
+            <filter>output_opt['exact_calls_log']</filter>
         </data>
         <data format="tsv" name="graph_output" label="${tool.name} on ${on_string}: GRAPH TSV" >
             <filter>output_opt['graph_output']</filter>

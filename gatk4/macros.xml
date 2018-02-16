@@ -43,12 +43,6 @@
         <data format="bam" name="output" label="${tool.name} on ${on_string}: BAM"/>
     </xml>
 
-    <template name="all_tools_opts">
-        #if $picard_common.arguments_file:
-            --arguments_file ${picard_common.arguments_file}
-        #end if
-    </template>
-
     <template name="bam_opt_opts">
         --COMPRESSION_LEVEL ${picard_common.compression_level}
         --CREATE_MD5_FILE ${picard_common.create_md5_file}
@@ -89,9 +83,57 @@
         </section>
     </xml>
 
+
+
+
+    <template name="all_tools_opts">
+        #if $picard_common.arguments_file:
+            --arguments_file ${picard_common.arguments_file}
+        #end if
+    </template>
+
+
     <xml name="all_tools_params">
         <param name="arguments_file" type="data" format="txt" optional="true" label="Arguments file" help="Read one or more arguments files and add them to the command line." />
     </xml>
+
+
+
+
+
+    <template name="gatk_common_opts">
+        --arguments_file "${gatk_common.arguments_file}"
+        --gatk-config-file "${gatk_common.gatk_config_file}"
+        --lenient "${gatk_common.lenient}"
+        --QUIET "${gatk_common.quiet}"
+        --read-validation-stringency "${gatk_common.read_validation_stringency}"
+        --use_jdk_deflater "${gatk_common.use_jdk_deflater}"
+        --use_jdk_inflater "${gatk_common.use_jdk_inflater}"
+        --verbosity "${gatk_common.verbosity}"
+    </template>
+
+    <xml name="gatk_common_params">
+        <section name="gatk_common" title="GATK Common Options" expanded="false">
+            <param name="arguments_file" type="data" format="txt" optional="true" label="Arguments File" help="Read one or more arguments files and add them to the command line." />
+            <param name="gatk_config_file" type="data" format="txt" optional="true" label="GATK Config File" help="A configuration file to use with the GATK." />
+            <param name="lenient" type="boolean" checked="false" label="Lenient Processing?" help="Lenient processing of VCF files." />
+            <param name="quiet" type="boolean" checked="false" label="Suppress Job Summary?" help="Whether to suppress job-summary info on System.err." />
+            <param name="read_validation_stringency" type="select" label="Validation Stringency" help="Validation stringency for all SAM/BAM/CRAM/SRA files read by this program. The default stringency value SILENT can improve performance when processing a BAM file in which variable-length data (read, qualities, tags) do not otherwise need to be decoded." >
+                <option value="STRICT">STRICT</option>
+                <option value="LENIENT">LENIENT</option>
+                <option value="SILENT" selected="true">SILENT</option>
+            </param>
+            <param name="use_jdk_deflater" type="boolean" label="Use JDK Deflater?" checked="false" help="Use the JDK Deflater instead of the Intel Deflater for writing compressed output." />
+            <param name="use_jdk_inflater" type="boolean" label="Use JDK Inflater?" checked="false" help="Use the JDK Inflater instead of the Intel Inflater for reading compressed input." />
+            <param name="verbosity" type="select" label="Logging Verbosity" help="Control verbosity of logging." >
+                <option value="INFO" selected="true">INFO</option>
+                <option value="ERROR">ERROR</option>
+                <option value="WARNING">WARNING</option>
+                <option value="DEBUG">DEBUG</option>
+            </param>
+        </section>
+    </xml>
+
 
     <template name="cloud_opts">
         --cloud-index-prefetch-buffer "${cloud.cloud_index_prefetch_buffer}"
@@ -118,7 +160,13 @@
     </xml>
 
     <template name="gatk_ival_prep"><![CDATA[
-        #for $value, $interval in enumerate($intervals):
+        #for $value, $interval in enumerate( $intervals ):
+            #if $interval:
+                ln -s ${interval} ${value}.interval_list &&
+            #end if
+        #end for
+
+        #for $value, $interval in enumerate( $exclude_intervals ):
             #if $interval:
                 ln -s ${interval} ${value}.interval_list &&
             #end if
@@ -126,20 +174,28 @@
     ]]></template>
 
     <template name="gatk_ival_opts">
-        #for $value, $interval in enumerate($intervals):
+        #for $value, $interval in enumerate( $intervals ):
             #if $interval:
                 --intervals ${value}.interval_list
             #end if
         #end for
         --interval-padding "${interval_padding}"
+
+        #for $value, $interval in enumerate( $exclude_intervals ):
+            #if $interval:
+                --exclude-intervals ${value}.interval_list
+            #end if
+        #end for
         --interval-exclusion-padding "${interval_exclusion_padding}"
+
         --interval-merging-rule "${interval_merging_rule}"
         --interval-set-rule "${interval_set_rule}"
     </template>
 
-    <xml name="gatk_opt_params">
+    <xml name="gatk_ival_params">
         <param name="intervals" type="data" format="gatk_interval" multiple="true" optional="true" label="Intervals" help="One or more genomic intervals over which to operate." />
         <param name="interval_padding" type="integer" value="0" label="Interval Padding" help="Amount of padding (in bp) to add to each interval you are including." />
+        <param name="exclude_intervals" type="data" format="gatk_interval" multiple="true" optional="true" label="Exclude Intervals" help="One or more genomic intervals to exclude from processing." />
         <param name="interval_exclusion_padding" type="integer" value="0" label="Interval Exclusion Padding" help="Amount of padding (in bp) to add to each interval you are excluding." />
         <param name="interval_merging_rule" type="select" label="Interval Merging Rule" help="Interval merging rule for abutting intervals." >
             <option value="ALL" selected="true">ALL</option>

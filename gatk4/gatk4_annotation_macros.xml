@@ -17,6 +17,22 @@
         #end for
     </template>
 
+    <template name="read_filter_opts">
+        #for $filt in str( $output_opt.read_filter ).split( ',' ):
+            #if $output_opt.read_filter:
+                --read-filter $filt
+            #end if
+        #end for
+
+        --disable-tool-default-read-filters "${output_opt.disable_tool_default_read_filters}"
+
+        #for $filt in str( $output_opt.disable_read_filter ).split( ',' ):
+            #if $output_opt.disable_read_filter:
+                --read-filter $filt
+            #end if
+        #end for
+    </template>
+
     <xml name="annotation_list_params">
         <param name="annotations" type="select" multiple="true" label="Annotation(s)" help="One or more specific annotations to add to variant calls." >
             <option value="AS_BaseQualityRankSumTest">AS_BaseQualityRankSumTest</option>
@@ -66,5 +82,62 @@
         </param>
     </xml>
 
-
+    <xml name="read_filter_params">
+        <param name="read_filter" type="select" multiple="true" label="Read Filter(s)" help="Read filters to be applied before analysis." >
+            <option value="AlignmentAgreesWithHeaderReadFilter">AlignmentAgreesWithHeaderReadFilter</option>
+            <option value="AllowAllReadsReadFilter">AllowAllReadsReadFilter</option>
+            <option value="AmbiguousBaseReadFilter">AmbiguousBaseReadFilter</option>
+            <option value="CigarContainsNoNOperator">CigarContainsNoNOperator</option>
+            <option value="FirstOfPairReadFilter">FirstOfPairReadFilter</option>
+            <option value="FragmentLengthReadFilter">FragmentLengthReadFilter</option>
+            <option value="GoodCigarReadFilter">GoodCigarReadFilter</option>
+            <option value="HasReadGroupReadFilter">HasReadGroupReadFilter</option>
+            <option value="LibraryReadFilter">LibraryReadFilter</option>
+            <option value="MappedReadFilter">MappedReadFilter</option>
+            <option value="MappingQualityAvailableReadFilter">MappingQualityAvailableReadFilter</option>
+            <option value="MappingQualityNotZeroReadFilter">MappingQualityNotZeroReadFilter</option>
+            <option value="MappingQualityReadFilter">MappingQualityReadFilter</option>
+            <option value="MatchingBasesAndQualsReadFilter">MatchingBasesAndQualsReadFilter</option>
+            <option value="MateDifferentStrandReadFilter">MateDifferentStrandReadFilter</option>
+            <option value="MateOnSameContigOrNoMappedMateReadFilter">MateOnSameContigOrNoMappedMateReadFilter</option>
+            <option value="MetricsReadFilter">MetricsReadFilter</option>
+            <option value="NonZeroFragmentLengthReadFilter">NonZeroFragmentLengthReadFilter</option>
+            <option value="NonZeroReferenceLengthAlignmentReadFilter">NonZeroReferenceLengthAlignmentReadFilter</option>
+            <option value="NotDuplicateReadFilter">NotDuplicateReadFilter</option>
+            <option value="NotOpticalDuplicateReadFilter">NotOpticalDuplicateReadFilter</option>
+            <option value="NotSecondaryAlignmentReadFilter">NotSecondaryAlignmentReadFilter</option>
+            <option value="NotSupplementaryAlignmentReadFilter">NotSupplementaryAlignmentReadFilter</option>
+            <option value="OverclippedReadFilter">OverclippedReadFilter</option>
+            <option value="PairedReadFilter">PairedReadFilter</option>
+            <option value="PassesVendorQualityCheckReadFilter">PassesVendorQualityCheckReadFilter</option>
+            <option value="PlatformReadFilter">PlatformReadFilter</option>
+            <option value="PlatformUnitReadFilter">PlatformUnitReadFilter</option>
+            <option value="PrimaryLineReadFilter">PrimaryLineReadFilter</option>
+            <option value="ProperlyPairedReadFilter">ProperlyPairedReadFilter</option>
+            <option value="ReadGroupBlackListReadFilter">ReadGroupBlackListReadFilter</option>
+            <option value="ReadGroupReadFilter">ReadGroupReadFilter</option>
+            <option value="ReadLengthEqualsCigarLengthReadFilter">ReadLengthEqualsCigarLengthReadFilter</option>
+            <option value="ReadLengthReadFilter">ReadLengthReadFilter</option>
+            <option value="ReadNameReadFilter">ReadNameReadFilter</option>
+            <option value="ReadStrandFilter">ReadStrandFilter</option>
+            <option value="SampleReadFilter">SampleReadFilter</option>
+            <option value="SecondOfPairReadFilter">SecondOfPairReadFilter</option>
+            <option value="SeqIsStoredReadFilter">SeqIsStoredReadFilter</option>
+            <option value="ValidAlignmentEndReadFilter">ValidAlignmentEndReadFilter</option>
+            <option value="ValidAlignmentStartReadFilter">ValidAlignmentStartReadFilter</option>
+            <option value="WellformedReadFilter">WellformedReadFilter</option>
+        </param>
+        <param name="disable_read_filter" type="select" multiple="true" label="Disable Read Filter(s)" help="Read filters to be disabled before analysis." >
+            <option value="GoodCigarReadFilter">GoodCigarReadFilter</option>
+            <option value="MappedReadFilter">MappedReadFilter</option>
+            <option value="MappingQualityAvailableReadFilter">MappingQualityAvailableReadFilter</option>
+            <option value="MappingQualityReadFilter">MappingQualityReadFilter</option>
+            <option value="NonZeroReferenceLengthAlignmentReadFilter">NonZeroReferenceLengthAlignmentReadFilter</option>
+            <option value="NotDuplicateReadFilter">NotDuplicateReadFilter</option>
+            <option value="NotSecondaryAlignmentReadFilter">NotSecondaryAlignmentReadFilter</option>
+            <option value="PassesVendorQualityCheckReadFilter">PassesVendorQualityCheckReadFilter</option>
+            <option value="WellformedReadFilter">WellformedReadFilter</option>
+        </param>
+        <param name="disable_tool_default_read_filters" type="boolean" checked="false" label="Disable Read Filters?" help="Disable all tool default read filters." />
+    </xml>
 </macros>
