@@ -7,10 +7,9 @@
 
     @VERSION_CMD@
 
-    <command detect_errors="exit_code"><![CDATA[
-        #for $value, $interval in enumerate($intervals):
-            ln -s ${interval} ${value}.interval_list &&
-        #end for
+    <command detect_errors="exit_code">
+        #include source=$gatk_ival_prep#
+        <![CDATA[
         @CMD_BEGIN@ GetPileupSummaries
 
         #for $tumor_input in $tumor_inputs:
@@ -29,10 +28,11 @@
     ]]></command>
 
     <inputs>
-	    <param name="tumor_inputs" type="data" format="sam,bam" optional="false" label="Tumor Input" multiple="true" help="BAM/SAM/CRAM file containing reads" />
+        <expand macro="gatk_req_params" />
+        <expand macro="gatk_ival_params"/>
+
+        <param name="tumor_inputs" type="data" format="sam,bam" optional="false" label="Tumor Input" multiple="true" help="BAM/SAM/CRAM file containing reads" />
         <param name="variants" type="data" format="vcf,vcf_bgzip" optional="false" label="Variant File(s)" multiple="true" help="One or more VCF files containing variants." />
-        <expand macro="ref_sel" />
-        <expand macro="gatk_opt_params" />
         <section name="getpileupsummaries_opt" title="Optional GetPileupSummaries Parameters" expanded="False" />
         <section name="getpileupsummaries_advanced" title="Advanced GetPileupSummaries Parameters" expanded="False" />
     </inputs>

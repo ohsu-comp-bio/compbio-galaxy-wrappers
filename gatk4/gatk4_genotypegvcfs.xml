@@ -9,8 +9,8 @@
 
     <command detect_errors="exit_code">
         #include source=$gatk_ival_prep#
+    <![CDATA[
         @CMD_BEGIN@ GenotypeGVCFs
-        <![CDATA[
 	    -V ${input}
 	    -O ${output}
         #include source=$gatk_req_opts#
@@ -18,9 +18,9 @@
     ]]></command>
 
     <inputs>
-        <param name="input" type="data" format="vcf" label=" A gVCF file containing variants." help="Required." />
         <expand macro="gatk_req_params" />
-        <expand macro="gatk_opt_params" />
+        <expand macro="gatk_ival_params"/>
+        <param name="input" type="data" format="vcf" label=" A gVCF file containing variants." help="Required." />
         <section name="genotypegvcfs_opt" title="Optional GenotypeGVCFs Parameters" expanded="False" />
         <section name="genotypegvcfs_advanced" title="Advanced GenotypeGVCFs Parameters" expanded="False" />
     </inputs>

@@ -6,12 +6,12 @@
         <import>gatk4_annotation_macros.xml</import>
     </macros>
 
-    @VERSION_CMD@
+    <expand macro="version_cmd"/>
 
     <command detect_errors="exit_code">
         #include source=$gatk_ival_prep#
-    <![CDATA[
         ## Wish this could be tool.name!
+        <![CDATA[
         @CMD_BEGIN@ HaplotypeCaller
 
         #include source=$bam_req_opts#

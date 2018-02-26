@@ -7,10 +7,9 @@
 
     @VERSION_CMD@
 
-    <command detect_errors="exit_code"><![CDATA[
-        #for $value, $interval in enumerate($intervals):
-            ln -s ${interval} ${value}.interval_list &&
-        #end for
+    <command detect_errors="exit_code">
+        #include source=$gatk_ival_prep#
+        <![CDATA[
         @CMD_BEGIN@ Mutect2
 
         #for $tumor_input in $tumor_inputs:
@@ -40,11 +39,13 @@
 
         #include source=$gatk_req_opts#
         #include source=$gatk_ival_opts#
-        ##include source=$gakt_common_opts#
 
     ]]></command>
 
     <inputs>
+        <expand macro="gatk_req_params" />
+        <expand macro="gatk_ival_params"/>
+
 	    <param name="tumor_inputs" type="data" format="sam,bam" label="Tumor Input" multiple="true" help="BAM/SAM/CRAM file containing reads"/>
         <conditional name="supply_normal">
             <param name="use_normal" type="select" label="Include a normal sample?">
@@ -57,8 +58,6 @@
             </when>
         </conditional>
 	    <param name="tumor_sample" type="text" label="BAM sample name of tumor"/>
-        <expand macro="ref_sel"/>
-        <expand macro="gatk_opt_params"/>
         <section name="mutect2_opt" title="Optional Mutect2 Parameters" expanded="False">
             <param name="germline_resource" type="data" format="vcf,vcf_bgzip" optional="true" label="Germline Resource" help="Population vcf of germline sequencing containing allele fractions." />
             <param name="panel_of_normals" type="data" format="vcf,vcf_bgzip" optional="true" label="Panel of Normals" help="VCF file of sites observed in normal." />
