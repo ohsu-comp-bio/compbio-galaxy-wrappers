@@ -10,10 +10,12 @@
     <command detect_errors="exit_code">
         #include source=$gatk_ival_prep#
         <![CDATA[
+        ln -s ${tumor_inputs} input.bam &&
+        samtools index input.bam &&
         @CMD_BEGIN@ GetPileupSummaries
 
         #for $tumor_input in $tumor_inputs:
-            -I "${tumor_input}"
+            -I input.bam
         #end for
 
         #for $variant in $variants:

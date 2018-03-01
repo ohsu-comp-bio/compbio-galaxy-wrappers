@@ -10,16 +10,20 @@
     <command detect_errors="exit_code">
         #include source=$gatk_ival_prep#
         <![CDATA[
+        ln -s ${normal_inputs} normal.bam &&
+        ln -s ${tumor_inputs} tumor.bam &&
+        samtools index normal.bam &&
+        samtools index tumor.bam &&
         @CMD_BEGIN@ Mutect2
 
         #for $tumor_input in $tumor_inputs:
-            -I "${tumor_input}"
+            -I tumor.bam
         #end for
 	    --tumor-sample "${tumor_sample}"
 
         #if $supply_normal.use_normal == "normal_yes":
             #for $normal_input in $supply_normal.normal_inputs:
-                -I "${normal_input}"
+                -I normal.bam
             #end for
     	    --normal-sample "${supply_normal.normal_sample}"
         #end if

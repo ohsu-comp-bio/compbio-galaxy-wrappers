@@ -12,9 +12,13 @@
         #include source=$gatk_ival_prep#
         ## Wish this could be tool.name!
         <![CDATA[
+        ln -s ${input} input.bam &&
+        samtools index input.bam &&
+
         @CMD_BEGIN@ HaplotypeCaller
 
-        #include source=$bam_req_opts#
+        -I input.bam
+        -O ${output}
         #include source=$gatk_req_opts#
         #include source=$gatk_ival_opts#
 
