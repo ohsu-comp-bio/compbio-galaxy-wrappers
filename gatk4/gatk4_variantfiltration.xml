@@ -1,5 +1,5 @@
-<tool id="gatk4_selectvariants" name="SelectVariants" version="@VERSION@.0" profile="17.09">
-    <description>- Select a subset of variants from a VCF file</description>
+<tool id="gatk4_variantfiltration" name="VariantFiltration" version="@VERSION@.0" profile="17.09">
+    <description>- Filter variant calls based on INFO and/or FORMAT annotations</description>
 
     <macros>
         <import>macros.xml</import>
@@ -10,13 +10,12 @@
     <command detect_errors="exit_code">
         #include source=$gatk_ival_prep#
         <![CDATA[
-        @CMD_BEGIN@ SelectVariants
+        @CMD_BEGIN@ VariantFiltration
         -V "${input}"
         -O "${output}"
-        --exclude-filtered "${selectvariants_opt.exclude_filtered}"
-        --restrict-alleles-to "${selectvariants_opt.restrict_alleles_to}"
-        #for $select in $selectvariants_opt.select_expressions:
-            --selectExpressions "$select.select"
+        #for $filter in $variantfiltration_opt.filter_expression:
+            --filter-name "$filter.filter_name"
+            --filter-expression "$filter.filter"
         #end for
 
         #include source=$gatk_req_opts#
@@ -29,15 +28,10 @@
         <expand macro="gatk_req_params"/>
         <expand macro="gatk_ival_params"/>
 
-        <section name="selectvariants_opt" title="Other SelectVariants Parameters" expanded="False" >
-            <param name="exclude_filtered" type="boolean" checked="false" label="Exclude Filtered?" help="Don't include filtered sites" />
-            <param name="restrict_alleles_to" type="select" label="Select Allelicity" help="Select only variants of a particular allelicity" >
-                <option value="ALL" selected="true">ALL</option>
-                <option value="BIALLELIC">BIALLELIC</option>
-                <option value="MULTIALLELIC">MULTIALLELIC</option>
-            </param>
-            <repeat name="select_expressions" title="Select Expressions" >
-                <param name="select" type="text" label="Expression" help="Criteria to use when selecting the data. These are JEXL expressions." >
+        <section name="variantfiltration_opt" title="Other VariantFiltration Parameters" expanded="False" >
+            <repeat name="filter_expression" title="Filter Expressions" >
+                <param name="filter_name" type="text" label="Filter Name" help="Name to use for the filter."/>
+                <param name="filter" type="text" label="Expression" help="One or more expressions used with INFO fields to filter. These are JEXL expressions." >
                     <sanitizer>
                         <valid initial="string.printable" />
                     </sanitizer>
