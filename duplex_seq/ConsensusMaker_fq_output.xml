@@ -1,0 +1,131 @@
+<tool id="consensus_maker" name="Consensus Maker" version="2.0.0" >
+  <description>Consensus Maker</description>
+
+  <command><![CDATA[
+    python $__tool_directory__/ConsensusMaker_fq_output.py
+    --infile '${infile}'
+    --tagfile '${tagfile}'
+    --outfile '${outfile}'
+    --rep_filt '${rep_filt}'
+    --minmem '${minmem}'
+    --maxmem '${maxmem}'
+    --cutoff '${cutoff}'
+    --Ncutoff '${ncutoff}'
+    --readlength '${readlength}'
+
+    #if $read_type:
+        #set $rtype = ''.join(str($read_type).split(','))
+        --read_type $rtype
+    #end if
+
+    --isize '${isize}'
+    --read_out '${rout}'
+
+    #if $filt:
+        #set $ftype = ''.join(str($filt).split(','))
+        --filt $ftype
+    #end if
+
+    #if $tag_type:
+        --tag_type '${tag_type}'
+    #end if
+
+    ]]></command>
+
+  <inputs>
+      <param name="infile" type="data" format="bam" optional="false" label="Input BAM" help="input BAM file" />
+      <param name="rep_filt" type="integer" min="0" value="9" label="Repeat Filter" help="Remove tags with homomeric runs of nucleotides of length x." />
+      <param name="minmem" type="integer" min="0" value="3" label="Minimum Reads" help="Minimum number of reads allowed to comprise a consensus." />
+      <param name="maxmem" type="integer" min="0" value="1000" label="Maximum Reads" help="Maximum number of reads allowed to comprise a consensus." />
+      <param name="cutoff" type="float" value="0.7" label="Identical Cutoff" help="Percentage of nucleotides at a given position in a read that must be identical in order for a consensus to be called at that position." />
+      <param name="ncutoff" type="float" value="1.0" label="N Cutoff" help="With --filt 'n', maximum fraction of Ns allowed in a consensus." />
+      <param name="readlength" type="integer" min="0" value="80" label="Input Read Length" help="Length of the input read that is being used." />
+      <param name="read_type" type="select" multiple="true" display="checkboxes" label="Read Types" help="A string specifying which types of read to consider.  If you don't select anything, the default dpm will be applied." >
+          <option value="n">Neither read 1 or read 2 mapped (n)</option>
+          <option value="m" selected="true">Either read 1 or read 2 mapped, but not both (m)</option>
+          <option value="p" selected="true">Both read 1 and read 2 mapped, not a proper pair (p)</option>
+          <option value="d" selected="true">Both read 1 and read 2 mapped, proper pair (d)</option>
+          <option value="s">Single ended reads (s)</option>
+      </param>
+      <param name="isize" type="integer" min="-1" value="-1" label="Max Distance Between Pairs" help="maximum distance between read pairs" />
+      <param name="rout" type="integer" min="0" value="1000000" label="Read Out After" help="How often you want to be told what the program is doing." />
+      <param name="filt" type="select" multiple="true" display="checkboxes" label="Filter Types" help="A string indicating which filters should be implemented.  If you don't select anything, the default dpm will be applied." >
+        <option value="s" selected="true">Softclipping filter (s)</option>
+        <option value="o" selected="true">Overlap filter (o)</option>
+        <option value="n" selected="true">N filter (n)</option>
+      </param>
+      <param name="tag_type" type="select" optional="false" label="Tag Types" help="A string specifying which types of read tag to consider." >
+        <option value="gd" selected="true">uses gamma-delta tag and alpha-beta tags in making consensuses (step one of two-step consensus making)</option>
+        <option value="ab">alpha-beta tag only (2nd tag in header), removes gamma-delta tags before making consensus (step 2 in 2-step consensus making)</option>
+      </param>
+  </inputs>
+
+  <outputs>
+    <data format="txt" name="tagfile" label="${tool.name} on ${on_string}: TXT" help="output tagcounts file" />
+    <data format="bam" name="outfile" label="${tool.name} on ${on_string}: BAM" help="output BAM file" />
+    <data format="fastq" name="outfq_1" label="${tool.name} on ${on_string}: R1 FASTQ" help="output R1 FASTQ file" from_work_dir="${outfile}.r1.fq"/>
+    <data format="fastq" name="outfq_2" label="${tool.name} on ${on_string}: R2 FASTQ" help="output R2 FASTQ file" from_work_dir="${outfile}.r2.fq"/>
+    <data format="bam" name="outfile_lcc" label="${tool.name} on ${on_string}: LCC BAM" help="output BAM file" from_work_dir="${outfile}_LCC.bam"/>
+    <data format="bam" name="outfile_nm" label="${tool.name} on ${on_string}: NM BAM" help="output BAM file" from_work_dir="${outfile}_NM.bam"/>
+    <data format="bam" name="outfile_up" label="${tool.name} on ${on_string}: UP BAM" help="output BAM file" from_work_dir="${outfile}_UP.bam">
+        <filter>'d' in read_type</filter>
+    </data>
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+usage: ConsensusMaker_fq_output.py [-h] [--infile INFILE] [--tagfile TAGFILE]
+                                   [--outfile OUTFILE] [--rep_filt REP_FILT]
+                                   [--minmem MINMEM] [--maxmem MAXMEM]
+                                   [--cutoff CUTOFF] [--Ncutoff NCUTOFF]
+                                   [--readlength READ_LENGTH]
+                                   [--read_type READ_TYPE] [--isize ISIZE]
+                                   [--read_out ROUT] [--filt FILT]
+                                   [--tag_type TAG_TYPE]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --infile INFILE       input BAM file
+  --tagfile TAGFILE     output tagcounts file
+  --outfile OUTFILE     output BAM file
+  --rep_filt REP_FILT   Remove tags with homomeric runs of nucleotides of
+                        length x. [9]
+  --minmem MINMEM       Minimum number of reads allowed to comprise a
+                        consensus. [3]
+  --maxmem MAXMEM       Maximum number of reads allowed to comprise a
+                        consensus. [1000]
+  --cutoff CUTOFF       Percentage of nucleotides at a given position in a
+                        read that must be identical in order for a consensus
+                        to be called at that position. [0.7]
+  --Ncutoff NCUTOFF     With --filt 'n', maximum fraction of Ns allowed in a
+                        consensus [1.0]
+  --readlength READ_LENGTH
+                        Length of the input read that is being used. [80]
+  --read_type READ_TYPE
+                        A string specifying which types of read to consider.
+                        Read types: n: Neither read 1 or read 2 mapped. m:
+                        Either read 1 or read 2 mapped, but not both. p: Both
+                        read 1 and read 2 mapped, not a propper pair. d: Both
+                        read 1 and read 2 mapped, propper pair. s: Single
+                        ended reads ['dpm']
+  --isize ISIZE         maximum distance between read pairs
+  --read_out ROUT       How often you want to be told what the program is
+                        doing. [1000000]
+  --filt FILT           A string indicating which filters should be
+                        implemented. Filters: s: Softclipping filter. o:
+                        Overlap filter. n: N filter. ['osn']
+  --tag_type TAG_TYPE   A string specifying which types of read tag to
+                        consider. Read tag types: gd: uses gamma-delta tag and
+                        alpha-beta tags in making consensuses (step one of
+                        two-step consensus making. ab: alpha-beta tag only
+                        (2nd tag in header), removes gamma-delta tags before
+                        making consensus (step 2 in 2-step consensus making)
+  </help>
+
+  <citations>
+      <citation type="doi">10.1073/pnas.1208715109</citation>
+      <citation type="doi">10.1038/nprot.2014.170</citation>
+  </citations>
+
+</tool>

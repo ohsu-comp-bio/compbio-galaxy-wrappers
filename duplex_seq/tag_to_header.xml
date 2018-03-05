@@ -1,0 +1,70 @@
+<tool id="tag_to_header" name="Tag To Header" version="2.0.1.0" >
+  <description>Isolate duplex tags, move them from within the sequenced read to the header region, and remove the spacer region.</description>
+
+  <command><![CDATA[
+    python $__tool_directory__/tag_to_header.py
+    --infile1 '${input_r1}'
+    --infile2 '${input_r2}'
+    --outfile1 '${output_r1}'
+    --outfile2 '${output_r2}'
+    --barcode_length '${blength}'
+    --spacer_length '${slength}'
+    --read_out '${rout}'
+    #if $adapterseq:
+        --adapter '${adapterseq}'
+    #end if
+    ]]></command>
+
+  <inputs>
+      <param name="input_r1" type="data" format="fastq" optional="false" label="FASTQ R1" help="First input raw fastq file." />
+      <param name="input_r2" type="data" format="fastq" optional="false" label="FASTQ R2" help="Second input raw fastq file." />
+      <param name="blength" type="integer" min="0" value="12" label="Barcode Length" help="Length of the duplex tag sequence." />
+      <param name="slength" type="integer" min="0" value="5" label="Spacer Length" help="Length of the spacer sequences used." />
+      <param name="rout" type="integer" min="0" value="1000000" label="Read Out After" help="How often you want to be told what the program is doing." />
+      <param name="adapterseq" type="text" optional="true" label="Optional Spacer Sequence" help="Spacer sequence for filtering on the presence of the spacer. This could be thrown off by low quality scores." />
+  </inputs>
+
+  <outputs>
+    <data format="fastq" name="output_r1" label="${tool.name} on ${on_string}: FASTQ R1" help="Output file for first fastq reads." />
+    <data format="fastq" name="output_r2" label="${tool.name} on ${on_string}: FASTQ R2" help="Output file for second fastq reads." />
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+Tag To Header
+Version 2.0.1
+By Joe Hiatt, Scott Kennedy(1), Brendan Kohrn and Mike Schmitt(1)
+(1) Department of Pathology, University of Washington School of Medicine, Seattle, WA 98195
+March 24, 2014
+
+Isolate duplex tags, move them from within the sequenced read to the header region, and remove the spacer region.
+
+usage: tag_to_header.py [-h] [--infile1 INFILE1] [--infile2 INFILE2]
+                        [--outfile1 OUTFILE1] [--outfile2 OUTFILE2]
+                        [--barcode_length BLENGTH] [--spacer_length SLENGTH]
+                        [--read_out ROUT] [--adapter ADAPTERSEQ]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --infile1 INFILE1     First input raw fastq file.
+  --infile2 INFILE2     Second input raw fastq file.
+  --outfile1 OUTFILE1   Output file for first fastq reads.
+  --outfile2 OUTFILE2   Output file for second fastq reads.
+  --barcode_length BLENGTH
+                        Length of the duplex tag sequence. [12]
+  --spacer_length SLENGTH
+                        Length of the spacer sequences used. [5]
+  --read_out ROUT       How often you want to be told what the program is
+                        doing. [1000000]
+  --adapter ADAPTERSEQ  Optional: Spacer sequence for filtering on the
+                        presence of the spacer. This could be thrown off by
+                        low quality scores.
+  </help>
+
+  <citations>
+      <citation type="doi">10.1073/pnas.1208715109</citation>
+      <citation type="doi">10.1038/nprot.2014.170</citation>
+  </citations>
+
+</tool>
