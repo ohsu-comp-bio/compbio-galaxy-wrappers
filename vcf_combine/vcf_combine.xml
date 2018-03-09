@@ -1,9 +1,9 @@
-<tool id="vcf_combine" name="Uniquify VCFs" version="0.1.0" >
+<tool id="vcf_combine" name="Uniquify VCFs" version="0.2.0" >
     <description>Remove entries from one VCF in a second VCF.</description>
   <version_command>$__tool_directory__/vcf_combine.py --version</version_command>
 
     <command><![CDATA[
-        $__tool_directory__/vcf_combine.py $remove_vcf $vcf_cands $output_vcf
+        $__tool_directory__/vcf_combine.py $remove_vcf $vcf_cands $output_vcf $output_vcf_base
      ]]></command>
 
   <inputs>
@@ -12,7 +12,8 @@
   </inputs>
 
   <outputs>
-    <data format="vcf" name="output_vcf" label="Output VCF" help="Output VCF." />
+    <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" help="Output VCF." />
+    <data format="vcf" name="output_vcf_base" label="${tool.name} on ${on_string}: Source VCF" help="Source output VCF." />
   </outputs>
 
   <tests></tests>
