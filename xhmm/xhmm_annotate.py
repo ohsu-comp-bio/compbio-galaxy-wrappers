@@ -58,6 +58,8 @@ def trans_call(value):
         return 'DEL'
     elif value == '2':
         return 'DUP'
+    elif value == '.':
+        return 'NO CALL'
     else:
         raise Exception('Call is not del or dup, please investigate.')
 
@@ -120,7 +122,8 @@ def manip_line(nline):
     zscore = nline[9].split(':')[9]
     avg_depth = nline[9].split(':')[10]
     numt = nline[7].split(';')[9].split('=')[1]
-    new_info = [region, cnv_call, svlen, zscore, avg_depth, numt, pop_dels, pop_dels_af, pop_dups, pop_dups_af]
+    allele_count = nline[7].split(';')[2].split('=')[1]
+    new_info = [region, cnv_call, svlen, zscore, avg_depth, numt, allele_count, pop_dels, pop_dels_af, pop_dups, pop_dups_af]
     return new_info
 
 
@@ -129,8 +132,8 @@ def tbl_header():
     Provide the table header.
     :return:
     """
-    header = ['REGION', 'DEL/DUP', 'CNV LENGTH', 'ZSCORE', 'MEAN DEPTH', 'NUMBER OF PROBES', 'POP DEL COUNT',
-              'POP DEL AF', 'POP DUP COUNT', 'POP DUP AF', 'GENES']
+    header = ['REGION', 'DEL/DUP', 'CNV LENGTH', 'ZSCORE', 'MEAN DEPTH', 'NUMBER OF PROBES', 'TOTAL ALLELES',
+              'POP DEL COUNT', 'POP DEL AF', 'POP DUP COUNT', 'POP DUP AF', 'GENES']
     return header
 
 
