@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+
+<macros>
+
+    <template name="disc_opts">
+        #set index_path = $index.fields.path
+
+        --ref $index_path
+        --numprocs \${GALAXY_SLOTS:-4}
+
+        #if $input_bed:
+            --bed input.bed
+            --intarget
+        #end if
+
+        #if $coords:
+            --coords '${coords}'
+        #end if
+
+        --kmer '${kmer}'
+        --covthr '${covthr}'
+        --lowcov '${lowcov}'
+        --covratio '${covratio}'
+        --radius '${radius}'
+        --window '${window}'
+        --maxregcov '${maxregcov}'
+        --step '${step}'
+        --mapscore '${mapscore}'
+        --pathlimit '${pathlimit}'
+        --mismatches '${mismatches}'
+        --seed '${seed}'
+    </template>
+
+    <template name="export_opts">
+        #set index_path = $index.fields.path
+        --ref $index_path
+        #if $input_bed:
+            --bed input.bed
+            --intarget
+        #end if
+        --output-format 'vcf'
+        --variant-type 'indel'
+    </template>
+
+    <xml name="disc_params">
+        <param name="coords" type="data" format="vcf" optional="true" label="Coordinates File" help="file with list of selected coordinates to examine" />
+        <param name="kmer" type="integer" min="0" value="25" label="Kmer Size" help="k-mer size" />
+        <param name="covthr" type="integer" min="0" value="5" label="" help="threshold used to select source and sink" />
+        <param name="lowcov" type="integer" min="0" value="2" label="" help="threshold used to remove low-coverage nodes" />
+        <param name="covratio" type="float" min="0.0" value="0.01" label="Min Coverage Ratio" help="minimum coverage ratio for sequencing errors" />
+        <param name="radius" type="integer" min="0" value="100" label="Extension" help="left and right extension (in base-pairs)" />
+        <param name="window" type="integer" min="0" value="400" label="Window Size" help="window-size of the region to assemble (in base-pairs)" />
+        <param name="maxregcov" type="integer" min="0" value="10000" label="Max Coverage" help="maximum average coverage allowed per region" />
+        <param name="step" type="integer" min="0" value="100" label="Window Delta Shift" help="delta shift for the sliding window (in base-pairs)" />
+        <param name="mapscore" type="integer" min="0" value="1" label="Min Map Qual" help="minimum mapping quality for selecting reads to assemble" />
+        <param name="pathlimit" type="integer" min="0" value="1000000" label="Path Limit" help="limit number of sequence paths to" />
+        <param name="mismatches" type="integer" min="0" value="3" label="Max Mismatches" help="max number of mismatches in near-perfect repeat detection" />
+        <param name="seed" type="integer" min="0" value="0" label="Random Seed" help="seed for random operations" />
+    </xml>
+
+    <xml name="export_params">
+        <param name="min_ins_size" type="integer" min="0" value="1" label="Min Insertion Size" help="minimum size of an insertion" />
+        <param name="min_del_size" type="integer" min="0" value="1" label="Min Deletion Size" help="minimum size of a deletion" />
+        <param name="max_ins_size" type="integer" min="0" value="1000000000" label="Max Insertion Size" help="maximum size of an insertion" />
+        <param name="max_del_size" type="integer" min="0" value="1000000000" label="Max Deletion Size" help="maximum size of a deletion" />
+    </xml>
+
+</macros>

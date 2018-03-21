@@ -1,0 +1,184 @@
+<tool id="scalpel" name="Scalpel" version="0.5.4.0" >
+
+    <description>Indel variant analysis of short-read sequencing data with Scalpel</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    <version_command></version_command>
+    <command detect_errors="exit_code"><![CDATA[
+
+    #if $input_bed:
+        ln -s "${input_bed}" input.bed &&
+    #end if
+
+    #if str($analysis.analysis_mode) == "single":
+        ln -s "${input_bam}" input.bam &&
+        scalpel-discovery
+        --single
+        --bam input.bam
+        #include source=$disc_opts#
+
+        #if $analysis.sample:
+            --sample '${analysis.sample}'
+        #end if
+
+        #if str($analysis.scalpel_export_single.filt_single) == "filt_yes":
+            && scalpel-export
+            --single
+            --db ./outdir/variants.db
+            --min-ins-size '${analysis.scalpel_export_single.min_ins_size}'
+            --min-del-size '${analysis.scalpel_export_single.min_del_size}'
+            --max-ins-size '${analysis.scalpel_export_single.max_ins_size}'
+            --max-del-size '${analysis.scalpel_export_single.max_del_size}'
+            --min-alt-count '${analysis.scalpel_export_single.min_alt_count}'
+            --max-alt-count '${analysis.scalpel_export_single.max_alt_count}'
+            --min-coverage '${analysis.scalpel_export_single.min_coverage}'
+            --max-coverage '${analysis.scalpel_export_single.max_coverage}'
+            --min-chi2-score '${analysis.scalpel_export_single.min_chi2_score}'
+            --max-chi2-score '${analysis.scalpel_export_single.max_chi2_score}'
+            --min-vaf '${analysis.scalpel_export_single.min_vaf}'
+            #include source=$export_opts#
+            > '${output_vcf_filt}'
+        #end if
+    #end if
+
+    #if str($analysis.analysis_mode) == "somatic":
+        ln -s "${tumor}" tumor.bam &&
+        ln -s "${normal}" normal.bam &&
+        scalpel-discovery
+        --somatic
+        --tumor tumor.bam
+        --normal normal.bam
+        #include source=$disc_opts#
+        #if $analysis.two_pass:
+            --two-pass
+        #end if
+
+        #if str($analysis.scalpel_export_somatic.filt_somatic) == "filt_yes":
+            && scalpel-export
+            --somatic
+            --db ./outdir/main/somatic.db
+            --min-ins-size '${analysis.scalpel_export_somatic.min_ins_size}'
+            --min-del-size '${analysis.scalpel_export_somatic.min_del_size}'
+            --max-ins-size '${analysis.scalpel_export_somatic.max_ins_size}'
+            --max-del-size '${analysis.scalpel_export_somatic.max_del_size}'
+            --min-alt-count-tumor '${analysis.scalpel_export_somatic.min_alt_count_tumor}'
+            --max-alt-count-normal '${analysis.scalpel_export_somatic.max_alt_count_normal}'
+            --min-vaf-tumor '${analysis.scalpel_export_somatic.min_vaf_tumor}'
+            --max-vaf-normal '${analysis.scalpel_export_somatic.max_vaf_normal}'
+            --min-coverage-tumor '${analysis.scalpel_export_somatic.min_coverage_tumor}'
+            --max-coverage-tumor '${analysis.scalpel_export_somatic.max_coverage_tumor}'
+            --min-coverage-normal '${analysis.scalpel_export_somatic.min_coverage_normal}'
+            --max-coverage-normal '${analysis.scalpel_export_somatic.max_coverage_normal}'
+            --min-phred-fisher '${analysis.scalpel_export_somatic.min_phred_fisher}'
+            #include source=$export_opts#
+            > '${tumor_vcf_filt}'
+        #end if
+    #end if
+
+    ]]></command>
+
+    <inputs>
+        <param name="index" type="select" label="Select the reference genome">
+            <options from_data_table="all_fasta">
+                <validator type="no_options" message="No genome indexes are available" />
+            </options>
+        </param>
+        <param name="input_bed" type="data" format="bed" optional="true" label="Input BED" help="Input BED file that will limit indel search space." />
+        <expand macro="disc_params" />
+        <conditional name="analysis">
+            <param name="analysis_mode" type="select" label="Analysis Mode" help="Analysis mode to run Scalpel in." >
+                <option value="single">Single Exome</option>
+                <option value="somatic">Paired Exome</option>
+            </param>
+            <when value="single">
+                <param name="input_bam" type="data" format="bam" label="Input BAM" help="Input BAM file that will be searched for indels." />
+                <param name="sample" type="text" optional="true" label="Sample Name" help="only process reads/fragments in sample" />
+                <conditional name="scalpel_export_single">
+                    <param name="filt_single" type="select" label="Filter VCF?" help="Filtering options for output VCF." >
+                        <option value="filt_no" selected="true">No</option>
+                        <option value="filt_yes">Yes</option>
+                    </param>
+                    <when value="filt_yes">
+                        <expand macro="export_params"/>
+                        <param name="min_alt_count" type="integer" min="0" value="5" label="Min Alt Allele Count" help="minimum alternative count" />
+                        <param name="max_alt_count" type="integer" min="0" value="1000000" label="Max Alt Allele Count" help="maximum alternative count" />
+                        <param name="min_coverage" type="integer" min="0" value="5" label="Min Coverage" help="minimum coverage" />
+                        <param name="max_coverage" type="integer" min="0" value="1000000" label="Max Coverage" help="maximum coverage" />
+                        <param name="min_chi2_score" type="float" min="0.0" value="0.0" label="Min Chi-square Score" help="minimum chi-square score" />
+                        <param name="max_chi2_score" type="float" min="0.0" value="20.0" label="Max Chi-square Score" help="maximum chi-square score" />
+                        <param name="min_vaf" type="float" min="0.0" value="0.05" label="Min VAF" help="minimum variant allele frequency (AlleleCov/TotCov)" />
+                    </when>
+                </conditional>
+            </when>
+            <when value="somatic">
+                <param name="tumor" type="data" format="bam" label="Tumor BAM" help="tumor BAM file" />
+                <param name="normal" type="data" format="bam" label="Normal BAM" help="normal BAM file" />
+                <param name="two_pass" type="boolean" checked="false" label="Two-Pass?" help="perform second pass of analysis to confirm candidate calls" />
+                <conditional name="scalpel_export_somatic">
+                    <param name="filt_somatic" type="select" label="Filter VCF?" help="Filtering options for output VCF." >
+                        <option value="filt_no" selected="true">No</option>
+                        <option value="filt_yes">Yes</option>
+                    </param>
+                    <when value="filt_yes">
+                        <expand macro="export_params"/>
+                        <param name="min_alt_count_tumor" type="integer" min="0" value="4" label="Min Alt Allele Count Tumor" help="minimum alternative count in the tumor" />
+                        <param name="max_alt_count_normal" type="integer" min="0" value="0" label="Max Alt Allele Count Normal" help="maximum alternative count in the normal" />
+                        <param name="min_vaf_tumor" type="float" min="0.0" value="0.05" max="1.0" label="Min VAF Tumor" help="minimum variant allele frequency (AlleleCov/TotCov) in the tumor" />
+                        <param name="max_vaf_normal" type="float" min="0.0" value="0.0" max="0.1" label="Max VAF Normal" help="maximum variant allele frequency (AlleleCov/TotCov) in the normal" />
+                        <param name="min_coverage_tumor" type="integer" min="0" value="4" label="Min Coverage Tumor" help="minimum coverage in the tumor" />
+                        <param name="max_coverage_tumor" type="integer" min="0" value="1000000000" label="Max Coverage Tumor" help="maximum coverage in the tumor" />
+                        <param name="min_coverage_normal" type="integer" min="0" value="10" label="Min Coverage Normal" help="minimum coverage in the normal" />
+                        <param name="max_coverage_normal" type="integer" min="0" value="1000000000" label="Max Coverage Normal" help="maximum coverage in the normal" />
+                        <param name="min_phred_fisher" type="float" min="0.0" value="10.0" label="Min Phred Fisher" help="minimum fisher exact test score" />
+                    </when>
+                </conditional>
+            </when>
+        </conditional>
+
+    </inputs>
+
+
+    <outputs>
+        <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: INDEL VCF" help="Output VCF with indel calls." from_work_dir="./outdir/variants.indel.vcf">
+            <filter>analysis['analysis_mode'] == 'single'</filter>
+        </data>
+        <data format="vcf" name="output_vcf_filt" label="${tool.name} on ${on_string}: FILTERED INDEL VCF" help="Output VCF with filtered indel calls." >
+            <filter>analysis['analysis_mode'] == 'single'</filter>
+            <filter>analysis['scalpel_export_single']['filt_single'] == 'filt_yes'</filter>
+        </data>
+        <data format="vcf" name="tumor_vcf" label="${tool.name} on ${on_string}: SOMATIC INDEL VCF" help="Somatic VCF with indel calls." from_work_dir="./outdir/main/somatic.indel.vcf">
+            <filter>analysis['analysis_mode'] == 'somatic'</filter>
+        </data>
+        <data format="vcf" name="tumor_vcf_filt" label="${tool.name} on ${on_string}: FILTERED SOMATIC INDEL VCF" help="Somatic VCF with filtered indel calls.">
+            <filter>analysis['analysis_mode'] == 'somatic'</filter>
+            <filter>analysis['scalpel_export_somatic']['filt_somatic'] == 'filt_yes'</filter>
+        </data>
+        <data format="vcf" name="normal_vcf" label="${tool.name} on ${on_string}: COMMON INDEL VCF" help="Common VCF with indel calls." from_work_dir="./outdir/main/common.indel.vcf">
+            <filter>analysis['analysis_mode'] == 'somatic'</filter>
+        </data>
+    </outputs>
+
+    <tests></tests>
+
+    <help><![CDATA[
+    As the second most common type of variation in the human genome, insertions and deletions (indels) have been linked
+    to many diseases, but the discovery of indels of more than a few bases in size from short-read sequencing data remains
+    challenging. Scalpel (http://scalpel.sourceforge.net) is an open-source software for reliable indel detection based
+    on the microassembly technique. It has been successfully used to discover mutations in novel candidate genes for
+    autism, and it is extensively used in other large-scale studies of human diseases. This protocol gives an overview
+    of the algorithm and describes how to use Scalpel to perform highly accurate indel calling from whole-genome and
+    whole-exome sequencing data. We provide detailed instructions for an exemplary family-based de novo study, but we
+    also characterize the other two supported modes of operation: single-sample and somatic analysis. Indel normalization,
+    visualization and annotation of the mutations are also illustrated. Using a standard server, indel discovery and
+    characterization in the exonic regions of the example sequencing data can be completed in ~5 h after read mapping.
+    ]]></help>
+
+    <citations>
+        <citation type="doi">10.1038/nprot.2016.150</citation>
+    </citations>
+
+</tool>
+
