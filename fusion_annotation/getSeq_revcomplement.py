@@ -1,17 +1,82 @@
 #!/usr/bin/env python
-# USAGE: python getSeq_revcomplement.py <maflite> <genome_refpath> <seq_out_filename>
+# USAGE: python getSeq_revcomplement.py <starfusionOutput> <genome_refpath> <left> <seq_out_prefix>
 # Args:
+#   Input: 
+#       1) starfusionOutput 
+#       2) genome fasta file
+#       3) "left" or "right"
+#       4) outfile name
+#   intermediate file is maflite:
 #   maflite
 #       chr	start	end	ref_allele	alt_allele
 #       2	89521179	89521180	T	-
 #       2	89521179	89521180	T	-
-#   genome_refpath= '/home/users/patterja/BioCoders/DataResources/AnnotationSources/Oncotator/oncotator_v1_ds_April052016'
-#   seq_out_filename = <name of output file>
+#   genome_refpath= '/home/exacloud/lustre1/BioCoders/DataResources/Genomes/hg19/broad_variant/genome/Homo_sapiens_assembly19.fasta'
+#   seq_out_prefix = <prefix of outfile>
 # Returns:
 #   list of sequence strings as txt file
 
 import sys
+import argparse
 import subprocess
+
+VERSION="0.2.0"
+#April 12, 2018
+
+def supply_args():
+    """
+    Populate args.
+    https://docs.python.org/2.7/library/argparse.html
+    """
+    parser = argparse.ArgumentParser(description='Input starfusion results and retrieve the 25 nts sequences.')
+    parser.add_argument('starfusionOutput', help='STAR-Fusion output star-fusion.fusion_candidates.final.abridged.FFPM')
+    parser.add_argument('genome_refpath', help='Full path to fasta.fa file, with index file')
+    parser.add_argument('fusion_side', help="'left' or 'right'")
+    parser.add_argument('seq_out_prefix', help="outfile name")
+    parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
+    args = parser.parse_args()
+    return args
+
+
+
+def convert_starfusion_to_maflites(starfusion_handle, fusion_side):
+    """
+    Convert starfusion results into maflite format. Simplest input for oncotator and std input for seq retriever. Two lists, left & right breakpoint
+    Args:
+        starfusionOutput (file): opened for read file type
+	fusion_side (flag): "left" or "right"
+    :Returns:
+        maflite (list of list)
+    """
+    maflite = []
+    if fusion_side == "left":
+        for line in starfusion_handle:
+            if not line.startswith('#'):
+                    vals = line.strip().split()
+                    valsL = vals[5].split(':')
+                    valsR = vals[7].split(':')
+                    chrL = valsL[0]
+                    posL = valsL[1]
+                    dinucL = vals[9][0]
+                    chrR = valsR[0]
+                    posR = valsR[1]
+                    dinucR = vals[11][0]
+                    maflite.append([chrL, str(int(posL)-1), posL, dinucL, '-'])
+    elif fusion_side == "right":
+        for line in starfusion_handle:
+            if not line.startswith('#'):
+                    vals = line.strip().split()
+                    valsL = vals[5].split(':')
+                    valsR = vals[7].split(':')
+                    chrL = valsL[0]
+                    posL = valsL[1]
+                    dinucL = vals[9][0]
+                    chrR = valsR[0]
+                    posR = valsR[1]
+                    dinucR = vals[11][0]
+                    maflite.append([chrR, str(int(posR)-1), posR, dinucR, '-'])
+    return maflite
+
 
 def reverse_complement(seq):
     """
@@ -59,20 +124,19 @@ def get_nucleotides_with_samtools(maflite, genome_refpath):
 
 
 def main():
-    genome_refpath = sys.argv[2]
-    maflite=[]
-    with open(sys.argv[1], 'r') as maf_file:
-        maf_file.next()
-        for line in maf_file:
-            vals = line.strip().split()
-            maflite.append(vals)
+    args = supply_args()
+
+    with open(args.starfusionOutput, 'r') as starfusion_handle:
+	   maf = convert_starfusion_to_maflites(starfusion_handle, args.fusion_side)
+       seq_list = get_nucleotides_with_samtools(maf, args.genome_refpath)
+
     #hg19
     #genome_refpath = '/home/users/patterja/BioCoders/DataResources/Genomes/hg19/release-75/genome/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa'
     #see fusion_annotation.py
-
-
-    seq_list = get_nucleotides_with_samtools(maflite, genome_refpath)
-
+    if args.fusion_side =="left":
+        seq_out_filename = args.seq_out_prefix + "_left.txt"
+    elif args.fusion_side =="right":
+        seq_out_filename = args.seq_out_prefix + "_right.txt"
 
     with open(seq_out_filename, 'w') as outfile:
         for i in seq_list:
