@@ -1,0 +1,111 @@
+<tool id="cnvkit_batch" name="CNVkit Batch" version="@VERSION@.0" profile="17.09">
+    <description>CNVkit, a command-line toolkit for copy number analysis.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ batch
+        #for i in $tumors
+        ${i} 
+        #end for
+        ##$tumor
+        -n
+        #for j in $normals
+        ${j}
+        #end for
+        #if $reference_genome_source.reference_genome_selector == "history":
+        --fasta $reference_genome_source.reference
+        #else if $reference_genome_source.reference_genome_selector == "cached":
+        --fasta $reference_genome_source.reference.fields.path
+        #end if
+        --processes 1
+        --method $method_sel
+        --targets $targets
+        ##--antitargets $antitargets
+        --access $access
+        #if $scatter:
+        --scatter
+        #end if
+        #if $diagram:
+        --diagram
+        #end if
+        --output-reference $output_ref
+        ##--output-dir out
+    ]]></command>
+
+    <inputs>
+        
+        <param name="tumors" type="data" format="bam" multiple="true" label="Mapped sequence reads from Tumor Samples."/>
+        <param name="normals" type="data" format="bam" multiple="true" optional="true" label="Mapped sequence reads from Normal Samples."/> 
+        <conditional name="reference_genome_source">
+            <param name="reference_genome_selector" type="select" label="Reference Genome Source:">
+                <option value="cached">Cached</option>
+                <option value="history">History</option>
+            </param>
+            <when value="cached">
+                <param name="reference" type="select" label="Using reference genome" >
+                    <options from_data_table="cnvkit_ref_genome" />
+                        <validator type="no_options" message="A built-in reference genome is not available."/>
+                </param>
+            </when>
+            <when value="history">
+                <param name="reference" type="data" format="fasta" label="Using reference genome file" />
+            </when>
+        </conditional>
+        <!--
+        <conditional name="reference_cnn_source">
+            <param name="reference_cnn_selector" type="select" label="Copy number reference source:">
+                <option value="cached">Cached</option>
+                <option value="history">History</option>
+            </param>
+            <when value="cached">
+                <param name="reference" type="select" label="Using reference genome" >
+                    <options from_data_table="cnvkit_ref_cnn" />
+                        <validator type="no_options" message="A built-in copy number reference is not available."/>
+                </param>
+            </when>
+            <when value="history">
+                <param name="reference" type="data" format="cnn" label="Using reference cnn file" />
+            </when>
+       </conditional>
+       --> 
+       <param name="method_sel" type="select" label="Sequencing protocol used:">
+            <option value="hybrid">Hybrid Capture</option>
+            <option value="amplicon">Targeted Amplicon</option>
+            <option value="wgs">Whole Genome Sequencing</option>
+        </param>
+        <param name="targets" type="data" format="gatkintervals,bed" label="Target intervals"/>
+        <param name="antitargets" type="data" format="gatkintervals,bed" optional="true" label="Antitarget intervals"/>
+        <param name="annotate" type="data" format="gatkintervals,bed,gff,txt" label="Gene models to assign names to target region."/>
+        <param name="access" type="data" format="bed" label="Regions of accessible sequence on chromosomes."/>
+        <param name="scatter" type="boolean" label="Create a whole-genome copy ratio profile as a PDF scatter plot."/>
+        <param name="diagram" type="boolean" label="Create an ideogram of copy ratios on chromosomes as a PDF."/>
+    </inputs>
+
+    <outputs>
+        <collection type="list"  name="output_diagram" label="${tool.name} on ${on_string}: Diagram">
+            <discover_datasets pattern="(?P&lt;designation&gt;.+)-diagram\.pdf" format="pdf" visible="false"/>
+        </collection>
+        <collection type="list" name="output_cnr" label="${tool.name} on ${on_string}: CNR">
+            <discover_datasets pattern="(?P&lt;designation&gt;.+)\.cnr" format="cnr" visible="false"/>
+        </collection>
+        <collection type="list" name="output_cns" label="${tool.name} on ${on_string}: CNS">
+            <discover_datasets pattern="(?P&lt;designation&gt;.+)\.cns" format="cns" visible="false"/>
+        </collection>
+        <collection type="list" name="output_scatter" label="${tool.name} on ${on_string}: Scatter">
+            <discover_datasets pattern="(?P&lt;designation&gt;.+)-scatter\.pdf" format="pdf" visible="false"/>
+        </collection>
+        <data format="cnn" name="output_ref" label="${tool.name} on ${on_string}: Reference CNN"/>
+    </outputs>
+
+    <help><![CDATA[
+    CNVkit batch: Run the complete CNVkit pipeline on one or more BAM files.
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>
