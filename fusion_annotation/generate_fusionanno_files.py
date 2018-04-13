@@ -7,9 +7,8 @@ import subprocess
 import os
 import argparse
 from getSeq_revcomplement import *
-from starfusion_oncotator import *
 
-VERSION = '0.3.0'
+VERSION = '0.4.0'
 
 def supply_args():
     """
@@ -24,42 +23,47 @@ def supply_args():
     args = parser.parse_args()
     return args
 
+def convert_starfusion_to_bedpe(starfusionOutput):
+    #with open(starfusionOutput, 'r') as starfusion_ffpm:
+    bedpe =[]
+    for line in starfusionOutput:
+        if not line.startswith('#'):
+            vals = line.strip().split()
+            valsL = vals[5].split(':')
+            valsR = vals[7].split(':')
+            chrL = valsL[0]
+            posL = valsL[1]
+            geneL = vals[4].split('^')[0]
+            strandL = valsL[2]
+            chrR = valsR[0]
+            posR = valsR[1]
+            geneR = vals[6].split('^')[0]
+            strandR = valsR[2]
+            linebedpe=[chrL, str(int(posL) - 1), posL, chrR, str(int(posR) - 1), posR, '--'.join([geneL, geneR]), '0', strandL, strandR, vals[1], vals[2], vals[3], geneL, vals[4].split('^')[1], geneR, vals[4].split('^')[1]]
+            linebedpe.extend(vals[8:15])
+            bedpe.append(linebedpe)
+    return bedpe
+
 def main():
     args = supply_args()
+    with open(args.starfusionOutput, 'r') as starfusion_handle:
+        bedpe=convert_starfusion_to_bedpe(starfusion_handle)
 
+    maf_left=[]
+    maf_right=[]
+    for i in range(len(bedpe)):
+        l=[bedpe[i][0], bedpe[i][1], bedpe[i][2], bedpe[i][18][0], bedpe[i][8]]
+        r=[bedpe[i][3], bedpe[i][4], bedpe[i][5], bedpe[i][20][0], bedpe[i][9]]
+        maf_left.append(l)
+        maf_right.append(r)
 
-    mafleft_filename = "left_brkpnt.maf"
-    mafright_filename = "right_brkpnt.maf"
-
-    with open(args.starfusionOutput, 'r') as starfusion_ffpm:
-        maflite_leftls, maflite_rightls = convert_starfusion_to_maflites(starfusion_ffpm)
-
-    # Oncotator Input
-    with open(mafleft_filename, 'w') as outfile_mafleft:
-        write_mafs(maflite_leftls, outfile_mafleft)
-
-    with open(mafright_filename, 'w') as outfile_mafright:
-        write_mafs(maflite_rightls, outfile_mafright)
-
-    # Run Oncotator, output is automatic
-
-    #runOncotator(args.oncotator_dbdir, mafleft_filename, "oncotated_left_output")
-    #runOncotator(args.oncotator_dbdir, mafright_filename, "oncotated_right_output")
-
-    # oncotator_dbdir = '.../BioCoders/DataResources/AnnotationSources/Oncotator/oncotator_v1_ds_April052016'
-    # genome_refpath = '.../BioCoders/DataResources/Genomes/hg19/release-75/genome/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa'
-
-
-    seq_list_left = get_nucleotides_with_samtools(maflite_leftls, args.genome_refPath)
-    seq_list_right = get_nucleotides_with_samtools(maflite_rightls, args.genome_refPath)
-    lr_seq_list = map(list.__add__, seq_list_left, seq_list_right)
-
-
-    with open(args.starfusionOutput, 'r') as starfusion_ffpm:
-        bedpe=convert_starfusion_to_bedpe(starfusion_ffpm)
+    
+    seq_left = get_nucleotides_with_samtools(maf_left, args.genome_refPath)
+    seq_right = get_nucleotides_with_samtools(maf_right, args.genome_refPath)
+    lr_seq_list = map(list.__add__, seq_left, seq_right)
 
     bedpe_wseq = map(list.__add__, bedpe , lr_seq_list)
-    sfoutcolumns = ["chrom1","start1","end1","chrom2","start2","end2","name","score","strand1","strand2","JunctionReadCount","SpanningFragCount","SpliceType","EnsGene1","EnsGene2","LargeAnchorSupport","LeftBreakDinuc","LeftBreakEntropy","RightBreakDinuc","RightBreakEntropy","J_FFPM","S_FFPM","leftcoord","leftseq","rightgene","rightseq"]
+    sfoutcolumns = ["chrom1","start1","end1","chrom2","start2","end2","name","score","strand1","strand2","JunctionReadCount","SpanningFragCount","SpliceType","HGVSGene1","EnsGene1","HGVSGene2","EnsGene2","LargeAnchorSupport","LeftBreakDinuc","LeftBreakEntropy","RightBreakDinuc","RightBreakEntropy","J_FFPM","S_FFPM","leftgene","leftseq","rightgene","rightseq"]
 
     with open("starfusion_output.bedpe", 'w') as sf_out:
         sf_out.writelines('\t'.join(sfoutcolumns))
