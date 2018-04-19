@@ -1,0 +1,33 @@
+<tool id="viper" name="Run VIPER" version="0.1.0">
+    <requirements>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+        Rscript run_viper.R -d foo -e foo -s foo -n foo
+    ]]></command>
+    <inputs>
+        <param type="data" name="input1" format="network" />
+        <param type="data" name="input2" format="matrix" />
+        <param type="data" name="input3" format="matrix" />
+    </inputs>
+    <outputs>
+        <data name="output1" format="data" from_work_dir="unknown" />
+    </outputs>
+    <help><![CDATA[
+Usage: run_arachne2regulon.R [options]
+
+
+Options:
+	-d DIR, --dir=DIR
+		Full path to outdir.
+
+	-e EXPR, --expr=EXPR
+		Full path to input expression matrix used to build ARACNE network.
+
+	-n NETWORK, --network=NETWORK
+		Full path to ARACNE network.txt.
+
+	-h, --help
+		Show this help message and exit
+
+    ]]></help>
+</tool>
