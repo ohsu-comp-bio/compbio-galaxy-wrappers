@@ -1,0 +1,37 @@
+<tool id="run_viper" name="Run VIPER" version="0.1.0">
+
+    <requirements>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+        Rscript run_viper.R -o $activity -r $inputs.regulons -e $inputs.expression
+    ]]></command>
+
+    <inputs>
+        <param type="data" name="regulons" format="rdata" />
+        <param type="data" name="expression" format="tsv" />
+    </inputs>
+
+    <outputs>
+        <data name="activity" format="tsv" />
+    </outputs>
+
+    <help><![CDATA[
+Usage: run_viper.R [options]
+
+Options:
+	-o OUTDIR, --outdir=OUTDIR
+		Path to output directory.
+
+	-r REGULONS, --regulons=REGULONS
+		Path to RDS file containing network regulons.
+
+	-e EXPR, --expr=EXPR
+		Path to file containing expression of samples for which viper
+
+        activity scores are desired.
+
+	-h, --help
+		Show this help message and exit
+    ]]></help>
+</tool>
