@@ -1,4 +1,4 @@
-<tool id="run_viper" name="Visualize VIPER" version="0.1.0">
+<tool id="run_viper" name="aracne2regulons" version="0.1.0">
 
     <requirements>
       <requirement type="package" version="1.10.0">bioconductor-viper</requirement>
@@ -9,34 +9,30 @@
     </requirements>
 
     <command detect_errors="exit_code"><![CDATA[
-        viz.r --output $viz --sample $sample --gene $gene --activity $activity
+        aracne2regulons.r --output $regulons --expr $expression --network $network
     ]]></command>
 
     <inputs>
-        <param type="data" name="activity" />
-        <param type="data" name="sample" />
-        <param type="data" name="gene" />
+        <param type="data" name="network" />
+        <param type="data" name="expression" />
     </inputs>
 
     <outputs>
-        <data name="viz" format="png" />
+        <data name="regulons" format="tsv" />
     </outputs>
 
     <help><![CDATA[
-Usage: viz.r [options]
+Usage: aracne2regulons.r [options]
 
 Options:
 	-o OUTPUT, --output=OUTPUT
-		Path to output file, saved as PNG.
+		Path to output.
 
-	-a ACTIVITY, --activity=ACTIVITY
-		Path to VIPER activity output file.
+	-e EXPR, --expr=EXPR
+		Path to input expression matrix used to build ARACNE network.
 
-	-s SAMPLE, --sample=SAMPLE
-		Name of sample of interest.
-
-	-n GENE, --gene=GENE
-		Name of gene of interest.
+	-n NETWORK, --network=NETWORK
+		Path to ARACNE network.txt.
 
 	-h, --help
 		Show this help message and exit
