@@ -1,15 +1,15 @@
-<tool id="run_viper" name="Visualize VIPER" version="0.1.0">
+<tool id="viper_report" name="Make VIPER Report" version="0.1.0">
 
     <requirements>
       <requirement type="package" version="1.10.0">bioconductor-viper</requirement>
       <requirement type="package" version="1.3.2">r-optparse</requirement>
       <requirement type="package" version="0.8.6">r-reshape</requirement>
       <requirement type="package" version="2.2.1">r-ggplot2</requirement>
-      <requirement type="package" version="TODO">buchanae-viper</requirement>
+      <requirement type="package" version="0.0.0">buchanae-viper</requirement>
     </requirements>
 
     <command detect_errors="exit_code"><![CDATA[
-        viz.r --output $viz --sample $sample --gene $gene --activity $activity
+        viper_report.r --output $viz --sample $sample --gene $gene --activity $activity
     ]]></command>
 
     <inputs>
@@ -23,7 +23,7 @@
     </outputs>
 
     <help><![CDATA[
-Usage: viz.r [options]
+Usage: viper_report.r [options]
 
 Options:
 	-o OUTPUT, --output=OUTPUT
