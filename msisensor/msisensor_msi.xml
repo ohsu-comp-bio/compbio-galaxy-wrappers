@@ -1,13 +1,18 @@
-<tool id="msisensor_msi" name="MSIsensor msi" version="0.0.1">
+<tool id="msisensor_msi" name="MSIsensor msi" version="0.0.2">
     <description>Detect replication slippage variants at microsatellite regions.</description>
     <requirements></requirements>
     <command detect_errors="exit_code"><![CDATA[
+
+        ln -s '${normal}' normal.bam &&
+        samtools index normal.bam &&
+        ln -s '${tumor}' tumor.bam &&
+        samtools index tumor.bam &&
         msisensor msi
 
         -d '${microsat_ref}'
-        -n '${normal}'
-        -t '${tumor}'
-        -o '${output}'
+        -n normal.bam
+        -t tumor.bam
+        -o output
 
         #if $bedfile:
             -e '${bedfile}'
@@ -63,7 +68,10 @@
     </inputs>
 
     <outputs>
-        <data format="tabular" name="output" label="${tool.name} on ${on_string}: TSV" />
+        <data format="tabular" name="output" label="${tool.name} on ${on_string}: TSV" from_work_dir="output" />
+        <data format="tabular" name="output_somatic" label="${tool.name} on ${on_string}: Somatic Output" from_work_dir="output_somatic" />
+        <data format="tabular" name="output_germline" label="${tool.name} on ${on_string}: Germline Output" from_work_dir="output_germline" />
+        <data format="tabular" name="output_dis" label="${tool.name} on ${on_string}: Coverage Distribution Output" from_work_dir="output_dis" />
     </outputs>
     <help><![CDATA[
     MSIsensor is a C++ program to detect replication slippage variants at microsatellite regions,
