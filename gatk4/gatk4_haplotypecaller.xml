@@ -8,6 +8,8 @@
 
     <expand macro="version_cmd"/>
 
+    <expand macro="requirements"/>
+
     <command detect_errors="exit_code">
         #include source=$gatk_ival_prep#
         ## Wish this could be tool.name!
