@@ -1,0 +1,59 @@
+<tool id="msisensor_scan" name="MSIsensor scan" version="@VERSION@.0" profile="18.01">
+    <description>Detect replication slippage variants at microsatellite regions.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <expand macro="requirements"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+
+        @set_reference_fasta_filename@
+
+        msisensor scan
+
+        -d '${reference_fasta_filename}'
+        -o '${output}'
+
+        #include source=$common_opts#
+        -c '${context_len}'
+        -s '${max_ms}'
+        -r '${min_ms_repeat}'
+
+        #if $output_hp_only:
+            -p '1'
+        #else
+            -p '0'
+        #end if
+
+    ]]></command>
+
+    <inputs>
+        <expand macro="reference_source_conditional" />
+        <expand macro="common_params" />
+        <param name="context_len" type="integer" value="5" min="0" label="Context Length" help="context length" />
+        <param name="max_ms" type="integer" value="5" min="0" label="Max Microsat Size" help="maximal length of microsat" />
+        <param name="min_ms_repeat" type="integer" value="3" min="0" label="Min Microsat Repeats" help="minimal repeat times of microsat" />
+        <param name="output_hp_only" type="boolean" checked="false" label="Homopolymer Only?" help="output homopolymer only" />
+    </inputs>
+
+    <outputs>
+        <data format="tabular" name="output" label="${tool.name} on ${on_string}: Homopolymer and Microsats File" />
+    </outputs>
+    <help><![CDATA[
+    MSIsensor is a C++ program to detect replication slippage variants at microsatellite regions,
+    and differentiate them as somatic or germline. Given paired tumor and normal sequence data,
+    it builds a distribution for expected (normal) and observed (tumor) lengths of repeated sequence
+    per microsatellite, and compares them using Pearson's Chi-Squared Test. Comprehensive testing
+    indicates MSIsensor is an efficient and effective tool for deriving MSI status from standard
+    tumor-normal paired sequence data.
+
+    If you used this tool for your work, please cite PMID 24371154.
+    ]]></help>
+    <citations>
+        <citation type="doi">10.1093/bioinformatics/btt755</citation>
+    </citations>
+</tool>

@@ -1,6 +1,14 @@
-<tool id="msisensor_msi" name="MSIsensor msi" version="0.0.2">
+<tool id="msisensor_msi" name="MSIsensor msi" version="@VERSION@.0" profile="18.01">
     <description>Detect replication slippage variants at microsatellite regions.</description>
-    <requirements></requirements>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <expand macro="requirements"/>
+
     <command detect_errors="exit_code"><![CDATA[
 
         ln -s '${normal}' normal.bam &&
@@ -22,11 +30,10 @@
             -r '${region}'
         #end if
 
+        #include source=$common_opts#
         -f '${fdr_thresh}'
         -c '${cov_thresh}'
-        -l '${min_hp}'
         -p '${min_hp_dist}'
-        -m '${max_hp_dist}'
         -q '${min_ms}'
         -s '${min_ms_dist}'
         -w '${max_ms_dist}'
@@ -54,11 +61,10 @@
         <param name="tumor" type="data" format="bam" label="Tumor BAM" help="tumor bam file" />
         <param name="bedfile" type="data" format="bed" label="BED Input" help="bed file, optional" optional="true" />
         <param name="region" type="text" label="Region to Assess" optional="true" help="choose one region, format: 1:10000000-20000000" />
+        <expand macro="common_params" />
         <param name="fdr_thresh" type="float" value="0.05" min="0" max="1.0" label="FDR Threshold" help="FDR threshold for somatic sites detection" />
         <param name="cov_thresh" type="integer" value="20" min="0" label="Coverage Threshold" help="coverage threshold for msi analysis, WXS: 20; WGS: 15" />
-        <param name="min_hp" type="integer" value="5" min="0" label="Min Homopolymer Size" help="minimal homopolymer size" />
         <param name="min_hp_dist" type="integer" value="10" min="0" label="Min Homopolymer Size DA" help="minimal homopolymer size for distribution analysis" />
-        <param name="max_hp_dist" type="integer" value="50" min="0" label="Max Homopolymer Size DA" help="maximal homopolymer size for distribution analysis" />
         <param name="min_ms" type="integer" value="3" min="0" label="Min Microsat Size" help="minimal microsats size" />
         <param name="min_ms_dist" type="integer" value="5" min="0" label="Min Microsat Size DA" help="minimal microsats size for distribution analysis" />
         <param name="max_ms_dist" type="integer" value="40" min="0" label="Max Microsat Size DA" help="maximal microsats size for distribution analysis" />
