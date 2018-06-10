@@ -43,6 +43,15 @@
     <outputs>
         <data format="tabular" name="output" label="${tool.name} on ${on_string}: Homopolymer and Microsats File" />
     </outputs>
+
+    <tests>
+        <test>
+            <param name="reference_source_selector" value="history" />
+            <param name="ref_file" ftype="fasta" value="msi_scan.fasta"/>
+            <output name="output" ftype="tabular" file="msi_scan_out" />
+        </test>
+    </tests>
+
     <help><![CDATA[
     MSIsensor is a C++ program to detect replication slippage variants at microsatellite regions,
     and differentiate them as somatic or germline. Given paired tumor and normal sequence data,
