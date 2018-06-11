@@ -97,7 +97,7 @@ def write_filtered_splice(args, not_ref_coords, handle):
               "First Base of Intron",
               "Last Base of Intron",
               "Strand: (0: undefined, 1: +, 2: -)",
-              "Intron Motif: (0: non-canonical, 1: GT/AG, 2: CT/AC, 3: GC/AG, 4: CT/GC, 5:AT/AC, 6: GT/AT)",
+              "Intron Motif",
               "0: unannotated, 1: annotated",
               "number of uniquely mapping reads crossing the junction",
               "number of multi-mapping reads crossing the junction",
