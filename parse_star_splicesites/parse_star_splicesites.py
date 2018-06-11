@@ -10,7 +10,7 @@ import argparse
 from file_types.gff3 import GffReader
 
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 def supply_args():
     """
@@ -112,8 +112,25 @@ def write_filtered_splice(args, not_ref_coords, handle):
 
     for entry in sorted(not_ref_coords, key=lambda e: int(e[6]), reverse=True):
         if int(entry[6]) > args.min_count and not entry[0].startswith('GL'):
+            entry[4] = motif_map(entry[4])
             handle.write('\t'.join(entry))
             handle.write('\n')
+
+
+def motif_map(motif):
+    """
+    Map the coded motif values to actual base values, as shown in the header.
+    :return:
+    """
+    mapper = {'0': 'non-canonical',
+              '1': 'GT/AG',
+              '2': 'CT/AC',
+              '3': 'GC/AG',
+              '4': 'CT/GC',
+              '5': 'AT/AC',
+              '6': 'GT/AT'}
+
+    return mapper[str(motif)]
 
 
 def main():
@@ -133,9 +150,7 @@ def main():
     for chrom in gff.exon_parent:
         for parent in gff.exon_parent[chrom]:
             coords = sorted(gff.exon_parent[chrom][parent])
-            splice_ints = [(chrom, int(coords[i][1])+1, int(coords[i + 1][
-            0])-1) for i
-                           in range(len(coords) - 1)]
+            splice_ints = [(chrom, int(coords[i][1])+1, int(coords[i + 1][0])-1) for i in range(len(coords) - 1)]
             norm_ints.extend(splice_ints)
 
     not_ref_coords = compare_norm(star_file, norm_ints)
