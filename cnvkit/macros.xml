@@ -15,7 +15,7 @@
         </citations>
     </xml>
 
-    <token name="@VERSION@">0.9.3</token>
+    <token name="@VERSION@">0.9.4a0</token>
     <token name="@CMD_BEGIN@">cnvkit.py</token>
 
 </macros>

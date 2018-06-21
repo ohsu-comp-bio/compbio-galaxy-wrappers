@@ -7,83 +7,138 @@
 
     @VERSION_CMD@
 
+    <expand macro="requirements"/>
+
     <command detect_errors="exit_code"><![CDATA[
         @CMD_BEGIN@ batch
-        #for i in $tumors
-        ${i} 
+        #for tumor in $tumors
+        ${tumor} 
         #end for
-        ##$tumor
+
+        #if $cnn_ref_type.cnn_ref_type_selector == "prebuilt":
+
+        #if $cnn_ref_type.reference_cnn_source.reference_cnn_selector == "history":
+        --reference ${cnn_ref_type.reference_cnn_source.cnn_reference}
+        #else if $cnn_ref_type.reference_cnn_source.reference_cnn_selector == "cached":
+        --reference ${cnn_ref_type.reference_cnn_source.cnn_reference.fields.path}
+
+        #else if $cnn_ref_type.cnn_ref_type_selector == "build":
+
         -n
         #for j in $normals
         ${j}
         #end for
-        #if $reference_genome_source.reference_genome_selector == "history":
-        --fasta $reference_genome_source.reference
-        #else if $reference_genome_source.reference_genome_selector == "cached":
-        --fasta $reference_genome_source.reference.fields.path
+
+        #if $cnn_ref_type.reference_genome_source.reference_genome_selector == "history":
+        --fasta ${cnn_ref_type.reference_genome_source.reference}
+        #else if $cnn_ref_type.reference_genome_source.reference_genome_selector == "cached":
+        --fasta ${cnn_ref_type.reference_genome_source.reference.fields.path}
         #end if
-        --processes 1
-        --method $method_sel
+
         --targets $targets
-        ##--antitargets $antitargets
+        --antitargets $antitargets
         --access $access
+        --output-reference $output_ref
+        #end if
+
+        --processes ${GALAXY_SLOTS:-4}
+        --method $method_sel
+
+        #if $count-reads:
+        --count-reads
+        #end if
+
         #if $scatter:
         --scatter
         #end if
+
         #if $diagram:
         --diagram
         #end if
-        --output-reference $output_ref
-        ##--output-dir out
+
+        #if $short-names:
+        --short-names
+        #end if
+
+        #if $target-avg-size:
+        --target-avg-size
+        #end if
+
+        #if $antitarget-avg-size:
+        --antitarget-avg-size
+        #end if
+
+        #if $antitarget-min-size:
+        --antitarget-min-size
+        #end if
+
     ]]></command>
 
     <inputs>
         
         <param name="tumors" type="data" format="bam" multiple="true" label="Mapped sequence reads from Tumor Samples."/>
-        <param name="normals" type="data" format="bam" multiple="true" optional="true" label="Mapped sequence reads from Normal Samples."/> 
-        <conditional name="reference_genome_source">
-            <param name="reference_genome_selector" type="select" label="Reference Genome Source:">
-                <option value="cached">Cached</option>
-                <option value="history">History</option>
+        <conditional name="cnn_ref_type">
+            <param name="cnn_ref_type_selector" type="select" label="Copy number reference type:">
+                <option value="prebuilt">Prebuilt</option>
+                <option value="build">Build new CNN</option>
             </param>
-            <when value="cached">
-                <param name="reference" type="select" label="Using reference genome" >
-                    <options from_data_table="cnvkit_ref_genome" />
-                        <validator type="no_options" message="A built-in reference genome is not available."/>
-                </param>
+            <when value="prebuilt">
+                <conditional name="reference_cnn_source">
+                    <param name="reference_cnn_selector" type="select" label="Copy number reference source:">
+                        <option value="cached">Cached</option>
+                        <option value="history">History</option>
+                    </param>
+                    <when value="cached">
+                        <param name="cnn_reference" type="select" label="Using Prebuilt CNN reference genome" >
+                            <options from_data_table="cnvkit_ref_cnn" >
+                                <validator type="no_options" message="A built-in copy number reference is not available."/>
+                            </options>
+                        </param>
+                    </when>
+                    <when value="history">
+                        <param name="cnn_reference" type="data" format="cnn" label="Using CNN reference genome file" />
+                    </when>
+                </conditional>
             </when>
-            <when value="history">
-                <param name="reference" type="data" format="fasta" label="Using reference genome file" />
-            </when>
+            <when value="build">
+                <param name="normals" type="data" format="bam" multiple="true" optional="true" label="Mapped sequence reads from Normal Samples."/> 
+                <conditional name="reference_genome_source">
+                    <param name="reference_genome_selector" type="select" label="Reference Genome Source:">
+                        <option value="cached">Cached</option>
+                        <option value="history">History</option>
+                    </param>
+                    <when value="cached">
+                        <param name="reference" type="select" label="Using reference genome" >
+                            <options from_data_table="cnvkit_ref_genome" />
+                                <validator type="no_options" message="A built-in reference genome is not available."/>
+                        </param>
+                    </when>
+                    <when value="history">
+                        <param name="reference" type="data" format="fasta" label="Using reference genome file" />
+                    </when>
+               </conditional>
+               <param name="targets" type="data" format="gatkintervals,bed" label="Target intervals"/>
+               <param name="antitargets" type="data" format="gatkintervals,bed" optional="true" label="Antitarget intervals"/>
+               <param name="annotate" type="data" format="gatkintervals,bed,gff,txt" label="Gene models to assign names to target region."/>
+               <param name="access" type="data" format="bed" label="Regions of accessible sequence on chromosomes."/>i
+           </when>
         </conditional>
-        <!--
-        <conditional name="reference_cnn_source">
-            <param name="reference_cnn_selector" type="select" label="Copy number reference source:">
-                <option value="cached">Cached</option>
-                <option value="history">History</option>
-            </param>
-            <when value="cached">
-                <param name="reference" type="select" label="Using reference genome" >
-                    <options from_data_table="cnvkit_ref_cnn" />
-                        <validator type="no_options" message="A built-in copy number reference is not available."/>
-                </param>
-            </when>
-            <when value="history">
-                <param name="reference" type="data" format="cnn" label="Using reference cnn file" />
-            </when>
-       </conditional>
-       --> 
-       <param name="method_sel" type="select" label="Sequencing protocol used:">
+        <param name="method_sel" type="select" label="Sequencing protocol used:">
             <option value="hybrid">Hybrid Capture</option>
             <option value="amplicon">Targeted Amplicon</option>
             <option value="wgs">Whole Genome Sequencing</option>
         </param>
-        <param name="targets" type="data" format="gatkintervals,bed" label="Target intervals"/>
-        <param name="antitargets" type="data" format="gatkintervals,bed" optional="true" label="Antitarget intervals"/>
-        <param name="annotate" type="data" format="gatkintervals,bed,gff,txt" label="Gene models to assign names to target region."/>
-        <param name="access" type="data" format="bed" label="Regions of accessible sequence on chromosomes."/>
-        <param name="scatter" type="boolean" label="Create a whole-genome copy ratio profile as a PDF scatter plot."/>
-        <param name="diagram" type="boolean" label="Create an ideogram of copy ratios on chromosomes as a PDF."/>
+        <param name="scatter" type="boolean" label="Scatter Plot" help="Create a whole-genome copy ratio profile as a PDF scatter plot."/>
+        <param name="diagram" type="boolean" label="Diagram" help="Create an ideogram of copy ratios on chromosomes as a PDF."/>
+        <param name="count-reads" type="boolean" label="Count Reads" help="Get read depths by counting read midpoints within each bin."/>
+        <param name="drop-low-coverage" type="boolean" label="Drop Low Coverage" help="Drop very-low-coverage bins before segmentation to avoid false-positive deletions in poor-quality tumor samples."/>
+
+        <section name="advanced_params" title="Advanced Paramters for CNVkit" expanded="False">
+            <param name="target-avg-size" type="integer" optional="true" label="Target Average Size" help="Average size of split target bins"/>
+            <param name="antitarget-avg-size" type="integer" optional="true" label="Antitarget Average Size" help="Average size of antitarget bins"/>
+            <param name="antitarget-min-size" type="integer" optional="true" label="Antitarget Minimum Size" help="Minimum size of antitarget bins"/>
+            <param name="short-names" type="boolean" checked="false" label="Short Names" help="Reduce multi-accession bait labels to be short and consistent."/>
+        </section>        
     </inputs>
 
     <outputs>
@@ -99,7 +154,9 @@
         <collection type="list" name="output_scatter" label="${tool.name} on ${on_string}: Scatter">
             <discover_datasets pattern="(?P&lt;designation&gt;.+)-scatter\.pdf" format="pdf" visible="false"/>
         </collection>
-        <data format="cnn" name="output_ref" label="${tool.name} on ${on_string}: Reference CNN"/>
+        <data format="cnn" name="output_ref" label="${tool.name} on ${on_string}: Reference CNN">
+            <filter>cnn_ref_type['cnn_ref_type_selector'] == "build"</filter>
+        </data>
     </outputs>
 
     <help><![CDATA[
