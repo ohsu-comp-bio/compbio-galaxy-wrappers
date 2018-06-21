@@ -216,7 +216,7 @@
         </citations>
     </xml>
 
-    <token name="@VERSION@">4.0.0.0</token>
+    <token name="@VERSION@">4.0.4.0</token>
     <token name="@CMD_BEGIN@">gatk --java-options "-Xmx28g"</token>
 
     <token name="@PICARD_HELP@">

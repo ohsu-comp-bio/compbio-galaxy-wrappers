@@ -1,0 +1,110 @@
+<tool id="msisensor_msi" name="MSIsensor msi" version="@VERSION@.0" profile="18.01">
+    <description>Detect replication slippage variants at microsatellite regions.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <expand macro="requirements"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+
+        ln -s '${normal}' normal.bam &&
+        samtools index normal.bam &&
+        ln -s '${tumor}' tumor.bam &&
+        samtools index tumor.bam &&
+        msisensor msi
+
+        -d '${microsat_ref}'
+        -n normal.bam
+        -t tumor.bam
+        -o output
+
+        #if $bedfile:
+            -e '${bedfile}'
+        #end if
+
+        #if $region:
+            -r '${region}'
+        #end if
+
+        #include source=$common_opts#
+        -f '${fdr_thresh}'
+        -c '${cov_thresh}'
+        -p '${min_hp_dist}'
+        -q '${min_ms}'
+        -s '${min_ms_dist}'
+        -w '${max_ms_dist}'
+        -u '${span_size}'
+
+        -b "\${GALAXY_SLOTS:-4}"
+
+        #if $output_hp_only:
+            -x '1'
+        #else
+            -x '0'
+        #end if
+
+        #if $output_ms_only:
+            -y '1'
+        #else
+            -y '0'
+        #end if
+
+    ]]></command>
+
+    <inputs>
+        <param name="microsat_ref" type="data" format="tabular" label="Homopolymer/Microsat Reference" help="homopolymer and microsats file" />
+        <param name="normal" type="data" format="bam" label="Normal BAM" help="normal bam file" />
+        <param name="tumor" type="data" format="bam" label="Tumor BAM" help="tumor bam file" />
+        <param name="bedfile" type="data" format="bed" label="BED Input" help="bed file, optional" optional="true" />
+        <param name="region" type="text" label="Region to Assess" optional="true" help="choose one region, format: 1:10000000-20000000" />
+        <expand macro="common_params" />
+        <param name="fdr_thresh" type="float" value="0.05" min="0" max="1.0" label="FDR Threshold" help="FDR threshold for somatic sites detection" />
+        <param name="cov_thresh" type="integer" value="20" min="0" label="Coverage Threshold" help="coverage threshold for msi analysis, WXS: 20; WGS: 15" />
+        <param name="min_hp_dist" type="integer" value="10" min="0" label="Min Homopolymer Size DA" help="minimal homopolymer size for distribution analysis" />
+        <param name="min_ms" type="integer" value="3" min="0" label="Min Microsat Size" help="minimal microsats size" />
+        <param name="min_ms_dist" type="integer" value="5" min="0" label="Min Microsat Size DA" help="minimal microsats size for distribution analysis" />
+        <param name="max_ms_dist" type="integer" value="40" min="0" label="Max Microsat Size DA" help="maximal microsats size for distribution analysis" />
+        <param name="span_size" type="integer" value="500" min="0" label="Span Size" help="span size around window for extracting reads" />
+        <param name="output_hp_only" type="boolean" checked="false" label="Homopolymer Only?" help="output homopolymer only" />
+        <param name="output_ms_only" type="boolean" checked="false" label="Microsats Only?" help="output microsatellite only" />
+    </inputs>
+
+    <outputs>
+        <data format="tabular" name="output" label="${tool.name} on ${on_string}: TSV" from_work_dir="output" />
+        <data format="tabular" name="output_somatic" label="${tool.name} on ${on_string}: Somatic Output" from_work_dir="output_somatic" />
+        <data format="tabular" name="output_germline" label="${tool.name} on ${on_string}: Germline Output" from_work_dir="output_germline" />
+        <data format="tabular" name="output_dis" label="${tool.name} on ${on_string}: Coverage Distribution Output" from_work_dir="output_dis" />
+    </outputs>
+
+    <tests>
+        <test>
+            <param name="microsat_ref" value="test_dist_scan" />
+            <param name="normal" value="testn_sorted.bam" />
+            <param name="tumor" value="testt_sorted.bam" />
+            <param name="bedfile" value="test.bed" />
+            <param name="fdr_thresh" value="0.1" />
+            <output name="output" ftype="tabular" file="test_dist" />
+            <output name="output_somatic" ftype="tabular" file="test_dist_somatic" />
+            <output name="output_germline" ftype="tabular" file="test_dist_germline" />
+            <output name="output_dis" ftype="tabular" file="test_dist_dis" />
+        </test>
+    </tests>
+
+    <help><![CDATA[
+    MSIsensor is a C++ program to detect replication slippage variants at microsatellite regions,
+    and differentiate them as somatic or germline. Given paired tumor and normal sequence data,
+    it builds a distribution for expected (normal) and observed (tumor) lengths of repeated sequence
+    per microsatellite, and compares them using Pearson's Chi-Squared Test. Comprehensive testing
+    indicates MSIsensor is an efficient and effective tool for deriving MSI status from standard
+    tumor-normal paired sequence data.
+
+    If you used this tool for your work, please cite PMID 24371154.
+    ]]></help>
+    <citations>
+        <citation type="doi">10.1093/bioinformatics/btt755</citation>
+    </citations>
+</tool>
