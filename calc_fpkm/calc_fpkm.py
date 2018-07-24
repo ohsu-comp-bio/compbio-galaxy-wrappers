@@ -17,8 +17,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-
-VERSION = '0.2.0'
+VERSION = '0.3.0'
 
 def supply_args():
     """
@@ -122,10 +121,12 @@ class HtseqReader(object):
         self.counts = self.make_counts(None)
         self.np_arr = numpy.array(self.counts.values())
         self.total_uq = numpy.percentile(self.np_arr, 75)
-        self.counts_fpkm = self.make_counts('fpkm')
-        self.counts_fpkm_uq = self.make_counts('fpkm_uq')
-        self.counts_tpm = self.make_counts('tpm')
-
+        try:
+            self.counts_fpkm = self.make_counts('fpkm')
+            self.counts_fpkm_uq = self.make_counts('fpkm_uq')
+            self.counts_tpm = self.make_counts('tpm')
+        except:
+            sys.exit("All counts are zero")
     def count_total(self):
         """
         Total number of counts in the HTSeq table of counts.
@@ -135,7 +136,7 @@ class HtseqReader(object):
         rpk_total = 0.0
         with open(self.filename, 'rU') as my_htseq:
             for line in my_htseq:
-                if line[0] != '_':
+                if '_' not in line:
                     line = line.rstrip('\n').split('\t')
                     ensg_id = line[0]
                     gene_len = len(set(self.gtf.gene_coords[ensg_id])) / 1000.0
@@ -151,7 +152,7 @@ class HtseqReader(object):
         counts_dict = {}
         with open(self.filename, 'rU') as my_htseq:
             for line in my_htseq:
-                if line[0] != '_':
+                if '_' not in line:
                     line = line.rstrip('\n').split('\t')
                     ensg_id = line[0]
                     count = float(line[1])
