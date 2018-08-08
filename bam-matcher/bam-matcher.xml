@@ -1,0 +1,91 @@
+<tool id="bam-matcher" name="BAM-Matcher" version="0.1.0">
+
+    <description>Compare two BAM files to see if they are from the same samples, using frequently occuring SNPs reported in the 1000Genome database</description>
+
+    <requirements>
+        <requirement type="package">bam-matcher</requirement>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+        bam-matcher.py 
+        --bam1 $bam1 
+        --bam2 $bam2 
+
+        #if $reference_genome_source.reference_genome_selector == "history":
+        --reference $reference_genome_source.reference
+        #else if $reference_genome_source.reference_genome_selector == "cached":
+        --reference $reference_genome_source.reference.fields.path
+        #end if
+
+        --config $config 
+        --vcf $vcf 
+        --caller $variant_caller
+        --dp-threshold $dp-threshold 
+        --number_of_snps $number_of_snps
+
+        #if $variant_caller == "freebayes":
+        --fastfreebayes 
+        #else if $variant_caller == "gatk":
+        --gatk-mem-gb 52
+        --gatk-nt \${GALAXY_SLOTS:-1}
+        #else if $variant_caller == "varscan":
+        --varscan-mem-gb 52 
+        #end if
+
+        --html
+        --output $output1 
+
+    ]]></command>
+
+    <inputs>
+        <param type="data" name="bam1" format="bam" label="First BAM file"/>
+        <param type="data" name="bam2" format="bam" label="Second BAM file"/>
+        <conditional name="reference_genome_source">
+            <param name="reference_genome_selector" type="select" label="Reference Genome Source:">
+                <option value="cached">Cached</option>
+                <option value="history">History</option>
+            </param>
+            <when value="cached">
+                <param name="reference" type="select" label="Using reference genome" >
+                    <options from_data_table="" />
+                    <validator type="no_options" message="A built-in reference genome is not available."/>
+                </param>
+            </when>
+            <when value="history">
+                <param name="reference" type="data" format="fasta" label="Using reference genome file" />
+            </when>
+        </conditional>
+        <param type="data" name="config" format="txt" label="Config" help="Specify BAM-Matcher configuration file"/>
+        <param type="data" name="vcf" format="vcf" label="SNPs" help="VCF file containing SNPs to check"/>
+        <param type="select" name="variant_caller" label="Variant Caller" help="Specify which caller to use">
+            <option value="gatk" selected="True">GATK</option>
+            <option value="freebayes">FreeBayes</option>
+            <option value="varscan">VarScan</option>
+        </param>
+        <param type="integer" name="dp-threshold" value="15" label="Depth Threshold" help="Minimum required depth for comparing variants"/>
+        <param type="integer" name="number_of_snps" value="" label="Number of SNPs" help="Number of SNPs to compare."/>
+    </inputs>
+
+    <outputs>
+        <data name="output1" format="html" />
+    </outputs>
+
+    <help><![CDATA[
+BAM-Matcher 
+        usage: bam-matcher.py [-h] --bam1 BAM1 --bam2 BAM2 [--config CONFIG] 
+        [--generate-config GENERATE_CONFIG] [--output OUTPUT] 
+        [--short-output] [--html] [--no-report] 
+        [--scratch-dir SCRATCH_DIR] [--vcf VCF] 
+        [--caller {gatk,freebayes,varscan}] 
+        [--dp-threshold DP_THRESHOLD]
+        [--number_of_snps NUMBER_OF_SNPS] [--fastfreebayes]
+        [--gatk-mem-gb GATK_MEM_GB] [--gatk-nt GATK_NT]
+        [--varscan-mem-gb VARSCAN_MEM_GB]
+        [--reference REFERENCE] [--ref-alternate REF_ALTERNATE]
+        [--chromosome-map CHROMOSOME_MAP]
+        [--about-alternate-ref ABOUT_ALTERNATE_REF]
+        [--do-not-cache] [--recalculate] [--cache-dir CACHE_DIR]
+        [--experimental] [--allele-freq] [--debug] [--verbose]
+
+    ]]></help>
+</tool>
