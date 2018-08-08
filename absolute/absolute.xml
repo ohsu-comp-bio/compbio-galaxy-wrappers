@@ -1,0 +1,94 @@
+<tool id="absolute" name="ABSOLUTE" version="@VERSION@.0" profile="17.09">
+    <description>: Estimate purity/ploidy, and from that compute absolute copy-number and mutation multiplicities.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <expand macro="requirements"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        ## 1. Prep maf files for absolute and get counts
+        python prep_absolute_maf_true_counts.py 
+        --oncotator $maf_file
+        --bam_file $bam_file
+        --out input_abs.maf
+
+        &&
+
+        ## 2. Prep segment file from cnvkit
+        echo -e "Chromosome\tStart\tEnd\tSegment_Mean\tNum_Probes"  > input_abs.seg && 
+        tail -n +2  $seg_file | cut -f-3,5,6 > input_abs.seg
+
+        &&
+
+        ## 3. Run Absolute
+        Rscript run_absolute.R
+        --seg.dat.fn input_abs.seg
+        --primary.disease $primary_disease
+        --platform $platform
+        --sample.name tumor
+        --results.dir output
+        --copy_num_type $advanced_params.copy_num_type
+        --min.ploidy $advanced_params.min_ploidy
+        --max.sigma.h $advanced_params.max_sigma_h
+        --sigma.p $advanced_params.sigma_p
+        --max.as.seg.count $advanced_params.max_as_seg_count
+        --max.neg.genome $advanced_params.max_neg_genome
+        --max.non.clonal $advanced_params.max_non_clonal
+        --maf.fn input_abs.maf
+        #if advanced_params.min_mut_af:
+        --min.mut.af $min_mut_af
+        #end if
+        --verbose
+    ]]></command>
+
+    <inputs>        
+        <param name="maf_file" type="data" format="maf" label="Mutect2 MAF File"/>
+        <param name="bam_file" type="data" format="bam" label="BAM File"/>
+        <param name="seg_file" type="data" format="txt,tsv,tabular" label="CNVkit Segment File"/>
+        <!--
+        <param name="sample_name" type="text" label="Sample Name"/>
+        -->
+        <param name="primary_disease" type="text" label="Primary Disease"/>
+        <param name="platform" type="select" label="Platform" help="The chip type used, supported values are currently SNP_250K_STY, SNP_6.0 and Illumina_WES">
+            <option value="snp_250k_sty">SNP_250K_STY</option>
+            <option value="snp_6_0">SNP_6.0</option>
+            <option value="illumina_wes" selected="True">Illumina_WES</option>
+        </param>
+        <section name="advanced_params" title="Advanced Paramters for Absolute" expanded="False">
+            <param name="copy_num_type" type="select" label="Copy Number Type">
+                <option value="total" selected="True">Total</option>
+                <option value="allelic">Allelic</option>
+            </param>
+            <param name="min_ploidy" type="float" value="0.95" label="Minimum Ploidy"/>
+            <param name="max_ploidy" type="float" value="10.0" label="Maximum Ploidy"/>
+            <param name="max_sigma_h" type="float" value="0.2" label="Maximum Sigma H"/>
+            <param name="sigma_p" type="float" value="0.0" label="Sigma P"/>
+            <param name="max_as_seg_count" type="integer" value="1500" label="Maximum Allelic Segment Count"/>
+            <param name="max_neg_genome" type="integer" value="0" label="Maximum Negative Genome"/>
+            <param name="max_non_clonal" type="integer" value="0" label="Maximum Non-clonal Genome"/>
+            <param name="min_mut_af" type="float" optional="True" label="Minimum Mutation Allelic Fraction"/>
+            <param name="verbose" type="boolean" checked="False" label="Verbose Output"/>
+        </section>    
+    </inputs>
+
+    <outputs>
+        <data format="data" name="ABSOLUTE_modes" from_work_dir="output/ABSOLUTE_modes.txt" label="${tool.name} on ${on_string}: MODES"/>
+        <data format="data" name="all_modes" from_work_dir="output/all_modes.txt" label="${tool.name} on ${on_string}: ALL_MODES"/>
+        <data format="data" name="mut" from_work_dir="output/mut.txt" label="${tool.name} on ${on_string}: MUT"/>
+        <data format="data" name="seg" from_work_dir="output/seg.txt" label="${tool.name} on ${on_string}: SEG"/>
+        <data format="data" name="pdf" from_work_dir="output/tumor.ABSOLUTE_plot.pdf" label="${tool.name} on ${on_string}: PDF"/>
+        <data format="data" name="rdata" from_work_dir="output/tumor.ABSOLUTE.RData" label="${tool.name} on ${on_string}: RDATA"/>"
+    </outputs>
+
+    <help><![CDATA[
+        
+ABSOLUTE provides various models of tumor cell purity and ploidy for subsequent manual solution selection. ABSOLUTE infers multiple models of purity, malignant cell ploidy and absolute somatic copy-numbers from copy ratios data. It determines possible models for absolute copy numbers per cancer cell from a mixed DNA population and gives copy numbers for genomic segments, and if provided mutation data, for mutated alleles. Use of homologue-specific copy ratios (HSCRs) data reduces ambiguity of copy profiles, compared to using total copy-ratios data, e.g. from comparative genomic hybridization (CGH) or low-pass sequencing. Results from multiple ABSOLUTE runs are compiled into a format facilitating manual solution selection by GenePattern's ABSOLUTE.summarize module. Manual review is necessary as, for a given tumor, the highest scoring model is not always the best solution. Manually selected solutions are then provided to ABSOLUTE.review for finalized results.    
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>

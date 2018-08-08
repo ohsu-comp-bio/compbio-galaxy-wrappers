@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<macros>
+
+    <xml name="requirements">
+        <requirements>
+            <requirement type="package" version="@VERSION@">absolute</requirement>
+            <requirement type="package" version="1.3.1">samtools</requirement>
+        </requirements>
+    </xml>
+
+    <xml name="version_cmd">
+        <version_command>echo @VERSION@</version_command>
+    </xml>
+    <xml name="citations">
+        <citations>
+        </citations>
+    </xml>
+
+    <token name="@VERSION@">1.0.6</token>
+    <token name="@CMD_BEGIN@">absolute</token>
+
+</macros>
