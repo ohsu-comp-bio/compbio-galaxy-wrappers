@@ -54,9 +54,9 @@
         -->
         <param name="primary_disease" type="text" label="Primary Disease"/>
         <param name="platform" type="select" label="Platform" help="The chip type used, supported values are currently SNP_250K_STY, SNP_6.0 and Illumina_WES">
-            <option value="snp_250k_sty">SNP_250K_STY</option>
-            <option value="snp_6_0">SNP_6.0</option>
-            <option value="illumina_wes" selected="True">Illumina_WES</option>
+            <option value="SNP_250K_STY">SNP_250K_STY</option>
+            <option value="SNP_6.0">SNP_6.0</option>
+            <option value="Illumina_WES" selected="True">Illumina_WES</option>
         </param>
         <section name="advanced_params" title="Advanced Paramters for Absolute" expanded="False">
             <param name="copy_num_type" type="select" label="Copy Number Type">
