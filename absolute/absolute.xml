@@ -31,16 +31,16 @@
         --platform $platform
         --sample.name tumor
         --results.dir output
-        --copy_num_type $advanced_params.copy_num_type
-        --min.ploidy $advanced_params.min_ploidy
-        --max.sigma.h $advanced_params.max_sigma_h
-        --sigma.p $advanced_params.sigma_p
-        --max.as.seg.count $advanced_params.max_as_seg_count
-        --max.neg.genome $advanced_params.max_neg_genome
-        --max.non.clonal $advanced_params.max_non_clonal
+        --copy_num_type ${advanced_params.copy_num_type}
+        --min.ploidy ${advanced_params.min_ploidy}
+        --max.sigma.h ${advanced_params.max_sigma_h}
+        --sigma.p ${advanced_params.sigma_p}
+        --max.as.seg.count ${advanced_params.max_as_seg_count}
+        --max.neg.genome ${advanced_params.max_neg_genome}
+        --max.non.clonal ${advanced_params.max_non_clonal}
         --maf.fn input_abs.maf
-        #if advanced_params.min_mut_af:
-        --min.mut.af $min_mut_af
+        #if $advanced_params.min_mut_af:
+        --min.mut.af ${advanced_params.min_mut_af}
         #end if
         --verbose
     ]]></command>
