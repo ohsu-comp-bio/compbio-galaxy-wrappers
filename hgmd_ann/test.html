@@ -1,0 +1,14 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<HTML>
+	<HEAD>
+		<TITLE>HGMD References Output</TITLE>	
+	</HEAD>
+	<BODY>
+		<h1>HGMD References for {{chrom}}:{{coord}} {{ref}}&gt;{{alt}}</h1>
+		<ul>
+			{% for pmid in refs %}
+			<li><h2><a href="https://www.ncbi.nlm.nih.gov/pubmed/{{pmid}}" target="_blank">pmid:{{pmid}}</a></h2></li>
+			{% endfor %}
+		</ul>
+	</BODY>
+</HTML>

@@ -1,0 +1,34 @@
+<tool id="hgmd_ref_pull" name="HGMD Reference Finder" version="0.1.0" profile="15.05">
+    <description>Retrieve HGMD references based on genomic coordinates.</description>
+
+    <command detect_errors="exit_code"><![CDATA[
+        python $__tool_directory__/hgmd_ref_pull.py
+        --chrom '${chrom}'
+        --coord '${coord}'
+        --ref '${ref}'
+        --alt '${alt}'
+        --outfile '${outfile}'
+        --creds '${creds}'
+    ]]></command>
+
+    <inputs>
+        <param name="creds" type="data" format="txt" label="Credentials File" help="This is needed in order to access the HGMD DB.  See help for more info." />
+        <param name="chrom" type="text" label="Chromosome" help="Enter the chromosome number of the variant. [1-22,X,Y]" />
+        <param name="coord" type="text" label="Genomic Coordinate" help="Enter the genomic coordinate of the variant." />
+        <param name="ref" type="text" label="Reference Allele" help="Enter the reference allele. [A,C,G,T]" />
+        <param name="alt" type="text" label="Alternate Allele" help="Enter the alternate allele. [A,C,G,T]" />
+    </inputs>
+
+    <outputs>
+        <data format="html" name="outfile" label="${tool.name} on ${on_string}: REFERENCES" />
+    </outputs>
+
+    <help><![CDATA[
+    Retrieve HGMD references based on genomic coordinates.  Beware of indel coordinates.  Since the data source in
+    HGMD LEFT-aligns (5') the indel coordinates, you will want to also enter your coordinates here in that same fashion.
+    This tool takes one input file.  This is the file that provides credentials to the HGMD database allowing us
+    to retrieve data.  This file should be in the 'common_input' data library, and is called 'db.conf.txt'.  If you
+    don't have access to this file for whatever reason, please let the Galaxy admin know.
+    ]]></help>
+
+</tool>
