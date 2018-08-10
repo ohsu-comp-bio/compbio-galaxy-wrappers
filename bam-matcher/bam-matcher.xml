@@ -4,7 +4,10 @@
 
     <requirements>
         <requirement type="package">bam-matcher</requirement>
-        <requirement type="package" version="1.6">samtools</requirement>
+        <requirement type="package" version="4.0.4.0">gatk4</requirement>
+        <requirement type="package" version="1.2.0">freebayes</requirement>
+        <requirement type="package" version="2.4.3">varscan</requirement>
+        <requirement type="package" version="1.4.1">samtools</requirement>
     </requirements>
 
     <command detect_errors="exit_code"><![CDATA[
@@ -41,7 +44,7 @@
 
         --do-not-cache
         --html
-        --output $output1 
+        --output output
 
     ]]></command>
 
@@ -75,7 +78,8 @@
     </inputs>
 
     <outputs>
-        <data name="output1" format="html" />
+        <data name="output1" format="html" from_work_dir="output.html" label="${tool.name} on ${on_string}: HTML"/>
+        <data name="output2" format="txt" from_work_dir="output" label="${tool.name} on ${on_string}: TXT"/>
     </outputs>
 
     <help><![CDATA[
