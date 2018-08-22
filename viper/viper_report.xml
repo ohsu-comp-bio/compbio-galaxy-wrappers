@@ -20,7 +20,7 @@
     <inputs>
         <param type="data" name="activity" label="Activity" help="Activity scores produced by Viper."/>
         <param type="text" name="sample" label="Sample Name" help="Name of sample of interest."/>
-        <param type="text" name="gene" label="Gene" help="Name of gene of interest"/>
+        <param type="data" name="gene" label="Gene" help="Name of gene of interest"/>
     </inputs>
 
     <outputs>
