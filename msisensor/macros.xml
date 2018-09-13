@@ -2,12 +2,11 @@
 
 <macros>
 
-    <token name="@VERSION@">0.2.0</token>
+    <token name="@VERSION@">0.5</token>
 
     <xml name="requirements">
         <requirements>
             <requirement type="package" version="@VERSION@">msisensor</requirement>
-            <requirement type="package" version="1.8">samtools</requirement>
         </requirements>
     </xml>
 

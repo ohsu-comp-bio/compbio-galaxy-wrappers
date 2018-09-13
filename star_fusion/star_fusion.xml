@@ -1,8 +1,10 @@
-<tool id="star_fusion" name="STAR-Fusion" version="1.0.0.1" profile="17.01">
+<tool id="star_fusion" name="STAR-Fusion" version="1.4.0.0" profile="17.01">
     <description>detect fusion genes in RNA-Seq data</description>
     <requirements>
         <!-- Bio-conda -->
-        <requirement type="package" version="0.5.4">star-fusion</requirement>
+        <requirement type="package" version="1.4.0">star-fusion</requirement>
+        <requirement type="package" version="0.1.19">samtools</requirement>  
+	<requirement type="package" version="3.2">hmmer</requirement>  
     </requirements>
 
     <stdio>
@@ -23,31 +25,28 @@
         <regex match="Process complete" source="stderr" level="warning"/>
     </stdio>
 
-    <version_command>STAR-Fusion --version  2>&amp;1 | grep version | grep -o -E "software version.*?"</version_command>
+    <version_command>STAR-Fusion --version</version_command>
 
     <command><![CDATA[
-        ## 1. ensure the blastn file is provided as *.gz
-        if file --mime-type '${blast_pairs}' | grep -q /gzip\$; then
-            gzip_suffix='' ;
-        else
-            ## Older versions of gzip do not support the -k option to keep
-            ## the original file - this should be an universion solution
-            
-            gzip -1 -c -- '${blast_pairs}' > 'temp.gz' &&
-            gzip_suffix='.gz' ;
-        fi &&
-        
-        ## 2. create reference index - using \$(pwd) is necessary, probably because the perl script changes work directory
-        ## - @todo once write a decent STAR and STAR Fusion data manager
-        prep_genome_lib.pl
-            --genome_fa '${fasta_type.ownFile}'
-            --gtf '${geneModel}'
-            --blast_pairs "temp.gz"
-            --CPU 8
-            --output_dir "\$(pwd)/tmp_star_fusion_genome_dir"
-        &&
+        ## 1. Create genome reference library
+        #if $genome_lib_type.genome_lib_type_selector == "build_lib":        
+            prep_genome_lib.pl
+                --genome_fa '${genome_lib_type.fasta_type.ownFile.fields.path}'
+                --gtf '${geneModel}'
+                --fusion_annot_lib ${fusion_annot_lib}
+                --annot_filter_rule ${annot_filter_rule}
+                --pfam_db ${pfam_db}
+                #if $gmap_build:
+                --gmap_build ${gmap_build}
+                #end if           
+                --CPU \${GALAXY_SLOTS:-1}
+                #if $genome_lib_type.max_readlength:
+                --max_readlength ${genome_lib_type.max_readlength}
+                #end if
+            &&
+        #end if
 
-        ## Link in fastq files so they have appropriate extensions
+        ## 2. Link in fastq files so they have appropriate extensions
         #if str($input_params.input_source) != "use_chimeric":
             #if $input_params.left_fq.is_of_type("fastq.gz"):
                 #set read1 = 'input_1.fastq.gz'
@@ -67,28 +66,45 @@
         #end if
         
         ## 3. Run STAR-Fusion
-        ln -f -s '${input_params.left_fq}' input_1.fastq &&
-        STAR-Fusion
+	ln -f -s '${input_params.left_fq}' input_1.fastq &&
+
+	#if $input_params.right_fq:
+	ln -f -s '${input_params.right_fq}' input_2.fastq &&
+	#end if
+
+	STAR-Fusion
             #if str($input_params.input_source) == "use_chimeric":
                 --chimeric_junction '${input_params.chimeric_junction}'
-                --left_fq input_1.fastq
-            #else:
-                --left_fq input_1.fastq
+            #end if
+
+            --left_fq input_1.fastq
+    
             #if $input_params.right_fq:
                 --right_fq input_2.fastq
             #end if
-            #end if
 
-            --genome_lib_dir "\$(pwd)/tmp_star_fusion_genome_dir"
+	    #if $genome_lib_type.genome_lib_type_selector == "build_lib":
+	    --genome_lib_dir "\$(pwd)/ctat_genome_lib_build_dir"
+	    #else if $genome_lib_type.genome_lib_type_selector == "prebuilt":
+	    --genome_lib_dir ${genome_lib_type.prebuilt_lib.fields.path}
+	    #end if
 
         #if str($params.settingsType) == "full":
+            #if $params.examine_coding_effect:
+            --examine_coding_effect
+            #end if
+            #if $params.FusionInspector != "None":
+            --FusionInspector ${params.FusionInspector}
+            #end if
+            #if $params.no_annotation_filter:
+            --no_annotation_filter
+            #end if
             --min_junction_reads $params.min_junction_reads
             --min_sum_frags $params.min_sum_frags
             --max_promiscuity $params.max_promiscuity
             --min_novel_junction_support $params.min_novel_junction_support
             --min_alt_pct_junction $params.min_alt_pct_junction
             --aggregate_novel_junction_dist $params.aggregate_novel_junction_dist
-            --E $params.E
         #end if
     ]]></command>
 
@@ -112,7 +128,7 @@
                        optional="true"
                        argument="--left_fq"
                        label="left.fq file"
-                       help=" include the left and right fastqs with the Chimeric.out.junction in order to compute the FFPM (normalized fusion fragments per million total rna-seq fragments) values in your summary report. Otherwise, you'll just get evidence fragment counts without the normalized values (empty fusion_candidates.final.abridged.FFPM file)"/>
+                       help=" include the left and right fastqs with the Chimeric.out.junction in order to compute the FFPM (normalized fusion fragments per million total rna-seq fragments) values in your summary report. Otherwise, you'll just get evidence fragment counts without the normalized values."/>
                 <param name="right_fq"
                        type="data"
                        optional="true"
@@ -136,40 +152,53 @@
             </when>
         </conditional>
 
-        <!-- Genome source. -->
-        <conditional name="fasta_type">
-            <param name="fasta_type_selector" type="select" label="Source for sequence to search">
-                <option value="cached">Locally Cached sequences</option>
-                <option value="history" selected="true">Sequences from your history</option>
+	<!-- Genome source. -->
+	<conditional name="genome_lib_type">
+            <param name="genome_lib_type_selector" type="select" label="Genome library source">
+	        <option value="prebuilt">Pre-built library</option>
+		<option value="build_lib">Build Library</option>
             </param>
-            <when value="cached">
-                <param name="ownFile"
-                       type="select" label="Genome to search">
-                    <options from_data_table="all_fasta">
-                        <column name="dbkey" index="1"/>
-                        <column name="name" index="2"/>
-                        <column name="value" index="3"/>
-                    </options>
-                </param>
-            </when>
-            <when value="history">
-                <param name="ownFile"
-                       type="data"
-                       format="fasta"
-                       label="Select the reference genome (FASTA file)"/>
-            </when>
-        </conditional>
-        
-        <param name="geneModel"
-               type="data"
-               format="gff3,gtf"
-               label="Gene model (gff3,gtf) file for splice junctions and fusion gene detection"/>
-        <param name="blast_pairs"
-               type="data"
-               format="tabular"
-               label="Result of BLAST+-blastn of the reference fasta sequence with itself"
-               help="Run blastn with '-outputfmt 6' or choose 'Tabular (standard 12 columns)' in the Galaxy wrapper. For human data it is recommended to obtain it from here: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/"/>
-        
+	    <when value="build_lib">
+	        <conditional name="fasta_type">
+                    <param name="fasta_type_selector" type="select" label="Source for sequence to search">
+                        <option value="cached">Locally Cached sequences</option>
+                        <option value="history" selected="true">Sequences from your history</option>
+                    </param>
+                    <when value="cached">
+                        <param name="ownFile"
+                            type="select" label="Genome to search">
+                            <options from_data_table="all_fasta">
+                                <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file."/>
+                            </options>
+                        </param>
+                    </when>
+                    <when value="history">
+                        <param name="ownFile"
+                               type="data"
+                               format="fasta"
+                               label="Select the reference genome (FASTA file)"/>
+                    </when>
+                </conditional>
+       
+               <param name="geneModel"
+                   type="data"
+                   format="gff3,gtf"
+                   label="Gene model (gff3,gtf) file for splice junctions and fusion gene detection"/>
+                <param name="fusion_annot_lib" type="data" format="txt,tsv,tabular" label="Fusion Annotation Library"/>
+                <param name="annot_filter_rule" type="data" format="txt" optional="true" label="Target AnnotFilerRule.pm"/>
+                <param name="pfam_db" type="data" format="txt,tsv,tabular" optional="true" label="PFAM Database"/>
+                <param name="gmap_build" type="data" format="txt,tsv,tabular" optional="true" label="GMAP Build"/>
+                <param name="max_readlength" type="integer" optional="true" label="Maximum Read Length"/>
+ 	    </when>
+            <when value="prebuilt">
+                <param name="prebuilt_lib" type="select" label="Genome library to search">
+		    <options from_data_table="star_fusion_genome_lib">
+                        <validator type="no_options" message="A pre-built STAR-fusion genome library is not available for the build associated with the selected input file"/>
+		    </options>
+		</param>
+	    </when>
+	</conditional>
+       
         <conditional name="params">
             <param name="settingsType" type="select" label="Settings to use" help="You can use the default settings or set custom values for any STAR Fusion parameter.">
                 <option value="default" selected="true">Use Defaults</option>
@@ -177,6 +206,13 @@
             </param>
             <when value="default" />
             <when value="full"><!-- Full/advanced params. -->
+                <param name="examine_coding_effect" type="boolean" checked="false" label="explore impact of fusions on coding sequences"/>
+                <param name="no_annotation_filter" type="boolean" checked="false" label="exclude filtering of fusion predictions"/>
+                <param name="FusionInspector" type="select" label="FusionInspector">
+                    <option value="None">None</option>
+                    <option value="inspect">Inspect</option>
+                    <option value="validate">Validate</option>
+                </param>
                 <param name="min_junction_reads"
                        type="integer" value="1"
                        label="minimum number of junction-spanning reads required."
@@ -206,18 +242,14 @@
                        value="5"
                        label="non-ref junctions within 5 are merged into single calls"
                        argument="--aggregate_novel_junction_dist"/>
-                <param name="E"
-                       type="float"
-                       value="0.001"
-                       label="E-value threshold for blast searches"
-                       argument="-E"/>
             </when>
         </conditional>
     </inputs>
 
     <outputs>
-        <data format="tabular" name="output_final" label="${tool.name} on ${on_string}: fusion_candidates.final" from_work_dir="star-fusion.fusion_candidates.final"/>
-        <data format="tabular" name="output_final_fpkm" label="${tool.name} on ${on_string}: fusion_candidates.final.abridged.FFPM" from_work_dir="star-fusion.fusion_candidates.final.abridged.FFPM"/>
+        <data format="tabular" name="output_predictions" label="${tool.name} on ${on_string}: PREDICTIONS" from_work_dir="STAR-Fusion_outdir/star-fusion.fusion_predictions.tsv"/>
+	<data format="tabular" name="output_predictions_abridged" label="${tool.name} on ${on_string}: PREDICTIONS ABRIDGED" from_work_dir="STAR-Fusion_outdir/star-fusion.fusion_predictions.abridged.tsv"/>
+        <data format="tabular" name="pre_blast_filt_info" label="${tool.name} on ${on_string}: PRE BLAST FILT INFO" from_work_dir="STAR-Fusion_outdir/star-fusion.preliminary/star-fusion.filter.intermediates_dir/star-fusion.pre_blast_filter.filt_info"/>
     </outputs>
 
     <tests>
@@ -231,7 +263,7 @@
             <param name="settingsType" value="default" />
             
             <!-- Last column of the results contains data in a random order so exact matching is not feasible -->
-            <output name="output_final">
+            <output name="output_predictions">
                 <assert_contents>
                     <has_line line="#fusion_name&#009;JunctionReads&#009;SpanningFrags&#009;Splice_type&#009;LeftGene&#009;LeftBreakpoint&#009;RightGene&#009;RightBreakpoint&#009;JunctionReads&#009;SpanningFrags" />
                     <has_text text="GENE1--GENE2&#009;24&#009;0&#009;INCL_NON_REF_SPLICE&#009;GENE1^GENE1&#009;chr1:240:+&#009;GENE2^GENE2&#009;chr2:241:+" />
@@ -248,7 +280,7 @@
             <param name="settingsType" value="default" />
             
             <!-- Last column of the results contains data in a random order so exact matching is not feasible -->
-            <output name="output_final">
+            <output name="output_predictions">
                 <assert_contents>
                     <has_line line="#fusion_name&#009;JunctionReads&#009;SpanningFrags&#009;Splice_type&#009;LeftGene&#009;LeftBreakpoint&#009;RightGene&#009;RightBreakpoint&#009;JunctionReads&#009;SpanningFrags" />
                     <has_text text="GENE1--GENE2&#009;24&#009;0&#009;INCL_NON_REF_SPLICE&#009;GENE1^GENE1&#009;chr1:240:+&#009;GENE2^GENE2&#009;chr2:241:+" />
@@ -265,7 +297,7 @@
             <param name="settingsType" value="default" />
             
             <!-- Last column of the results contains data in a random order so exact matching is not feasible -->
-            <output name="output_final">
+            <output name="output_predictions">
                 <assert_contents>
                     <has_line line="#fusion_name&#009;JunctionReads&#009;SpanningFrags&#009;Splice_type&#009;LeftGene&#009;LeftBreakpoint&#009;RightGene&#009;RightBreakpoint&#009;JunctionReads&#009;SpanningFrags" />
                     <has_text text="GENE1--GENE2&#009;24&#009;0&#009;INCL_NON_REF_SPLICE&#009;GENE1^GENE1&#009;chr1:240:+&#009;GENE2^GENE2&#009;chr2:241:+" />
