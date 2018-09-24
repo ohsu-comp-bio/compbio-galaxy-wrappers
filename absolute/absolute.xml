@@ -11,21 +11,22 @@
 
     <command detect_errors="exit_code"><![CDATA[
         ## 1. Prep maf files for absolute and get counts
-        python prep_absolute_maf_true_counts.py 
+        prep_absolute_maf.py 
         --oncotator $maf_file
         --bam_file $bam_file
+        --tumor_name $tumor_name
         --out input_abs.maf
 
         &&
 
         ## 2. Prep segment file from cnvkit
         echo -e "Chromosome\tStart\tEnd\tSegment_Mean\tNum_Probes"  > input_abs.seg && 
-        tail -n +2  $seg_file | cut -f-3,5,6 > input_abs.seg
+        tail -n +2  $seg_file | cut -f-3,5,6 >> input_abs.seg
 
         &&
 
         ## 3. Run Absolute
-        Rscript run_absolute.R
+        run_absolute.R
         --seg.dat.fn input_abs.seg
         --primary.disease $primary_disease
         --platform $platform
@@ -39,13 +40,18 @@
         --max.neg.genome ${advanced_params.max_neg_genome}
         --max.non.clonal ${advanced_params.max_non_clonal}
         --maf.fn input_abs.maf
+
         #if $advanced_params.min_mut_af:
         --min.mut.af ${advanced_params.min_mut_af}
         #end if
-        --verbose
+
+        #if $advanced_params.verbose:
+        --verbose TRUE
+        #end if
     ]]></command>
 
-    <inputs>        
+    <inputs>       
+        <param name="tumor_name" type="text" label="Sample Name"/>
         <param name="maf_file" type="data" format="maf" label="Mutect2 MAF File"/>
         <param name="bam_file" type="data" format="bam" label="BAM File"/>
         <param name="seg_file" type="data" format="txt,tsv,tabular" label="CNVkit Segment File"/>
@@ -64,24 +70,24 @@
                 <option value="allelic">Allelic</option>
             </param>
             <param name="min_ploidy" type="float" value="0.95" label="Minimum Ploidy"/>
-            <param name="max_ploidy" type="float" value="10.0" label="Maximum Ploidy"/>
-            <param name="max_sigma_h" type="float" value="0.2" label="Maximum Sigma H"/>
+            <param name="max_ploidy" type="integer" value="10" label="Maximum Ploidy"/>
+            <param name="max_sigma_h" type="float" value="0.015" label="Maximum Sigma H"/>
             <param name="sigma_p" type="float" value="0.0" label="Sigma P"/>
             <param name="max_as_seg_count" type="integer" value="1500" label="Maximum Allelic Segment Count"/>
-            <param name="max_neg_genome" type="integer" value="0" label="Maximum Negative Genome"/>
-            <param name="max_non_clonal" type="integer" value="0" label="Maximum Non-clonal Genome"/>
+            <param name="max_neg_genome" type="float" value="0.005" label="Maximum Negative Genome"/>
+            <param name="max_non_clonal" type="float" value="0.05" label="Maximum Non-clonal Genome"/>
             <param name="min_mut_af" type="float" optional="True" label="Minimum Mutation Allelic Fraction"/>
             <param name="verbose" type="boolean" checked="False" label="Verbose Output"/>
         </section>    
     </inputs>
 
     <outputs>
-        <data format="data" name="ABSOLUTE_modes" from_work_dir="output/ABSOLUTE_modes.txt" label="${tool.name} on ${on_string}: MODES"/>
-        <data format="data" name="all_modes" from_work_dir="output/all_modes.txt" label="${tool.name} on ${on_string}: ALL_MODES"/>
-        <data format="data" name="mut" from_work_dir="output/mut.txt" label="${tool.name} on ${on_string}: MUT"/>
-        <data format="data" name="seg" from_work_dir="output/seg.txt" label="${tool.name} on ${on_string}: SEG"/>
-        <data format="data" name="pdf" from_work_dir="output/tumor.ABSOLUTE_plot.pdf" label="${tool.name} on ${on_string}: PDF"/>
-        <data format="data" name="rdata" from_work_dir="output/tumor.ABSOLUTE.RData" label="${tool.name} on ${on_string}: RDATA"/>"
+        <data format="txt" name="ABSOLUTE_modes" from_work_dir="output/ABSOLUTE_modes.txt" label="${tool.name} on ${on_string}: MODES"/>
+        <data format="txt" name="all_modes" from_work_dir="output/all_modes.txt" label="${tool.name} on ${on_string}: ALL_MODES"/>
+        <data format="txt" name="mut" from_work_dir="output/mut.txt" label="${tool.name} on ${on_string}: MUT"/>
+        <data format="txt" name="seg" from_work_dir="output/seg.txt" label="${tool.name} on ${on_string}: SEG"/>
+        <data format="pdf" name="pdf" from_work_dir="output/tumor.ABSOLUTE_plot.pdf" label="${tool.name} on ${on_string}: PDF"/>
+        <data format="rdata" name="rdata" from_work_dir="output/tumor.ABSOLUTE.RData" label="${tool.name} on ${on_string}: RDATA"/>"
     </outputs>
 
     <help><![CDATA[
