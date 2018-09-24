@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<macros>
+    <xml name="requirements">
+        <requirements>
+            <requirement type="package" version="@VERSION@">smmart_utils</requirement>
+        </requirements>
+    </xml>
+
+    <xml name="version_cmd">
+        <version_command>echo @VERSION@</version_command>
+    </xml>
+
+    <token name="@VERSION@">0.2.0</token>
+
+</macros>
