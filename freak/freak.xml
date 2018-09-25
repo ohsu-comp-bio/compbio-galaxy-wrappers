@@ -52,18 +52,20 @@
     </outputs>
 
     <help><![CDATA[
-        usage: freak.py [-h] -b BAM [-t TRANSCRIPT] [-o OUTPUT]
+Freak
 
-        freak
+usage: freak.py [-h] -b BAM [-t TRANSCRIPT] [-o OUTPUT]
 
-        Python prototype of freak. Borrows liberally from Rail-RNA.
+Python prototype of freak. Borrows liberally from Rail-RNA.
 
-        optional arguments:
-        -h, --help            show this help message and exit
-        -b BAM, --bam BAM     coordinate-sorted and indexed BAM with correct MD strings
-        -t TRANSCRIPT, --transcript TRANSCRIPT
-                              path for recording transcript of input that reproduces output
-        -o OUTPUT, --output OUTPUT
-                              path for recording output in TSV format; default is stdin
+optional arguments:
+
+-h, --help            show this help message and exit
+
+-b BAM, --bam BAM     coordinate-sorted and indexed BAM with correct MD strings
+
+-t TRANSCRIPT, --transcript TRANSCRIPT      path for recording transcript of input that reproduces output
+
+-o OUTPUT, --output OUTPUT      path for recording output in TSV format; default is stdin
         ]]></help>
 </tool>
