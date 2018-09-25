@@ -1,0 +1,97 @@
+<tool id="eurydice_fit_gene_models" name="Eurydice Fit Gene Models" version="@VERSION@.0" profile="17.09">
+
+    <description></description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <expand macro="requirements"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        fit_gene_models.py
+        --tune_splits $advanced_params.tune_splits
+        --test_count $advanced_params.test_count
+        --infer_splits $advanced_params.infer_splits
+        --infer_folds $advanced_params.infer_folds
+        --parallel_jobs $advanced_params.parallel_jobs
+        --cv_seed $advanced_params.cv_seed
+        $tcga_expr_file
+        $tcga_var_file
+        $tx_map_file
+        $patient_expr_file
+        $patient_muts_file
+        $patient_meta_file
+        out_dir
+        $gene
+        $classif
+
+    ]]></command>
+
+    <inputs>
+        <param name="tcga_expr_file" type="data" format="tsv,tabular,txt" label="TCGA Expression" help="TCGA Toil expression matrix"/>
+        <param name="tcga_var_file" type="data" format="tsv,tabular,txt" label="TCGA Variants" help="TCGA mutation calls from MC3"/>
+        <param name="tx_map_file" type="data" format="tsv,tabular,txt" label="Transcript Map" help="Mapping of Toil expression genes to transcripts"/>
+        <param name="patient_expr_file" type="data" format="tsv,tabular,txt" label="Expression" help="Patient expression matrix"/>
+        <param name="patient_muts_file" type="data" format="tsv,tabular,txt" label="Mutations" help="Patient mutation file"/>
+        <param name="patient_meta_file" type="data" format="tsv,tabular,txt" label="Metadata" help="Patient metadata file"/>
+        <param name="gene" type="text" label="Gene" help="A mutated gene"/>
+        <param name="classif" type="text" label="Classif" help="A mutated gene"/>
+
+        <section name="advanced_params" title="Advanced Parameters">
+            <param name="tune_splits" type="integer" value="0" label="Tune Splits" help="How many training cohort splits to use for tuning"/>
+            <param name="test_count" type="integer" value="0" label="Test Counts" help="How many hyper-parameter values to test in each tuning split"/>
+            <param name="infer_splits" type="integer" value="0" label="Infer Splits" help="How many cohort splits to use for inference bootstrapping"/>
+            <param name="infer_folds" type="integer" value="0" label="Infer Folds" help="how many parts to split the cohort into in each inference cross-validation run"/>
+            <param name="parallel_jobs" type="integer" value="1" label="Parallel Jobs" help="How many parallel CPUs to allocate the tuning tests across"/>
+            <param name="cv_seed" type="integer" value="0" label="CV Seed"/>
+        </section>
+    </inputs>
+
+    <outputs>
+        <data format="" name="output" from_work_dir="out_dir" label="${tool.name} on ${on_string}: "/>
+    </outputs>
+
+    <help><![CDATA[
+**Eurydice**
+
+usage: fit_gene_models.py 
+    [-h] 
+    [--tune_splits TUNE_SPLITS]
+    [--test_count TEST_COUNT]
+    [--infer_splits INFER_SPLITS]
+    [--infer_folds INFER_FOLDS]
+    [--parallel_jobs PARALLEL_JOBS]
+    [--cv_seed CV_SEED]
+    [--verbose]
+    tcga_expr_file tcga_var_file tx_map_file
+    patient_expr_file patient_muts_file
+    patient_meta_file out_dir gene classif
+
+positional arguments::
+
+    tcga_expr_file      TCGA Toil expression matrix
+    tcga_var_file       TCGA mutation calls from MC3
+    tx_map_file         mapping of Toil expression genes to transcripts
+    patient_expr_file   SMMART patient expression matrix
+    patient_muts_file   SMMART patient mutation dictionary
+    patient_meta_file   SMMART patient metadata
+    out_dir             where to store the output
+    gene                a mutated gene
+    classif             a mutated gene
+
+optional arguments:
+
+    -h, --help            show this help message and exit
+    --tune_splits TUNE_SPLITS       how many training cohort splits to use for tuning
+    --test_count TEST_COUNT     how many hyper-parameter values to test in each tuning split
+    --infer_splits INFER_SPLITS     how many cohort splits to use for inference bootstrapping
+    --infer_folds INFER_FOLDS       how many parts to split the cohort into in each inference cross-validation run
+    --parallel_jobs PARALLEL_JOBS       how many parallel CPUs to allocate the tuning tests across
+    --cv_seed CV_SEED       set seed
+    --verbose, -v   turns on diagnostic messages
+]]></help>
+
+</tool>
