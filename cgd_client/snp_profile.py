@@ -10,12 +10,11 @@ class SnpProfile(object):
     {"chromosome":"3","position":500,"genotype":1},{"chromosome":"7","position":600,"genotype":2}]}
 
     This works (GET):
-    letaw@exaclinical:~/clinical/users/letaw/compbio-galaxy-wrappers/snp_profile$ java8 -jar /home/exacloud/clinical/installedTest/cgd_client-1.2.4.jar -c /home/exacloud/clinical/installedTest/cgd_client.properties -u https://kdlwebuser01.ohsu.edu/cgd_next/service/run/180408_NS500390_0222_AHMMV5BGX5/barcodeId/A01/snpProfile
+    java8 -jar ~/cgd_client-1.2.4.jar -c ~/cgd_client.properties -u <url>
     {"message":"ok","items":[]}
 
     (POST)
-    letaw@exaclinical:~/clinical/users/letaw/compbio-galaxy-wrappers/snp_profile$ java8 -jar /home/exacloud/clinical/installedTest/cgd_client-1.2.4.jar -c /home/exacloud/clinical/installedTest/cgd_client.properties -u https://kdlwebuser01.ohsu.edu/cgd_next/service/run/180408_NS500390_0222_AHMMV5BGX5/barcodeId/A01/snpProfile -j blah -d
-    URL endpoint: https://kdlwebuser01.ohsu.edu/cgd_next/service/run/180408_NS500390_0222_AHMMV5BGX5/barcodeId/A01/snpProfile
+    java8 -jar ~/cgd_client-1.2.4.jar -c ~/cgd_client.properties -u <url> -j blah -d
     {"message":"ok","items":[]}
 
 
