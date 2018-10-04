@@ -1,0 +1,36 @@
+<tool id="pharmacogenomics" name="SMMART Utils Pharmacogenomics" version="@VERSION@.0" profile="17.09">
+
+    <description></description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <expand macro="requirements"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        smmart_utils pharmacogenomics 
+        $oncotator
+        $rsid
+        $output
+    ]]></command>
+
+    <inputs>
+        <param name="oncotator" type="data" format="tsv,tabular" label="Oncotator file"/>
+        <param name="rsid" type="data" format="tsv,tabular" label="rs IDs file"/>
+    </inputs>
+
+    <outputs>
+        <data name="output" format="tsv" label="${tool.name} on ${on_string}: Pharmacogenomics"/>
+    </outputs>
+
+    <help><![CDATA[
+This command runs the pharmacogenomics lookup using rs IDs and outputs a file of matches. 
+        
+Usage: smmart_utils pharmacogenomics <oncotator file> <rs IDs> <output file>
+            
+    ]]></help>
+
+</tool>
