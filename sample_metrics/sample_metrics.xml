@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.1.5" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.2.0" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
 
   <version_command>python $__tool_directory__/sample_metrics.py --version</version_command>
@@ -12,12 +12,21 @@
     --picard_summary '${picard_metrics}'
     --outfile '${output}'
     --outfile_txt '${output_txt}'
+    #if $primers_bed:
+        --primers_bed '${primers_bed}'
+    #end if
+    #if $primers_bam:
+        --primers_bam '${primers_bam}'
+    #end if
+
 
 ]]></command>
 
   <inputs>
-      <param name="probeqc" type="data" format="txt" required="true" label="ProbeQC Metrics" help="ProbeQC metrics file, as produced by the intervalqc_v2 script.  If you intend on producing UMI metrics, this would be the coverage QC AFTER UMI deduplication." />
+      <param name="probeqc" type="data" format="txt" label="ProbeQC Metrics" help="ProbeQC metrics file, as produced by the intervalqc_v2 script.  If you intend on producing UMI metrics, this would be the coverage QC AFTER UMI deduplication." />
       <param name="picard_metrics" type="data" format="txt" label="Picard Alignment Summary Metrics" help="Alignment summary metrics produced by the Picard CollectAlignmentSummaryMetrics tool." />
+      <param name="primers_bed" type="data" format="bed" optional="true" label="Primers BED" help="BED file containing primer coordinates only." />
+      <param name="primers_bam" type="data" format="bam" optional="true" label="Primers BAM" help="BAM file to calculate primer reads on target." />
       <conditional name="umi">
           <param label="Assess UMI deduplication" name="umi_sel" type="select">
               <option value="umi_yes">Yes</option>

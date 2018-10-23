@@ -9,13 +9,20 @@ from __future__ import print_function
 
 import argparse
 import json
+import os
+#import pysam
 import sys
-sys.path.append('/home/groups/clinical/users/letaw/jhl_tools')
+#sys.path.append('/home/groups/clinical/users/letaw/jhl_tools')
 
 from file_types.gatk_intervals import ProbeQcRead
 from file_types.picard import AlignSummaryMetrics
 
-VERSION = '0.1.5'
+if os.name == 'posix' and sys.version_info[0] < 3:
+    import subprocess32 as subprocess
+else:
+    import subprocess
+
+VERSION = '0.2.0'
 
 
 def supply_args():
@@ -32,6 +39,8 @@ def supply_args():
                              'metrics.')
     parser.add_argument('--picard_summary', help='Picard alignment summary '
                                                  'metrics file.')
+    parser.add_argument('--primers_bed', help='BED file containing primer coordinates only.')
+    parser.add_argument('--primers_bam', help='BAM file to calculate primer reads on target.')
     parser.add_argument('--outfile', help='Output file with json string.')
     parser.add_argument('--outfile_txt', help='Output file in human readable '
                                               'text format.')
@@ -39,6 +48,41 @@ def supply_args():
                                                                VERSION)
     args = parser.parse_args()
     return args
+
+
+def run_cmd(cmd):
+    """
+    Run command.
+    """
+    print('Running the following command:')
+    print('\t'.join(cmd))
+
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    print("From Output: " + stdout)
+    eprint("From Error: " + stderr)
+
+    return stdout
+
+
+def eprint(*args, **kwargs):
+    """
+    http://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
+    """
+    print(*args, file=sys.stderr, **kwargs)
+
+
+def get_target_count_cmd(samfile, bed):
+    """
+    From a BAM file, use samtools view to count the number of reads with targets in primers_bed.
+    samtools-1.3.1 view -L primers_only.bed test.bam -c
+    Core dumps occur trying to run below pysam command.  Command work great for several versions of samtools on command
+    line, so we're doing subprocess until better solution.
+    :return:
+    """
+    #print(pysam.view(samfile, "-L", bed, "-c"))
+    cmd = ['samtools', 'view', '-L', bed, '-c', samfile]
+    return cmd
 
 
 def calc_total_bp(probeqc):
@@ -112,7 +156,7 @@ def write_to_text(sample_metrics, outfile_txt):
         outfile_txt.write(key)
         outfile_txt.write(': ')
         outfile_txt.write(value)
-        if key != 'AVGD':
+        if key != 'AVGD' and key != 'on_primer_frag_count':
             outfile_txt.write('%')
         outfile_txt.write('\n')
 
@@ -145,7 +189,8 @@ def map_fields(sample_metrics):
                       'D2000': 'depthTwoThousand',
                       'AVGD': 'averageDepth',
                       'pumi': 'percentUmi',
-                      'on_target': 'percentOnTarget'}
+                      'on_target': 'percentOnTarget',
+                      'on_primer_frag_count': 'on_primer_frag_count'}
 
     for key, value in sample_metrics.iteritems():
         if key in mapping:
@@ -185,6 +230,9 @@ def main():
         on_target = add_on_target(this_picard.metrics, total_cov)
     sample_metrics['on_target'] = on_target
 
+    if args.primers_bed and args.primers_bam:
+        on_primer_frag_count = run_cmd(get_target_count_cmd(args.primers_bam, args.primers_bed))
+        sample_metrics['on_primer_frag_count'] = on_primer_frag_count.rstrip('\n')
 
     write_to_text(sample_metrics, write_me_txt)
     write_me.write(json.dumps(map_fields(sample_metrics)))
