@@ -8,6 +8,7 @@
 from __future__ import print_function
 
 import argparse
+import copy
 import json
 import os
 import sys
@@ -202,7 +203,8 @@ def new_iter_samp_met(sample_metrics):
     """
     for met_type, values in sample_metrics.items():
         for metric in values:
-            sample_metrics[met_type]["metric"] = map_fields(metric["metric"])
+            metric["metric"] = map_fields(metric["metric"])
+    print(sample_metrics)
     return sample_metrics
 
 def create_sample_metrics(args):
