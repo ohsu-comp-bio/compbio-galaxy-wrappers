@@ -113,8 +113,8 @@ def main():
                         linebedpe = convert_starfusion_to_bedpe(line)
 
                         #calculate on-target cpm from junction & spanning frag count and sample level metrics
-                        j_cpm = (float(linebedpe[10]) / ontarget_count) * 1e6
-                        s_cpm = (float(linebedpe[11]) / ontarget_count) * 1e6
+                        # JL: Lab has requested junction and spanning be summed for this calculation.
+                        j_s_cpm = ((float(linebedpe[10]) + float(linebedpe[11])) / ontarget_count) * 1e6
 
                         #get seqs left and right
                         mafline_left = [linebedpe[0], linebedpe[1], linebedpe[2], linebedpe[18][0], linebedpe[8]]
@@ -122,7 +122,7 @@ def main():
                         seq_left = get_nucleotides_with_samtools(mafline_left, args.path_to_fasta)
                         seq_right = get_nucleotides_with_samtools(mafline_right, args.path_to_fasta)
 
-                        linebedpe.extend([round(j_cpm, 3), round(s_cpm, 3)])
+                        linebedpe.extend([round(j_s_cpm, 3)])
                         linebedpe.extend(seq_left)
                         linebedpe.extend(seq_right)
                         bedpe.append(linebedpe)
@@ -133,8 +133,8 @@ def main():
                     linebedpe = convert_starfusion_to_bedpe(line)
 
                     # calculate on-target cpm from junction & spanning frag count and sample level metrics
-                    j_cpm = (float(linebedpe[10]) / ontarget_count) * 1e6
-                    s_cpm = (float(linebedpe[11]) / ontarget_count) * 1e6
+                    # JL: Lab has requested junction and spanning be summed for this calculation.
+                    j_s_cpm = ((float(linebedpe[10]) + float(linebedpe[11])) / ontarget_count) * 1e6
 
                     # get seqs left and right
                     mafline_left = [linebedpe[0], linebedpe[1], linebedpe[2], linebedpe[18][0], linebedpe[8]]
@@ -142,13 +142,13 @@ def main():
                     seq_left = get_nucleotides_with_samtools(mafline_left, args.path_to_fasta)
                     seq_right = get_nucleotides_with_samtools(mafline_right, args.path_to_fasta)
 
-                    linebedpe.extend([round(j_cpm, 3), round(s_cpm,3)])
+                    linebedpe.extend([round(j_s_cpm, 3)])
                     linebedpe.extend(seq_left)
                     linebedpe.extend(seq_right)
                     bedpe.append(linebedpe)
 
 
-    sfoutcolumns = ["chrom1","start1","end1","chrom2","start2","end2","name","score","strand1","strand2","JunctionReadCount","SpanningFragCount","SpliceType","HGVSGene1","EnsGene1","HGVSGene2","EnsGene2","LargeAnchorSupport","LeftBreakDinuc","LeftBreakEntropy","RightBreakDinuc","RightBreakEntropy","J_FFPM","S_FFPM", "j_ontarget_cpm", "s_ontarget_cpm", "leftgene","leftseq","rightgene","rightseq"]
+    sfoutcolumns = ["chrom1","start1","end1","chrom2","start2","end2","name","score","strand1","strand2","JunctionReadCount","SpanningFragCount","SpliceType","HGVSGene1","EnsGene1","HGVSGene2","EnsGene2","LargeAnchorSupport","LeftBreakDinuc","LeftBreakEntropy","RightBreakDinuc","RightBreakEntropy","J_FFPM","S_FFPM", "NormalizedFrags", "leftgene","leftseq","rightgene","rightseq"]
 
     with open("starfusion_output.bedpe", 'w') as sf_out:
         sf_out.writelines('\t'.join(sfoutcolumns))
