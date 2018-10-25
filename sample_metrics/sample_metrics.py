@@ -10,9 +10,7 @@ from __future__ import print_function
 import argparse
 import json
 import os
-#import pysam
 import sys
-#sys.path.append('/home/groups/clinical/users/letaw/jhl_tools')
 
 from file_types.gatk_intervals import ProbeQcRead
 from file_types.picard import AlignSummaryMetrics
@@ -22,7 +20,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '0.2.0'
+VERSION = '0.3.0'
 
 
 def supply_args():
@@ -42,6 +40,7 @@ def supply_args():
     parser.add_argument('--primers_bed', help='BED file containing primer coordinates only.')
     parser.add_argument('--primers_bam', help='BAM file to calculate primer reads on target.')
     parser.add_argument('--outfile', help='Output file with json string.')
+    parser.add_argument('--outfile_new', help='Output file with new style json string.')
     parser.add_argument('--outfile_txt', help='Output file in human readable '
                                               'text format.')
     parser.add_argument('--version', action='version', version='%(prog)s ' +
@@ -59,17 +58,7 @@ def run_cmd(cmd):
 
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
-    print("From Output: " + stdout)
-    eprint("From Error: " + stderr)
-
     return stdout
-
-
-def eprint(*args, **kwargs):
-    """
-    http://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
-    """
-    print(*args, file=sys.stderr, **kwargs)
 
 
 def get_target_count_cmd(samfile, bed):
@@ -91,7 +80,7 @@ def calc_total_bp(probeqc):
     :return:
     """
     total_bp = 0
-    for line in probeqc.probeqc.itervalues():
+    for line in probeqc.probeqc.values():
         try:
             curr = int(line['STOP']) - int(line['START']) + 1.0
             total_bp += curr
@@ -109,7 +98,7 @@ def calc_cov(probeqc, metric):
     :return:
     """
     total_cov = 0
-    for line in probeqc.probeqc.itervalues():
+    for line in probeqc.probeqc.values():
         try:
             curr_bp = int(line['STOP']) - int(line['START']) + 1.0
             curr_cov = curr_bp * float(line[metric])
@@ -152,7 +141,7 @@ def write_to_text(sample_metrics, outfile_txt):
     Write metrics to a text file, mainly to be viewed in Galaxy.
     :return:
     """
-    for key, value in sorted(sample_metrics.iteritems()):
+    for key, value in sorted(sample_metrics.items()):
         outfile_txt.write(key)
         outfile_txt.write(': ')
         outfile_txt.write(value)
@@ -163,7 +152,7 @@ def write_to_text(sample_metrics, outfile_txt):
     outfile_txt.close()
 
 
-def map_fields(sample_metrics):
+def map_fields(value):
     """
     CGD recognizes fields as described here.
     Q30: qthirty
@@ -176,7 +165,6 @@ def map_fields(sample_metrics):
     on_target: percentOnTarget
     :return:
     """
-    mapped_metrics = {}
     mapping = {'Q30': 'qthirty',
                       'D10': 'depthTen',
                       'D20': 'depthTwenty',
@@ -190,29 +178,45 @@ def map_fields(sample_metrics):
                       'AVGD': 'averageDepth',
                       'pumi': 'percentUmi',
                       'on_target': 'percentOnTarget',
-                      'on_primer_frag_count': 'on_primer_frag_count'}
+                      'on_primer_frag_count': 'total_on_target_transcripts'}
+    if value in mapping:
+        return mapping[value]
+    else:
+        return value
 
-    for key, value in sample_metrics.iteritems():
-        if key in mapping:
-            mapped_metrics[mapping[key]] = value
-
+def iter_samp_met(sample_metrics):
+    """
+    Iterate through sample metrics and return the mapping.
+    :return:
+    """
+    mapped_metrics = {}
+    for key, value in sample_metrics.items():
+        mapped_metrics[map_fields(key)] = value
     return mapped_metrics
 
+def new_iter_samp_met(sample_metrics):
+    """
+    Iterate through new sample metrics and return the mapping.
+    :param sample_metrics:
+    :return:
+    """
+    for met_type, values in sample_metrics.items():
+        for metric in values:
+            sample_metrics[met_type]["metric"] = map_fields(metric["metric"])
+    return sample_metrics
 
-def main():
-    args = supply_args()
+def create_sample_metrics(args):
+    """
+
+    :return:
+    """
     sample_metrics = {}
-
     probeqc = args.probeqc_after
     total_cov = calc_cov(probeqc, 'AVGD')
     total_bp = calc_total_bp(probeqc)
-    write_me = open(args.outfile, 'w')
-    write_me_txt = open(args.outfile_txt, 'w')
-
     for label in probeqc.headers[5:]:
         this_cov = calc_cov(probeqc, label)
         sample_metrics[label] = calc_metric(total_bp, this_cov)
-
     # Calculate PUMI metric
     if args.probeqc_before:
         probeqc_before = args.probeqc_before
@@ -233,10 +237,84 @@ def main():
     if args.primers_bed and args.primers_bam:
         on_primer_frag_count = run_cmd(get_target_count_cmd(args.primers_bam, args.primers_bed))
         sample_metrics['on_primer_frag_count'] = on_primer_frag_count.rstrip('\n')
+    return sample_metrics
 
+
+def create_new_sample_metrics(args):
+    """
+    Same as above, but this time with the new format:
+    {
+    "sampleRunMetrics": [
+        {
+            "metric": "total_on_target_reads",
+            "value": 1230411
+        },
+        {
+            "metric": "percent_on_target_reads",
+            "value": 0.91
+        }
+    ],
+    "geneMetrics": [
+        {
+                "gene": "ASXL1",
+            "metric": "total_on_target_reads",
+            "value": 469012
+        },
+        {
+                "gene": "BRCA1",
+            "metric": "total_on_target_reads",
+            "value": 362330
+        }
+    ]
+}
+
+    TODO: Simplify/refactor this using decorators.
+    :param args:
+    :return:
+    """
+    sample_metrics = {"sampleRunMetrics": [], "geneMetrics": []}
+    probeqc = args.probeqc_after
+    total_cov = calc_cov(probeqc, 'AVGD')
+    total_bp = calc_total_bp(probeqc)
+    for label in probeqc.headers[5:]:
+        this_cov = calc_cov(probeqc, label)
+        sample_metrics["sampleRunMetrics"].append({"metric": label, "value": calc_metric(total_bp, this_cov)})
+    # Calculate PUMI metric
+    if args.probeqc_before:
+        probeqc_before = args.probeqc_before
+        total_cov_before = calc_cov(probeqc_before, 'AVGD')
+        pumi = calc_metric(total_cov_before, (total_cov * 100))
+        sample_metrics['sampleRunMetrics'].append({"metric": "pumi", "value": pumi})
+    else:
+        total_cov_before = None
+
+    # Calculate on target reads, or amplicon efficiency
+    this_picard = AlignSummaryMetrics(args.picard_summary)
+    if total_cov_before:
+        on_target = add_on_target(this_picard.metrics, total_cov)
+    else:
+        on_target = add_on_target(this_picard.metrics, total_cov)
+    sample_metrics["sampleRunMetrics"].append({"metric": "on_target", "value": on_target})
+
+    if args.primers_bed and args.primers_bam:
+        on_primer_frag_count = run_cmd(get_target_count_cmd(args.primers_bam, args.primers_bed))
+        sample_metrics["sampleRunMetrics"].append({"metric": "on_primer_frag_count", "value": on_primer_frag_count.rstrip('\n')})
+    return sample_metrics
+
+
+def main():
+    args = supply_args()
+    sample_metrics = create_sample_metrics(args)
+    new_sample_metrics = create_new_sample_metrics(args)
+    # Write the output.
+    write_me = open(args.outfile, 'w')
+    write_me_new = open(args.outfile_new, 'w')
+    write_me_txt = open(args.outfile_txt, 'w')
     write_to_text(sample_metrics, write_me_txt)
-    write_me.write(json.dumps(map_fields(sample_metrics)))
+    write_me.write(json.dumps(iter_samp_met(sample_metrics)))
+    write_me_new.write(json.dumps(new_iter_samp_met(new_sample_metrics)))
     write_me.close()
+    write_me_new.close()
 
 
 if __name__ == "__main__":
