@@ -87,7 +87,7 @@ class CompareProfiles(object):
             coord = int(pos[1])
             to_add = {"chromosome": chrom, "position": coord, "genotype": geno}
             new_json.append(to_add)
-        return json.dumps(new_json)
+        return new_json
 
 
     def _count_matches(self):

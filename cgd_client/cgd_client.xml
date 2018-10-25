@@ -4,7 +4,7 @@
         gene metrics files, VCF, SeattleSeq output, and FastQC output.</description>
 
     <command interpreter="python" detect_errors="exit_code">
-        send_to_cgd_dev.py $output $endpoint_choice.endpoint "\${JAVA8_PATH}"
+        cgd_client.py $output $endpoint_choice.endpoint "\${JAVA8_PATH}"
         --cgd_config "\${CGD_CLIENT_CONFIG}"
 
         --cgd_client $cgd_client
