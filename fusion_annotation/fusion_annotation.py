@@ -2,9 +2,7 @@
 # USAGE: python fusion_annotation.py [-f] <starfusion> <sample_level_metrics.txt> <genome_refpath>
 
 
-import sys
 import subprocess
-import os
 import argparse
 import re
 import json
