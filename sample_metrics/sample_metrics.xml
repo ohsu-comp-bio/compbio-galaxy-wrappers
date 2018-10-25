@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.2.0" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.3.0" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
 
   <version_command>python $__tool_directory__/sample_metrics.py --version</version_command>
@@ -11,6 +11,7 @@
     #end if
     --picard_summary '${picard_metrics}'
     --outfile '${output}'
+    --outfile_new '${output_new}'
     --outfile_txt '${output_txt}'
     #if $primers_bed:
         --primers_bed '${primers_bed}'
@@ -40,6 +41,7 @@
 
   <outputs>
     <data format="txt" name="output" label="${tool.name} on ${on_string}: json" help="JSON version of sample level metrics output." />
+    <data format="txt" name="output_new" label="${tool.name} on ${on_string}: json [NEW STYLE]" help="JSON version of new style sample level metrics output." />
     <data format="txt" name="output_txt" label="${tool.name} on ${on_string}: txt" help="TXT version of sample level metrics output." />
   </outputs>
 
