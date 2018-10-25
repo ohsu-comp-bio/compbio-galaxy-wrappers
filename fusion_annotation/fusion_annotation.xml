@@ -1,0 +1,73 @@
+<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.1.0">
+  <description>Create annotation files for fusion annotation. Run Oncotator and get sequence context.</description>
+  <requirements></requirements>
+  <stdio>
+    <exit_code range="1:" />
+  </stdio>
+  <version_command>fusion_annotation.py --version</version_command>
+  <command>
+<![CDATA[
+    python $__tool_directory__/fusion_annotation.py
+    $filter
+    $starfusion
+    $json_sample_metrics
+      #if $refGenomeSource.genomeSource == "history":
+        $refGenomeSource.ownFile
+      #else:
+        "${refGenomeSource.index.fields.path}"
+      #end if
+ ]]>
+   </command>
+  <inputs>
+     <param name="starfusion" type="data" format="tabular" label="STAR-Fusion result: star-fusion.fusion_candidates.final.abridged.FFPM" />
+     <param name="json_sample_metrics" type="data" format="json" label="Sample metrics output in JSON format." />
+     <param name="filter" type="select" label="Filter non-coding RNAs" help="Check to remove specific non coding RNAs and tRNA mitochondrial genes. Keeps all others such as protein-coding mitochondrial genes. Based on this regular expression: MT-T|MT-RNR|RNA18S5|RNA28S5|RNA5-85S">
+       <option value="-f">Yes</option>
+       <option value=''>No</option>
+     </param>
+     <conditional name="refGenomeSource">
+          <param name="genomeSource" type="select" label="Will you select a reference genome from your history or use a built-in index?" help="Built-ins were indexed using default options">
+              <option value="indexed">Use a built-in index</option>
+              <option value="history">Use one from the history</option>
+          </param>
+          <when value="indexed">
+              <param name="index" type="select" label="Select a reference genome" help="If your genome of interest is not listed, contact the Galaxy team">
+              <options from_data_table="bwa_indexes">
+                  <filter type="sort_by" column="2"/>
+                  <validator type="no_options" message="No indexes are available for the selected input dataset"/>
+              </options>
+              </param>
+          </when>
+          <when value="history">
+              <param name="ownFile" type="data" format="fasta" metadata_name="dbkey" label="Select the reference genome" />
+          </when>  <!-- history -->
+      </conditional>  <!-- refGenomeSource -->
+  </inputs>
+  <outputs>
+       <data format="tabular" name="starfusion_output.bedpe" label="${tool.name} on ${on_string}: starfusion_output.bedpe" from_work_dir= "starfusion_output.bedpe" />
+  </outputs>
+
+  <help>
+usage: fusion_annotation.py [-h] [-f] [--version]
+                            starfusion json_sample_metrics path_to_fasta
+
+Annotate starfusion output with oncotator and nts sequences.
+
+positional arguments:
+  starfusion           STAR-Fusion output star-
+                       fusion.fusion_candidates.final.abridged.FFPM
+  json_sample_metrics  Sample level metrics file
+  path_to_fasta        Full path to fasta.fa file, with index file
+
+optional arguments:
+  -h, --help           show this help message and exit
+  -f                   filter out specific ribosomal and mitochondrial fusions
+  --version            show program's version number and exit
+# Input
+Input should be the final, abridged, FFPM from STAR-Fusion. Should be called star-fusion.fusion_candidates.final.abridged.FFPM.
+Sample Metrics from sample_metrics.xml Galaxy tool.
+
+# Output
+Bedpe formatted, 25 base pair sequences around breakpoint, optionally filtered
+  </help>
+</tool>
