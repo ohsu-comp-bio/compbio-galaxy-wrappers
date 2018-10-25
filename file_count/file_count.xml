@@ -1,24 +1,19 @@
-<tool id="file_count" name="Count Directory Files" version="0.1.0" >
+<tool id="file_count" name="Create GATK List" version="0.1.1" >
   <description>For a particular directory, count the number of files, and compare to an input value.</description>
 
   <command><![CDATA[
-    #import os
-    #set dir_count = len([name for name in os.listdir(str($base_dir)) if os.path.isfile(name)])
-    #if int($dir_count) == int($input_cnt):
-        echo "Counts are equal!"
-    #else
-        #raise Exception("Counts are not equal yet!")
-    #end if
-    > ${output_log}
+  python $__tool_directory__/file_count.py
+  "${input_cnt}" "${base_dir}" "${file_list}"
    ]]></command>
 
   <inputs>
+    <param name="dummy_input" type="data" label="Dummy Input File" />
     <param name="input_cnt" type="text" label="Expected Count" help="Expected number of files in the directory.  If this number of files exist, the workflow will continue." />
     <param name="base_dir" type="text" label="Directory" help="Count the number of files in this directory." />
   </inputs>
 
   <outputs>
-    <data format="txt" name="output_log" label="${tool.name} on ${on_string}" help="STDOUT log" />
+    <data format="txt" name="file_list" label="${tool.name} on ${on_string}: list" help="GATK File List" />
   </outputs>
 
   <tests></tests>
