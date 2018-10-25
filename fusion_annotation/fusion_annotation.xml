@@ -20,7 +20,7 @@
    </command>
   <inputs>
      <param name="starfusion" type="data" format="tabular" label="STAR-Fusion result: star-fusion.fusion_candidates.final.abridged.FFPM" />
-     <param name="json_sample_metrics" type="data" format="json" label="Sample metrics output in JSON format." />
+     <param name="json_sample_metrics" type="data" format="txt" label="Sample metrics output in JSON format." />
      <param name="filter" type="select" label="Filter non-coding RNAs" help="Check to remove specific non coding RNAs and tRNA mitochondrial genes. Keeps all others such as protein-coding mitochondrial genes. Based on this regular expression: MT-T|MT-RNR|RNA18S5|RNA28S5|RNA5-85S">
        <option value="-f">Yes</option>
        <option value=''>No</option>
