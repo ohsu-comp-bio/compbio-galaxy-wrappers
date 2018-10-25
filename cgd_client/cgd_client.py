@@ -22,7 +22,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.6.0'
+VERSION = '1.2.6.1'
 
 
 def supply_args():
@@ -140,7 +140,7 @@ def build_cmd(args, recvd_prof=False):
             or (args.endpoint == "snpProfile" and not recvd_prof):
         # The cmd for this endpoint is already set, don't do anything.
         pass
-    elif args.endpoint == "updatesamplerun":
+    elif args.endpoint == "updatesamplerun" or args.endpoint == "metrics":
         cmd.extend(["-j", args.pipeline_out])
     elif args.endpoint == "snpProfile" and recvd_prof:
         cmd.extend(["-j", args.json_out])
