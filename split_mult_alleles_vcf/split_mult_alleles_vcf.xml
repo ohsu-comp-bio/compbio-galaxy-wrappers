@@ -1,11 +1,21 @@
-<tool id="split_mult_alleles_vcf" name="Split Multiple Alterate Alleles VCF" version="0.2.3" >
+<tool id="split_mult_alleles_vcf" name="Split Multiple Alterate Alleles VCF" version="0.3.0" >
   <description>Where multiple alleles are listed by commas in a VCF, make each a separate entry.</description>
-  <command interpreter="python">split_mult_alleles_vcf.py
-    $input $output
-  </command>
+  <command detect_errors="exit_code"><![CDATA[
+  #if $input.is_of_type("vcf_bgzip")
+    zcat $input > input.vcf &&
+  #end if
+  python $__tool_directory__/split_mult_alleles_vcf.py
+  #if $input.is_of_type("vcf_bgzip")
+    "input.vcf"
+  #else
+    "${input}"
+  #end if
+
+  $output
+  ]]></command>
 
   <inputs>   
-    <param name="input" format="vcf" type="data" label="Input VCF" />
+    <param name="input" format="vcf,vcf_bgzip" type="data" label="Input VCF" />
   </inputs>
 
   <outputs>

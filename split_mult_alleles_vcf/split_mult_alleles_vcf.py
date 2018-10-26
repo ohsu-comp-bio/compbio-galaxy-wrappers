@@ -11,7 +11,7 @@
 import argparse
 import itertools
 
-VERSION = '0.2.3'
+VERSION = '0.3.0'
 
 
 def supply_args():
@@ -22,10 +22,6 @@ def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument(dest='input', help='')
     parser.add_argument(dest='output', help='')
-#    parser.add_argument(dest='output_alt', help='VCF Output composed of '
-#                                                'alternate alleles.')
-#    parser.add_argument(dest='format_style', choices=['total_alt',
-    # 'ref_alt'], help='Will the FORMAT field describe allele counts in terms of [total, alt] or [ref, alt]?')
     parser.add_argument('--version', action='version', version='%(prog)s ' +
                                                                VERSION)
     args = parser.parse_args()
@@ -91,7 +87,7 @@ def geno_prob_parse(alt_cnt):
     for entry in itertools.combinations_with_replacement(values, 2):
         if entry not in genos:
             genos[entry] = calc_gl_pos(int(entry[1]), int(entry[0]))
-    return sorted(genos.iteritems(), key=lambda x: x[1])
+    return sorted(genos.items(), key=lambda x: x[1])
 
 
 def include_gl(genos, allele):
@@ -196,6 +192,12 @@ def collect_gls(gl_ind, broke_samp, label):
 
     return ','.join(temp)
 
+def proc_samp():
+    """
+    Get the sample section written out correctly for each sample in the VCF.
+    :return:
+    """
+    pass
 
 def main():
     
@@ -203,6 +205,7 @@ def main():
 
     handle_in_vcf = open(args.input, 'rU')
     handle_out_vcf = open(args.output, 'w')
+    # broke_samp = []
 
     with handle_in_vcf as vcf:
         for line in vcf:
@@ -217,12 +220,11 @@ def main():
                 filter = new_line[6]
                 info = new_line[7]
                 format = new_line[8]
-                sample = new_line[9]
+                samples = new_line[9:]
 
                 if ',' in alts:
                     alt_allele = alts.split(',')
                     genos = geno_prob_parse(len(alt_allele))
-                    broke_samp = sample_break(format, sample)
                     for i in range(1, len(alt_allele)+1):
                         to_write = [chrom, pos, rsid, ref]
                         gl_ind = include_gl(genos, i)
@@ -231,38 +233,36 @@ def main():
                         to_write.append(info_break(info, i-1))
                         to_write.append(format)
 
-                        # Work up the SAMPLE section.
-                        # GT:DP:AD:RO:QR:AO:QA:GL
-                        # 0/1:1206:597,608:597:23045:608:23566:-1753.83,0,-1708.68:0.5045643:0.542
-                        new_samp = []
-                        for field in format.split(':'):
-                            if field == 'GT':
-                                if 'GL' in broke_samp:
-                                    new_field = new_gt(broke_samp, gl_ind,
-                                                       'GL')
-                                elif 'PL' in broke_samp:
-                                    new_field = new_gt(broke_samp, gl_ind,
-                                                       'PL')
+                        for sample in samples:
+                            broke_samp = sample_break(format, sample)
+                            # Work up the SAMPLE section.
+                            # GT:DP:AD:RO:QR:AO:QA:GL
+                            # 0/1:1206:597,608:597:23045:608:23566:-1753.83,0,-1708.68:0.5045643:0.542
+                            new_samp = []
+                            for field in format.split(':'):
+                                if field == 'GT':
+                                    if 'GL' in broke_samp:
+                                        new_field = new_gt(broke_samp, gl_ind,
+                                                           'GL')
+                                    elif 'PL' in broke_samp:
+                                        new_field = new_gt(broke_samp, gl_ind,
+                                                           'PL')
+                                    else:
+                                        new_field = './.'
+                                elif field == 'AD':
+                                    this_samp_ad_ref = broke_samp[field].split(',')[0]
+                                    this_samp_ad_alt = broke_samp[field].split(',')[i]
+                                    new_field = ','.join([this_samp_ad_ref,
+                                                      this_samp_ad_alt])
+                                elif field == 'AO' or field == 'QA' or field == 'AF':
+                                    new_field = broke_samp[field].split(',')[i-1]
+                                elif field == 'GL' or field == 'PL':
+                                    new_field = collect_gls(gl_ind, broke_samp, field)
                                 else:
-                                    new_field = './.'
-                            elif field == 'AD':
-                                this_samp_ad_ref = broke_samp[field].split(
-                                    ',')[0]
-                                this_samp_ad_alt = broke_samp[field].split(
-                                    ',')[i]
-                                new_field = ','.join([this_samp_ad_ref,
-                                                  this_samp_ad_alt])
-                            elif field == 'AO' or field == 'QA' or field == 'AF':
-                                new_field = broke_samp[field].split(',')[i-1]
-                            elif field == 'GL' or field == 'PL':
-                                new_field = collect_gls(gl_ind, broke_samp,
-                                                        field)
-                            else:
-                                new_field = broke_samp[field]
+                                    new_field = broke_samp[field]
 
-                            new_samp.append(new_field)
-
-                        to_write.append(':'.join(new_samp))
+                                new_samp.append(new_field)
+                            to_write.append(':'.join(new_samp))
                         handle_out_vcf.write('\t'.join(to_write))
                         handle_out_vcf.write('\n')
                 else:
