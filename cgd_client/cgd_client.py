@@ -22,7 +22,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.6.1'
+VERSION = '1.2.6.2'
 
 
 def supply_args():
@@ -111,7 +111,9 @@ def run_cmd(cmd):
         if json.loads(stdout)['errors']:
             raise Exception(json.loads(stdout)['errors'])
     elif 'message' in json.loads(stdout):
-        if json.loads(stdout)['message'] != 'ok':
+        if json.loads(stdout)['message'] == 'error_patient_not_found':
+            return None
+        elif json.loads(stdout)['message'] != 'ok':
             raise Exception(json.loads(stdout)['message'])
     return stdout
 
@@ -221,16 +223,7 @@ def main():
         # Get the current profile ready.
         # We run one command here, then another down below.
 
-    if args.endpoint == 'snpProfile':
-        json_to_send = SnpProfile(args.pipeline_out).geno_items
-        cgd_json = json.loads(stdout)['items']
-        compare_snps = CompareProfiles(cgd_json, json_to_send)
-        with open(args.json_out, 'w') as to_cgd:
-            json.dump(compare_snps.for_cgd, to_cgd)
-            #to_cgd.write(compare_snps.for_cgd)
-        cmd, newfile = build_cmd(args, True)
-        stdout = run_cmd(cmd)
-
+    if args.endpoint == 'snpProfile' and stdout:
         # Command has been run to retrieve the profile.  Now, we need to figure out if the overlap of the two profiles match.
         # If the match, no need to run anything else.
         # If they don't match, error.
@@ -240,111 +233,16 @@ def main():
         #                                      {"chromosome": "1", "position": 16256007, "genotype": 1},
         #                                      {"chromosome": "1", "position": 36937059, "genotype": 2},
         #                                      {"chromosome": "1", "position": 65321388, "genotype": 2},
-        #                                      {"chromosome": "1", "position": 215848587, "genotype": 0},
-        #                                      {"chromosome": "1", "position": 215960167, "genotype": 2},
-        #                                      {"chromosome": "1", "position": 216219781, "genotype": 2},
-        #                                      {"chromosome": "1", "position": 237814783, "genotype": 2},
-        #                                      {"chromosome": "11", "position": 1267325, "genotype": 0},
-        #                                      {"chromosome": "11", "position": 1267917, "genotype": 1},
-        #                                      {"chromosome": "11", "position": 1271321, "genotype": 0},
-        #                                      {"chromosome": "11", "position": 69462910, "genotype": 1},
-        #                                      {"chromosome": "11", "position": 72946020, "genotype": 1},
-        #                                      {"chromosome": "11", "position": 108043988, "genotype": 1},
-        #                                      {"chromosome": "12", "position": 49444545, "genotype": 1},
-        #                                      {"chromosome": "13", "position": 28624294, "genotype": 2},
-        #                                      {"chromosome": "13", "position": 73349359, "genotype": 0},
-        #                                      {"chromosome": "16", "position": 81929488, "genotype": 1},
-        #                                      {"chromosome": "16", "position": 81971403, "genotype": 0},
-        #                                      {"chromosome": "17", "position": 11511457, "genotype": 2},
-        #                                      {"chromosome": "17", "position": 29508775, "genotype": 0},
-        #                                      {"chromosome": "17", "position": 29553485, "genotype": 2},
-        #                                      {"chromosome": "17", "position": 37922259, "genotype": 1},
-        #                                      {"chromosome": "17", "position": 41244000, "genotype": 0},
-        #                                      {"chromosome": "17", "position": 41245466, "genotype": 0},
-        #                                      {"chromosome": "17", "position": 62007498, "genotype": 2},
-        #                                      {"chromosome": "17", "position": 73552185, "genotype": 2},
-        #                                      {"chromosome": "18", "position": 52895531, "genotype": 1},
-        #                                      {"chromosome": "18", "position": 60985879, "genotype": 0},
-        #                                      {"chromosome": "19", "position": 10267077, "genotype": 1},
-        #                                      {"chromosome": "19", "position": 22154732, "genotype": 2},
-        #                                      {"chromosome": "19", "position": 22156992, "genotype": 2},
-        #                                      {"chromosome": "19", "position": 22157302, "genotype": 1},
-        #                                      {"chromosome": "2", "position": 47739551, "genotype": 2},
-        #                                      {"chromosome": "20", "position": 31024274, "genotype": 1},
-        #                                      {"chromosome": "20", "position": 31386347, "genotype": 2},
-        #                                      {"chromosome": "20", "position": 31386449, "genotype": 2},
-        #                                      {"chromosome": "20", "position": 39797465, "genotype": 1},
-        #                                      {"chromosome": "20", "position": 40743829, "genotype": 1},
-        #                                      {"chromosome": "20", "position": 41306600, "genotype": 1},
-        #                                      {"chromosome": "20", "position": 57478807, "genotype": 2},
-        #                                      {"chromosome": "22", "position": 23653880, "genotype": 1},
-        #                                      {"chromosome": "22", "position": 40058186, "genotype": 2},
-        #                                      {"chromosome": "3", "position": 47162661, "genotype": 1},
-        #                                      {"chromosome": "4", "position": 89670155, "genotype": 1},
-        #                                      {"chromosome": "4", "position": 126397321, "genotype": 1},
-        #                                      {"chromosome": "4", "position": 187516880, "genotype": 1},
-        #                                      {"chromosome": "4", "position": 187534363, "genotype": 1},
-        #                                      {"chromosome": "4", "position": 187534375, "genotype": 1},
-        #                                      {"chromosome": "4", "position": 187538330, "genotype": 1},
-        #                                      {"chromosome": "4", "position": 187557893, "genotype": 1},
-        #                                      {"chromosome": "4", "position": 187629497, "genotype": 2},
-        #                                      {"chromosome": "5", "position": 13701525, "genotype": 1},
-        #                                      {"chromosome": "5", "position": 13701536, "genotype": 2},
-        #                                      {"chromosome": "5", "position": 13845107, "genotype": 1},
-        #                                      {"chromosome": "5", "position": 13864728, "genotype": 2},
-        #                                      {"chromosome": "5", "position": 13913885, "genotype": 1},
-        #                                      {"chromosome": "5", "position": 35861068, "genotype": 1},
-        #                                      {"chromosome": "5", "position": 35871190, "genotype": 1},
-        #                                      {"chromosome": "5", "position": 112162854, "genotype": 2},
-        #                                      {"chromosome": "5", "position": 112164561, "genotype": 2},
-        #                                      {"chromosome": "5", "position": 112175770, "genotype": 2},
-        #                                      {"chromosome": "5", "position": 112177171, "genotype": 2},
-        #                                      {"chromosome": "5", "position": 140168070, "genotype": 1},
-        #                                      {"chromosome": "5", "position": 140168151, "genotype": 1},
-        #                                      {"chromosome": "5", "position": 149460553, "genotype": 0},
-        #                                      {"chromosome": "6", "position": 152464839, "genotype": 1},
-        #                                      {"chromosome": "6", "position": 152466674, "genotype": 1},
-        #                                      {"chromosome": "6", "position": 152469188, "genotype": 1},
-        #                                      {"chromosome": "6", "position": 152665261, "genotype": 2},
-        #                                      {"chromosome": "6", "position": 152772264, "genotype": 2},
-        #                                      {"chromosome": "6", "position": 157405930, "genotype": 0},
-        #                                      {"chromosome": "7", "position": 6026988, "genotype": 0},
-        #                                      {"chromosome": "7", "position": 55214348, "genotype": 0},
-        #                                      {"chromosome": "7", "position": 55238874, "genotype": 2},
-        #                                      {"chromosome": "7", "position": 55249063, "genotype": 1},
-        #                                      {"chromosome": "7", "position": 82453708, "genotype": 0},
-        #                                      {"chromosome": "7", "position": 82455895, "genotype": 0},
-        #                                      {"chromosome": "7", "position": 82581859, "genotype": 2},
-        #                                      {"chromosome": "7", "position": 82582846, "genotype": 2},
-        #                                      {"chromosome": "7", "position": 101844851, "genotype": 0},
-        #                                      {"chromosome": "7", "position": 101892328, "genotype": 1},
-        #                                      {"chromosome": "7", "position": 101917521, "genotype": 2},
-        #                                      {"chromosome": "7", "position": 124499002, "genotype": 1},
-        #                                      {"chromosome": "7", "position": 124499003, "genotype": 1},
-        #                                      {"chromosome": "7", "position": 140426257, "genotype": 0},
-        #                                      {"chromosome": "8", "position": 90958530, "genotype": 1},
-        #                                      {"chromosome": "8", "position": 90967711, "genotype": 1},
-        #                                      {"chromosome": "8", "position": 90995019, "genotype": 1},
-        #                                      {"chromosome": "9", "position": 5081780, "genotype": 0},
-        #                                      {"chromosome": "9", "position": 139391636, "genotype": 2},
-        #                                      {"chromosome": "9", "position": 139397707, "genotype": 2},
-        #                                      {"chromosome": "9", "position": 139407932, "genotype": 2},
-        #                                      {"chromosome": "9", "position": 139410177, "genotype": 2},
-        #                                      {"chromosome": "9", "position": 139412197, "genotype": 2},
         #                                      {"chromosome": "9", "position": 139418260, "genotype": 2}]}
-        #        to_send = CompareProfiles(json.loads(stdout)["items"], json_to_send).for_cgd
+        # TODO: Deal with (Exception: error_patient_not_found)
 
-
-#        to_send = CompareProfiles(stdout["items"], json_to_send).for_cgd
-
-        # cmd, newfile = build_cmd(args)
-        # stdout = run_cmd(cmd)
-        #
-        # profile_out.write(to_send)
-        # profile_out.close()
-
-        # Hold off on this until we get cgd_client worked out.
-        # cmd = ['java8', '-jar', '/home/exacloud/clinical/installedTest/cgd_client-1.2.4.jar', '-c', '/home/exacloud/clinical/installedTest/cgd_client.properties', '-u', 'https://kdlwebuser01.ohsu.edu/cgd_next/service/run/180408_NS500390_0222_AHMMV5BGX5/barcodeId/A01/snpProfile']
+        json_to_send = SnpProfile(args.pipeline_out).geno_items
+        cgd_json = json.loads(stdout)['items']
+        compare_snps = CompareProfiles(cgd_json, json_to_send)
+        with open(args.json_out, 'w') as to_cgd:
+            json.dump(compare_snps.for_cgd, to_cgd)
+        cmd, newfile = build_cmd(args, True)
+        stdout = run_cmd(cmd)
 
     # Write and output log.  This is necessary so that Galaxy knows the process is over.
     outfile = open(args.stdout_log, 'w')

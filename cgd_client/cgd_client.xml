@@ -1,4 +1,4 @@
-<tool id="cgd_client" name="CGD Import Client" version="1.2.6.1" >
+<tool id="cgd_client" name="CGD Import Client" version="1.2.6.2" >
 
     <description>Send a pipeline output file to the CGD via cgd_client.jar.  Files that can be sent are the interval and
         gene metrics files, VCF, SeattleSeq output, and FastQC output.</description>
