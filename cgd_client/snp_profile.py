@@ -1,7 +1,29 @@
 from scipy.stats import binom_test
 
+import gzip
 import json
 import vcf
+
+def file_type(filename):
+    """
+    Check for the file type and return the extension.
+    http://stackoverflow.com/questions/13044562/python-mechanism-to-identify-compressed-file-type-and-uncompress
+    """
+
+    magic_dict = {
+        "\x1f\x8b\x08": "gz",
+        "\x42\x5a\x68": "bz2",
+        "\x50\x4b\x03\x04": "zip"
+        }
+
+    max_len = max(len(x) for x in magic_dict)
+
+    with open(filename) as f:
+        file_start = f.read(max_len)
+    for magic, filetype in magic_dict.items():
+        if file_start.startswith(magic):
+            return filetype
+    return None
 
 class SnpProfile(object):
     """
@@ -20,8 +42,13 @@ class SnpProfile(object):
 
     """
     def __init__(self, filename):
-        handle = open(filename, 'r')
-        self.vcf_read = vcf.Reader(handle)
+
+        if file_type(filename) == 'gz':
+            handle = gzip.open(filename, 'rb')
+            self.vcf_read = vcf.Reader(handle)
+        else:
+            handle = open(filename, 'r')
+            self.vcf_read = vcf.Reader(handle)
         self.geno_items = self._vcf_parse()
 
     def _vcf_parse(self):
