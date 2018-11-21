@@ -22,7 +22,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.6.2'
+VERSION = '1.2.6.3'
 
 
 def supply_args():
@@ -214,6 +214,9 @@ def main():
     # Run the command.
     stdout = run_cmd(cmd)
 
+    # Write and output log.  This is necessary so that Galaxy knows the process is over.
+    outfile = open(args.stdout_log, 'w')
+
     if args.endpoint == 'reportedvariants':
         vcf = open(args.report_vcf, 'w')
         regions = open(args.report_bed, 'w')
@@ -243,10 +246,9 @@ def main():
             json.dump(compare_snps.for_cgd, to_cgd)
         cmd, newfile = build_cmd(args, True)
         stdout = run_cmd(cmd)
+        out_metric = {'snp_profile_pvalue': compare_snps.pvalue}
+        json.dump(out_metric, outfile)
 
-    # Write and output log.  This is necessary so that Galaxy knows the process is over.
-    outfile = open(args.stdout_log, 'w')
-    outfile.write("The process has run.")
     outfile.close()
 
     # Clean up temp file.

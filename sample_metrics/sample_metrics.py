@@ -21,7 +21,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '0.3.0'
+VERSION = '0.4.0'
 
 
 def supply_args():
@@ -40,6 +40,7 @@ def supply_args():
                                                  'metrics file.')
     parser.add_argument('--primers_bed', help='BED file containing primer coordinates only.')
     parser.add_argument('--primers_bam', help='BAM file to calculate primer reads on target.')
+    parser.add_argument('--json_in', nargs='*', help='Arbitrary number of files to be included in sample metrics that are in json format.')
     parser.add_argument('--outfile', help='Output file with json string.')
     parser.add_argument('--outfile_new', help='Output file with new style json string.')
     parser.add_argument('--outfile_txt', help='Output file in human readable '
@@ -236,9 +237,10 @@ def create_sample_metrics(args):
         on_target = add_on_target(this_picard.metrics, total_cov)
     sample_metrics['on_target'] = on_target
 
-    if args.primers_bed and args.primers_bam:
-        on_primer_frag_count = run_cmd(get_target_count_cmd(args.primers_bam, args.primers_bed))
-        sample_metrics['on_primer_frag_count'] = on_primer_frag_count.rstrip('\n')
+    # # Only doing the below for new sample metrics until further notice.
+    # if args.primers_bed and args.primers_bam:
+    #     on_primer_frag_count = run_cmd(get_target_count_cmd(args.primers_bam, args.primers_bed))
+    #     sample_metrics['on_primer_frag_count'] = on_primer_frag_count.rstrip('\n')
     return sample_metrics
 
 
@@ -275,32 +277,42 @@ def create_new_sample_metrics(args):
     :return:
     """
     sample_metrics = {"sampleRunMetrics": [], "geneMetrics": []}
-    probeqc = args.probeqc_after
-    total_cov = calc_cov(probeqc, 'AVGD')
-    total_bp = calc_total_bp(probeqc)
-    for label in probeqc.headers[5:]:
-        this_cov = calc_cov(probeqc, label)
-        sample_metrics["sampleRunMetrics"].append({"metric": label, "value": calc_metric(total_bp, this_cov)})
-    # Calculate PUMI metric
-    if args.probeqc_before:
-        probeqc_before = args.probeqc_before
-        total_cov_before = calc_cov(probeqc_before, 'AVGD')
-        pumi = calc_metric(total_cov_before, (total_cov * 100))
-        sample_metrics['sampleRunMetrics'].append({"metric": "pumi", "value": pumi})
-    else:
-        total_cov_before = None
-
-    # Calculate on target reads, or amplicon efficiency
-    this_picard = AlignSummaryMetrics(args.picard_summary)
-    if total_cov_before:
-        on_target = add_on_target(this_picard.metrics, total_cov)
-    else:
-        on_target = add_on_target(this_picard.metrics, total_cov)
-    sample_metrics["sampleRunMetrics"].append({"metric": "on_target", "value": on_target})
+    # # Right now, they just want the new metrics to be passed to the new endpoint.  This is fine since I don't like
+    # # the way I'm doing this right now.  Stuff below commented out until future notice.
+    # probeqc = args.probeqc_after
+    # total_cov = calc_cov(probeqc, 'AVGD')
+    # total_bp = calc_total_bp(probeqc)
+    # for label in probeqc.headers[5:]:
+    #     this_cov = calc_cov(probeqc, label)
+    #     sample_metrics["sampleRunMetrics"].append({"metric": label, "value": calc_metric(total_bp, this_cov)})
+    # # Calculate PUMI metric
+    # if args.probeqc_before:
+    #     probeqc_before = args.probeqc_before
+    #     total_cov_before = calc_cov(probeqc_before, 'AVGD')
+    #     pumi = calc_metric(total_cov_before, (total_cov * 100))
+    #     sample_metrics['sampleRunMetrics'].append({"metric": "pumi", "value": pumi})
+    # else:
+    #     total_cov_before = None
+    #
+    # # Calculate on target reads, or amplicon efficiency
+    # this_picard = AlignSummaryMetrics(args.picard_summary)
+    # if total_cov_before:
+    #     on_target = add_on_target(this_picard.metrics, total_cov)
+    # else:
+    #     on_target = add_on_target(this_picard.metrics, total_cov)
+    # sample_metrics["sampleRunMetrics"].append({"metric": "on_target", "value": on_target})
 
     if args.primers_bed and args.primers_bam:
         on_primer_frag_count = run_cmd(get_target_count_cmd(args.primers_bam, args.primers_bed))
         sample_metrics["sampleRunMetrics"].append({"metric": "on_primer_frag_count", "value": on_primer_frag_count.rstrip('\n')})
+
+    if args.json_in:
+        for filename in args.json_in:
+            with open(filename, 'rU') as myfile:
+                for line in myfile:
+                    for k, v in json.loads(line).items():
+                        sample_metrics['sampleRunMetrics'].append({"metric": str(k), "value": v})
+
     return sample_metrics
 
 

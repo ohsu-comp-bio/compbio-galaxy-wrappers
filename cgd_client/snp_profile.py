@@ -3,6 +3,8 @@ from scipy.stats import binom_test
 import gzip
 import vcf
 
+VERSION = '0.1.0'
+
 def file_type(filename):
     """
     Check for the file type and return the extension.
@@ -115,7 +117,7 @@ class CompareProfiles(object):
         self.profp = self._create_dict(profp)
         self._compare_them()
         self.for_cgd = self.dict_to_json(self.new_snps)
-        self._perform_binom()
+        self.pvalue = self._perform_binom()
 
     def _create_dict(self, prof):
         """
@@ -162,11 +164,8 @@ class CompareProfiles(object):
         :return:
         """
         pvalue = binom_test(self.mismatch, self.total, prob)
-        if pvalue < pfail:
-            raise Exception("Null hypothesis(p=" + str(pfail) + ") of patient profiles being the same rejected with p-value: " + str(pvalue))
-        else:
-            print("Null hypothesis(p=" + str(pfail) + ") of patient profiles being the same accepted with p-value: " + str(pvalue))
-
+        print("Null hypothesis(p=" + str(pfail) + ") of patient profiles being the same p-value: " + str(pvalue))
+        return pvalue
 
     def _compare_them(self):
         """
