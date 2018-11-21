@@ -1,7 +1,6 @@
 from scipy.stats import binom_test
 
 import gzip
-import json
 import vcf
 
 def file_type(filename):
@@ -62,13 +61,45 @@ class SnpProfile(object):
             pos = int(record.POS)
             if len(record.samples) == 1:
                 geno = record.samples[0].gt_type
-                if geno is None:
-                    geno = -1
+                ref = record.samples[0]['AD'][0]
+                alt = record.samples[0]['AD'][1]
+                ab = self._calc_ab(ref, alt, geno)
+                geno = self._assess_ab(ab, geno)
             else:
                 raise Exception("The input VCF should only have one sample column, this one has " + str(len(record.samples)))
             geno_items.append({"chromosome": chrom, "position": pos, "genotype": geno})
 
         return geno_items
+
+    def _assess_ab(self, ab, geno, hom_thresh=0.01, het_thresh=0.1):
+        """
+        """
+        if not ab:
+            return -1
+        elif geno == None:
+            return -1
+        elif ab > hom_thresh and geno == 0:
+            return -1
+        elif ab > het_thresh and geno == 1:
+            return -1
+        elif ab > hom_thresh and geno == 2:
+            return -1
+        else:
+            return geno
+
+    def _calc_ab(self, ref, alt, geno):
+        """
+        Calculate the allele balance.
+        :return:
+        """
+        if geno == 0:
+            return float(alt / (ref + alt + 0.0))
+        elif geno == 1:
+            return abs(0.5 - (float(alt / (ref + alt + 0.0))))
+        elif geno == 2:
+            return float(ref / (ref + alt + 0.0))
+        else:
+            return None
 
 
 class CompareProfiles(object):
@@ -109,7 +140,7 @@ class CompareProfiles(object):
         :return:
         """
         new_json = []
-        for pos, geno in to_json.iteritems():
+        for pos, geno in to_json.items():
             chrom = str(pos[0])
             coord = int(pos[1])
             to_add = {"chromosome": chrom, "position": coord, "genotype": geno}
@@ -125,7 +156,7 @@ class CompareProfiles(object):
         return len([x for x in (list(set(self.proft) & set(self.profp))) if x != '-1'])
 
 
-    def _perform_binom(self, prob=0.01, pfail=0.05):
+    def _perform_binom(self, prob=0.02, pfail=0.05):
         """
         Look at total and mismatch values from compare_them, and find a p-value.
         :return:
@@ -158,7 +189,7 @@ class CompareProfiles(object):
         self.mismatch = 0
         self.new_snps = {}
 
-        for pos, geno in self.profp.iteritems():
+        for pos, geno in self.profp.items():
             if geno != -1:
                 if pos in self.proft:
                     # Situation 2
