@@ -21,7 +21,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '0.4.0'
+VERSION = '0.5.0'
 
 
 def supply_args():
@@ -45,6 +45,7 @@ def supply_args():
     parser.add_argument('--outfile_new', help='Output file with new style json string.')
     parser.add_argument('--outfile_txt', help='Output file in human readable '
                                               'text format.')
+    parser.add_argument('--workflow', help='Pass the Galaxy workflow name, if applicable.')
     parser.add_argument('--version', action='version', version='%(prog)s ' +
                                                                VERSION)
     args = parser.parse_args()
@@ -153,6 +154,21 @@ def write_to_text(sample_metrics, outfile_txt):
 
     outfile_txt.close()
 
+def req_metrics(wf, metrics):
+    """
+    Labs only want to see certain metrics...
+    :return:
+    """
+    wf_metric_list = {'QIAseq_V3_RNA': ['Q30', 'AVGD', 'pumi', 'on_target']}
+    new_metrics = {}
+    if wf in wf_metric_list:
+        for metric, value in metrics.items():
+            if metric in wf_metric_list[wf]:
+                new_metrics[metric] = value
+    else:
+        return metrics
+
+    return new_metrics
 
 def map_fields(value):
     """
@@ -175,6 +191,7 @@ def map_fields(value):
                       'D250': 'depthTwoHundredFifty',
                       'D500': 'depthFiveHundred',
                       'D700': 'depthSevenHundred',
+                      'D1000': 'depthOneThousand',
                       'D1250': 'depthTwelveHundredFifty',
                       'D2000': 'depthTwoThousand',
                       'AVGD': 'averageDepth',
@@ -205,7 +222,6 @@ def new_iter_samp_met(sample_metrics):
     for met_type, values in sample_metrics.items():
         for metric in values:
             metric["metric"] = map_fields(metric["metric"])
-    print(sample_metrics)
     return sample_metrics
 
 def create_sample_metrics(args):
@@ -318,8 +334,9 @@ def create_new_sample_metrics(args):
 
 def main():
     args = supply_args()
-    sample_metrics = create_sample_metrics(args)
+    sample_metrics = req_metrics(args.workflow, create_sample_metrics(args))
     new_sample_metrics = create_new_sample_metrics(args)
+
     # Write the output.
     write_me = open(args.outfile, 'w')
     write_me_new = open(args.outfile_new, 'w')
