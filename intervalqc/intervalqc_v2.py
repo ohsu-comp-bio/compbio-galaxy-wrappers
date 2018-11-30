@@ -4,7 +4,7 @@ import sys
 from natsort import natsorted
 import argparse
 
-VERSION = '1.0.2'
+VERSION = '1.0.3'
 
 CHROMS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "X", "Y", "MT"]
 
@@ -295,23 +295,24 @@ def writeProbeQC(all_intervals, position_refseq, doc_dict_0, doc_dict_30, probe_
                     i += 1
 
     ### Write totals.
-    avgd = str("{:.1f}".format(total_counts[1]/total_counts[0]))
-    q30 = str("{:.4}".format((total_counts[2]*100)/total_counts[1]))
-    # Calculate amplicon efficiency, defined as amplicon base coverage
-    # divided by percent bases aligned to genome.
-    print("Total probe aligned bases: " + str(total_counts[1]))
-    print("Total aligned bases to genome: " + str(pf_bases_aligned))
-    amp_eff = str("{:.4}".format((total_counts[1]*100)/pf_bases_aligned))
-    if float(amp_eff) > 100 or float(amp_eff) < 0:
-        amp_eff = '0'
-# Waiting to include this...
-#    if amp_eff > 100 or amp_eff < 0:
-#        raise Exception("This value should not ever be above 100 or below 0.")
-    probe_out.write('\t'.join(["\t\t\tTOTAL", amp_eff, avgd, q30]))
-    for value in total_counts[3:]:
-        write_depths = str("{:.4}".format((value*100)/total_counts[0]))
-        probe_out.write('\t' + write_depths)
-    probe_out.write('\n')
+    # No, actually we don't want to write the totals any more...
+#     avgd = str("{:.1f}".format(total_counts[1]/total_counts[0]))
+#     q30 = str("{:.4}".format((total_counts[2]*100)/total_counts[1]))
+#     # Calculate amplicon efficiency, defined as amplicon base coverage
+#     # divided by percent bases aligned to genome.
+#     print("Total probe aligned bases: " + str(total_counts[1]))
+#     print("Total aligned bases to genome: " + str(pf_bases_aligned))
+#     amp_eff = str("{:.4}".format((total_counts[1]*100)/pf_bases_aligned))
+#     if float(amp_eff) > 100 or float(amp_eff) < 0:
+#         amp_eff = '0'
+# # Waiting to include this...
+# #    if amp_eff > 100 or amp_eff < 0:
+# #        raise Exception("This value should not ever be above 100 or below 0.")
+#     probe_out.write('\t'.join(["\t\t\tTOTAL", amp_eff, avgd, q30]))
+#     for value in total_counts[3:]:
+#         write_depths = str("{:.4}".format((value*100)/total_counts[0]))
+#         probe_out.write('\t' + write_depths)
+#     probe_out.write('\n')
     
     probe_out.close()
 
