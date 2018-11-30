@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.5.0" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.5.1" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
 
   <version_command>python $__tool_directory__/sample_metrics.py --version</version_command>

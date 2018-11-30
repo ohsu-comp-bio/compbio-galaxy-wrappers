@@ -21,7 +21,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '0.5.0'
+VERSION = '0.5.1'
 
 
 def supply_args():
@@ -122,22 +122,22 @@ def calc_metric(bp, cov):
     return '{:0.1f}'.format(cov / bp)
 
 
-def add_on_target(picard, total_cov):
+def add_on_target(picard, total_cov, total_lbl='PF_ALIGNED_BASES'):
     """
     Include the percent on target reads metric, mainly for amplicon assays.
+    Also include the on primer frag count percentage.  Rename variables...
     :return:
     """
     if 'PAIR' in picard:
-        pf_bases_aligned = int(picard['PAIR']['PF_ALIGNED_BASES'])
+        pf_bases_aligned = int(picard['PAIR'][total_lbl])
     elif 'UNPAIRED' in picard:
-        pf_bases_aligned = int(picard['UNPAIRED']['PF_ALIGNED_BASES'])
+        pf_bases_aligned = int(picard['UNPAIRED'][total_lbl])
     else:
         pf_bases_aligned = None
 
     on_target = str("{:.4}".format((total_cov * 100.0) / pf_bases_aligned))
 
     return on_target
-
 
 def write_to_text(sample_metrics, outfile_txt):
     """
@@ -159,7 +159,7 @@ def req_metrics(wf, metrics):
     Labs only want to see certain metrics...
     :return:
     """
-    wf_metric_list = {'QIAseq_V3_RNA': ['Q30', 'AVGD', 'pumi', 'on_target']}
+    wf_metric_list = {'QIAseq_V3_RNA': ['Q30', 'AVGD', 'pumi', 'on_primer_frag_count_pct']}
     new_metrics = {}
     if wf in wf_metric_list:
         for metric, value in metrics.items():
@@ -197,7 +197,8 @@ def map_fields(value):
                       'AVGD': 'averageDepth',
                       'pumi': 'percentUmi',
                       'on_target': 'percentOnTarget',
-                      'on_primer_frag_count': 'total_on_target_transcripts'}
+                      'on_primer_frag_count': 'total_on_target_transcripts',
+                      'on_primer_frag_count_pct': 'total_on_target_transcripts_pct'}
     if value in mapping:
         return mapping[value]
     else:
@@ -247,10 +248,10 @@ def create_sample_metrics(args):
 
     # Calculate on target reads, or amplicon efficiency
     this_picard = AlignSummaryMetrics(args.picard_summary)
-    if total_cov_before:
-        on_target = add_on_target(this_picard.metrics, total_cov)
-    else:
-        on_target = add_on_target(this_picard.metrics, total_cov)
+    # if total_cov_before:
+    #     on_target = add_on_target(this_picard.metrics, total_cov)
+    # else:
+    on_target = add_on_target(this_picard.metrics, total_cov)
     sample_metrics['on_target'] = on_target
 
     # # Only doing the below for new sample metrics until further notice.
@@ -311,7 +312,7 @@ def create_new_sample_metrics(args):
     #     total_cov_before = None
     #
     # # Calculate on target reads, or amplicon efficiency
-    # this_picard = AlignSummaryMetrics(args.picard_summary)
+    this_picard = AlignSummaryMetrics(args.picard_summary)
     # if total_cov_before:
     #     on_target = add_on_target(this_picard.metrics, total_cov)
     # else:
@@ -321,7 +322,8 @@ def create_new_sample_metrics(args):
     if args.primers_bed and args.primers_bam:
         on_primer_frag_count = run_cmd(get_target_count_cmd(args.primers_bam, args.primers_bed))
         sample_metrics["sampleRunMetrics"].append({"metric": "on_primer_frag_count", "value": on_primer_frag_count.rstrip('\n')})
-
+        on_primer_frag_count_pct = add_on_target(this_picard.metrics, int(on_primer_frag_count), 'PF_HQ_ALIGNED_READS')
+        sample_metrics["sampleRunMetrics"].append({"metric": "on_primer_frag_count_pct", "value": on_primer_frag_count_pct.rstrip('\n')})
     if args.json_in:
         for filename in args.json_in:
             with open(filename, 'rU') as myfile:
