@@ -1,4 +1,4 @@
-<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.1.0">
+<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.1.1">
   <description>Create annotation files for fusion annotation. Run Oncotator and get sequence context.</description>
   <requirements></requirements>
   <stdio>

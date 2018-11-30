@@ -7,7 +7,7 @@ import argparse
 import re
 import json
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 def supply_args():
     """
@@ -82,7 +82,6 @@ def get_nucleotides_with_samtools(mafline, genome_refpath):
     interval = mafline[0] + ':' + mafline[1] + '-' + str(int(mafline[1])+25)
     cmd = ['samtools', 'faidx', genome_refpath, interval]
     seq = subprocess.check_output(cmd)
-    print seq
     seq_strip = seq.strip().split()
     if mafline[4] == '-':
         print "reverse complementing"
@@ -98,8 +97,9 @@ def main():
     #took this file parsing out of the convert_starfusion_to_bedpe function because of regex matching to filter
     with open(args.json_sample_metrics, 'r') as samp_metrics_fh:
         metrics = json.load(samp_metrics_fh)
-        ontarget_count = float(metrics['on_primer_frag_count'])
-
+        for entry in metrics['sampleRunMetrics']:
+            if entry['metric'] == 'total_on_target_transcripts':
+                ontarget_count = float(entry['value'])
 
     if args.f:
         filterout = "MT-T*|MT-RNR*|RNA18S5|RNA28S5|RNA5-8S5"
