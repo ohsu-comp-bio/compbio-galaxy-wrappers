@@ -192,7 +192,7 @@ class CompareProfiles(object):
             if geno != -1:
                 if pos in self.proft:
                     # Situation 2
-                    if geno != self.proft[pos]:
+                    if geno != self.proft[pos] and self.proft[pos] != -1:
                         self.mismatch += 1
                     self.total += 1
                 else:

@@ -246,7 +246,7 @@ def main():
             json.dump(compare_snps.for_cgd, to_cgd)
         cmd, newfile = build_cmd(args, True)
         stdout = run_cmd(cmd)
-        out_metric = {'snp_profile_pvalue': compare_snps.pvalue}
+        out_metric = {'snp_profile_pvalue': compare_snps.pvalue, 'snp_profile_total': compare_snps.total, 'snp_profile_mismatch': compare_snps.mismatch}
         json.dump(out_metric, outfile)
 
     outfile.close()
