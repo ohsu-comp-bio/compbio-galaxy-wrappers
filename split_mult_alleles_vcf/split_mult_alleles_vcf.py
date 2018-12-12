@@ -11,7 +11,7 @@
 import argparse
 import itertools
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
 
 def supply_args():
@@ -219,7 +219,6 @@ def main():
                 qual = new_line[5]
                 filter = new_line[6]
                 info = new_line[7]
-                format = new_line[8]
                 samples = new_line[9:]
 
                 if ',' in alts:
@@ -231,38 +230,43 @@ def main():
                         to_write.append(alt_allele[i-1])
                         to_write.extend([qual, filter])
                         to_write.append(info_break(info, i-1))
-                        to_write.append(format)
 
-                        for sample in samples:
-                            broke_samp = sample_break(format, sample)
-                            # Work up the SAMPLE section.
-                            # GT:DP:AD:RO:QR:AO:QA:GL
-                            # 0/1:1206:597,608:597:23045:608:23566:-1753.83,0,-1708.68:0.5045643:0.542
-                            new_samp = []
-                            for field in format.split(':'):
-                                if field == 'GT':
-                                    if 'GL' in broke_samp:
-                                        new_field = new_gt(broke_samp, gl_ind,
-                                                           'GL')
-                                    elif 'PL' in broke_samp:
-                                        new_field = new_gt(broke_samp, gl_ind,
-                                                           'PL')
+                        try:
+                            format = new_line[8]
+                            to_write.append(format)
+
+                            for sample in samples:
+                                broke_samp = sample_break(format, sample)
+                                # Work up the SAMPLE section.
+                                # GT:DP:AD:RO:QR:AO:QA:GL
+                                # 0/1:1206:597,608:597:23045:608:23566:-1753.83,0,-1708.68:0.5045643:0.542
+                                new_samp = []
+                                for field in format.split(':'):
+                                    if field == 'GT':
+                                        if 'GL' in broke_samp:
+                                            new_field = new_gt(broke_samp, gl_ind,
+                                                               'GL')
+                                        elif 'PL' in broke_samp:
+                                            new_field = new_gt(broke_samp, gl_ind,
+                                                               'PL')
+                                        else:
+                                            new_field = './.'
+                                    elif field == 'AD':
+                                        this_samp_ad_ref = broke_samp[field].split(',')[0]
+                                        this_samp_ad_alt = broke_samp[field].split(',')[i]
+                                        new_field = ','.join([this_samp_ad_ref,
+                                                          this_samp_ad_alt])
+                                    elif field == 'AO' or field == 'QA' or field == 'AF':
+                                        new_field = broke_samp[field].split(',')[i-1]
+                                    elif field == 'GL' or field == 'PL':
+                                        new_field = collect_gls(gl_ind, broke_samp, field)
                                     else:
-                                        new_field = './.'
-                                elif field == 'AD':
-                                    this_samp_ad_ref = broke_samp[field].split(',')[0]
-                                    this_samp_ad_alt = broke_samp[field].split(',')[i]
-                                    new_field = ','.join([this_samp_ad_ref,
-                                                      this_samp_ad_alt])
-                                elif field == 'AO' or field == 'QA' or field == 'AF':
-                                    new_field = broke_samp[field].split(',')[i-1]
-                                elif field == 'GL' or field == 'PL':
-                                    new_field = collect_gls(gl_ind, broke_samp, field)
-                                else:
-                                    new_field = broke_samp[field]
+                                        new_field = broke_samp[field]
 
-                                new_samp.append(new_field)
-                            to_write.append(':'.join(new_samp))
+                                    new_samp.append(new_field)
+                                to_write.append(':'.join(new_samp))
+                        except:
+                            pass
                         handle_out_vcf.write('\t'.join(to_write))
                         handle_out_vcf.write('\n')
                 else:
