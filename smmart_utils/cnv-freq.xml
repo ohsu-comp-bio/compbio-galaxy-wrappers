@@ -1,0 +1,36 @@
+<tool id="smmart_utils_cnv-freq" name="CNV Allele Frequency" version="@VERSION@.0" profile="17.09">
+
+    <description></description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <expand macro="requirements"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        smmart_utils cnv-freq
+        $cnv_path
+        $summary_table
+        $output
+    ]]></command>
+
+    <inputs>
+        <param name="cnv_path" type="data" format="tsv,tabular" label="GeneTrails CNV table"/>
+        <param name="summary_table" type="data" format="csv" label="TCGA Frequency Summary table"/>
+    </inputs>
+
+    <outputs>
+        <data name="output" format="png" label="${tool.name} on ${on_string}: Output"/>
+    </outputs>
+
+    <help><![CDATA[
+        This command runs Allele Frequency for a set of CNV calls from GeneTrails.  
+        
+        Usage: smmart_utils cnv-freq <cnv_path> <summary_table> <output>
+            
+    ]]></help>
+
+</tool>

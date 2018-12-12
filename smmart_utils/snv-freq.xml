@@ -1,0 +1,49 @@
+<tool id="smmart_utils_snv-freq" name="SNV Allele Frequency" version="@VERSION@.0" profile="17.09">
+
+    <description></description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <expand macro="requirements"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        ## Set up tmp space
+        export JOB_DIR=\$PWD &&
+        export TMP=\$(/usr/bin/mktemp -d /mnt/scratch/gxyjobXXXXXXXXXXX) &&
+        chmod 770 \$TMP &&
+        echo \$TMP &&
+
+        ## Copy SQLite DB to tmp space, won't run on lustre
+        cp $snv_sqlite_db \$TMP/snv_sqlite_db &&
+
+        ## Run smmart_utils
+        smmart_utils snv-freq
+        $genetrails_path
+        \$TMP/snv_sqlite_db
+        $output_path &&
+
+        ## Clean up tmp dir
+        rm -rf \$TMP
+    ]]></command>
+
+    <inputs>
+        <param name="genetrails_path" type="data" format="tsv,tabular" label="Genetrails SNVs"/>
+        <param name="snv_sqlite_db" type="data" format="csv" label="TCGA SNV SQLite Database"/>
+    </inputs>
+
+    <outputs>
+        <data name="output_path" format="tsv" label="${tool.name} on ${on_string}: Output"/>
+    </outputs>
+
+    <help><![CDATA[
+        This command runs Allele Frequency for a set of SNV calls from GeneTrails.  
+        
+        Usage: smmart_utils snv-freq <genetrails_path> <snv_sqlite_db> <output_path>
+            
+    ]]></help>
+
+</tool>
