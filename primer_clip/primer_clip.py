@@ -10,7 +10,7 @@ import argparse
 import pysam
 import re
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 
 
 def supply_args():
@@ -163,6 +163,8 @@ def check_len(cigar, minlen=10):
     for entry in cigar:
         field = entry[0]
         value = entry[1]
+        if value <= 0:
+            return False
         if field == 0:
             if value >= minlen:
                 return True
@@ -434,8 +436,7 @@ def main2():
                         outfile.write(line2)
 
             else:
-                seqloc = (chrom, xrange(line1.pos, (line1.pnext - line1.tlen)
-                                        - sco))
+                seqloc = (chrom, xrange(line1.pos, (line1.pnext - line1.tlen) - sco))
                 z = set(primer_coords[seqloc[0]]['0']).intersection(
                     set(seqloc[1]))
                 if z:
