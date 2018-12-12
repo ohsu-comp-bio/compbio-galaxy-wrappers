@@ -1,4 +1,4 @@
-<tool id="smmart_utils_hrd" name="SMMART Utils HRD" version="@VERSION@.0" profile="17.09">
+<tool id="smmart_utils_hrd" name="HRD Signature Analysis" version="@VERSION@.0" profile="17.09">
 
     <description></description>
 
@@ -31,7 +31,7 @@
     </outputs>
 
     <help><![CDATA[
-        This command runs the HRD (Homologous Recombination Deficiency) Analysis on SMMART samples.  
+        This command runs the HRD (Homologous Recombination Deficiency) Gene Signature Analysis on SMMART samples.  
         
         Usage: smmart_utils hrd <smmart expression matrix> <smmart sample metadata> <sample of interest> <background expression matrix> <output directory>
             
