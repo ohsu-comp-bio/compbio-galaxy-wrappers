@@ -1,0 +1,75 @@
+<tool id="epic" name="EPIC" version="@VERSION@.0" profile="18.09">
+    <description>EPIC - a tool to Estimate the Proportion of Immune and Cancer cells from bulk gene expression data.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    <expand macro="requirements" />
+
+    <command detect_errors="exit_code"><![CDATA[
+        epic.R 
+        $bulk 
+        --reference $reference_source.reference
+
+        #if $reference_source.reference_source_selector == "history"
+        --mRNA_cell $reference_source.mRNA_cell
+        --sigGenes $reference_source.sigGenes
+        #end if
+
+        #if $withothercells
+        --withothercells 
+        #end if
+
+        #if $scaleExprs
+        --scaleExprs
+        #end if
+
+        #if $constrainedSum
+        --constrainedSum
+        #end if
+
+        #if $rangeBasedOptim
+        --rangeBasedOptim
+        #end if
+
+    ]]></command>
+
+    <inputs>
+        <param type="data" name="bulk" format="" />
+        <conditional name="reference_source">
+            <param name="reference_source_selector" type="select" label="Reference Source:">
+                <option value="cached">Cached</option>
+                <option value="history">History</option>
+            </param>
+            <when value="cached">
+                <param name="reference" type="select" label="Using reference">
+                    <option value="TRef">TRef</option>
+                    <option value="BRef">BRef</option>
+                </param>
+            </when>
+            <when value="history">
+                <param name="reference" type="data" format="tsv, tabular" label="Reference Gene Expression Matrix"/>
+                <param name="mRNA_cell" type="data" format="tsv,tabular" label="Reference mRNA"/>
+                <param name="sigGenes" type="data" format="tsv, tabular" label="Significant Genes"/>
+            </when>
+        </conditional>
+        <param type="boolean" name="withothercells" checked="True"/>
+        <param type="boolean" name="scaleExprs"  checked="True"/>
+        <param type="boolean" name="constrainedSum"  checked="True"/>
+        <param type="boolean" name="rangeBasedOptim"  checked="False"/>
+    </inputs>
+
+    <outputs>
+        <data name="mrnaproportions" format="tsv" from_work_dir="epic_mRNAProportions.tsv" label="${tool.name} on ${on_string}: mRNA Proportions TSV"/>
+        <data name="cellfractions" format="tsv" from_work_dir="epic_cellFractions.tsv" label="${tool.name} on ${on_string}: Cell Fractions TSV"/>
+        <data name="gof" format="tsv" from_work_dir="epic_gof.tsv" label="${tool.name} on ${on_string}: Goodness of Fit"/>
+        <data name="cellfractions_fig" format="pdf" from_work_dir="epic_cellFractions.pdf" label="${tool.name} on ${on_string}: Cell Fractions PDF"/>
+    </outputs>
+
+    <help><![CDATA[
+        
+    ]]></help>
+
+    <expand macro="citations" />
+</tool>
