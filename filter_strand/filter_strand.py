@@ -6,9 +6,10 @@
 # CODED BY: John Letaw
 
 from __future__ import print_function
+from file_types.file_handle_ops import handle_return
 import argparse
 
-VERSION = '0.4.1'
+VERSION = '0.4.2'
 
 def supply_args():
     """
@@ -85,7 +86,7 @@ def cosmic_grab(filename):
     :return:
     """
     cosmic_vars = {}
-    with open(filename, 'rU') as cosmic:
+    with handle_return(filename) as cosmic:
         for line in cosmic:
             if not line.startswith('#'):
                 line = line.rstrip('\n').split('\t')
@@ -106,7 +107,7 @@ def hotspots_grab(filename):
     :return:
     """
     hotspots = []
-    with open(filename, 'rU') as hots:
+    with handle_return(filename) as hots:
         for line in hots:
             if not line.startswith('#'):
                 line = line.rstrip('\n').split('\t')
@@ -135,8 +136,6 @@ def replace_filter(filt, anno):
 def main():
 
     args = supply_args()
-
-    handle_vcf = open(args.infile, 'rU')
     handle_out = open(args.outfile, 'w')
     handle_outr = open(args.outfile_removed, 'w')
 
@@ -144,7 +143,7 @@ def main():
     cosmic_vars = cosmic_grab(args.cosmic)
     check = True
 
-    with handle_vcf as vcf:
+    with handle_return(args.infile) as vcf:
         for line in vcf:
             if not line.startswith('#'):
                 line = line.rstrip('\n').split('\t')
