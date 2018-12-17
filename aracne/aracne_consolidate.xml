@@ -1,0 +1,37 @@
+<tool id="aracne_consolidate" name="ARACNe-AP Consolidate" version="0.1.0">
+    <description>ARACNe-AP - Algorithm for the Reconstruction of Accurate Cellular Networks with Adaptive Partitioning</description>
+
+    <requirements>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+        mkdir -p output &&
+        cp ${threshold.name} output &&
+
+        #for $i in range(1..$bootstraps)
+        cp $bootstrap[$i] output/bootstrapNetwork_$i.txt
+        #end for
+
+        java -Xmx5G -jar aracne.jar 
+        -o output
+        --consolidate
+        
+        #if $nobonferroni
+        --nobonferroni
+        #end if
+    ]]></command>
+
+    <inputs>
+        <param type="data" name="threshold" label="Threshold"/>
+        <param type="data_collection" name="bootstraps" label="Bootstraps"/>
+        <param type="boolean" name="nobonferroni" label="No Bonferroni"/>
+    </inputs>
+
+    <outputs>
+        <data name="out" format="data" from_work_dir="output/network.txt" label=""/>
+    </outputs>
+    
+    <help><![CDATA[
+        TODO: Fill in help.
+    ]]></help>
+</tool>

@@ -1,0 +1,34 @@
+<tool id="aracne_bootstrap" name="ARACNe-AP Bootstrap" version="0.1.0">
+    <description>ARACNe-AP - Algorithm for the Reconstruction of Accurate Cellular Networks with Adaptive Partitioning</description>
+
+    <requirements>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+        cp ${threshold.name} output/ &&
+
+        java -Xmx5G -jar aracne.jar 
+        -e $expression  
+        -o output
+        --tfs $tfs 
+        --pvalue $pvalue 
+        --seed $seed 
+    ]]></command>
+
+    <inputs>
+        <param type="data" name="expression" format="tsv, tabular, txt" label="Expression matrix" />
+        <param type="data" name="tfs" format="tsv, tabular, txt" label="Transcription Regulator list"/>
+        <param type="data" name="threshold" format="txt" label="Threshold"/>
+        <param type="integer" name="seed" label="Seed"/>
+    </inputs>
+
+    <outputs>
+        <data name="out" format="data" from_work_dir="output">
+            <discover_datasets pattern="(bootstrapNetwork.*)\.txt" format="txt" visible="true" />
+        </data>
+    </outputs>
+    
+    <help><![CDATA[
+        TODO: Fill in help.
+    ]]></help>
+</tool>

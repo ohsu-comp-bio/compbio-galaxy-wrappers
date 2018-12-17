@@ -1,0 +1,33 @@
+<tool id="aracne_calc_thres" name="ARACNe-AP Calculate Threshold" version="0.1.0">
+    <description>ARACNe-AP - Algorithm for the Reconstruction of Accurate Cellular Networks with Adaptive Partitioning</description>
+
+    <requirements>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+        java -Xmx5G -jar aracne.jar 
+        -e $expression  
+        -o output
+        --tfs $tfs 
+        --pvalue $pvalue 
+        --seed $seed 
+        --calculateThreshold
+    ]]></command>
+
+    <inputs>
+        <param type="data" name="expression" format="tsv, tabular, txt" label="Expression matrix"/>
+        <param type="data" name="tfs" format="tsv, tabular, txt" label="Transcription Regulator list"/>
+        <param type="integer" name="seed" label="Seed"/>
+        <param type="float" name="pvalue" label="P-value"/>
+    </inputs>
+
+    <outputs>
+        <data name="out" format="data" from_work_dir="output">
+            <discover_datasets pattern="(miThreshold.*)\.txt" format="txt" visible="true" />
+        </data>
+    </outputs>
+    
+    <help><![CDATA[
+        TODO: Fill in help.
+    ]]></help>
+</tool>
