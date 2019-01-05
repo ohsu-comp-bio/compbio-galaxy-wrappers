@@ -7,7 +7,7 @@ import argparse
 import re
 import json
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 
 def supply_args():
     """
@@ -102,19 +102,20 @@ def main():
                 ontarget_count = float(entry['value'])
 
     if args.f:
-        # JHL added from RP[0-9]+- forward...
-        filterout = "MT-T*|MT-RNR*|RNA18S5|RNA28S5|RNA5-8S5|RP[0-9]+-|CT[CD]-|A[CL][0-9]{6}.[0-9]|XXbac-|WI2-|LA16c-"
-        # I'm adding this for the time being while we figure out which genes go where.  These genes being added are appearing
-        # over and over again, and they look artifactual.
-        # NOTE: Should we also be filtering Y and GL* chromosome calls? I think probably yes, but need lab verification.
-        hard_filter = ['Y_RNA', 'MGC39584']
-        print(filterout)
+        # filterout = ""
+        hard_filter = ["ATP6", "ATP8", "COX1", "COX2", "COX3", "CYTB", "ND1", 
+                       "ND2", "ND3", "ND4", "ND4L", "ND5", "ND6", "RNR1", "RNR2", 
+                       "TRNA", "TRNC", "TRND", "TRNE", "TRNF", "TRNG", "TRNH", 
+                       "TRNI", "TRNK", "TRNL1", "TRNL2", "TRNM", "TRNN", "TRNP", 
+                       "TRNQ", "TRNR", "TRNS1", "TRNS2", "TRNT", "TRNV", "TRNW", "TRNY"]
         with open(args.starfusion, 'r') as sf_handle:
             for line in sf_handle:
                 if not line.startswith('#'):
-                    gene1 = line[13]
-                    gene2 = line[15]
-                    if not re.search(filterout, line) and (gene1 not in hard_filter) and (gene2 not in hard_filter):
+                    gene1 = line.rstrip('\n').split('\t')[4].split('^')[0]
+                    gene2 = line.rstrip('\n').split('\t')[6].split('^')[0]
+                    # Removing this statement since filterout is empty.
+                    # not re.search(filterout, line)
+                    if (gene1 not in hard_filter) and (gene2 not in hard_filter):
                         linebedpe = convert_starfusion_to_bedpe(line)
 
                         #calculate on-target cpm from junction & spanning frag count and sample level metrics
