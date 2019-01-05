@@ -1,4 +1,4 @@
-<tool id="use_pon" name="Panel of Normals Filter" version="0.3.1" >
+<tool id="use_pon" name="Panel of Normals Filter" version="0.3.2" >
     <description>Filter or remove variants from a sample VCF based on a panel of normals VCF.</description>
 
     <version_command></version_command>
