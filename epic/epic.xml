@@ -1,4 +1,4 @@
-<tool id="epic" name="EPIC" version="@VERSION@.0" profile="18.09">
+<tool id="epic" name="EPIC" version="@VERSION@.0" profile="17.09">
     <description>EPIC - a tool to Estimate the Proportion of Immune and Cancer cells from bulk gene expression data.</description>
 
     <macros>
@@ -36,7 +36,7 @@
     ]]></command>
 
     <inputs>
-        <param type="data" name="bulk" format="" />
+        <param type="data" name="bulk" format="tsv,tabular" label="RNA-seq expression matrix" />
         <conditional name="reference_source">
             <param name="reference_source_selector" type="select" label="Reference Source:">
                 <option value="cached">Cached</option>
