@@ -33,6 +33,9 @@
         --rangeBasedOptim
         #end if
 
+        #if $hgnc
+        --hgnc
+        #end if
     ]]></command>
 
     <inputs>
@@ -58,6 +61,7 @@
         <param type="boolean" name="scaleExprs"  checked="True"/>
         <param type="boolean" name="constrainedSum"  checked="True"/>
         <param type="boolean" name="rangeBasedOptim"  checked="False"/>
+        <param type="boolean" name="hgnc"  checked="False"/>
     </inputs>
 
     <outputs>
