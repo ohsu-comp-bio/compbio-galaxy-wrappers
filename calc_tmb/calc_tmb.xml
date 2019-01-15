@@ -1,0 +1,25 @@
+<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.1.0" >
+    <description>Calculate TMB from VCF annotations.</description>
+
+    <command detect_errors="exit_code"><![CDATA[
+        python $__tool_directory__/calc_tmb.py
+        --infile '${infile}'
+        --outfile '${outfile}'
+    ]]></command>
+
+    <inputs>
+        <param name="infile" type="data" format="vcf" label="Input VCF" help="Input VCF" />
+    </inputs>
+
+    <outputs>
+      <data format="txt" name="outfile" label="${tool.name} on ${on_string}: JSON" help="JSON output for Sample Metrics" />
+    </outputs>
+
+    <tests></tests>
+
+    <help><![CDATA[
+    python calc_tmb.py -h
+  ]]></help>
+
+</tool>
+
