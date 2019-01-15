@@ -1,14 +1,20 @@
-<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.1.0" >
+<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.1.1" >
     <description>Calculate TMB from VCF annotations.</description>
 
     <command detect_errors="exit_code"><![CDATA[
         python $__tool_directory__/calc_tmb.py
         --infile '${infile}'
         --outfile '${outfile}'
+        --gnomad_af '${gnomad_af}'
+        --m2_tlod '${m2_tlod}'
+        --seq_space '${seq_space}'
     ]]></command>
 
     <inputs>
         <param name="infile" type="data" format="vcf" label="Input VCF" help="Input VCF" />
+        <param name="gnomad_af" type="float" value="0.00001" label="GNOMAD VAF" help="GNOMAD VAF to filter list upon.  Values greater than this will not be utilized." />
+        <param name="m2_tlod" type="float" value="20.0" label="Mutect2 TLOD" help="M2 TLOD score to filter list upon.  Values less than this will not be utilized." />
+        <param name="seq_space" type="float" value="0.61" label="Genomic Target Size" help="Total genomic sequence target size, in Mb." />
     </inputs>
 
     <outputs>

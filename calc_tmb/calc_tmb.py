@@ -4,7 +4,7 @@ import argparse
 import json
 import vcf
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 def supply_args():
     """
@@ -14,6 +14,9 @@ def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--infile', help='Input VCF')
     parser.add_argument('--outfile', help='Output JSON')
+    parser.add_argument('--gnomad_af', default=0.00001, type=float, help='GNOMAD VAF to filter list upon.  Values greater than this will not be utilized.')
+    parser.add_argument('--m2_tlod', default=20.0, type=float, help='M2 TLOD score to filter list upon.  Values less than this will not be utilized.')
+    parser.add_argument('--seq_space', default=0.61, type=float, help='Total genomic size of sequence targets, in Mb.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
@@ -54,16 +57,17 @@ def write_out(filename, val):
 def main():
     args = supply_args()
     vcf_reader = vcf.Reader(open(args.infile, 'r'))
-    tmb_cnt = 0
+    tmb_cnt = 0.0
 
     for record in vcf_reader:
         if record.is_snp:
             entry = VcfRec(record)
-            if entry.gnomad < 0.001:
+            if entry.gnomad < args.gnomad_af:
                 if "missense_variant" in entry.snpeff[0]:
-                    if entry.tlod > 20.0:
+                    if entry.tlod > args.m2_tlod:
                         tmb_cnt += 1
-                        print(entry.rec)
+
+    tmb_cnt = '{:.1f}'.format(tmb_cnt / args.seq_space)
 
     write_out(args.outfile, tmb_cnt)
 
