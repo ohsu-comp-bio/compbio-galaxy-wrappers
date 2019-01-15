@@ -44,13 +44,13 @@ class VcfRec(object):
             self.tlod = None
 
 
-def write_out(filename, val):
+def write_out(filename, tmb, mut_cnt):
     """
     Prepare output json file.
     :return:
     """
     outfile = open(filename, 'w')
-    out_metric = {'tmb': val}
+    out_metric = {'tmb': tmb, 'tmb_mut_cnt': mut_cnt}
     json.dump(out_metric, outfile)
     outfile.close()
 
@@ -67,9 +67,8 @@ def main():
                     if entry.tlod > args.m2_tlod:
                         tmb_cnt += 1
 
-    tmb_cnt = '{:.1f}'.format(tmb_cnt / args.seq_space)
-
-    write_out(args.outfile, tmb_cnt)
+    tmb_calc = '{:.1f}'.format(tmb_cnt / args.seq_space)
+    write_out(args.outfile, tmb_calc, int(tmb_cnt))
 
 
 if __name__ == "__main__":
