@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # USAGE:
-# CODED BY: John Letaw, Janice Patterson
+# BY: John Letaw, Janice Patterson
 
 from __future__ import print_function
 import argparse
@@ -9,17 +9,12 @@ import numpy
 import os
 import sys
 
-
-
-# Including this because is it quite useful...
-# https://docs.python.org/2/library/subprocess.html
-# https://github.com/google/python-subprocess32
 if os.name == 'posix' and sys.version_info[0] < 3:
     import subprocess32 as subprocess
 else:
     import subprocess
 
-VERSION = '0.4.0'
+VERSION = '0.5.0'
 
 
 def supply_args():
@@ -92,12 +87,17 @@ class GTFReader(object):
                     line = line.rstrip('\n').split('\t')
                     gene_type = line[2]
                     if gene_type == "exon" or gene_type == "start_codon" or gene_type == "stop_codon" or gene_type == "UTR":
-                        gene_id = line[8].split(';')[0].split(' ')[1][1:-1]
+                        #dictionary of the column 9 because they can be in different order
+                        dattr={}
+                        for item in [x for x in line[8].split(';') if x]:
+                            #attrn = item.
+                            attr = item.strip().split(' ')
+                            dattr[attr[0]]=attr[1].strip('\"')
+                        gene_id = str(dattr['gene_id'])
                         if gene_id not in gene_coords:
                             gene_coords[gene_id] = []
-
                         start = int(line[3])
-                        stop = int(line[4])
+                        stop = int(line[4])+1
                         for i in range(start, stop):
                             gene_coords[gene_id].append(i)
 
@@ -159,11 +159,11 @@ class HtseqReader(object):
         except:
             sys.exit("All counts are zero")
 
-    def coords(self, ens_id):
-        if ens_id.startswith("ENST"):
-            coords = self.gtf.tx_coords[ens_id]
+    def coords(self, id):
+        if id.startswith(("ENST", "rna")):
+            coords = self.gtf.tx_coords[id]
         else:
-            coords = self.gtf.gene_coords[ens_id]
+            coords = self.gtf.gene_coords[id]
         return coords
 
     def count_total(self):
@@ -177,8 +177,8 @@ class HtseqReader(object):
             for line in my_htseq:
                 if '_' not in line:
                     line = line.rstrip('\n').split('\t')
-                    ens_id = line[0]
-                    gene_len = len(set(self.coords(ens_id))) / 1000.0
+                    id = line[0]
+                    gene_len = len(set(self.coords(id))) / 1000.0
                     count = int(line[1])
                     total += count
                     rpk_total += float(count / gene_len)
@@ -192,41 +192,41 @@ class HtseqReader(object):
             for line in my_htseq:
                 if '_' not in line:
                     line = line.rstrip('\n').split('\t')
-                    ens_id = line[0]
+                    id = line[0]
                     count = float(line[1])
 
                     if count_type == 'fpkm':
-                        count = self.calc_fpkm(ens_id, count)
+                        count = self.calc_fpkm(id, count)
                     elif count_type == 'fpkm_uq':
-                        count = self.calc_fpkm_uq(ens_id, count)
+                        count = self.calc_fpkm_uq(id, count)
                     elif count_type == 'tpm':
-                        count = self.calc_tpm(ens_id, count)
+                        count = self.calc_tpm(id, count)
 
-                    counts_dict[ens_id] = count
+                    counts_dict[id] = count
 
         return counts_dict
 
-    def calc_fpkm(self, ens_id, count):
+    def calc_fpkm(self, id, count):
         """
         """
-        gene_len = len(set(self.coords(ens_id)))
+        gene_len = len(set(self.coords(id)))
         return float((count * 1000000000.0) / (self.total * gene_len))
 
-    def calc_fpkm_uq(self, ens_id, count):
+    def calc_fpkm_uq(self, id, count):
         """
         """
         np_arr = numpy.array(self.counts.values())
         #upper quartile without zeroes
         total_uq = numpy.percentile(np_arr[np_arr>0], 75)
-        gene_len = len(set(self.coords(ens_id)))
+        gene_len = len(set(self.coords(id)))
         return float((count * 1000000000.0) / (total_uq * gene_len))
 
-    def calc_tpm(self, ens_id, count):
+    def calc_tpm(self, id, count):
         """
         Calculate Transcripts per Million normalized counts.
         :return:
         """
-        gene_len = len(set(self.coords(ens_id))) / 1000.0
+        gene_len = len(set(self.coords(id))) / 1000.0
         return float((count / gene_len) / (self.rpk_total / 1000000.0))
 
 
