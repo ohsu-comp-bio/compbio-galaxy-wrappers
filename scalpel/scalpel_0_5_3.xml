@@ -1,0 +1,68 @@
+<tool id="scalpel_0_5_3" name="Scalpel v0.5.3" version="0.0.4" >
+
+  <description>Indel variant analysis of short-read sequencing data with Scalpel</description>
+  <version_command></version_command>
+
+  <command detect_errors="exit_code"><![CDATA[
+
+  #set index_path = $index.fields.path
+
+  ln -s "${input_bed}" input.bed
+  &&
+  ln -s "${input_bam}" input.bam
+  &&
+
+  scalpel-discovery 
+
+  --single
+  --ref $index_path
+  --bam input.bam
+  --bed input.bed
+  --dir .
+  --intarget
+  --numprocs \${GALAXY_SLOTS:-4}
+
+  &&
+
+  scalpel-export 
+  --single 
+  --db variants.db 
+  --bed input.bed
+  --ref $index_path 
+  --min-ins-size 10
+  --min-del-size 10 
+  --min-coverage 250 
+  --min-alt-count 25
+  --min-vaf 0.05 | grep -v "LowVaf" | grep -v "LowCov" > "${output_vcf}"
+
+  ]]></command>
+
+  <inputs>   
+
+    <param name="index" type="select" label="Select the reference genome">
+      <options from_data_table="all_fasta">
+        <validator type="no_options" message="No genome indexes are available" />
+      </options>
+    </param>
+
+    <param name="input_bam" type="data" format="bam" label="Input BAM" help="Input BAM file that will be searched for indels." />
+    <param name="input_bed" type="data" format="bed" label="Input BED" help="Input BED file that will limit indel search space." />
+  </inputs>
+
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" help="Output VCF with indel calls." />
+  </outputs>
+
+  <tests></tests>
+
+  <help><![CDATA[
+As the second most common type of variation in the human genome, insertions and deletions (indels) have been linked to many diseases, but the discovery of indels of more than a few bases in size from short-read sequencing data remains challenging. Scalpel (http://scalpel.sourceforge.net) is an open-source software for reliable indel detection based on the microassembly technique. It has been successfully used to discover mutations in novel candidate genes for autism, and it is extensively used in other large-scale studies of human diseases. This protocol gives an overview of the algorithm and describes how to use Scalpel to perform highly accurate indel calling from whole-genome and whole-exome sequencing data. We provide detailed instructions for an exemplary family-based de novo study, but we also characterize the other two supported modes of operation: single-sample and somatic analysis. Indel normalization, visualization and annotation of the mutations are also illustrated. Using a standard server, indel discovery and characterization in the exonic regions of the example sequencing data can be completed in ~5 h after read mapping.
+  ]]></help>
+
+  <citations>
+    <citation type="doi">10.1038/nprot.2016.150</citation>
+  </citations>
+
+</tool>
+
