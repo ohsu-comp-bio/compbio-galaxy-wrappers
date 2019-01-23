@@ -21,7 +21,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '0.5.1'
+VERSION = '0.5.2'
 
 
 def supply_args():
@@ -40,6 +40,7 @@ def supply_args():
                                                  'metrics file.')
     parser.add_argument('--primers_bed', help='BED file containing primer coordinates only.')
     parser.add_argument('--primers_bam', help='BAM file to calculate primer reads on target.')
+    parser.add_argument('--msi', help='TSV file containing MSI results')
     parser.add_argument('--json_in', nargs='*', help='Arbitrary number of files to be included in sample metrics that are in json format.')
     parser.add_argument('--outfile', help='Output file with json string.')
     parser.add_argument('--outfile_new', help='Output file with new style json string.')
@@ -319,6 +320,11 @@ def create_new_sample_metrics(args):
     #     on_target = add_on_target(this_picard.metrics, total_cov)
     # sample_metrics["sampleRunMetrics"].append({"metric": "on_target", "value": on_target})
 
+    if args.msi:
+        msi_res = msi_parse(args.msi)
+        sample_metrics['sampleRunMetrics'].append({"metric": "msi_sites", "value": msi_res[0]})
+        sample_metrics['sampleRunMetrics'].append({"metric": "msi_somatic_sites", "value": msi_res[1]})
+        sample_metrics['sampleRunMetrics'].append({"metric": "msi_pct", "value": msi_res[2]})
     if args.primers_bed and args.primers_bam:
         on_primer_frag_count = run_cmd(get_target_count_cmd(args.primers_bam, args.primers_bed))
         sample_metrics["sampleRunMetrics"].append({"metric": "on_primer_frag_count", "value": on_primer_frag_count.rstrip('\n')})
@@ -332,6 +338,20 @@ def create_new_sample_metrics(args):
                         sample_metrics['sampleRunMetrics'].append({"metric": str(k), "value": v})
 
     return sample_metrics
+
+def msi_parse(filename):
+    """
+    Get the MSI results from the TSV file.
+    Total_Number_of_Sites	Number_of_Somatic_Sites	%
+    230	60	26.09
+
+    :return:
+    """
+    with open(filename, 'rU') as mymsi:
+        for line in mymsi:
+            if not line.startswith('Total'):
+                line = line.rstrip('\n').split('\t')
+                return (int(line[0]), int(line[1]), float(line[2]))
 
 
 def main():
