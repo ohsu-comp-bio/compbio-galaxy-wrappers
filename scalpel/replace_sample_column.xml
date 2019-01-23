@@ -1,0 +1,25 @@
+<tool id="replace_sample_column" name="Replace Sample Column VCF" version="0.0.1" >
+
+    <description>If the sample column in your VCF says something you don't like, replace it with a sample name from a BAM header.</description>
+    <command detect_errors="exit_code"><![CDATA[
+      python $__tool_directory__/replace_sample_column.py
+       --bam '${bam}'
+       --vcf '${vcf}'
+       --vcf_out '${vcf_out}'
+    ]]></command>
+
+    <inputs>
+        <param name="bam" type="data" format="bam" label="Input BAM" help="Input BAM to pull read group sample name from." />
+        <param name="vcf" type="data" format="vcf" label="Input VCF" help="Input VCF to replace sample column header of." />
+    </inputs>
+
+    <outputs>
+        <data format="vcf" name="vcf_out" label="${tool.name} on ${on_string}: VCF" help="Output VCF with corrected sample column header." />
+    </outputs>
+
+    <help><![CDATA[
+    If the sample column in your VCF says something you don't like, replace it with a sample name from a BAM header.
+    ]]></help>
+
+</tool>
+
