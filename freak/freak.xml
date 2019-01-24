@@ -23,7 +23,10 @@
 
         cat $input | 
         freak.py
-        --bam $bam
+        --bam input.md.bam
+        #if $transcript
+        --transcript $txn
+        #end if
         --output $output
     ]]></command>
 
@@ -37,7 +40,7 @@
             </param>
             <when value="cached">
                 <param name="reference" type="select" label="Using reference genome" >
-                    <options from_data_table="" />
+                    <options from_data_table="all_fasta"/>
                     <validator type="no_options" message="A built-in reference genome is not available."/>
                 </param>
             </when>
@@ -45,10 +48,14 @@
                 <param name="reference" type="data" format="fasta" label="Using reference genome file" />
             </when>
         </conditional>
+        <param type="boolean" name="transcript" checked="False" label="Output for recording transcript of input"/>
     </inputs>
 
     <outputs>
         <data name="output" format="tsv" label="${tool.name} on ${on_string}: OUTPUT"/>
+        <data name="txn" format="tsv" label="${tool.name} on ${on_string}: TRANSCRIPT">
+            <filter>transcript == "True"</filter>
+        </data>
     </outputs>
 
     <help><![CDATA[
