@@ -22,7 +22,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.6.3'
+VERSION = '1.2.7.0'
 
 
 def supply_args():
@@ -138,7 +138,13 @@ def build_cmd(args, recvd_prof=False):
         print("Copying to " + newfile)
         shutil.copyfile(args.pipeline_out, newfile)
         cmd.extend(["-f", newfile])
-    elif args.endpoint == "annotationcomplete" or args.endpoint == "annotate" or args.endpoint == "reportedvariants" \
+    elif args.endpoint == "annotationcomplete" \
+            or args.endpoint == "completeRun" \
+            or args.endpoint == "completeSampleRun" \
+            or args.endpoint == "annotate" \
+            or args.endpoint == "annotateRun" \
+            or args.endpoint == "annotateSampleRun" \
+            or args.endpoint == "reportedvariants" \
             or (args.endpoint == "snpProfile" and not recvd_prof):
         # The cmd for this endpoint is already set, don't do anything.
         pass
@@ -238,16 +244,19 @@ def main():
         #                                      {"chromosome": "1", "position": 65321388, "genotype": 2},
         #                                      {"chromosome": "9", "position": 139418260, "genotype": 2}]}
         # TODO: Deal with (Exception: error_patient_not_found)
+        # This is on hold until the lab decides whether they want to use it.  We will be implementing a version of the
+        # profiling tool for HOP, which will compare all samples against each other and produce a table.
+        pass
 
-        json_to_send = SnpProfile(args.pipeline_out).geno_items
-        cgd_json = json.loads(stdout)['items']
-        compare_snps = CompareProfiles(cgd_json, json_to_send)
-        with open(args.json_out, 'w') as to_cgd:
-            json.dump(compare_snps.for_cgd, to_cgd)
-        cmd, newfile = build_cmd(args, True)
-        stdout = run_cmd(cmd)
-        out_metric = {'snp_profile_pvalue': compare_snps.pvalue, 'snp_profile_total': compare_snps.total, 'snp_profile_mismatch': compare_snps.mismatch}
-        json.dump(out_metric, outfile)
+        # json_to_send = SnpProfile(args.pipeline_out).geno_items
+        # cgd_json = json.loads(stdout)['items']
+        # compare_snps = CompareProfiles(cgd_json, json_to_send)
+        # with open(args.json_out, 'w') as to_cgd:
+        #     json.dump(compare_snps.for_cgd, to_cgd)
+        # cmd, newfile = build_cmd(args, True)
+        # stdout = run_cmd(cmd)
+        # out_metric = {'snp_profile_pvalue': compare_snps.pvalue, 'snp_profile_total': compare_snps.total, 'snp_profile_mismatch': compare_snps.mismatch}
+        # json.dump(out_metric, outfile)
 
     outfile.close()
 
