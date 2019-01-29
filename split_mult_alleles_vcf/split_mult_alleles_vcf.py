@@ -10,8 +10,9 @@
 
 import argparse
 import itertools
+import pysam
 
-VERSION = '0.3.1'
+VERSION = '0.4.0'
 
 
 def supply_args():
@@ -22,6 +23,7 @@ def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument(dest='input', help='')
     parser.add_argument(dest='output', help='')
+    parser.add_argument(dest='ref', help='')
     parser.add_argument('--version', action='version', version='%(prog)s ' +
                                                                VERSION)
     args = parser.parse_args()
@@ -225,6 +227,12 @@ def main():
                     alt_allele = alts.split(',')
                     genos = geno_prob_parse(len(alt_allele))
                     for i in range(1, len(alt_allele)+1):
+                        # Assess alt allele here, if asterisk.
+                        if alt_allele[i-1] == '*':
+                            extra_base = pysam.FastaFile(args.ref).fetch(chrom, int(pos)-2, int(pos)-1)
+                            pos = str(int(pos) - 1)
+                            ref = extra_base + ref
+                            alt_allele[i-1] = extra_base
                         to_write = [chrom, pos, rsid, ref]
                         gl_ind = include_gl(genos, i)
                         to_write.append(alt_allele[i-1])
@@ -244,18 +252,18 @@ def main():
                                 for field in format.split(':'):
                                     if field == 'GT':
                                         if 'GL' in broke_samp:
-                                            new_field = new_gt(broke_samp, gl_ind,
-                                                               'GL')
+                                            new_field = new_gt(broke_samp, gl_ind, 'GL')
                                         elif 'PL' in broke_samp:
-                                            new_field = new_gt(broke_samp, gl_ind,
-                                                               'PL')
+                                            new_field = new_gt(broke_samp, gl_ind, 'PL')
                                         else:
-                                            new_field = './.'
-                                    elif field == 'AD':
+                                            if broke_samp['GT'] != '1/1':
+                                                new_field = '0/1'
+                                            else:
+                                                new_field = '1/1'
+                                    elif field == 'AD' or field == 'F1R2' or field == 'F2R1' or field == 'MBQ' or field == 'MFRL':
                                         this_samp_ad_ref = broke_samp[field].split(',')[0]
                                         this_samp_ad_alt = broke_samp[field].split(',')[i]
-                                        new_field = ','.join([this_samp_ad_ref,
-                                                          this_samp_ad_alt])
+                                        new_field = ','.join([this_samp_ad_ref, this_samp_ad_alt])
                                     elif field == 'AO' or field == 'QA' or field == 'AF':
                                         new_field = broke_samp[field].split(',')[i-1]
                                     elif field == 'GL' or field == 'PL':
