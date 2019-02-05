@@ -106,7 +106,7 @@ def write_new_vcf(args, annot, indels, outfile_indels):
                 af = float(sline[7].split(';')[0].split('=')[1])
                 if len(sline[3]) == 1 and len(sline[4]) == 1:
                     if uniq_key in annot:
-                        sline[6] = replace_filter(sline[6], 'm2')
+                        sline[6] = replace_filter(sline[6], 'm2_fb')
                         tlod_str = 'TLOD=' + annot[uniq_key]
                         sline[7] = ';'.join([sline[7], tlod_str])
                         outfile.write('\t'.join(sline))
@@ -114,10 +114,14 @@ def write_new_vcf(args, annot, indels, outfile_indels):
                         just_wrote.append(uniq_key)
                     # No, make this an argument.
                     elif af >= 0.2:
-                        outfile.write(line)
+                        sline[6] = replace_filter(sline[6], 'fb')
+                        outfile.write('\t'.join(sline))
+                        outfile.write('\n')
                         just_wrote.append(uniq_key)
                     elif af >= 0.08 and (len(sline[3]) > 1 or len(sline[4]) > 1):
-                        outfile.write(line)
+                        sline[6] = replace_filter(sline[6], 'fb')
+                        outfile.write('\t'.join(sline))
+                        outfile.write('\n')
                         just_wrote.append(uniq_key)
                     elif 'hotspot' in sline[6]:
                         outfile.write(line)
@@ -127,12 +131,15 @@ def write_new_vcf(args, annot, indels, outfile_indels):
     #                    outfile.write(line)
                 else:
                     if uniq_key not in annot and af > 0.2:
-                        outfile.write(line)
+                        sline[6] = replace_filter(sline[6], 'fb')
+                        outfile.write('\t'.join(sline))
+                        outfile.write('\n')
                         just_wrote.append(uniq_key)
             else:
                 outfile.write(line)
                 if line.startswith("##FILTER") and filtered:
-                    outfile.write("##FILTER=<ID=m2,Description=\"Variant found in MuTect2.\">\n")
+                    outfile.write("##FILTER=<ID=m2_fb,Description=\"Variant found in MuTect2 and FreeBayes.\">\n")
+                    outfile.write("##FILTER=<ID=fb,Description=\"Variant found in FreeBayes.\">\n")
                     outfile.write("##INFO=<ID=TLOD,Number=A,Type=Float,Description=\"Tumor LOD score\">\n")
 #                    outfile.write("##FILTER=<ID=m2_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
                     filtered = False
