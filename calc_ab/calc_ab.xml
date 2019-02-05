@@ -1,0 +1,31 @@
+<tool id="calc_ab" name="Calculate Allele Balance" version="0.0.1" >
+    <description>Calculate allele balance from variant calls.</description>
+
+    <command detect_errors="exit_code"><![CDATA[
+        python $__tool_directory__/calc_tmb.py
+        --infile '${infile}'
+        --outfile '${outfile}'
+    ]]></command>
+
+    <inputs>
+        <param name="infile" type="data" format="vcf" label="Input VCF(s)" help="Input VCF(s)" />
+    </inputs>
+
+    <outputs>
+      <data format="txt" name="outfile" label="${tool.name} on ${on_string}: JSON" help="JSON output for Sample Metrics" />
+    </outputs>
+
+    <tests></tests>
+
+    <help><![CDATA[
+usage: calc_ab.py [-h] [--infile INFILE] [--outfile OUTFILE] [--version]
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --infile INFILE    Input VCF
+  --outfile OUTFILE  Output JSON
+  --version          show program's version number and exit
+  ]]></help>
+
+</tool>
+
