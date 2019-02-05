@@ -10,6 +10,7 @@ from __future__ import print_function
 import argparse
 import copy
 import json
+import math
 import os
 import sys
 
@@ -324,7 +325,10 @@ def create_new_sample_metrics(args):
         msi_res = msi_parse(args.msi)
         sample_metrics['sampleRunMetrics'].append({"metric": "msi_sites", "value": msi_res[0]})
         sample_metrics['sampleRunMetrics'].append({"metric": "msi_somatic_sites", "value": msi_res[1]})
-        sample_metrics['sampleRunMetrics'].append({"metric": "msi_pct", "value": msi_res[2]})
+        if math.isnan(msi_res[2]):
+            sample_metrics['sampleRunMetrics'].append({"metric": "msi_pct", "value": -0.0})
+        else:
+            sample_metrics['sampleRunMetrics'].append({"metric": "msi_pct", "value": msi_res[2]})
     if args.primers_bed and args.primers_bam:
         on_primer_frag_count = run_cmd(get_target_count_cmd(args.primers_bam, args.primers_bed))
         sample_metrics["sampleRunMetrics"].append({"metric": "on_primer_frag_count", "value": on_primer_frag_count.rstrip('\n')})
