@@ -1,10 +1,16 @@
-<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.2.0" >
+<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.3.0" >
     <description>Calculate TMB from VCF annotations.</description>
 
     <command detect_errors="exit_code"><![CDATA[
         python $__tool_directory__/calc_tmb.py
-        --infile '${infile}'
+        --infile
+        #for $input in $infile
+            #if $input
+                '${input}'
+            #end if
+        #end for
         --outfile '${outfile}'
+        --variants '${variants}'
         --gnomad_af '${gnomad_af}'
         --m2_tlod '${m2_tlod}'
         --min_ab '${min_ab}'
@@ -12,7 +18,7 @@
     ]]></command>
 
     <inputs>
-        <param name="infile" type="data" format="vcf" label="Input VCF" help="Input VCF" />
+        <param name="infile" type="data" multiple="true" format="vcf" label="Input VCF(s)" help="Input VCF(s)" />
         <param name="gnomad_af" type="float" value="0.00001" label="GNOMAD VAF" help="GNOMAD VAF to filter list upon.  Values greater than this will not be utilized." />
         <param name="m2_tlod" type="float" value="20.0" label="Mutect2 TLOD" help="M2 TLOD score to filter list upon.  Values less than this will not be utilized." />
         <param name="min_ab" type="float" value="0.05" label="Variant Allele Balance" help="Variant allele frequency (balance) to filter list upon.  Values less than this will not be utilized." />
@@ -21,12 +27,32 @@
 
     <outputs>
       <data format="txt" name="outfile" label="${tool.name} on ${on_string}: JSON" help="JSON output for Sample Metrics" />
+      <data format="vcf" name="variants" label="${tool.name} on ${on_string}: VCF" help="VCF containing variants used in the calculation" />
     </outputs>
 
     <tests></tests>
 
     <help><![CDATA[
-    python calc_tmb.py -h
+usage: calc_tmb.py [-h] [--infile INFILE] [--outfile OUTFILE]
+                   [--variants VARIANTS] [--gnomad_af GNOMAD_AF]
+                   [--m2_tlod M2_TLOD] [--min_ab MIN_AB]
+                   [--seq_space SEQ_SPACE] [--version]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --infile INFILE       Input VCF
+  --outfile OUTFILE     Output JSON
+  --variants VARIANTS   Output list of variants
+  --gnomad_af GNOMAD_AF
+                        GNOMAD VAF to filter list upon. Values greater than
+                        this will not be utilized.
+  --m2_tlod M2_TLOD     M2 TLOD score to filter list upon. Values less than
+                        this will not be utilized.
+  --min_ab MIN_AB       Variant allele frequency (balance) to filter list
+                        upon. Values less than this will not be utilized.
+  --seq_space SEQ_SPACE
+                        Total genomic size of sequence targets, in Mb.
+  --version             show program's version number and exit
   ]]></help>
 
 </tool>
