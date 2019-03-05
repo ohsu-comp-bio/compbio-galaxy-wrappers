@@ -1,4 +1,4 @@
-<tool id="cgd_client" name="CGD Import Client" version="1.2.7.0" >
+<tool id="cgd_client" name="CGD Import Client" version="1.2.7.1" >
 
     <description>Send a pipeline output file to the CGD via cgd_client.jar.  Files that can be sent are the interval and
         gene metrics files, VCF, SeattleSeq output, and FastQC output.</description>
@@ -60,6 +60,10 @@
 
         #if $endpoint_choice.endpoint=="illuminavcf"
         --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+        #end if
+
+        #if $endpoint_choice.endpoint=="vcf"
+        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid
         #end if
 
         #if $endpoint_choice.endpoint=="splicevariant"
@@ -164,6 +168,7 @@
                 <option value="updatesamplerun">Sample Metrics [json]</option>
                 <option value="uploadqcsheet">FastQC R1</option>
                 <option value="uploadqcsheetrtwo">FastQC R2</option>
+                <option value="vcf">Multisample VCF</option>
                 <option value="none">NONE</option>
             </param>
 
@@ -241,6 +246,11 @@
                 <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
+            </when>
+
+            <when value="vcf">
+                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="runid" type="text" label="Galaxy Run ID: " />
             </when>
 
             <when value="splicevariant">
