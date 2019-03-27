@@ -39,7 +39,7 @@ def build_cands(filename, outfile):
         for line in myfile:
             if not line.startswith('#'):
                 sline = line.rstrip('\n').split('\t')
-                variants = (sline[0], sline[1])
+                variants = (sline[0], sline[1], sline[3], sline[4])
                 cands[variants] = line
             else:
                 handle_out.write(line)
@@ -62,7 +62,7 @@ def remove_cands(cands, infile, outfile, outfile_base):
             else:
                 sline = line.rstrip('\n').split('\t')
                 filt = sline[6]
-                variant = (sline[0], sline[1])
+                variant = (sline[0], sline[1], sline[3], sline[4])
                 if variant not in cands:
                     handle_out.write(line)
                 else:
