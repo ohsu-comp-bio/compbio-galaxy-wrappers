@@ -8,7 +8,7 @@
 from __future__ import print_function
 import argparse
 
-VERSION = '0.3.2'
+VERSION = '0.4.1'
 
 def supply_args():
     """
@@ -32,22 +32,29 @@ def parse_pon(args):
     """
     drop_list = []
     annot_list = []
+    all_pon = {}
     with open(args.pon, 'rU') as pon:
         for line in pon:
             if not line.startswith('#'):
                 line = line.rstrip('\n').split('\t')
                 seen = line[7].split(';')[5].split('=')[1]
                 cosmic = line[7].split(';')[4].split('=')[1]
-#                avg_af = line[7].split(';')[4].split('=')[0]
-                if int(seen) >= 3 and cosmic == 'F':
-                    drop_list.append((line[0], line[1], line[3], line[4]))
+                avg_af = float(line[7].split(';')[0].split('=')[1])
+                stdev_af = float(line[7].split(';')[1].split('=')[1])
+                uniq_key = (line[0], line[1], line[3], line[4])
+                if uniq_key not in all_pon:
+                    all_pon[uniq_key] = (avg_af, stdev_af)
+#                if avg_af < 0.15 and stdev_af < 0.06:
+                    
+                # if int(seen) >= 3 and cosmic == 'F':
+                #     drop_list.append((line[0], line[1], line[3], line[4]))
                 # nixed
                 # elif int(seen) >= 5 and cosmic == 'T':
                 #     drop_list.append((line[0], line[1], line[3], line[4]))
-                else:
-                    annot_list.append((line[0], line[1], line[3], line[4]))
+                # else:
+                #     annot_list.append((line[0], line[1], line[3], line[4]))
 
-    return drop_list, annot_list
+    return all_pon
 
 
 def replace_filter(filt, anno):
@@ -61,8 +68,7 @@ def replace_filter(filt, anno):
     else:
         return ';'.join([filt, anno])
 
-
-def write_new_vcf(args, drop_list, annot_list, hotspots):
+def write_new_vcf(args, all_pon, hotspots):
     """
     Write a new VCF with the panel_of_normals tag in FILTER section.
     :return:
@@ -73,14 +79,33 @@ def write_new_vcf(args, drop_list, annot_list, hotspots):
         for line in infile:
             if not line.startswith('#'):
                 sline = line.rstrip('\n').split('\t')
+                labels = sline[8].split(':')
+                info = sline[9].split(':')
+                vaf = float(info[labels.index('AF')])
                 uniq_key = (sline[0], sline[1], sline[3], sline[4])
-                if uniq_key not in drop_list:
-                    if uniq_key in annot_list:
+                write_me = False
+                if uniq_key in all_pon:
+                    avg_af = float(all_pon[uniq_key][0])
+                    stdev_af = float(all_pon[uniq_key][1])
+
+                    if stdev_af == 0.0:
+                        stdev_af = 0.001
+                    if avg_af < 0.2 and stdev_af < 0.06:
+                        stdev_af = max(stdev_af, .01)
+                        if vaf >= (3*stdev_af + avg_af):
+                            sline[6] = replace_filter(sline[6], 'PON_OV')
+                            write_me = True
+                    else:
                         sline[6] = replace_filter(sline[6], 'PON')
+                        write_me = True
+
+                else:
+                    write_me = True
+
+                if write_me:
                     outfile.write('\t'.join(sline))
                     outfile.write('\n')
-                else:
-                    pass
+
                     # if uniq_key in hotspots:
                     #     sline[6] = replace_filter(sline[6], 'PON_hotspot')
                     #     outfile.write('\t'.join(sline))
@@ -89,7 +114,8 @@ def write_new_vcf(args, drop_list, annot_list, hotspots):
             else:
                 outfile.write(line)
                 if line.startswith("##FILTER") and check:
-                    outfile.write("##FILTER=<ID=PON,Description=\"Variant found in panel of normals in 2 to 4 samples.\">\n")
+                    outfile.write("##FILTER=<ID=PON,Description=\"Variant found in panel of normals in 3 or more samples.\">\n")
+                    outfile.write("##FILTER=<ID=PON_OV,Description=\"Variant found in panel of normals at low frequency, but call is at significantly higher frequency.\">\n")
                     # outfile.write("##FILTER=<ID=PON_hotspot,Description=\"Variant would have been filtered but appears in the hotspot list.\">\n")
                     check = False
 
@@ -121,8 +147,8 @@ def main():
 
     args = supply_args()
     hotspots = hotspots_grab(args.hotspots)
-    drop_list, annot_list = parse_pon(args)
-    write_new_vcf(args, drop_list, annot_list, hotspots)
+    all_pon = parse_pon(args)
+    write_new_vcf(args, all_pon, hotspots)
 
 
 if __name__ == "__main__":
