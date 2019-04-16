@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # DESCRIPTION: Given a panel of normals VCF, as created by
 # panel_of_normals.py, annotate or remove entries in a sample VCF.
@@ -6,12 +6,12 @@
 # CODED BY: John Letaw
 
 from __future__ import print_function
+from collections import OrderedDict
 from string import Template
 import argparse
 import numpy
-import vcf
 
-VERSION = '0.5.0'
+VERSION = '0.5.1'
 
 def supply_args():
     """
@@ -26,7 +26,9 @@ def supply_args():
 
     # Hard cutoff section
     parser.add_argument('--min_cnt', type=int, help='Variants seen at least this many times in the PON will be removed, unless they are subject to background assessment.')
-    parser.add_argument('--pon_flag', help='Flag to apply if variant is seen in PON, but does not get removed for other reasons.')
+    parser.add_argument('--pon_flag_above', help='Flag to apply if variant is seen in PON, does not get removed for other reasons, and is above min_cnt.')
+    parser.add_argument('--pon_flag_below', help='Flag to apply if variant is seen in PON, does not get removed for other reasons, and is below min_cnt.')
+    parser.add_argument('--no_clinvar_rm', action='store_true', help='If the call is in ClinVar, and is not benign, do not remove the entry based on min_cnt thresholds.')
 
     # Background filtering option section
     parser.add_argument('--bkgd_avg', help='Average VAF for which we will assess whether variant rises above background.  '
@@ -49,54 +51,125 @@ def supply_args():
     return args
 
 
-class PanelOfNormals(object):
+
+class VcfRecBase(object):
     """
-    COSMIC variant handling
-    non-COSMIC variant handling
-    low VAF variant handling
-    applying FILTER tags
+    Basic parsing of VCF records.
+    #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	RDM-0C19G1-1
+    1	16200729	.	A	AT	.	m2	DP=1180;ECNT=1;POP_AF=5e-08;RPA=9;RU=T;STR;TLOD=25.6;OLD_VARIANT
+    =1:16200729:AT/ATT	GT:AD:AF:DP:F1R2:F2R1:MBQ:MFRL:MMQ:MPOS:ORIGINAL_CONTIG_MISMATCH:SA_MAP_AF:SA_POST_PROB	0/1:906,38:0.031
+    :1078:906,38:0,0:36,32:202,190:60,60:38,35:0:0.121,0.121,0.129:0.011,0.002304,0.986
     """
-    def __init__(self, args):
-        self.filename = args.pon
+    def __init__(self, rec, args):
+
+        self.rec = rec.rstrip('\n').split('\t')
+        self.chrom = str(self.rec[0])
         self.args = args
-        self.pon = self._create_pon()
+        # 1-based
+        self.coord = str(self.rec[1])
+        self.ident = self.rec[2]
+        self.ref = self.rec[3]
+        self.alt = self.rec[4]
+        self.qual = self.rec[5]
+        self.filt = self.rec[6].split(';')
+        self.info = self._create_info(self.rec[7])
+        try:
+            self.frmt = self.rec[8].split(':')
+            self.samps = self._create_samps(self.rec[9:])
+            # Only going to grab the first item on the vafs list right now.  Not ready to deal with mult sample vafs.
+            self.vafs = self._get_samp_vafs()[0]
+        except:
+            self.frmt = None
+            self.samps = None
+            self.vafs = None
+        self.uniq_key = (self.chrom, self.coord, self.ref, self.alt)
 
-    def _create_pon(self):
+    def _get_samp_vafs(self):
         """
-        VCF INFO field
-        AVG_AF=0.585;STDEV_AF=0.357;MAX_AF=0.985;MIN_AF=0.024;COSMIC=F;SEEN=18;TLOD=1774.033;CLNSIG=F
+        Return a list of VAFs per sample in samps.
         :return:
         """
-        pon = {}
-        for variant in vcf.Reader(open(self.filename, 'r')):
-            uniq_key = (str(variant.CHROM), str(variant.POS), str(variant.REF), str(variant.ALT[0]))
-            if uniq_key not in pon:
-                pon[uniq_key] = VcfRecPON(variant, self.args.min_cnt, self.args.bkgd_min_cnt, self.args.bkgd_avg, self.args.bkgd_std)
+        vafs = []
+        for samp, val in self.samps.items():
+            vafs.append(float(val['AF']))
+        return vafs
+
+    def _retr_write(self, val, delim):
+        """
+        Return writable version of basic delimited strings.
+        :return:
+        """
+        return delim.join(val)
+
+    def _retr_info_write(self):
+        """
+        Return writable version of INFO string.
+        :return:
+        """
+        info = []
+        for key, val in self.info.items():
+            if val:
+                info.append('='.join([key, val]))
             else:
-                raise Exception("No duplicates allowed.  Make sure PON doesn't contain them.")
-        return pon
+                info.append(key)
+        return ';'.join(info)
 
-    def _delim_to_dict(self, info, delim=';'):
+    def _retr_samps_write(self):
         """
-        Create a dict out of a typical VCF INFO field string.
+        Return SAMPLE columns in writable format.
+        Looks like {<SAMPLE>: {<FRMT>: <SAMP_VAL>} }
         :return:
         """
-        new_dict = {}
-        for entry in info.split(delim):
-            field = entry.split('=')[0]
-            val = entry.split('=')[1]
-            new_dict[field] = val
-        return new_dict
+        samps = []
+        for data in self.samps.values():
+            vals = []
+            for val in data.values():
+                vals.append(val)
+            samps.append(':'.join(vals))
+        return samps
 
+    def retr_curr_values(self):
+        """
+        Return current state of vcf rec.
+        :return:
+        """
+        to_write = [self.chrom, self.coord, self.ident, self.ref, self.alt, self.qual,
+                self._retr_write(self.filt, delim=';'),
+                self._retr_info_write()]
+        if self.frmt:
+            to_write.append(self._retr_write(self.frmt, delim=':'))
+            to_write.extend(self._retr_samps_write())
+        return to_write
 
-class VcfRec(object):
-    """
-    """
-    def __init__(self, rec):
+    def _create_samps(self, samps):
+        """
 
-        self.rec = rec
-        self.chrom = str(rec.CHROM)
-        self.coord = str(rec.POS)
+        :return:
+        """
+        new_samps = OrderedDict()
+        for samp in samps:
+            if samp:
+                new_samps[samp] = OrderedDict()
+                samp_data = samp.split(':')
+                for val in samp_data:
+                    idx = samp_data.index(val)
+                    new_samps[samp][self.frmt[idx]] = val
+        return new_samps
+
+    def _create_info(self, info):
+        """
+        Place INFO data in structure.
+        :return:
+        """
+        new_info = OrderedDict()
+        for entry in info.split(';'):
+            key = entry.split('=')[0]
+            try:
+                val = entry.split('=')[1]
+            except:
+                val = None
+            new_info[key] = val
+        return new_info
 
     def _value_set(self, value):
         """
@@ -104,7 +177,7 @@ class VcfRec(object):
         :return:
         """
         try:
-            return self.rec.INFO[value]
+            return self.info[value]
         except:
             return None
 
@@ -133,22 +206,22 @@ class VcfRec(object):
         :return:
         """
         print("PYVCF REC: {0}".format(self.rec))
-        print("PYVCF INFO: {0}".format(self.rec.INFO))
+        print("PYVCF INFO: {0}".format(self.info))
         # print("Chromosome: {0}".format(self.chrom))
         # print("Position: {0}".format(self.coord))
 
-class VcfRecPON(VcfRec):
+class VcfRecPON(VcfRecBase):
     """
     Specific to PON INFO entries.
     For PONs, INFO fields currently look like this:
     AVG_AF=0.021;STDEV_AF=0.003;MAX_AF=0.027;MIN_AF=0.016;COSMIC=F;SEEN=35;TLOD=10.257;CLNSIG=F
     """
-    def __init__(self, rec, min_cnt, bkgd_min_cnt=0, bkgd_avg=None, bkgd_std=None):
-        super(VcfRecPON, self).__init__(rec)
-        self.min_cnt = min_cnt
-        self.bkgd_avg = bkgd_avg
-        self.bkgd_std = bkgd_std
-        self.bkgd_min_cnt = bkgd_min_cnt
+    def __init__(self, rec, args):
+        super(VcfRecPON, self).__init__(rec, args)
+        self.min_cnt = args.min_cnt
+        self.bkgd_avg = args.bkgd_avg
+        self.bkgd_std = args.bkgd_std
+        self.bkgd_min_cnt = args.bkgd_min_cnt
         # Set variables that are included in INFO line.
         self.avg_ab = self._value_set('AVG_AF')
         self.stdev_ab = self._value_set('STDEV_AF')
@@ -163,6 +236,37 @@ class VcfRecPON(VcfRec):
         self.assess_bkgd = self._bkgd_assess()
         self.remove_me = self._remove_assess()
         self.pon_label_me = self._label_assess()
+        self.is_cosmic = self._assess_bool(self.cosmic)
+        self.is_clinvar = self._assess_clinvar(self.clnsig)
+
+        # temp = ['120539960','124499002','129148234','140434574','15350813','212285339','43814992','44232823','49434801','70356793']
+        #
+        # if self.coord in temp:
+        #     self.var_req()
+
+    def _assess_clinvar(self, val):
+        """
+        For ClinVar, the entries that are not benign are interesting.
+        :return:
+        """
+        # If ClinVar labels are in this list, they can be treated just like CLNSIG=F PON variants.
+        bad_clinvar = ['Likely_benign', 'Benign', 'Benign/Likely_benign']
+        if val == 'F':
+            return False
+        elif val in bad_clinvar:
+            return False
+        else:
+            return True
+
+    def _assess_bool(self, val):
+        """
+        If value is set as T, return True.  Otherwise, return False.
+        :return:
+        """
+        if val == 'T':
+            return True
+        else:
+            return False
 
     def _label_assess(self):
         """
@@ -180,13 +284,10 @@ class VcfRecPON(VcfRec):
         Determine whether the variant will be an absolute removal.
         :return:
         """
-        try:
-            if int(self.seen) >= int(self.min_cnt):
-                if not self.assess_bkgd:
-                    return True
-        except:
+        if int(self.seen) >= int(self.min_cnt):
+            return True
+        else:
             return False
-        return False
 
     def _bkgd_assess(self):
         """
@@ -223,24 +324,194 @@ class VcfRecPON(VcfRec):
         print("Hard Remove?: {0}".format(self.remove_me))
 
 
-class PanelOfNormalsWriter():
+class MyVcf(object):
     """
-    Handle writing of new PON.
+    Hold VCF records, manage access to them based in chrom, pos, ref, alt.
     """
-    def __init__(self, infile, outfile, outfile_bad, pon, bkgd_min_cnt=None, bkgd_pass_flag=None, pon_flag=None, min_cnt=None):
-        self.infile = infile
-        self.outfile = outfile
-        self.outfile_bad = outfile_bad
-        self.pon = pon
-        self.min_cnt = min_cnt
-        self.bkgd_min_cnt = bkgd_min_cnt
-        self.bkgd_pass_flag = bkgd_pass_flag
-        self.pon_flag = pon_flag
-        self.param_dict = {'bkgd_min_cnt': self.bkgd_min_cnt,
-                           'bkgd_pass_flag': self.bkgd_pass_flag,
-                           'pon_flag': self.pon_flag,
-                           'min_cnt': self.min_cnt}
+    def __init__(self, filename, vcfrec, args):
+        self.filename = filename
+        self.args = args
+        self.vcfrec = vcfrec
+        self.header = []
+        self.myvcf = self._create_vcf()
 
+    def _create_vcf(self):
+        """
+        VCF INFO field
+        AVG_AF=0.585;STDEV_AF=0.357;MAX_AF=0.985;MIN_AF=0.024;COSMIC=F;SEEN=18;TLOD=1774.033;CLNSIG=F
+        :return:
+        """
+        myvcf = OrderedDict()
+        with open(self.filename, 'r') as vcf:
+            for line in vcf:
+                if not line.startswith('#'):
+                    vrnt = self._sel_vcfrec(self.vcfrec, line, self.args)
+                    if vrnt.uniq_key not in myvcf:
+                        myvcf[vrnt.uniq_key] = vrnt
+                    else:
+                        raise Exception("No duplicates allowed.  Make sure your VCF doesn't contain them.")
+                else:
+                    self.header.append(line.rstrip('\n'))
+        return myvcf
+
+    def _sel_vcfrec(self, vcfrec, val, args):
+        """
+
+        :return:
+        """
+        return vcfrec(val, args)
+
+
+class MyVcfEdited(MyVcf):
+    """
+
+    """
+    def __init__(self, filename, vcfrec, args, low_seen):
+        super(MyVcfEdited, self).__init__(filename, vcfrec, args)
+        self.param_dict = {'bkgd_min_cnt': args.bkgd_min_cnt,
+                           'bkgd_pass_flag': args.bkgd_pass_flag,
+                           'pon_flag_below': args.pon_flag_below,
+                           'pon_flag_above': args.pon_flag_above,
+                           'min_cnt': args.min_cnt,
+                           'low_seen': low_seen}
+        self.new_headers = self._create_new_headers()
+        self.new_header = self._insert_new_headers()
+
+    def _insert_new_headers(self):
+        """
+        Locate the place these new header lines belong.  Currently, just place them before the first column heading line.
+        :return:
+        """
+        return self.header[:-1] + self.new_headers + self.header[-1:]
+
+    def _create_new_headers(self):
+        """
+
+        :return:
+        """
+        new_headers = []
+        for param, val in self.param_dict.items():
+            if val:
+                try:
+                    new_headers.append(self._filter_create(param))
+                except:
+                    pass
+        return new_headers
+
+    def _filter_create(self, tmpl):
+        """
+        Create FILTER lines to be added for each new label.
+        :return:
+        """
+        filt_tmpls = {'bkgd_pass_flag': Template('##FILTER=<ID=${bkgd_pass_flag},Description=\"Variant found in panel of normals in ${bkgd_min_cnt} or greater samples, and exceeds background at this site.\">'),
+                      'pon_flag_below': Template('##FILTER=<ID=${pon_flag_below},Description=\"Variant found in panel of normals in ${low_seen} or more and fewer than ${min_cnt} samples.\">'),
+                      'pon_flag_above': Template('##FILTER=<ID=${pon_flag_above},Description=\"Variant found in panel of normals in ${min_cnt} or more samples.\">')}
+        return filt_tmpls[tmpl].substitute(self.param_dict)
+
+
+
+class PanelOfNormals(MyVcf):
+    """
+    COSMIC variant handling
+    non-COSMIC variant handling
+    low VAF variant handling
+    applying FILTER tags
+    """
+    def __init__(self, filename, vcfrec, args):
+        super(PanelOfNormals, self).__init__(filename, vcfrec, args)
+        self.min_cnt = args.min_cnt
+        self.bkgd_min_cnt = args.bkgd_min_cnt
+        self.bkgd_pass_flag = args.bkgd_pass_flag
+        self.pon_flag_below = args.pon_flag_below
+        self.pon_flag_above = args.pon_flag_above
+        self.low_seen = self._find_low_seen()
+
+    def _find_low_seen(self):
+        """
+        VCF INFO field
+        AVG_AF=0.585;STDEV_AF=0.357;MAX_AF=0.985;MIN_AF=0.024;COSMIC=F;SEEN=18;TLOD=1774.033;CLNSIG=F
+        Find the lowest SEEN value.
+        :return:
+        """
+        low_seen = 1000000
+        for entry in self.myvcf.values():
+            if entry.info['SEEN'] < low_seen:
+                low_seen = entry.info['SEEN']
+        return low_seen
+
+    def _delim_to_dict(self, info, delim=';'):
+        """
+        Create a dict out of a typical VCF INFO field string.
+        :return:
+        """
+        new_dict = {}
+        for entry in info.split(delim):
+            field = entry.split('=')[0]
+            val = entry.split('=')[1]
+            new_dict[field] = val
+        return new_dict
+
+
+class VcfRecComp(object):
+    """
+    Decide on whether the entry should be written.
+    The rules:
+        if the entry is in the PON, at above min_cnt, we can either remove it, or just label it
+            min_cnt implies either removal or label of variants seen above min_cnt times
+        if the entry is in the PON, at below min_cnt, it can be labeled, though probably not removed (otherwise no need to specify min_cnt)
+
+    """
+    def __init__(self, pon_rec, vcf_rec, bkgd_pass_flag, no_clinvar_rm):
+        self.pon_rec = pon_rec
+        self.vcf_rec = vcf_rec
+        self.bkgd_pass_flag = bkgd_pass_flag
+        self.no_clinvar_rm = no_clinvar_rm
+
+        self.add_flags = []
+        self.write_me = True
+
+        # If the record is set as a remove candidate, based on min_cnt, set write_me to False.
+        if self.pon_rec.remove_me:
+            # If arg has been sent to not remove ClinVar variants...
+            if self.no_clinvar_rm:
+                if self.pon_rec.is_clinvar:
+                    self.write_me = True
+                else:
+                    self.write_me = False
+            else:
+                self.write_me = False
+        else:
+            self.write_me = True
+
+        # If the entry is classified as needing assessment, do it here.
+        if self.pon_rec.assess_bkgd:
+            self.over_bkgd = self._assess_bkgd()
+            if self.over_bkgd:
+                self._add_flag(self.bkgd_pass_flag)
+                self.write_me = True
+            else:
+                self.write_me = False
+
+        for entry in self.add_flags:
+            self.vcf_rec.filt = self._replace_filter(self.vcf_rec.filt, entry)
+
+    def _add_flag(self, arg):
+        """
+        Check if we are adding a flag.
+        :return:
+        """
+        if arg:
+            self.add_flags.append(arg)
+
+    def _assess_bkgd(self, min_stdev=0.01):
+        """
+        Perform the background assessment.
+        :return:
+        """
+        if float(self.vcf_rec.vafs) >= ((3 * max(self.pon_rec.stdev_ab, min_stdev)) + self.pon_rec.avg_ab):
+            return True
+        else:
+            return False
 
     def _replace_filter(self, filt, anno):
         """
@@ -248,86 +519,82 @@ class PanelOfNormalsWriter():
         semicolon.
         :return:
         """
-        if anno:
-            if filt == '.' or filt == 'PASS':
-                return anno
-            else:
-                return ';'.join([filt, anno])
+        pass_flags = ['.', 'PASS']
+        for pss in pass_flags:
+            if pss in filt:
+                return [anno]
+        if anno not in filt:
+            return [filt, anno]
         return filt
 
-    def _assess_bkgd(self, rec, vaf):
+class CompVcf(object):
+    """
+    Deal with comparison portion.
+    """
+    def __init__(self, myvcf, pon, args):
+        self.myvcf = myvcf
+        self.pon = pon
+        self.bkgd_pass_flag = args.bkgd_pass_flag
+        self.no_clinvar_rm = args.no_clinvar_rm
+        self.good_vcf, self.bad_vcf = self._start_comp()
+
+    def _do_comp(self, vcf, pon):
         """
-        Perform the background assessment.
+        Do the actual comparisons, according to specified logic.
         :return:
         """
-        if vaf >= ((3 * rec.stdev_ab) + rec.avg_ab):
+        comp = VcfRecComp(pon, vcf, self.bkgd_pass_flag, self.no_clinvar_rm)
+        if comp.write_me:
             return True
         else:
             return False
 
-    def _filter_create(self, tmpl):
+    def _start_comp(self):
         """
-        Create FILTER lines to be added for each new label.
+        Kick off the comparison process.
         :return:
         """
-        filt_tmpls = {'bkgd_pass_flag': Template('##FILTER=<ID=${bkgd_pass_flag},Description=\"Variant found in panel of normals in ${bkgd_min_cnt} or greater samples, and exceeds background at this site.\">\n'),
-                      'pon_flag': Template('##FILTER=<ID=${pon_flag},Description=\"Variant found in panel of normals in less than ${min_cnt} samples.\">\n')}
-        return filt_tmpls[tmpl].substitute(self.param_dict)
-
-    def write_new_vcf(self):
-        """
-        Write a new VCF with the panel_of_normals tag in FILTER section.
-        :return:
-        """
-        outfile = open(self.outfile, 'w')
-        outfile_bad = open(self.outfile_bad, 'w')
-        check = True
-        with open(self.infile, 'rU') as infile:
-            for line in infile:
-                if not line.startswith('#'):
-                    sline = line.rstrip('\n').split('\t')
-                    labels = sline[8].split(':')
-                    info = sline[9].split(':')
-                    vaf = float(info[labels.index('AF')])
-                    uniq_key = (sline[0], sline[1], sline[3], sline[4])
-                    write_me = True
-                    if uniq_key in self.pon:
-                        this_rec = self.pon[uniq_key]
-                        # Check if PON variant is labeled as needing assessment.
-                        if this_rec.assess_bkgd:
-                            # Check is VAF falls outside of PON background range.
-                            if self._assess_bkgd(this_rec, vaf):
-                                sline[6] = self._replace_filter(sline[6], self.bkgd_pass_flag)
-                                write_me = True
-                            else:
-                                write_me = False
-                        # Check to see if the record should be removed, based on min_cnt.
-                        if this_rec.remove_me:
-                            write_me = False
-                        # Check to see if we should label the record.
-                        if this_rec.pon_label_me:
-                            sline[6] = self._replace_filter(sline[6], self.pon_flag)
-                            write_me = True
-                    if write_me:
-                        outfile.write('\t'.join(sline))
-                        outfile.write('\n')
-                    else:
-                        outfile_bad.write('\t'.join(sline))
-                        outfile_bad.write('\n')
-
+        good_vcf = []
+        bad_vcf = []
+        for coord in self.myvcf.myvcf:
+            if coord in self.pon.myvcf:
+                vcfv = self.myvcf.myvcf[coord]
+                ponv = self.pon.myvcf[coord]
+                if self._do_comp(vcfv, ponv):
+                    good_vcf.append(self.myvcf.myvcf[coord].retr_curr_values())
                 else:
-                    outfile.write(line)
-                    outfile_bad.write(line)
-                    # Move to own function
-                    if line.startswith("##FILTER") and check:
-                        if self.bkgd_pass_flag:
-                            outfile.write(self._filter_create('bkgd_pass_flag'))
-                        if self.pon_flag:
-                            outfile.write(self._filter_create('pon_flag'))
-                        check = False
+                    bad_vcf.append(self.myvcf.myvcf[coord].retr_curr_values())
+            else:
+                good_vcf.append(self.myvcf.myvcf[coord].retr_curr_values())
+        return good_vcf, bad_vcf
 
-        outfile.close()
-        outfile_bad.close()
+class VcfWriter(object):
+    """
+
+    """
+    def __init__(self, filename, vcf, header):
+        self.vcf = vcf
+        self.filename = filename
+        self.header = header
+
+    def write_me(self):
+        """
+        Perform writing of MyVcf structure.
+        :return:
+        """
+        with open(self.filename, 'w') as outvcf:
+            # Get header section worked out.
+            # for entry in self.vcf.header:
+            #     outvcf.write(entry)
+            #     outvcf.write('\n')
+            for entry in self.header:
+                outvcf.write(entry)
+                outvcf.write('\n')
+            for entry in self.vcf:
+                to_write = '\t'.join(entry)
+                outvcf.write(to_write)
+                outvcf.write('\n')
+
 
 
 class Hotspots():
@@ -368,25 +635,21 @@ def main():
     # choose to include or exclude variants in COSMIC.  Similar criteria can be set (eg SEEN) for these COSMIC or ClinVar
     # instances.
 
+    # TODO: bad_vcf should not be writing new header lines, since no annotation should ever be added
 
     args = supply_args()
+    # Add this at some point.  Not high priority.
     # if args.hotspots:
     #     hotspots = Hotspots(args.hotspots).hotspots
     # else:
     #     hotspots = None
-    my_pon = PanelOfNormals(args)
 
-    # test_var = ('1', '115251259', 'A', 'G')
-    # my_var = my_pon.pon[test_var]
-    # my_var.var_req()
-    # print(my_var.seen)
-    # print(my_var.min_cnt)
-    # print(my_var.assess_bkgd)
-
-    PanelOfNormalsWriter(args.infile, args.outfile, args.outfile_bad, my_pon.pon,
-                         args.bkgd_min_cnt, args.bkgd_pass_flag, args.pon_flag,
-                         args.min_cnt).write_new_vcf()
-
+    my_pon = PanelOfNormals(args.pon, VcfRecPON, args)
+    my_vcf = MyVcfEdited(args.infile, VcfRecBase, args, my_pon.low_seen)
+    good_vcf = CompVcf(my_vcf, my_pon, args).good_vcf
+    bad_vcf = CompVcf(my_vcf, my_pon, args).bad_vcf
+    VcfWriter(args.outfile, good_vcf, my_vcf.new_header).write_me()
+    VcfWriter(args.outfile_bad, bad_vcf, my_vcf.header).write_me()
 
 if __name__ == "__main__":
     main()

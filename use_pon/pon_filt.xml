@@ -1,4 +1,4 @@
-<tool id="pon_filt" name="PON Filter" version="0.5.0" >
+<tool id="pon_filt" name="PON Filter" version="0.5.1" >
     <description>Filter or remove variants from a sample VCF based on a panel of normals VCF.</description>
 
     <version_command></version_command>
@@ -11,8 +11,16 @@
         --min_cnt "${min_cnt}"
     #end if
 
-    #if $pon_flag
-        --pon_flag "${pon_flag}"
+    #if $pon_flag_above
+        --pon_flag_above "${pon_flag_above}"
+    #end if
+
+    #if $pon_flag_below
+        --pon_flag_below "${pon_flag_below}"
+    #end if
+
+    #if $no_clinvar_rm
+        "${no_clinvar_rm}"
     #end if
 
     #if $bkgd_avg
@@ -31,13 +39,16 @@
         --bkgd_min_cnt "${bkgd_min_cnt}"
     #end if
 
+
     ]]></command>
 
     <inputs>
         <param name="pon" type="data" format="vcf" label="Panel of Normals" help="PON used for comparison against input VCF." />
         <param name="infile" type="data" format="vcf" label="Input VCF" help="Input VCF to filter." />
         <param name="min_cnt" type="integer" optional="true" value="4" label="Min Count" help="Minimum count required to filter non-background PON sites." />
-        <param name="pon_flag" type="text" optional="true" label="PON Found Flag" help="Flag applied in FILTER column of VCF for calls that do not exceed Min Count, and that do not fall within assessed background regions." />
+        <param name="pon_flag_above" type="text" optional="true" label="PON Found Flag Above" help="Flag applied in FILTER column of VCF for calls that do exceed Min Count, and that do not fall within assessed background regions." />
+        <param name="pon_flag_below" type="text" optional="true" label="PON Found Flag Below" help="Flag applied in FILTER column of VCF for calls that do not exceed Min Count, and that do not fall within assessed background regions." />
+        <param name="no_clinvar_rm" type="boolean" optional="true" truevalue="--no_clinvar_rm" falsevalue="" label="Keep ClinVar?" help="If the call is in ClinVar, and is not benign, do not remove the entry based on min_cnt thresholds." />
         <param name="bkgd_avg" type="float" optional="true" value="0.2" label="Max Background Mean" help="Maximum PON mean used to assess background calls." />
         <param name="bkgd_std" type="float" optional="true" value="0.06" label="Max Background Stdev" help="Maximum PON stdev used to assess background calls." />
         <param name="bkgd_pass_flag" type="text" optional="true" label="Background Pass Flag" help="Flag applied in FILTER column of VCF for PON calls falling outside of background." />
