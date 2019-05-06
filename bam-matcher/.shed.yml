@@ -9,3 +9,5 @@ repositories:
     include:
       - bam-matcher.conf
       - bam-matcher.xml
+      - tool_data_table_conf.xml.sample
+      - tool-data/all_fasta.loc.sample
