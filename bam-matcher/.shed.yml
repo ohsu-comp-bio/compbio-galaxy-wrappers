@@ -1,0 +1,11 @@
+owner: "creason"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/bam-matcher"
+homepage_url: "https://bitbucket.org/sacgf/bam-matcher/wiki/Home"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  bam_matcher:
+    description: "Compare two BAM files to see if they are from the same samples"
+    include:
+      - bam-matcher.conf
+      - bam-matcher.xml
