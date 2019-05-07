@@ -9,4 +9,4 @@ repositories:
     include:
         - epic.xml
         - macros.xml
-
+        - data/tref_ensembl_hugo_map.txt

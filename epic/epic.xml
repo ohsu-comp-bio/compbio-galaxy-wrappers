@@ -35,7 +35,8 @@
 
         #if $hgnc
         --hgnc
-        #end if
+        --map_file $__tool_directory__/data/tref_ensembl_hugo_map.txt
+        #end if    
     ]]></command>
 
     <inputs>
