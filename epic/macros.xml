@@ -1,0 +1,21 @@
+<macros>
+    <xml name="requirements">
+        <requirements>
+            <requirement type="package" version="v1.1">epic</requirement>
+        </requirements>
+    </xml>
+
+    <xml name="citations">
+        <citations>
+            <citation type="bibtex">
+@misc{renameTODO,
+  author = {LastTODO, FirstTODO},
+  year = {TODO},
+  title = {TODO},
+  url = {https://elifesciences.org/articles/26476},
+}</citation>
+        </citations>
+    </xml>
+
+    <token name="@VERSION@">v1.1</token>
+</macros>
