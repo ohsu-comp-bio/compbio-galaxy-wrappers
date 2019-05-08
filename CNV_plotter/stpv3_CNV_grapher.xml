@@ -1,7 +1,11 @@
 <tool id="stpv3_cnv_plotter" name="STPv3 CNV Plotter" version="1.0">
   <description>Creates two plots of CNVs using gtrellis.</description>
+  <requirements>
+    <requirement type="package" version="1.14.0">bioconductor-gtrellis</requirement>
+    <requirement type="package" version="1.2.0">bioconductor-genomeinfodbdata</requirement>
+  </requirements>
   <command detect_errors="exit_code"><![CDATA[
-    Rscript $__tool_directory__/gtrellis_CNV_NEC.R $tumor_percent $count_file $segment_file $sample_name $gene_file 
+    Rscript $__tool_directory__/gtrellis_CNV_NT.R $tumor_percent $count_file $segment_file $sample_name $gene_file 
 
     #if $chrom_file:
       $chrom_file
@@ -25,4 +29,7 @@
     <data name="plot1" format="png" from_work_dir="plot1.png" label="${tool.name} on ${on_string}: Plot 1"/>
     <data name="plot2" format="png" from_work_dir="plot2.png" label="${tool.name} on ${on_string}: Plot 2"/>
   </outputs>
+  <citations>
+    <citation type="doi">10.18129/B9.bioc.gtrellis</citation>
+    </citations>
 </tool>
