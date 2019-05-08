@@ -1,7 +1,23 @@
-categories: [Sequence Analysis]
+categories: 
+  - "Sequence Analysis"
 description: MSIsensor
 homepage_url: https://github.com/ding-lab/msisensor
 long_description: Detect replication slippage variants at microsatellite regions.
-name: msisensor
-owner: jhletaw
+owner: letaw
 remote_repository_url: https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/msisensor
+repositories:
+  msisensor_msi:
+    include:
+      - msisensor_msi.xml
+      - macros.xml
+      - test-data/*
+      - tool-data/*
+      - tool_data_table_conf.xml.sample
+  msisensor_scan:
+    include:
+      - msisensor_scan.xml
+      - macros.xml
+      - test-data/*
+      - tool-data/*
+      - tool_data_table_conf.xml.sample
+
