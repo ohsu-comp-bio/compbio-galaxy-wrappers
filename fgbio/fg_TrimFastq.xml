@@ -1,0 +1,34 @@
+<tool id="fg_TrimFastq" name="Trim Fastq" version="0.7.0">
+  <description>Trims reads in one or more line-matched fastq files to a specific read length. </description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <command detect_errors="exit_code"><![CDATA[
+    @CMD_BEGIN@ FastqToBam
+    #include source=$input_output_cmd#
+    #include source=$length_cmd#
+    #include source=$exclude_cmd#
+    #include source=$log_cmd#
+    ]]>
+  </command>
+  <inputs>
+    <expand macro="fastq_input"/>
+    <expand macro="length_input"/>
+    <expand macro="exclude_input"/>
+  </inputs>
+  <outputs>
+    <expand macro="fastq_output"/>
+    <expand macro="log_output"/>
+  </outputs>
+  <help><![CDATA[
+
+Trims reads in one or more line-matched fastq files to a specific read length. The individual fastq files are expected to have the same set of reads, as would be the case with an r1.fastq and r2.fastq file for the same sample.
+
+Optionally supports dropping of reads across all files when one or more reads is already shorter than the desired trim length.
+
+Input and output fastq files may be gzipped.
+
+]]>  
+  </help>
+  
+</tool>

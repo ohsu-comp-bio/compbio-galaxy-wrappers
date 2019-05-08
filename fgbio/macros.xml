@@ -1,0 +1,609 @@
+<macros>
+  <token name="@CMD_BEGIN@">java -Xmx4g -XX:+AggressiveOpts -XX:+AggressiveHeap -jar $__tool_directory__/fgbio-0.7.0.jar</token>
+  
+  
+  <!--Required Input and Output for SAM BAM-->
+  <template name="sorted_input_output_cmd"><![CDATA[
+    -i $sorted_bam
+    -o $output
+]]> 
+  </template>
+  
+  <template name="input_output_cmd"><![CDATA[
+    -i $input
+    -o $output
+]]> 
+  </template>
+
+    <template name="input_bam_output_cmd"><![CDATA[
+    -i $input
+    -o output.bam
+]]> 
+  </template>
+
+  
+  <xml name="sam_input">
+    <param name="input" argument="-i" type="data" format="sam,bam" label="Input SAM or BAM file"/>
+  </xml>
+  
+  <xml name="sam_output">
+    <data format="sam" name="output" label="${tool.name} on ${on_string}: SAM"/>
+  </xml>
+  
+  <xml name="bam_output">
+    <data from_work_dir="output.bam" format="bam" name="output" label="${tool.name} on ${on_string}: BAM"/>
+  </xml>
+  
+  <xml name="multi_fastq_input">
+    <param name="input" argument="-i" type="data" format="fastq" label="Fastq Files" multiple="true"/>
+  </xml>
+  
+  <template name="multi_input_cmd">
+    --input
+    #for $num, $file in enumerate($input)
+      $file
+    #end for
+    -o output.bam
+  </template>
+  
+  <xml name="fastq_input">
+    <param name="input" label="FASTQ Input File" type="data" format="fastq" argument="-i"/>
+  </xml>
+  
+  <xml name="fastq_output">
+    <data name="output" label="${tool.name} on ${on_string}: FASTQ" format="fastq"/>
+  </xml>
+  
+  <!--Rejects-->
+  
+  <template name="rejects_cmd">
+    #if $rejects_output_on
+    -r $rejects
+    #end if
+  </template>
+  
+  <xml name="rejects_input">
+    <param name="rejects_output_on" argument="-r" type="boolean" checked="false" label="Output Rejects File?" help="Optional output SAM or BAM file to write reads not used."/>
+  </xml>
+  
+  <xml name="rejects_output">
+    <data format="bam" name="rejects" label="${tool.name} on ${on_string}: Rejects BAM">
+      <filter>rejects_output_on</filter>
+    </data>
+  </xml>
+  
+  <!--tag-->
+  
+  <template name="tag_cmd">
+    #if $tag
+    -t $tag
+    #end if
+  </template>
+  
+  <xml name="tag_input">
+    <param name="tag" label="Tag" optional="true" argument="-t" type="text" help="The SAM attribute with the unique molecule tag. Default Value is MI"/>
+  </xml>
+  
+  <!--Read-name-prefix-->
+  
+  <template name="read_name_prefix_cmd">
+    #if $read_name_prefix
+    -p $read_name_prefix
+    #end if
+  </template>
+  
+  <xml name="read_name_prefix_input">
+    <param name="read_name_prefix" label="Read Name Prefix" argument="-p" optional="true" type="text" help="The Prefix all consensus read names."/>
+  </xml>
+  
+  <!--read-group-id-->
+  <template name="read_group_id_cmd">
+    #if $read_group_id
+    -R $read_group_id
+    #end if
+  </template>
+  
+  <xml name="read_group_id_input">
+    <param name="read_group_id" argument="-R" label="Read Group ID" optional="true" type="text" help="The new read group ID for all the consensus reads. Defaults to A."/>
+  </xml>
+  
+  <!--Error-rate-pre-umi-->
+  
+  <template name="error_rate_pre_umi_cmd">
+    #if $error_rate_pre_umi
+    -1 $error_rate_pre_umi
+    #end if
+  </template>
+  
+  <xml name="error_rate_pre_umi_input">
+    <param name="error_rate_pre_umi" argument="-1" type="integer" label="Error Rate Pre-UMI" help="The Phred-scaled error rate for an error prior to the UMIs being integrated. Default to 45." optional="true"/>
+  </xml>
+  
+  <!--Error-rate-pre-umi-->
+  
+  <template name="error_rate_post_umi_cmd">
+    #if $error_rate_post_umi
+    -2 $error_rate_post_umi
+    #end if
+  </template>
+  
+  <xml name="error_rate_post_umi_input">
+    <param name="error_rate_post_umi" argument="-2" type="integer" label="Error Rate Post-UMI" help="The Phred-scaled error rate for an error post the UMIs have been integrated. Default to 40." optional="true"/>
+  </xml>
+  
+  <!--min-input-base-quality-->
+  
+  <template name="min_input_base_quality_cmd">
+    #if $min_input_base_quality
+    -m $min_input_base_quality
+    #end if
+  </template>
+  
+  <xml name="min_input_base_quality_input">
+    <param name="min_input_base_quality" label="Minimum Input Base Quality" argument="-m" help="PhredScore. Ignore bases in raw reads that have Q below this value. Default to 10." optional="true" type="integer"/>
+  </xml>
+  
+  <!--Min reads-->
+  
+  <template name="min_reads_cmd">
+    -M $min_reads
+  </template>
+  
+  <xml name="min_reads_input">
+    <param name="min_reads" argument="-M" label="Min Reads" value="" type="integer" help="The minimum number of reads to produce a consensus base."/>
+  </xml>
+  
+  <!--max reads FIND THE FLAG-->
+  
+  <!--output-per-base-tags-->
+  
+  <template name="output_per_base_tags_cmd">
+    $output_per_base_tags
+  </template>
+  
+  <xml name="output_per_base_tags_input">
+    <param name="output_per_base_tags" argument="-B" type="boolean" truevalue="" falsevalue="-B false" checked="true" label="Output per Base Tags" help="If true produce tags on consensus reads that contain per-base information. Defaults to true."/>
+  </xml>
+  
+  <!--Sort Order-->
+  
+  <template name="sort_order_cmd">
+    #if $sort_order
+    --sort-order $sort_order
+    #end if
+  </template>
+  
+  <xml name="sort_order_input">
+    <param name="sort_order" label="Sort Order" type="select" argument="--sort-order" help="The sort order of the output, if :none: then the same as the input." optional="true">
+      <option value="Unsorted">Unsorted</option>
+      <option value="Unknown">Unknown</option>
+      <option value="Queryname">Queryname</option>
+      <option value="Coordinate">Coordinate</option>
+      <option value="Random">Random</option>
+      <option value="RandomQuery">Random Query</option>
+      <option value="TemplateCoordinate">Template Coordinate</option>
+    </param>
+  </xml>
+  
+  <!--debug-->
+  
+  <template name="debug_cmd">
+    $debug
+  </template>
+  
+  <xml name="debug_input">
+    <param name="debug" type="boolean" truevalue="-D" falsevalue="" checked="false" label="Debug" argument="-D" help="Turn on debug logging."/>
+  </xml>
+  
+  <!--PRE_SORT-->
+  
+  <template name="pre_sort"><![CDATA[
+    @CMD_BEGIN@ SortBam -s TemplateCoordinate -i $input -o $sorted_bam 2>> $log &&
+]]>
+  </template>
+  
+  <template name="set_mate_information"><![CDATA[
+    @CMD_BEGIN@ SortBam -s Queryname -i $input -o sorted_bam_1.bam 2>> $log &&
+    @CMD_BEGIN@ SetMateInformation -i sorted_bam_1.bam -o sorted_bam_2.bam 2>> $log &&
+    @CMD_BEGIN@ SortBam -s TemplateCoordinate -i sorted_bam_2.bam -o $sorted_bam 2>> $log &&
+]]> 
+  </template>
+  
+  <xml name="sorted_bam_output">
+    <data name="sorted_bam" format="bam" label="Sorted BAM"/>
+  </xml>
+  
+  <!--Logs-->
+  <template name="log_cmd">
+    2>> $log
+  </template>
+  
+  <xml name="log_output">
+    <data name="log" format="txt" label="${tool.name} on ${on_string}: Log"/> 
+  </xml>
+  
+  <!--allow missing mates-->
+  <template name="allow_missing_mates_cmd">
+    $allow_missing_mates
+  </template>
+  
+  <xml name="allow_missing_mates_input">
+    <param name="allow_missing_mates" type="boolean" truevalue="-x" falsevalue=""
+ checked="false" label="Allow Missing Mates" argument="-x" help="If specified, do not fail when reads marked as paired are missing their mate pairs."/>  </xml>
+  
+  <!--max records in ram-->
+  
+  <template name="max_records_in_ram_cmd">
+    #if $max_records_in_ram
+      -m $max_records_in_ram
+    #end if
+  </template>
+  
+  <xml name="max_records_in_ram_input">
+    <param name="max_records_in_ram" type="integer" argument="-m" label="Max records in RAM" optional="true" help="Defaults to 1000000"/>
+  </xml>
+  
+  <!--Fastq-->
+  
+  <template name="fastq_cmd">
+    -f $fastq
+  </template>
+  
+  <xml name="fastq_input">
+    <param name="fastq" label="FASTQ" help="Input FASTQ file with UMI reads." type="data" format="fastq" argument="-f"/>
+  </xml> 
+  
+  <!--atribute-->
+  
+  <template name="attribute_cmd">
+    #if $attribute
+      -t $attribute
+    #end if
+  </template>
+  
+  <xml name="attribute_input">
+    <param name="attribute" label="Attribute" help="The BAM attribute to store the UMIs in, defaults to RX" type="text" optional="true" argument="-t"/>
+  </xml>
+  
+  <!--fail-fast-->
+  
+  <template name="fail_fast_cmd">
+    $fail_fast
+  </template>
+  
+  <xml name="fail_fast_input">
+    <param name="fail_fast" type="boolean" label="Fail Fast" help="If set, fail on the first missing UMI." truevalue="--fail-fast" falsevalue="" checked="false"/>
+  </xml>
+  
+  <!-- read structures-->
+  
+  <xml name="read_structures_input">
+    <repeat name="read_structures" title="Read Structure">
+      <param name="read_structure" type="text" label="Structure" argument="-r" help="Read structures, one for each of the FASTQs."/>
+    </repeat>
+  </xml>
+  
+  <template name="read_structures_cmd">
+    -r
+    #for $num, $string in enumerate($read_structures)
+      $string.read_structure 
+    #end for
+  </template>
+  
+  <!--sort boolean-->
+  
+  <template name="sort_boolean_cmd">
+    $sort
+  </template>
+  
+  <xml name="sort_boolean_input">
+    <param name="sort" label="Sort?" type="boolean" truevalue="-s" falsevalue="" help="If true, queryname sort the BAM file, otherwise preserve input order." argument="-s" checked="false"/>
+  </xml>
+  
+  <!--Umi tag-->
+  
+  <template name="umi_tag_cmd">
+    #if $umi_tag
+      -u $umi_tag
+    #end if
+  </template>
+  
+  <xml name="umi_tag_input">
+    <param name="umi_tag" label="UMI tag" type="text" argument="-u" help="Tag in which to store molecular barcodes/UMIs. Defaults to RX" optional="true"/>
+  </xml>
+  
+  <!--Header Read Group ID-->
+  
+  <template name="header_read_group_id_cmd">
+    #if $read_group_id
+      --read-group-id $read_group_id
+    #end if
+  </template>
+  
+  <xml name="header_read_group_id_input">
+    <param name="read_group_id" label="Read Group ID" help="Read group ID to use in the file header. Defaults to A." optional="true" type="text" argument="--read-group-id"/>
+  </xml>
+  
+  <!--Sample-->
+  
+  <template name="sample_cmd">
+    --sample $sample
+  </template>
+  
+  <xml name="sample_input">
+    <param name="sample" label="Sample" argument="--sample" help="The name of the sequenced sample." type="text"/>
+  </xml>
+  
+  <!--Library-->
+  
+  <template name="library_cmd">
+    --library $library
+  </template>
+  
+  <xml name="library_input">
+    <param name="library" label="Library" argument="--library" help="The name/ID of the sequenced library." type="text"/>
+  </xml>
+  
+  <!-- platform-->
+  
+  <template name="platform_cmd">
+    #if $platform
+      --platform $platform
+    #end if
+  </template>
+  
+  <xml name="platform_input">
+    <param name="platform" label="Platform" type="text" argument="--platform" help="Sequencing Platform. Defaults to illumina." optional="true"/>
+  </xml>
+  
+  <template name="platform_unit_cmd">
+    #if $platform_unit
+      --platform-unit $platform_unit
+    #end if
+  </template>
+  
+  <xml name="platform_unit_input">
+    <param name="platform_unit" label="Platform Unit" help="Platform unit (e.g. ‘..')" optional="true" type="text" argument="--platform-unit"/>
+  </xml>
+  
+  <template name="platform_model_cmd">
+    #if $platform_model
+      --platform-model $platform_model
+    #end if
+  </template>
+  
+  <xml name="platform_model_input">
+    <param name="platform_model" label="Platform Model" type="text" argument="--platform-model" optional="true" help="Platform model to insert into the group header (ex. miseq, hiseq2500, hiseqX)"/>
+  </xml>
+  
+  <!--Sequencing Center-->
+  
+  <template name="sequencing_center_cmd">
+    #if $sequencing_center
+      --sequencing-center $sequencing_center
+    #end if
+  </template>
+  
+  <xml name="sequencing_center_input">
+    <param name="sequencing_center" label="Sequencing Center" argument="--sequencing-center" type="text" optional="true" help="The sequencing center from which the data originated."/>
+  </xml>
+  
+  <template name="predicted_insert_size_cmd">
+    #if $predicted_insert_size
+      --predicted-insert-size $predicted_insert_size
+    #end if
+  </template>
+  
+  <xml name="predicted_insert_size_input">
+    <param name="predicted_insert_size" label="Predicted Insert Size" type="integer" argument="--predicted-insert-size" optional="true" help="Predicted median insert size, to insert into the read group header"/>
+  </xml>
+  
+  <!-- Description-->
+  
+  <template name="description_cmd">
+    #if $description
+      --description $description
+    #end if
+  </template>
+  
+  <xml name="description_input">
+    <param name="description" label="Description" type="text" argument="--description" optional="true" help="Description of the read group."/>
+  </xml>
+  
+  <!--Comments-->
+  
+  <template name="comment_cmd">
+    #if $comment 
+      --comment $comment
+    #end if
+  </template>
+  
+  <xml name="comment_input">
+    <param name="comment" label="Comments" argument="--comment" optional="true" type="text" help="Comment(s) to include in the output file’s header."/>
+  </xml>
+  
+  <!--Run Date-->
+  
+  <template name="run_date_cmd">
+    #if $run_date
+      --run-date $run_date
+    #end if
+  </template>
+  
+  <xml name="run_date_input">
+    <param name="run_date" label="Run Date" argument="--run-date" optional="true" type="text" help="Date the run was produced, to insert into the read group header. Iso8601Date format."/>
+  </xml>
+  
+  
+  <!--molecular index tags-->
+  
+  <template name="molecular_index_tags_cmd">
+    #for $num, $tag in enumerate($molecular_index_tags)
+      -t $tag.tag
+    #end for
+  </template>
+  
+  <xml name="molecular_index_tags_input">
+    <repeat name="molecular_index_tags" title="Molecular Index Tags">
+      <param name="tag" type="text" label="Tag" argument="-t" help="SAM tag(s) in which to store the molecular indices."/>
+    </repeat>
+  </xml>
+  
+  
+  <!-- Single tag-->
+  
+  <template name="single_tag_cmd">
+    #if $single_tag
+      --single-tag single_tag
+    #end if
+  </template>
+  
+  <xml name="single_tag_input">
+    <param name="single_tag" type="text" label="Single Tag" help="Single tag into which to concatenate all molecular indices." argument="--single-tag" optional="true"/>
+  </xml>
+  
+  <!-- annotate read names-->
+  
+  <template name="annotate_read_names_cmd">
+    $annotate_read_names
+  </template>
+  
+  <xml name="annotate_read_names_input">
+    <param name="annotate_read_names" label="Annotate Read Names" type="boolean" truevalue="--annotate-read-names" falsevalue="" checked="false" argument="--annotate-read-names" help="Annotate the read names with the molecular indices. See usage for more details."/>
+  </xml>
+  
+  <!--Clipping Atribute-->
+  
+  <template name="clipping_attribute_cmd">
+    #if $clipping_attribute
+      --clipping-attribute $clipping_attribute
+    #end if
+  </template>
+  
+  <xml name="clipping_attribute_input">
+    <param name="clipping_attribute" label="Clipping Attribute" type="text" argument="--clipping-attribute" optional="true" help="The SAM tag with the position in read to clip adapters (e.g. XT as produced by Picard’s MarkIlluminaAdapters)."/>
+  </xml>
+  
+  <!--Family size histogram-->
+  <template name="family_size_histogram_cmd">
+    #if $family_size_histogram_on
+      -f $family_size_histogram
+    #end if
+  </template>
+  
+  <xml name="family_size_histogram_output">
+    <data name="family_size_histogram" format="txt" label="${tool.name} on ${on_string}: Histogram">
+      <filter>family_size_histogram_on</filter>
+    </data>
+  </xml>
+  
+  <xml name="family_size_histogram_input">
+    <param name="family_size_histogram_on" type="boolean" label="Output Family Size Histogram?" checked="false" help="Optional output of tag family size counts."/>
+  </xml>
+  
+  <!--Raw tag-->
+  
+  <template name="raw_tag_cmd">
+    #if $raw_tag
+      -t $raw_tag
+    #end if
+  </template>
+  
+  <xml name="raw_tag_input">
+    <param name="raw_tag" label="Raw Tag" type="text" optional="true" argument="-t" help="The tag containing the raw UMI. Defaults to RX."/>
+  </xml>
+  
+  <!--Assign tag-->
+  
+  <template name="assign_tag_cmd">
+    #if $assign_tag
+      -T $assign_tag
+    #end if
+  </template>
+  
+  <xml name="assign_tag_input">
+    <param name="assign_tag" label="Assign Tag" argument="-T" optional="true" type="text" help="The output tag for UMI grouping. Defaults to MI."/>
+  </xml>
+  
+  <!--Min map q-->
+  
+  <template name="min_map_q_cmd">
+    #if $min_map_q
+      -m $min_map_q
+    #end if
+  </template>
+  
+  <xml name="min_map_q_input">
+    <param name="min_map_q" label="Minimum Mapping Quality" type="integer" optional="true" argument="-m" help="Minimum mapping quality. Defaults to 30."/>
+  </xml>
+  
+  <!--include non pf reads-->
+  
+  <template name="include_non_pf_reads_cmd">
+    $include_non_pf_reads
+  </template>
+  
+  <xml name="include_non_pf_reads_input">
+    <param name="include_non_pf_reads" label="Include Non-PF Reads?" type="boolean" checked="false" truevalue="-n" falsevalue="" argument="-n"/>
+  </xml>
+  
+  <!--strategy-->
+  
+  <template name="strategy_cmd">
+    -s $strategy
+  </template>
+  
+  <xml name="strategy_input">
+    <param name="strategy" label="Strategy" type="select" argument="-s" help="The UMI assignment strategy.">
+      <option value="identity">Identity</option>
+      <option value="edit">Edit</option>
+      <option value="adjacency">Adjacency</option>
+      <option value="paired">Paired</option>
+    </param>
+  </xml>
+  
+  <!--edits-->
+  
+  <template name="edits_cmd">
+    #if $edits
+      -e $edits
+    #end if
+  </template>
+  
+  <xml name="edits_input">
+    <param name="edits" label="Edits" argument="-e" type="integer" optional="true" help="The allowable number of edits between UMIs."/>
+  </xml>
+  
+  <!--min umi length-->
+  
+  <template name="min_umi_length_cmd">
+    #if $min_umi_length
+      -l $min_umi_length
+    #end if
+  </template>
+  
+  <xml name="min_umi_length_input">
+    <param name="min_umi_length" label="Minimum UMI Length" type="integer" argument="-l" optional="true" help="The minimum UMI length. If not specified then all UMIs must have the same length, otherwise discard reads with UMIs shorter than this length and allow for differing UMI lengths."/>
+  </xml>
+  
+  <!-- length-->
+  
+  <template name="length_cmd">
+    -l $length
+  </template>
+  
+  <xml name="length_input">
+    <param name="length" type="integer" label="Length" argument="-l" help="Length to trim reads to." value=""/>
+  </xml>
+  
+  <!-- exclude -->
+  
+  <template name="exclude_cmd">
+    $exclude
+  </template>
+  
+  <xml name="exclude_input">
+    <param name="exclude" type="boolean" truevalue="-x" falsevalue="" checked="false" argument="-x" help="Exclude reads below the trim length." label="Exclude?"/>
+  </xml>
+  
+</macros>

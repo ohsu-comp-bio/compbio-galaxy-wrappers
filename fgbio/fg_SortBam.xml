@@ -1,0 +1,37 @@
+<tool id="fg_SortBam" name="SortBam" version="0.7.0">
+  <description>Sorts a SAM or BAM file.</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <command detect_errors="exit_code"><![CDATA[
+    @CMD_BEGIN@ SortBam
+    #include source=$input_output_cmd#
+    #include source=$sort_order_cmd#
+    #include source=$max_records_in_ram_cmd#
+    #include source=$log_cmd#
+    ]]>
+  </command>
+  <inputs>
+    <expand macro="sam_input"/>
+    <expand macro="sort_order_input"/>
+    <expand macro="max_records_in_ram_input"/>
+  </inputs>
+  <outputs>
+    <expand macro="sam_output"/>
+    <expand macro="log_output"/>
+  </outputs>
+  <help>
+  <![CDATA[Sorts a SAM or BAM file. Several sort orders are available:
+
+Coordinate: sorts reads by their reference sequence and left-most aligned coordinate
+Queryname: sort the reads by their query (i.e. read) name
+Random: sorts the reads into a random order. The output is deterministic for any given input. and several
+RandomQuery: sorts the reads into a random order but keeps reads with the same queryname together. The ordering is deterministic for any given input.
+Uses a temporary directory to buffer sets of sorted reads to disk. The number of reads kept in memory affects memory use and can be changed with the --max-records-in-ram option. The temporary directory to use can be set with the fgbio global option --tmp-dir.
+
+An example invocation might look like:
+
+java -Xmx4g -jar fgbio.jar --tmp-dir=/my/big/scratch/volume \
+  SortBam --input=queryname.bam --sort-order=Coordinate --output coordinate.bam]]>
+  </help>
+</tool>
