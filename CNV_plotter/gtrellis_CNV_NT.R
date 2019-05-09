@@ -28,7 +28,9 @@ chromFile <- args[6]
 upper <- as.double(args[7])
 lower <- as.double(args[8])
 
+#turn tumor percent into a fraction
 
+tumorPercent = tumorPercent/100
 
 # read file that contains hg19 chromosome BED, along with max and min copy values values that will be plotted as lines across each plot
 # working directory is "C:/Users/beadling/Documents"
