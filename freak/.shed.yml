@@ -1,0 +1,7 @@
+categories: 
+  - "CompBio Galaxy Wrappers"
+description: "Calculates varaint allele frequency in RNA sequencing data"
+homepage_url: "https://github.com/ohsu-comp-bio/freak"
+name: freak
+owner: creason
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/freak"
