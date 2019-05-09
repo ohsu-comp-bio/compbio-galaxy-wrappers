@@ -1,0 +1,47 @@
+<tool id="run_aracne2regulons" name="Aracne to Regulons" version="@VERSION@.0" profile="17.09">
+
+    <description>- builds regulons from an aracne network.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <expand macro="requirements"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        run_aracne2regulon.r
+        --output $regulons 
+        --expr $expression 
+        --network $network
+    ]]></command>
+
+    <inputs>
+        <param type="data" name="network" label="Aracne network"/>
+        <param type="data" name="expression" format="tsv,tabular" label="Expression matrix" help="Expression matrix used to build ARACNE network" />
+    </inputs>
+
+    <outputs>
+        <data name="regulons" format="rdata" label="${tool.name} on ${on_string}: Regulons"/>
+    </outputs>
+
+    <help><![CDATA[
+This command runs aracne2regulon to convert an aracne network to VIPER regulons. The output is a serialized R object (RDS format).
+
+Usage: run_aracne2regulons.r [options]
+
+Options:
+	-o OUTPUT, --output=OUTPUT
+		Path to output.
+
+	-e EXPR, --expr=EXPR
+		Path to input expression matrix used to build ARACNE network.
+
+	-n NETWORK, --network=NETWORK
+		Path to ARACNE network.txt.
+
+	-h, --help
+		Show this help message and exit
+    ]]></help>
+</tool>

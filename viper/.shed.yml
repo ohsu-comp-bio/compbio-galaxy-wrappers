@@ -1,0 +1,18 @@
+categories: 
+  - "CompBio Galaxy Wrappers"
+homepage_url: http://califano.c2b2.columbia.edu/viper
+owner: creason
+remote_repository_url: https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/viper
+repositories:
+  run_viper:
+    include:
+      - run_viper.xml
+      - macros.xml
+  viper_report:
+    include:
+      - viper_report.xml
+      - macros.xml
+  run_aracne2regulons:
+    include:
+      - run_aracne2regulons.xml
+      - macros.xml

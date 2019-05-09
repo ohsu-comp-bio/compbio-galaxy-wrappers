@@ -1,0 +1,47 @@
+<tool id="run_viper" name="VIPER" version="@VERSION@.0" profile="17.09">
+
+    <description>- Virtual Inference of Protein-activity by Enriched Regulon analysis.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <expand macro="requirements"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        run_viper.r 
+        --output $activity 
+        --regulons $regulons 
+        --expr $expression
+    ]]></command>
+
+    <inputs>
+        <param type="data" name="regulons" format="rdata" label="Regulons" help="Output from arachne2regulon"/>
+        <param type="data" name="expression" format="tsv,tabular" label="Expression" help="Expression matrix"/>
+    </inputs>
+
+    <outputs>
+        <data name="activity" format="tsv" label="${tool.name} on ${on_string}: Activity"/>
+    </outputs>
+
+    <help><![CDATA[
+This command runs the inference analysis, outputing a matrix of regulator activity values per sample (TSV format).
+
+Usage: run_viper.r [options]
+
+Options:
+	-o OUTPUT, --output=OUTPUT
+		Path to output file.
+
+	-r REGULONS, --regulons=REGULONS
+		Path to RDS file containing network regulons.
+
+	-e EXPR, --expr=EXPR
+		Path to file containing expression of samples for which viper activity scores are desired.
+
+	-h, --help
+		Show this help message and exit
+    ]]></help>
+</tool>
