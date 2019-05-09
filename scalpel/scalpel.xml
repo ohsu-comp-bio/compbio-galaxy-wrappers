@@ -1,4 +1,4 @@
-<tool id="scalpel" name="Scalpel" version="@VERSION@.1" >
+<tool id="scalpel" name="Scalpel" version="@VERSION@.2" >
 
     <description>Indel variant analysis of short-read sequencing data with Scalpel</description>
 
@@ -9,6 +9,13 @@
     <expand macro="requirements"/>
 
     <command detect_errors="exit_code"><![CDATA[
+    ## Set up tmp space  
+    export JOB_DIR=\$PWD &&  
+    export TMP=\$(/usr/bin/mktemp -d /mnt/scratch/gxyjobXXXXXXXXXXX) &&
+    chmod 770 \$TMP &&
+    cd \$TMP &&
+    echo \$PWD &&
+
     #if $input_bed:
         ln -s "${input_bed}" input.bed &&
     #end if
@@ -80,6 +87,11 @@
             > '${tumor_vcf_filt}'
         #end if
     #end if
+
+    && 
+
+    cp -r * \$JOB_DIR &&
+    rm -rf \$TMP
     ]]></command>
 
     <inputs>

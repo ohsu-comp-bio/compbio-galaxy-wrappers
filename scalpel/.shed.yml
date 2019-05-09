@@ -1,0 +1,21 @@
+categories: 
+  - "CompBio Galaxy Wrappers"
+homepage_url: http://scalpel.sourceforge.net/
+owner: creason
+remote_repository_url: https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/scalpel/scalpel
+repositories:
+  scalpel:
+    description: "Indel variant analysis of short-read sequencing data with Scalpel"  
+    include:
+      - scalpel.xml
+      - macros.xml
+      - tool-data/*
+      - tool_data_table_conf.xml.sample
+  replace_sample_column:
+    description: "If the sample column in your VCF says something you don't like, replace it with a sample name from a BAM header."
+    include:
+      - replace_sample_column.xml
+      - replace_sample_column.py
+      - macros.xml
+      - tool-data/*
+      - tool_data_table_conf.xml.sample
