@@ -5,7 +5,14 @@
     <requirement type="package" version="1.2.0">bioconductor-genomeinfodbdata</requirement>
   </requirements>
   <command detect_errors="exit_code"><![CDATA[
-    Rscript $__tool_directory__/gtrellis_CNV_NT.R $tumor_percent $count_file $segment_file $sample_name $gene_file 
+    Rscript $__tool_directory__/gtrellis_CNV_NT.R 
+    #if $tumor_percent:
+      $tumor_percent
+    #else:
+      100
+    #end if
+
+    $count_file $segment_file $sample_name $gene_file 
 
     #if $chrom_file:
       $chrom_file
@@ -17,7 +24,7 @@
 
   <inputs>
     <param name="sample_name" type="text" label="Sample Name"/>
-    <param name="tumor_percent" type="float" value="" label="Percent Tumor"/>
+    <param name="tumor_percent" type="float" value="" label="Percent Tumor" optional="true"/>
     <param name="count_file" type="data" format="tabular" label="Read Counts File"/>
     <param name="segment_file" type="data" format="tabular" label="Copy Ratio Segements"/>
     <param name="gene_file" type="data" format="tabular" label="Gene Interval File"/>
