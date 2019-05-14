@@ -1,0 +1,32 @@
+<tool id="gatk4_cnv_annotate" name="Annotate GATK4 CNV" version="0.1.0" >
+    <description>Annotate results from GATK4 CNV workflow output.</description>
+
+    <version_command></version_command>
+
+    <command><![CDATA[
+    python $__tool_directory__/gatk4_cnv_annotate.py
+    --gffutils_db '${gffutils}'
+    --cnv_infile '${infile}'
+    --genes '${genes}'
+    --outfile '${outfile}'
+    --outfile_genes '${outfile_genes}'
+    ]]></command>
+
+    <inputs>
+        <param name="infile" type="data" format="tabular" label="Input TSV" help="Output from GATK4 CNV step such as CallCopyRatioSegments." />
+        <param name="genes" type="data" format="txt" label="Input Gene List" help="Gene list from which to filter genomic interval output." />
+        <param name="gffutils" type="text" label="GffUtils DB Path" help="GffUtils DB Path" />
+    </inputs>
+
+    <outputs>
+        <data format="tabular" name="outfile" label="${tool.name} on ${on_string}: TABULAR" />
+        <data format="tabular" name="outfile_genes" label="${tool.name} on ${on_string}: TABULAR GENE CENTRIC" />
+    </outputs>
+
+    <tests></tests>
+
+    <help>Annotate results from GATK4 CNV workflow output.</help>
+
+    <citations></citations>
+
+</tool>
