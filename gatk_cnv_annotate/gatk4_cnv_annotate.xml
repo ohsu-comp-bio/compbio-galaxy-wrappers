@@ -1,5 +1,5 @@
-<tool id="gatk4_cnv_annotate" name="Annotate GATK4 CNV" version="0.1.0" >
-    <description>Annotate results from GATK4 CNV workflow output.</description>
+<tool id="gatk4_cnv_annotate" name="Annotate GATK4 CNV" version="0.2.0" >
+        <description>Annotate results from GATK4 CNV workflow output.</description>
 
     <version_command></version_command>
 
@@ -7,6 +7,8 @@
     python $__tool_directory__/gatk4_cnv_annotate.py
     --gffutils_db '${gffutils}'
     --cnv_infile '${infile}'
+    --cnv_denoised_infile '${denoised_infile}'
+    --tumor_pct '${tumor_pct}'
     --genes '${genes}'
     --outfile '${outfile}'
     --outfile_genes '${outfile_genes}'
@@ -14,7 +16,9 @@
 
     <inputs>
         <param name="infile" type="data" format="tabular" label="Input TSV" help="Output from GATK4 CNV step such as CallCopyRatioSegments." />
+        <param name="denoised_infile" type="data" format="tabular" label="Input Denoised TSV" help="Output from GATK4 CNV DenoisedReadCounts (standardized)." />
         <param name="genes" type="data" format="txt" label="Input Gene List" help="Gene list from which to filter genomic interval output." />
+        <param name="tumor_pct" type="integer" min="0" max="100" label="Tumor Percentage" help="Estimated tumor percentage (between 0 and 100)." />
         <param name="gffutils" type="text" label="GffUtils DB Path" help="GffUtils DB Path" />
     </inputs>
 
