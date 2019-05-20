@@ -78,7 +78,7 @@ correctCopies <- function(data_sheet, log_name) {
 	#get the tumor corrected copies number
 	data_sheet$tumorCorrectedCopies = ((2^(log_name + 1))-(2*(1-tumorPercent))/tumorPercent)
 	#replace the negatives with .1
-	data_sheet$Tumor_Corrected_Copies_STPv3 = (ifelse(data_sheet$tumorCorrectedCopies > 0, data_sheet$tumorCorrectedCopies, .1))
+	data_sheet$Tumor_Corrected_Copies_STPv3 = (ifelse(data_sheet$tumorCorrectedCopies > 0.1, data_sheet$tumorCorrectedCopies, .1))
 	#return only the needed columns, contig start end and tumore corrected copies
 	return(data_sheet[,c("CONTIG", "START", "END", "Tumor_Corrected_Copies_STPv3")])
 }
