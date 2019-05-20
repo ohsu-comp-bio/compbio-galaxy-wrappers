@@ -2,7 +2,7 @@
   <description>Converts a PNG to a PDF.</description>
   <command detect_errors="exit_code"><![CDATA[
     #for $input, $filenum in enumerate($inputs)
-      ln -s $input input{$filenum}.png &&
+      ln -s input{$filenum}.png $input &&
     #end for
     convert input*.png input.pdf
   ]]></command>
