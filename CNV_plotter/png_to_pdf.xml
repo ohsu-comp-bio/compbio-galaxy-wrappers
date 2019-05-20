@@ -1,8 +1,8 @@
 <tool id="png_to_pdf" name="PNG to PDF Converter" version="1.0.1">
   <description>Converts a PNG to a PDF.</description>
   <command detect_errors="exit_code"><![CDATA[
-    #for $input, $filenum in enumerate($inputs)
-      ln -s input{$filenum}.png $input &&
+    #for $filenum, $input in enumerate($inputs)
+      ln -s input${filenum}.png $input &&
     #end for
     convert input*.png input.pdf
   ]]></command>
