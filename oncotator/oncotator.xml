@@ -2,9 +2,10 @@
     <description>variant annotation tool</description>
     <requirements>
         <requirement type="package" version="1.9.9.0">oncotator</requirement>
+        <requirement type="package">subprocess32</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[ 
-      oncotator.py
+      $__tool_directory__/oncotator.py
       #if $datasource
       --db-dir $datasource
       #else
