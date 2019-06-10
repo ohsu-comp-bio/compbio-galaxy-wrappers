@@ -1,4 +1,4 @@
-<tool id="vcf_combine" name="Uniquify VCFs" version="0.2.0" >
+<tool id="vcf_combine" name="Uniquify VCFs" version="0.2.1" >
     <description>Remove entries from one VCF in a second VCF.</description>
   <version_command>$__tool_directory__/vcf_combine.py --version</version_command>
 
