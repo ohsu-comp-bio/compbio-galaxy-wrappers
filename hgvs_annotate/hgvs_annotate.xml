@@ -1,0 +1,22 @@
+<tool id="hgvs_annotate" name="HGVS Annotate" version="0.3.0" >
+  <description>Annotate a VCF with HGVS g, c, and p dot.</description>
+  <command detect_errors="exit_code"><![CDATA[
+  python $__tool_directory__/hgvs_annotate.py
+    --input_vcf "${input}"
+    --output_vcf "${output}"
+  ]]></command>
+
+  <inputs>
+    <param name="input" format="vcf" type="data" label="Input VCF" />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output" label="${tool.name} on ${on_string}: vcf" />
+  </outputs>
+  <tests>
+  </tests>
+  <help><![CDATA[
+    Annotate a VCF with HGVS g, c, and p dot.
+  ]]></help>
+</tool>
+
