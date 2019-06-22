@@ -1,7 +1,7 @@
 import argparse
 import gffutils
 
-VERSION = '0.2.1'
+VERSION = '0.2.2'
 
 def supply_args():
     """
@@ -400,18 +400,12 @@ class GeneCentricCnv(object):
                         start_ind = self.den_genes[gene].index(ival)
                     if ival[2] == int_end:
                         end_ind = self.den_genes[gene].index(ival)
-                return end_ind - start_ind + 1
-        else:
-            try:
-                print(self.den_genes[gene])
-                print(len(self.den_genes[gene]))
-            except:
-                pass
-            print(start_exon)
-            print(end_exon)
-            print(int_start)
-            print(int_end)
-            return default
+                try:
+                    return end_ind - start_ind + 1
+                except UnboundLocalError:
+                    return len(self.den_genes[gene])
+
+        return default
 
     def _calc_raw_copy_number(self, val):
         """
