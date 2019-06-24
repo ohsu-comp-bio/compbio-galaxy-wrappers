@@ -4,7 +4,7 @@ import argparse
 import json
 import vcf
 
-VERSION = '0.4.1'
+VERSION = '0.4.2'
 
 def supply_args():
     """
@@ -22,6 +22,7 @@ def supply_args():
     parser.add_argument('--min_dp_fb', default=500, type=int, help='Minimum read depth for FreeBayes variants used in calculation.  Values less than this will not be utilized.')
     parser.add_argument('--min_dp_m2', default=250, type=int, help='Minimum read depth for Mutect2 variants used in calculation.  Values less than this will not be utilized.')
     parser.add_argument('--seq_space', default=0.61, type=float, help='Total genomic size of sequence targets, in Mb.')
+    parser.add_argument('--send_placeholder', type=float, help="Lab isn't interested in our TMB calculation, but we need to send something so they can edit the value in CGD.")
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
@@ -190,12 +191,12 @@ class Writer(object):
     """
 
     """
-    def __init__(self, vcf_reader, outfile, vcf_out, collector):
+    def __init__(self, vcf_reader, outfile, vcf_out, tmb, vars):
         self.outfile = outfile
         self.vcf_out = vcf_out
-        self.tmb = collector.tmb
+        self.tmb = tmb
         self.vcf_reader = vcf_reader
-        self.vars = collector.vars
+        self.vars = vars
 
     def write_json_out(self):
         """
@@ -221,7 +222,11 @@ def main():
     args = supply_args()
     vars = [WholeVcf(vcf, args.gnomad_af, args.m2_tlod, args.min_ab, args.min_ab_pon_ov, args.min_dp_fb, args.min_dp_m2) for vcf in args.infile]
     all_vcfs = VcfCollector(args.seq_space, vars)
-    writer = Writer(vars[0].vcf_reader, args.outfile, args.variants, all_vcfs)
+    if not args.send_placeholder:
+        writer = Writer(vars[0].vcf_reader, args.outfile, args.variants, all_vcfs.tmb, all_vcfs.vars)
+    else:
+        writer = Writer(vars[0].vcf_reader, args.outfile, args.variants, args.send_placeholder, all_vcfs.vars)
+
     writer.write_json_out()
     writer.write_vcf_out()
 

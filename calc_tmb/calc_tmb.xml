@@ -1,4 +1,4 @@
-<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.4.1" >
+<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.4.2" >
     <description>Calculate TMB from VCF annotations.</description>
 
     <command detect_errors="exit_code"><![CDATA[
@@ -18,6 +18,10 @@
         --min_dp_fb '${min_dp_fb}'
         --min_dp_m2 '${min_dp_m2}'
         --seq_space '${seq_space}'
+        #if $send_placeholder
+            --send_placeholder '${send_placeholder}'
+        #end if
+
     ]]></command>
 
     <inputs>
@@ -29,6 +33,7 @@
         <param name="min_dp_fb" type="integer" value="500" label="Min Depth FreeBayes" help="Minimum read depth for FreeBayes variants used in calculation.  Values less than this will not be utilized." />
         <param name="min_dp_m2" type="integer" value="250" label="Min Depth Mutect2" help="Minimum read depth for Mutect2 variants used in calculation.  Values less than this will not be utilized." />
         <param name="seq_space" type="float" value="0.61" label="Genomic Target Size" help="Total genomic sequence target size, in Mb." />
+        <param name="send_placeholder" type="float" optional="true" label="Placeholder Value" help="Output this value, instead of the result of the TMB calculation." />
     </inputs>
 
     <outputs>
