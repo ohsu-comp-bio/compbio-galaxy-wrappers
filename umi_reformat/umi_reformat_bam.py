@@ -31,7 +31,7 @@ def main():
 
     for align in mybam:
         ident = align.query_name
-        umi = ident.split(':')[-1]
+        umi = ident.split(':')[-1].split('_')[1]
         #        this_seq = align.query_sequence
 #        umi = this_seq[:12]
 #        align.query_sequence = this_seq[22:]
