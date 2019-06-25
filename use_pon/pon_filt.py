@@ -50,7 +50,30 @@ def supply_args():
 
     return args
 
+class VcfWriter(object):
+    """
+    Write a VCF.  A header needs to be supplied, which is simply a list of all header lines.
+    Also, the body needs to be supplied, which is additionally just a list of ordered lines.
+    Creating these formatted lines is done by VcfRecBase.
+    """
+    def __init__(self, filename, vcf, header):
+        self.vcf = vcf
+        self.filename = filename
+        self.header = header
 
+    def write_me(self):
+        """
+        Perform writing of MyVcf structure.
+        :return:
+        """
+        with open(self.filename, 'w') as outvcf:
+            for entry in self.header:
+                outvcf.write(entry)
+                outvcf.write('\n')
+            for entry in self.vcf:
+                to_write = '\t'.join(entry)
+                outvcf.write(to_write)
+                outvcf.write('\n')
 
 class VcfRecBase(object):
     """
@@ -91,10 +114,26 @@ class VcfRecBase(object):
         """
         vafs = []
         for samp, val in self.samps.items():
-            vafs.append(float(val['AF']))
+            try:
+                vafs.append(float(val['AF']))
+            except KeyError:
+                vafs.append(self._get_from_ad(val['AD']))
         return vafs
 
-    def _retr_write(self, val, delim):
+    def _get_from_ad(self, depths):
+        """
+        Retrieve VAFs from the AD values, instead of and actual AF sample field.
+        Depths are in [ref, alt] format.
+        If there are additional alternate alleles, you would have additional entries in the depth list.
+        :return:
+        """
+        ref_cnt = depths[0]
+        alt_cnt = depths[1]
+        vaf = alt_cnt / (alt_cnt + ref_cnt + 0.0)
+        return vaf
+
+    @staticmethod
+    def _retr_write(val, delim):
         """
         Return writable version of basic delimited strings.
         :return:
@@ -130,12 +169,12 @@ class VcfRecBase(object):
 
     def retr_curr_values(self):
         """
-        Return current state of vcf rec.
+        Return current state of vcfkdl rec.
         :return:
         """
         to_write = [self.chrom, self.coord, self.ident, self.ref, self.alt, self.qual,
-                self._retr_write(self.filt, delim=';'),
-                self._retr_info_write()]
+                    self._retr_write(self.filt, delim=';'),
+                    self._retr_info_write()]
         if self.frmt:
             to_write.append(self._retr_write(self.frmt, delim=':'))
             to_write.extend(self._retr_samps_write())
@@ -181,24 +220,6 @@ class VcfRecBase(object):
         except:
             return None
 
-    def _calc_ab(self):
-        """
-        Get the average allele balance for a specific genotype.
-        :return:
-        """
-        all_vafs = []
-        for entry in self.rec.samples:
-            if entry['GT'] == '0/1':
-                ref_cnt = entry['AD'][0]
-                alt_cnt = entry['AD'][1]
-                vaf = alt_cnt / (alt_cnt + ref_cnt + 0.0)
-                all_vafs.append(vaf)
-
-        try:
-            return numpy.mean(all_vafs), numpy.std(all_vafs)
-        except:
-            return 0.0, 0.0
-
     def var_req(self):
         """
         Print out the current value of each variable.
@@ -209,6 +230,44 @@ class VcfRecBase(object):
         print("PYVCF INFO: {0}".format(self.info))
         # print("Chromosome: {0}".format(self.chrom))
         # print("Position: {0}".format(self.coord))
+
+class MyVcf(object):
+    """
+    Hold VCF records, manage access to them based in chrom, pos, ref, alt.
+    """
+    def __init__(self, filename, vcfrec, args):
+        self.filename = filename
+        self.args = args
+        self.vcfrec = vcfrec
+        self.header = []
+        self.myvcf = self._create_vcf()
+
+    def _create_vcf(self):
+        """
+        VCF INFO field
+        AVG_AF=0.585;STDEV_AF=0.357;MAX_AF=0.985;MIN_AF=0.024;COSMIC=F;SEEN=18;TLOD=1774.033;CLNSIG=F
+        :return:
+        """
+        myvcf = OrderedDict()
+        with open(self.filename, 'r') as vcf:
+            for line in vcf:
+                if not line.startswith('#'):
+                    vrnt = self._sel_vcfrec(self.vcfrec, line, self.args)
+                    if vrnt.uniq_key not in myvcf:
+                        myvcf[vrnt.uniq_key] = vrnt
+                    else:
+                        raise Exception("No duplicates allowed.  Make sure your VCF doesn't contain them.")
+                else:
+                    self.header.append(line.rstrip('\n'))
+        return myvcf
+
+    def _sel_vcfrec(self, vcfrec, val, args):
+        """
+
+        :return:
+        """
+        return vcfrec(val, args)
+
 
 class VcfRecPON(VcfRecBase):
     """
@@ -238,6 +297,7 @@ class VcfRecPON(VcfRecBase):
         self.pon_label_me = self._label_assess()
         self.is_cosmic = self._assess_bool(self.cosmic)
         self.is_clinvar = self._assess_clinvar(self.clnsig)
+
 
         # temp = ['120539960','124499002','129148234','140434574','15350813','212285339','43814992','44232823','49434801','70356793']
         #
@@ -304,13 +364,10 @@ class VcfRecPON(VcfRecBase):
         Above this value will mean the call can be assessed.  Below, and it will not.
         :return:
         """
-        try:
-            if float(self.avg_ab) < float(self.bkgd_avg):
-                if float(self.stdev_ab) < float(self.bkgd_std):
-                    if int(self.seen) >= int(self.bkgd_min_cnt):
-                        return True
-        except:
-            return False
+        if float(self.avg_ab) < float(self.bkgd_avg):
+            if float(self.stdev_ab) < float(self.bkgd_std):
+                if int(self.seen) >= int(self.bkgd_min_cnt):
+                    return True
         return False
 
     def var_req(self):
@@ -322,44 +379,6 @@ class VcfRecPON(VcfRecBase):
         super(VcfRecPON, self).var_req()
         print("Assess Background?: {0}".format(self.assess_bkgd))
         print("Hard Remove?: {0}".format(self.remove_me))
-
-
-class MyVcf(object):
-    """
-    Hold VCF records, manage access to them based in chrom, pos, ref, alt.
-    """
-    def __init__(self, filename, vcfrec, args):
-        self.filename = filename
-        self.args = args
-        self.vcfrec = vcfrec
-        self.header = []
-        self.myvcf = self._create_vcf()
-
-    def _create_vcf(self):
-        """
-        VCF INFO field
-        AVG_AF=0.585;STDEV_AF=0.357;MAX_AF=0.985;MIN_AF=0.024;COSMIC=F;SEEN=18;TLOD=1774.033;CLNSIG=F
-        :return:
-        """
-        myvcf = OrderedDict()
-        with open(self.filename, 'r') as vcf:
-            for line in vcf:
-                if not line.startswith('#'):
-                    vrnt = self._sel_vcfrec(self.vcfrec, line, self.args)
-                    if vrnt.uniq_key not in myvcf:
-                        myvcf[vrnt.uniq_key] = vrnt
-                    else:
-                        raise Exception("No duplicates allowed.  Make sure your VCF doesn't contain them.")
-                else:
-                    self.header.append(line.rstrip('\n'))
-        return myvcf
-
-    def _sel_vcfrec(self, vcfrec, val, args):
-        """
-
-        :return:
-        """
-        return vcfrec(val, args)
 
 
 class MyVcfEdited(MyVcf):
@@ -435,8 +454,8 @@ class PanelOfNormals(MyVcf):
         """
         low_seen = 1000000
         for entry in self.myvcf.values():
-            if entry.info['SEEN'] < low_seen:
-                low_seen = entry.info['SEEN']
+            if int(entry.info['SEEN']) < low_seen:
+                low_seen = int(entry.info['SEEN'])
         return low_seen
 
     def _delim_to_dict(self, info, delim=';'):
@@ -461,10 +480,11 @@ class VcfRecComp(object):
         if the entry is in the PON, at below min_cnt, it can be labeled, though probably not removed (otherwise no need to specify min_cnt)
 
     """
-    def __init__(self, pon_rec, vcf_rec, bkgd_pass_flag, no_clinvar_rm):
+    def __init__(self, pon_rec, vcf_rec, bkgd_pass_flag, pon_flag_below, no_clinvar_rm):
         self.pon_rec = pon_rec
         self.vcf_rec = vcf_rec
         self.bkgd_pass_flag = bkgd_pass_flag
+        self.pon_flag_below = pon_flag_below
         self.no_clinvar_rm = no_clinvar_rm
 
         self.add_flags = []
@@ -492,6 +512,11 @@ class VcfRecComp(object):
             else:
                 self.write_me = False
 
+        # Check if the record is set for labeling.  This will occur if the number of times SEEN is less than
+        # min_cnt and bkgd_min_cnt.
+        if self.pon_rec.pon_label_me:
+            self._add_flag(self.pon_flag_below)
+
         for entry in self.add_flags:
             self.vcf_rec.filt = self._replace_filter(self.vcf_rec.filt, entry)
 
@@ -508,7 +533,7 @@ class VcfRecComp(object):
         Perform the background assessment.
         :return:
         """
-        if float(self.vcf_rec.vafs) >= ((3 * max(self.pon_rec.stdev_ab, min_stdev)) + self.pon_rec.avg_ab):
+        if float(self.vcf_rec.vafs) >= ((3 * float(max(self.pon_rec.stdev_ab, min_stdev))) + float(self.pon_rec.avg_ab)):
             return True
         else:
             return False
@@ -524,7 +549,7 @@ class VcfRecComp(object):
             if pss in filt:
                 return [anno]
         if anno not in filt:
-            return [filt, anno]
+            filt.append(anno)
         return filt
 
 class CompVcf(object):
@@ -535,6 +560,7 @@ class CompVcf(object):
         self.myvcf = myvcf
         self.pon = pon
         self.bkgd_pass_flag = args.bkgd_pass_flag
+        self.pon_flag_below = args.pon_flag_below
         self.no_clinvar_rm = args.no_clinvar_rm
         self.good_vcf, self.bad_vcf = self._start_comp()
 
@@ -543,7 +569,7 @@ class CompVcf(object):
         Do the actual comparisons, according to specified logic.
         :return:
         """
-        comp = VcfRecComp(pon, vcf, self.bkgd_pass_flag, self.no_clinvar_rm)
+        comp = VcfRecComp(pon, vcf, self.bkgd_pass_flag, self.pon_flag_below, self.no_clinvar_rm)
         if comp.write_me:
             return True
         else:
@@ -567,34 +593,6 @@ class CompVcf(object):
             else:
                 good_vcf.append(self.myvcf.myvcf[coord].retr_curr_values())
         return good_vcf, bad_vcf
-
-class VcfWriter(object):
-    """
-
-    """
-    def __init__(self, filename, vcf, header):
-        self.vcf = vcf
-        self.filename = filename
-        self.header = header
-
-    def write_me(self):
-        """
-        Perform writing of MyVcf structure.
-        :return:
-        """
-        with open(self.filename, 'w') as outvcf:
-            # Get header section worked out.
-            # for entry in self.vcf.header:
-            #     outvcf.write(entry)
-            #     outvcf.write('\n')
-            for entry in self.header:
-                outvcf.write(entry)
-                outvcf.write('\n')
-            for entry in self.vcf:
-                to_write = '\t'.join(entry)
-                outvcf.write(to_write)
-                outvcf.write('\n')
-
 
 
 class Hotspots():
