@@ -1,0 +1,11 @@
+## Exomiser Analysis Template for multi-sample VCF files
+# These are all the possible options for running exomiser. Use this as a template for
+# your own set-up.
+# java -Xms2g -Xmx4g -jar exomiser-cli-11.0.0.jar --analysis n18KD_036M0097/analysis_proband.yml
+analysis:
+    # hg19 or hg38 - ensure that the application has been configured to run the specified assembly otherwise it will halt.
+    genomeAssembly: hg19
+    vcf: proband.vcf
+    ped:
+    proband:
+    hpoIds: [

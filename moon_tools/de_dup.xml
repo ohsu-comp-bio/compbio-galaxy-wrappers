@@ -1,0 +1,21 @@
+<tool id="de_dup_hpo_list" name="DeDup HPO Gene List" version="0.0.1">
+    
+    <description>Removes all the HPO genes from the medical exome list </description>
+    
+    <requirements></requirements>
+    
+    <command detect_errors="exit_code"><![CDATA[
+        python $__tool_directory__/de_dup.py "$med_list" "$hpo_list"
+    ]]></command>
+    
+    <inputs>
+        <param type='data' name='hpo_list' label='HPO Gene List' help='List of genes derived from the HPO terms.'/>
+        <param type='data' name='med_list' label='Medical Exome Gene List' help='List of genes on the medical exome list.'/>
+    </inputs>
+    <outputs>
+        <data format='txt' name='de_duped_list' from_work_dir='output.txt' help='List of genes from the medical exome NOT in the HPO gene list.'/>
+    </outputs>
+    <tests></tests>
+    <help>Takes the medical exome and removes all genes which have already been identified in the HPO gene list.</help>
+    <citations></citations>
+</tool>

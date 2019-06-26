@@ -1,0 +1,57 @@
+<tool id='moon_filter' name='Moon Filter' version='0.0.2'>
+    
+    <description>filters and populates the All Rare Variants file from Moon.</description>
+    
+    <command><![CDATA[
+        python $__tool_directory__/Moon_filter_galaxy.py '$all_rare_variants' 
+        #if $gene_list:
+            -geneList '$gene_list'
+        #end if
+        #if $omim_data and $orph_conv and $orph_prev:
+            -omim '$omim_data' -orphConv '$orph_conv' -orphPrev '$orph_prev'
+        #end if
+        #unless $filter_on:
+            -filterOff
+        #end unless
+        #if $non_moon_specs.gene_header:
+            -header $non_moon_specs.gene_header
+        #end if
+    ]]></command>
+    
+    <inputs>
+        <param name="all_rare_variants" type='data' format='txt' label='Variants File' help='All rare variants file from Moon downloads.'/>
+        <param name="gene_list" type='data' format='txt' label='Gene List' help='Optional: List of genes to filter by.' optional='True'/>
+        <section name='data_files' title='Data Files' expanded='True' help='Optional: OMIM and Orphanet files for populating the variants with inheritance and prevelance.'>
+            <param name="omim_data" type='data' format='txt' label='OMIM Data' help='Data from OMIM containing inheritance data. Likely genemap2.txt' optional='True'/>
+            <param name='orph_conv' type='data' format='txt' label='Orphanet Conversion Data' help='Orphanet data with gene symbols and Orphanums' optional='True'/>
+            <param name='orph_prev' type='data' format='txt' label='Orphanet Prevelance Data' help='Orphanet data with orphanums and prevelance data.' optional="True"/>
+        </section>
+        <section name='non_moon_specs' title='Non-Moon File Specifications' expanded='False' help='Information needed to use the moon filter on non-Moon files.'>
+            <param name='gene_header' type='text' label='Gene Column Header' optional='True' help='The header on the gene column in your data.'/>
+        </section>
+        <param name='filter_on' type='boolean' label='Filter?' checked='True' help='Choosing No will turn off all filters other than the gene list. Filter only works on Moon generated files.'/>
+    </inputs>
+    
+    <outputs>
+        <data format='tsv' name='filtered' label='Filtered $on_string' from_work_dir='filtered.tsv' help='Filtered All Rare Variants file, not populated'>
+            <filter>filter_on</filter>
+        </data>
+        <data format='tsv' name='rel_genes' label='Relevant Genes in $on_string' from_work_dir='RelGenes.tsv' help='List of variants in the genes from the gene list.'>
+            <filter>gene_list</filter>
+        </data>
+        <data format='tsv' name='populated' label='Populated $on_string' from_work_dir='populated.tsv' help='Filtered and populated All Rare Variants file.'>
+            <filter>data_files['omim_data'] and data_files['orph_conv'] and data_files['orph_prev']</filter>
+        </data>
+    </outputs>
+    <help>Used to filter and populate an All Rare Variants file from Moon.
+        Can also be used to do any of it's componenet parts alone or in pairs, simply leave off any unnecessary files. 
+        
+        POPULATER: Leave off the gene list file and turn OFF the filter. Can be used on non-Moon files. Specify the header of the gene column.
+        
+        GENE LIST FILTER: Do not include the data files and turn OFF the filter. Can be used on non-Moon files. Specify the header on the gene column.
+        
+        FILTER ONLY: Add only the file to be filtered, do not include the gene list file or the data files. Formatted for Moon-generated files only.
+        
+    </help>
+
+</tool>

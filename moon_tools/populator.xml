@@ -1,0 +1,30 @@
+<tool id='populator' name='Populator' version='0.0.1'>
+
+    <description>populates a variant file with inheritance and prevelance.</description>
+    
+    <command><![CDATA[
+        python $__tool_directory__/Moon_filter_galaxy.py '$all_rare_variants' 
+            -omim '$omim_data' 
+            -orphConv '$orph_conv' 
+            -orphPrev '$orph_prev'
+            -filterOff
+            -header $gene_header
+    ]]></command>
+    
+    <inputs>
+        <param name="all_rare_variants" type='data' format='txt' label='Variants File' help='File to be populated.'/>
+        <param name='gene_header' type='text' label='Gene Column Header' help='The header on the gene column in your data.'/>
+        <section name='data_files' title='Data Files' expanded='True' help='OMIM and Orphanet files for populating the variants with inheritance and prevelance. Download from Shared Data.'>
+            <param name="omim_data" type='data' format='txt' label='OMIM Data' help='Data from OMIM containing inheritance data. Likely genemap2.txt'/>
+            <param name='orph_conv' type='data' format='txt' label='Orphanet Conversion Data' help='Orphanet data with gene symbols and Orphanums'/>
+            <param name='orph_prev' type='data' format='txt' label='Orphanet Prevelance Data' help='Orphanet data with orphanums and prevelance data.'/>
+        </section>
+    </inputs>
+    
+    <outputs>
+        <data format='tsv' name='populated' label='Populated $on_string' from_work_dir='populated.tsv' help='File populated with OMIM inheritance, OMIM disorder, Orphanet disorder and Orphanet prevelance.'/>
+    </outputs>
+    <help>Populates a file with OMIM inheritance, OMIM disorder, Orphanet disorder and Orphanet prevelance. 
+    </help>
+
+</tool>
