@@ -1,0 +1,40 @@
+<tool id="dbnsfp" name="dbNSFP" version="3.5.1" >
+  <description>dbNSFP funcitonal prediction database, including dbscSNV splicing predictions</description>
+
+  <command><![CDATA[
+    ln -fs /home/groups/clinical/RichardsLab/data/resources/dbnsfp/3.5a/* . &&
+    java search_dbNSFP35a
+    -i "${input_vcf}"
+    -o output
+    -s -v 'hg19' -p
+   ]]></command>
+
+  <inputs>   
+    <param name="input_vcf" type="data" format="vcf" required="true" label="Input VCF" help="Input VCF to be annotated." />
+  </inputs>
+
+  <outputs>
+    <data format="txt" name="output_dbnsfp" label="dbNSFP Output" help="dbNSFP Output" from_work_dir="output" />
+    <data format="txt" name="output_dbscsnv" label="dbscSNV Output" help="dbscSNV Output" from_work_dir="output.dbscSNV" />
+    <data format="txt" name="output_spidex" label="SPIDEX Output" help="SPIDEX Output" from_work_dir="output.SPIDEX" />
+  </outputs>
+
+  <tests>
+  </tests>
+
+  <help>
+    dbNSFP is a database developed for functional prediction and annotation of all potential non-synonymous single-nucleotide variants (nsSNVs) in the human genome. Its current version is based on the Gencode release 22 / Ensembl version 79 and includes a total of 83,422,341 nsSNVs and ssSNVs (splicing-site SNVs).  It compiles prediction scores from 18 prediction algorithms (SIFT, Polyphen2-HDIV, Polyphen2-HVAR, LRT, MutationTaster2, MutationAssessor, FATHMM, MetaSVM, MetaLR, CADD, VEST3, PROVEAN, FATHMM-MKL coding, fitCons, DANN, GenoCanyon, Eigen coding, Eigen-PC, M-CAP), 6 conservation scores (PhyloP x 2, phastCons x 2, GERP++ and SiPhy) and other related information including allele frequencies observed in the 1000 Genomes Project phase 3 data, UK10K cohorts data, ExAC consortium data and the NHLBI Exome Sequencing Project ESP6500 data, various gene IDs from different databases, functional descriptions of genes, gene expression and gene interaction information, etc.
+
+https://sites.google.com/site/jpopgen/dbNSFP
+
+  </help>
+
+  <citations>
+    <citation type="doi">10.1002/humu.21517</citation>
+    <citation type="doi">10.1002/humu.22376</citation>
+    <citation type="doi">10.1002/humu.22932</citation>
+    <citation type="doi">10.1093/nar/gku1206</citation>
+  </citations>
+
+</tool>
+

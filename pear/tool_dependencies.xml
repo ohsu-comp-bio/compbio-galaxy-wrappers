@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<tool_dependency>
+  <package name="pear" version="0.9.6">
+      <repository changeset_revision="833c4be8f4d4" name="package_pear_0_9_6" owner="iuc" toolshed="https://toolshed.g2.bx.psu.edu" />
+    </package>
+</tool_dependency>

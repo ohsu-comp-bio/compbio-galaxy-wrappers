@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<tool_dependency>
+    <package name="cutadapt" version="1.6">
+        <repository name="package_cutadapt_1_6" owner="lparsons" />
+    </package>
+</tool_dependency>

@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<tool id="gatk4_renamesampleinvcf" name="GATK4 RenameSampleInVcf (Picard)" version="@WRAPPER_VERSION@0" profile="17.09">
+
+    <description>- Renames a sample within a VCF or BCF.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    <expand macro="requirements"/>
+    <expand macro="version_cmd"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        #include source=$vcf_tabix#
+
+        @CMD_BEGIN@ RenameSampleInVcf
+        --NEW_SAMPLE_NAME ${new_sample_name}
+        --OLD_SAMPLE_NAME ${optional.old_sample_name}
+        #include source=$picard_opts#
+        #include source=$picard_vcf_output_opts#
+        #include source=$vcf_input#
+        #include source=$picard_ref_opts#
+
+    ]]></command>
+
+    <inputs>
+        <expand macro="picard_vcf_params" />
+        <param name="input" argument="--INPUT" type="data" optional="false" format="vcf,vcf_bgzip" label="Input" help="Input single sample VCF or BCF file." />
+        <param name="new_sample_name" argument="--NEW_SAMPLE_NAME" type="text" optional="false" value="null" label="New_Sample_Name" help="New name to give sample in output VCF." />
+        <section name="optional" title="Optional Parameters" expanded="False">
+            <param name="old_sample_name" argument="--OLD_SAMPLE_NAME" type="text" optional="true" value="null" label="Old_Sample_Name" help="Existing name of sample in VCF; if provided, asserts that that is the name of the extant sample name" />
+
+            <expand macro="ref_sel" />
+        </section>
+        <expand macro="picard_params" />
+    </inputs>
+
+    <outputs>
+        <expand macro="picard_vcf_output_params" />
+        <expand macro="picard_output_params" />
+
+    </outputs>
+
+    <tests>
+    </tests>
+
+    <help><![CDATA[
+    Renames a sample within a VCF or BCF.
+
+Summary
+~~~~~~~
+
+This tool enables the user to rename a sample in either a VCF or BCF
+file. It is intended to change the name of a sample in a VCF prior to
+merging with VCF files in which one or more samples have similar names.
+Note that the input VCF file must be single-sample VCF and that the
+NEW_SAMPLE_NAME argument is required.
+
+Inputs
+~~~~~~
+
+-  Input single-sample VCF or BCF file.
+-  Output single-sample VCF or BCF file.
+-  New name to give sample in output VCF.
+-  [Optional] Existing name of sample in VCF; if provided, asserts that
+   that is the name of the extant sample name.
+
+Usage example:
+~~~~~~~~~~~~~~
+
+::
+
+        java -jar picard.jar RenameSampleInVcf \
+        INPUT=input_variants.vcf \
+        OUTPUT=output_variants.vcf \
+        NEW_SAMPLE_NAME=sample
+    
+
+Notes
+~~~~~
+
+The input VCF (or BCF) *must* be single-sample.
+
+    ]]></help>
+
+    <expand macro="citations"/>
+
+</tool>

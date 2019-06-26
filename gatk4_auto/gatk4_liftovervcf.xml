@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<tool id="gatk4_liftovervcf" name="GATK4 LiftoverVcf (Picard)" version="@WRAPPER_VERSION@0" profile="17.09">
+
+    <description>- Lifts over a VCF file from one reference build to another.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    <expand macro="requirements"/>
+    <expand macro="version_cmd"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        #include source=$vcf_tabix#
+
+        @CMD_BEGIN@ LiftoverVcf
+        ${optional.allow_missing_fields_in_header}
+        --CHAIN ${chain}
+        --LIFTOVER_MIN_MATCH ${optional.liftover_min_match}
+        ${optional.log_failed_intervals}
+        ${optional.recover_swapped_ref_alt}
+        --REJECT ${reject}
+        ${optional.warn_on_missing_contig}
+        ${optional.write_original_alleles}
+        ${optional.write_original_position}
+        #include source=$picard_opts#
+        #include source=$vcf_input#
+        #include source=$picard_ref_opts#
+
+    ]]></command>
+
+    <inputs>
+        <expand macro="picard_vcf_params" />
+        <param name="chain" argument="--CHAIN" type="data" optional="false" format="vcf,vcf_bgzip" label="Chain" help="The liftover chain file. See https://genome.ucsc.edu/goldenPath/help/chain.html for a description of chain files.  See http://hgdownload.soe.ucsc.edu/downloads.html#terms for where to download chain files." />
+        <param name="input" argument="--INPUT" type="data" optional="false" format="vcf,vcf_bgzip" label="Input" help="The input VCF/BCF file to be lifted over." />
+        <expand macro="ref_sel" />
+        <section name="optional" title="Optional Parameters" expanded="False">
+            <param name="allow_missing_fields_in_header" argument="--ALLOW_MISSING_FIELDS_IN_HEADER" type="boolean" truevalue="--ALLOW_MISSING_FIELDS_IN_HEADER" falsevalue="" optional="true" checked="false" label="Allow_Missing_Fields_In_Header" help="Allow INFO and FORMAT in the records that are not found in the header" />
+            <param name="liftover_min_match" argument="--LIFTOVER_MIN_MATCH" type="float" optional="true" value="1.0" label="Liftover_Min_Match" help="The minimum percent match required for a variant to be lifted." />
+            <param name="log_failed_intervals" argument="--LOG_FAILED_INTERVALS" type="boolean" truevalue="--LOG_FAILED_INTERVALS" falsevalue="" optional="true" checked="true" label="Log_Failed_Intervals" help="If true, intervals failing due to match below LIFTOVER_MIN_MATCH will be logged as a warning to the console." />
+            <param name="recover_swapped_ref_alt" argument="--RECOVER_SWAPPED_REF_ALT" type="boolean" truevalue="--RECOVER_SWAPPED_REF_ALT" falsevalue="" optional="true" checked="false" label="Recover_Swapped_Ref_Alt" help="If the REF allele of the lifted site does not match the target genome, that variant is normally rejected. For bi-allelic SNPs, if this is set to true and the ALT allele equals the new REF allele, the REF and ALT alleles will be swapped.  This can rescue some variants; however, do this carefully as some annotations may become invalid, such as any that are alelle-specifc.  See also TAGS_TO_REVERSE and TAGS_TO_DROP." />
+            <param name="warn_on_missing_contig" argument="--WARN_ON_MISSING_CONTIG" type="boolean" truevalue="--WARN_ON_MISSING_CONTIG" falsevalue="" optional="true" checked="false" label="Warn_On_Missing_Contig" help="Warn on missing contig." />
+            <param name="write_original_alleles" argument="--WRITE_ORIGINAL_ALLELES" type="boolean" truevalue="--WRITE_ORIGINAL_ALLELES" falsevalue="" optional="true" checked="false" label="Write_Original_Alleles" help="Write the original alleles for lifted variants to the INFO field.  If the alleles are identical, this attribute will be omitted." />
+            <param name="write_original_position" argument="--WRITE_ORIGINAL_POSITION" type="boolean" truevalue="--WRITE_ORIGINAL_POSITION" falsevalue="" optional="true" checked="false" label="Write_Original_Position" help="Write the original contig/position for lifted variants to the INFO field." />
+
+        </section>
+        <expand macro="picard_params" />
+    </inputs>
+
+    <outputs>
+        <expand macro="picard_vcf_output_params" />
+        <expand macro="picard_output_params" />
+        <data format="vcf" name="reject" label="${tool.name} on ${on_string}: vcf" />
+    </outputs>
+
+    <tests>
+    </tests>
+
+    <help><![CDATA[
+    Summary
+~~~~~~~
+
+Tool for "lifting over" a VCF from one genome build to another,
+producing a properly headered, sorted and indexed VCF in one go.
+
+Details
+~~~~~~~
+
+| This tool adjusts the coordinates of variants within a VCF file to
+  match a new reference. The output file will be sorted and indexed
+  using the target reference build. To be clear, #REFERENCE_SEQUENCE
+  should be the *target* reference build (that is, the "new" one). The
+  tool is based on the `UCSC LiftOver
+  tool <http://genome.ucsc.edu/cgi-bin/hgLiftOver>`__ and uses a UCSC
+  chain file to guide its operation.
+| For each variant, the tool will look for the target coordinate,
+  reverse-complement and left-align the variant if needed, and, in the
+  case that the reference and alternate alleles of a SNP have been
+  swapped in the new genome build, it will adjust the SNP, and correct
+  AF-like INFO fields and the relevant genotypes.
+
+Example
+~~~~~~~
+
+::
+
+    java -jar picard.jar LiftoverVcf \\
+        I=input.vcf \\
+        O=lifted_over.vcf \\
+        CHAIN=b37tohg38.chain \\
+        REJECT=rejected_variants.vcf \\
+        R=reference_sequence.fasta
+    
+
+Caveats
+~~~~~~~
+
+Rejected Records
+^^^^^^^^^^^^^^^^
+
+Records may be rejected because they cannot be lifted over or because of
+sequence incompatibilities between the source and target reference
+genomes. Rejected records will be emitted to the #REJECT file using the
+source genome build coordinates. The reason for the rejection will be
+stated in the FILTER field, and more detail may be placed in the INFO
+field.
+
+Memory Use
+^^^^^^^^^^
+
+LiftOverVcf sorts the output using a
+htsjdk.samtools.util.SortingCollection which relies on
+#MAX_RECORDS_IN_RAM to specify how many (vcf) records to hold in memory
+before "spilling" to disk. The default value is reasonable when sorting
+SAM files, but not for VCFs as there is no good default due to the
+dependence on the number of samples and amount of information in the
+INFO and FORMAT fields. Consider lowering to 100,000 or even less if you
+have many genotypes.
+
+    ]]></help>
+
+    <expand macro="citations"/>
+
+</tool>

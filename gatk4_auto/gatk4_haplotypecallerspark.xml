@@ -1,0 +1,249 @@
+<tool id="gatk4_haplotypecallerspark" name="GATK4 HaplotypeCallerSpark" profile="17.09" version="@WRAPPER_VERSION@0">
+  <description>- HaplotypeCaller on Spark</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[#include source=$vcf_tabix_multi#
+@CMD_BEGIN@ HaplotypeCallerSpark
+--active-probability-threshold ${advanced.active-probability-threshold}
+${advanced.all-site-pls}
+--alleles ${optional.alleles}
+${advanced.allow-non-unique-kmers-in-ref}
+${optional.annotate-with-num-discovered-alleles}
+--annotation ${optional.annotation}
+--annotation-group ${optional.annotation-group}
+--annotations-to-exclude ${optional.annotations-to-exclude}
+--assembly-region-padding ${optional.assembly-region-padding}
+--bam-output ${advanced.bam-output}
+--bam-partition-size ${optional.bam-partition-size}
+--bam-writer-type ${advanced.bam-writer-type}
+--base-quality-score-threshold ${optional.base-quality-score-threshold}
+--comp ${advanced.comp}
+--conf ${optional.conf}
+${advanced.consensus}
+--contamination-fraction-per-sample-file ${advanced.contamination-fraction-per-sample-file}
+--contamination-fraction-to-filter ${optional.contamination-fraction-to-filter}
+--dbsnp ${optional.dbsnp}
+${advanced.debug}
+${advanced.disable-optimizations}
+--disable-read-filter ${optional.disable-read-filter}
+${optional.disable-sequence-dictionary-validation}
+${advanced.disable-tool-default-annotations}
+${optional.disable-tool-default-read-filters}
+${advanced.do-not-run-physical-phasing}
+${advanced.dont-increase-kmer-sizes-for-cycles}
+${advanced.dont-trim-active-regions}
+${advanced.dont-use-soft-clipped-bases}
+--emit-ref-confidence ${advanced.emit-ref-confidence}
+${advanced.enable-all-annotations}
+--exclude-intervals ${optional.exclude-intervals}
+--founder-id ${optional.founder-id}
+--gatk-config-file ${optional.gatk-config-file}
+--gcs-max-retries ${optional.gcs-max-retries}
+${advanced.genotype-filtered-alleles}
+--genotyping-mode ${optional.genotyping-mode}
+--graph-output ${optional.graph-output}
+--gvcf-gq-bands ${advanced.gvcf-gq-bands}
+--heterozygosity ${optional.heterozygosity}
+--heterozygosity-stdev ${optional.heterozygosity-stdev}
+--indel-heterozygosity ${optional.indel-heterozygosity}
+--indel-size-to-eliminate-in-ref-model ${advanced.indel-size-to-eliminate-in-ref-model}
+--input ${input}
+--input-prior ${advanced.input-prior}
+--interval-exclusion-padding ${optional.interval-exclusion-padding}
+--interval-merging-rule ${optional.interval-merging-rule}
+--interval-padding ${optional.interval-padding}
+--interval-set-rule ${optional.interval-set-rule}
+--intervals ${optional.intervals}
+--kmer-size ${advanced.kmer-size}
+--max-alternate-alleles ${advanced.max-alternate-alleles}
+--max-assembly-region-size ${optional.max-assembly-region-size}
+--max-genotype-count ${advanced.max-genotype-count}
+--max-mnp-distance ${advanced.max-mnp-distance}
+--max-num-haplotypes-in-population ${advanced.max-num-haplotypes-in-population}
+--max-prob-propagation-distance ${advanced.max-prob-propagation-distance}
+--max-reads-per-alignment-start ${optional.max-reads-per-alignment-start}
+--min-assembly-region-size ${optional.min-assembly-region-size}
+--min-base-quality-score ${optional.min-base-quality-score}
+--min-dangling-branch-length ${advanced.min-dangling-branch-length}
+--min-pruning ${advanced.min-pruning}
+--native-pair-hmm-threads ${optional.native-pair-hmm-threads}
+${optional.native-pair-hmm-use-double-precision}
+--num-pruning-samples ${advanced.num-pruning-samples}
+--num-reducers ${optional.num-reducers}
+--num-reference-samples-if-no-call ${optional.num-reference-samples-if-no-call}
+--output ${output}
+--output-mode ${optional.output-mode}
+--output-shard-tmp-dir ${optional.output-shard-tmp-dir}
+--pair-hmm-gap-continuation-penalty ${advanced.pair-hmm-gap-continuation-penalty}
+--pair-hmm-implementation ${advanced.pair-hmm-implementation}
+--pcr-indel-model ${advanced.pcr-indel-model}
+--pedigree ${optional.pedigree}
+--phred-scaled-global-read-mismapping-rate ${advanced.phred-scaled-global-read-mismapping-rate}
+--population-callset ${optional.population-callset}
+--program-name ${optional.program-name}
+--read-filter ${optional.read-filter}
+--read-index ${optional.read-index}
+--read-shard-padding ${optional.read-shard-padding}
+--read-shard-size ${optional.read-shard-size}
+--read-validation-stringency ${optional.read-validation-stringency}
+${deprecated.recover-dangling-heads}
+--reference ${reference}
+--sample-name ${optional.sample-name}
+--sample-ploidy ${optional.sample-ploidy}
+${optional.sharded-output}
+--smith-waterman ${advanced.smith-waterman}
+--spark-master ${optional.spark-master}
+--standard-min-confidence-threshold-for-calling ${optional.standard-min-confidence-threshold-for-calling}
+${advanced.use-alleles-trigger}
+${advanced.use-filtered-reads-for-annotations}
+${optional.use-jdk-deflater}
+${optional.use-jdk-inflater}
+${optional.use-new-qual-calculator}
+--verbosity ${optional.verbosity}
+#include source=$picard_opts#
+#include source=$picard_vcf_output_opts#
+#include source=$vcf_input_multi#
+#include source=$picard_ref_opts_opt#
+#include source=$picard_seqdict_opts#]]></command>
+  <inputs>
+    <expand macro="picard_vcf_params"/>
+    <expand macro="vcf_input_params_multi"/>
+    <param name="active-probability-threshold" argument="--active-probability-threshold" type="float" optional="true" value="0.002" min="" max="" label="Active Probability Threshold" help="Minimum probability for a locus to be considered active."/>
+    <param name="all-site-pls" argument="--all-site-pls" type="boolean" truevalue="--all-site-pls" falsevalue="" optional="true" checked="false" label="All Site Pls" help="Annotate all sites with PLs"/>
+    <param name="alleles" argument="--alleles" type="data" optional="true" format="" label="Alleles" help="The set of alleles at which to genotype when --genotyping_mode is GENOTYPE_GIVEN_ALLELES"/>
+    <param name="allow-non-unique-kmers-in-ref" argument="--allow-non-unique-kmers-in-ref" type="boolean" truevalue="--allow-non-unique-kmers-in-ref" falsevalue="" optional="true" checked="false" label="Allow Non Unique Kmers In Ref" help="Allow graphs that have non-unique kmers in the reference"/>
+    <param name="annotate-with-num-discovered-alleles" argument="--annotate-with-num-discovered-alleles" type="boolean" truevalue="--annotate-with-num-discovered-alleles" falsevalue="" optional="true" checked="false" label="Annotate With Num Discovered Alleles" help="If provided, we will annotate records with the number of alternate alleles that were discovered (but not necessarily genotyped) at a given site"/>
+    <param name="annotation" argument="--annotation" type="data" optional="true" format="" label="Annotation" help="One or more specific annotations to add to variant calls"/>
+    <param name="annotation-group" argument="--annotation-group" type="data" optional="true" format="" label="Annotation Group" help="One or more groups of annotations to apply to variant calls"/>
+    <param name="annotations-to-exclude" argument="--annotations-to-exclude" type="data" optional="true" format="" label="Annotations To Exclude" help="One or more specific annotations to exclude from variant calls"/>
+    <param name="assembly-region-padding" argument="--assembly-region-padding" type="integer" optional="true" value="100" min="" max="" label="Assembly Region Padding" help="Number of additional bases of context to include around each assembly region"/>
+    <param name="bam-output" argument="--bam-output" type="text" optional="true" value="null" label="Bam Output" help="File to which assembled haplotypes should be written"/>
+    <param name="bam-partition-size" argument="--bam-partition-size" type="integer" optional="true" value="0" min="" max="" label="Bam Partition Size" help="maximum number of bytes to read from a file into each partition of reads. Setting this higher will result in fewer partitions. Note that this will not be equal to the size of the partition in memory. Defaults to 0, which uses the default split size (determined by the Hadoop input format, typically the size of one HDFS block)."/>
+    <param name="bam-writer-type" argument="--bam-writer-type" type="select" optional="true" label="Bam Writer Type" help="Which haplotypes should be written to the BAM"/>
+    <param name="base-quality-score-threshold" argument="--base-quality-score-threshold" type="integer" optional="true" value="18" min="" max="" label="Base Quality Score Threshold" help="Base qualities below this threshold will be reduced to the minimum (6)"/>
+    <param name="comp" argument="--comp" type="data" optional="true" format="" label="Comp" help="Comparison VCF file(s)"/>
+    <param name="conf" argument="--conf" type="data" optional="true" format="" label="Conf" help="spark properties to set on the spark context in the format &amp;lt;property&amp;gt;=&amp;lt;value&amp;gt;"/>
+    <param name="consensus" argument="--consensus" type="boolean" truevalue="--consensus" falsevalue="" optional="true" checked="false" label="Consensus" help="1000G consensus mode"/>
+    <param name="contamination-fraction-per-sample-file" argument="--contamination-fraction-per-sample-file" type="data" optional="true" format="" label="Contamination Fraction Per Sample File" help="Tab-separated File containing fraction of contamination in sequencing data (per sample) to aggressively remove. Format should be &amp;quot;&amp;lt;SampleID&amp;gt;&amp;lt;TAB&amp;gt;&amp;lt;Contamination&amp;gt;&amp;quot; (Contamination is double) per line; No header."/>
+    <param name="contamination-fraction-to-filter" argument="--contamination-fraction-to-filter" type="float" optional="true" value="0.0" min="" max="" label="Contamination Fraction To Filter" help="Fraction of contamination in sequencing data (for all samples) to aggressively remove"/>
+    <param name="dbsnp" argument="--dbsnp" type="data" optional="true" format="" label="Dbsnp" help="dbSNP file"/>
+    <param name="debug" argument="--debug" type="boolean" truevalue="--debug" falsevalue="" optional="true" checked="false" label="Debug" help="Print out very verbose debug information about each triggering active region"/>
+    <param name="disable-optimizations" argument="--disable-optimizations" type="boolean" truevalue="--disable-optimizations" falsevalue="" optional="true" checked="false" label="Disable Optimizations" help="Don&amp;apos;t skip calculations in ActiveRegions with no variants"/>
+    <param name="disable-read-filter" argument="--disable-read-filter" type="data" optional="true" format="" label="Disable Read Filter" help="Read filters to be disabled before analysis"/>
+    <param name="disable-sequence-dictionary-validation" argument="--disable-sequence-dictionary-validation" type="boolean" truevalue="--disable-sequence-dictionary-validation" falsevalue="" optional="true" checked="false" label="Disable Sequence Dictionary Validation" help="If specified, do not check the sequence dictionaries from our inputs for compatibility. Use at your own risk!"/>
+    <param name="disable-tool-default-annotations" argument="--disable-tool-default-annotations" type="boolean" truevalue="--disable-tool-default-annotations" falsevalue="" optional="true" checked="false" label="Disable Tool Default Annotations" help="Disable all tool default annotations"/>
+    <param name="disable-tool-default-read-filters" argument="--disable-tool-default-read-filters" type="boolean" truevalue="--disable-tool-default-read-filters" falsevalue="" optional="true" checked="false" label="Disable Tool Default Read Filters" help="Disable all tool default read filters (WARNING: many tools will not function correctly without their default read filters on)"/>
+    <param name="do-not-run-physical-phasing" argument="--do-not-run-physical-phasing" type="boolean" truevalue="--do-not-run-physical-phasing" falsevalue="" optional="true" checked="false" label="Do Not Run Physical Phasing" help="Disable physical phasing"/>
+    <param name="dont-increase-kmer-sizes-for-cycles" argument="--dont-increase-kmer-sizes-for-cycles" type="boolean" truevalue="--dont-increase-kmer-sizes-for-cycles" falsevalue="" optional="true" checked="false" label="Dont Increase Kmer Sizes For Cycles" help="Disable iterating over kmer sizes when graph cycles are detected"/>
+    <param name="dont-trim-active-regions" argument="--dont-trim-active-regions" type="boolean" truevalue="--dont-trim-active-regions" falsevalue="" optional="true" checked="false" label="Dont Trim Active Regions" help="If specified, we will not trim down the active region from the full region (active + extension) to just the active interval for genotyping"/>
+    <param name="dont-use-soft-clipped-bases" argument="--dont-use-soft-clipped-bases" type="boolean" truevalue="--dont-use-soft-clipped-bases" falsevalue="" optional="true" checked="false" label="Dont Use Soft Clipped Bases" help="Do not analyze soft clipped bases in the reads"/>
+    <param name="emit-ref-confidence" argument="--emit-ref-confidence" type="select" optional="true" label="Emit Ref Confidence" help="Mode for emitting reference confidence scores"/>
+    <param name="enable-all-annotations" argument="--enable-all-annotations" type="boolean" truevalue="--enable-all-annotations" falsevalue="" optional="true" checked="false" label="Enable All Annotations" help="Use all possible annotations (not for the faint of heart)"/>
+    <param name="exclude-intervals" argument="--exclude-intervals" type="data" optional="true" format="" label="Exclude Intervals" help="One or more genomic intervals to exclude from processing"/>
+    <param name="founder-id" argument="--founder-id" type="data" optional="true" format="" label="Founder Id" help="Samples representing the population &amp;quot;founders&amp;quot;"/>
+    <param name="gatk-config-file" argument="--gatk-config-file" type="text" optional="true" value="null" label="Gatk Config File" help="A configuration file to use with the GATK."/>
+    <param name="gcs-max-retries" argument="--gcs-max-retries" type="integer" optional="true" value="20" min="" max="" label="Gcs Max Retries" help="If the GCS bucket channel errors out, how many times it will attempt to re-initiate the connection"/>
+    <param name="genotype-filtered-alleles" argument="--genotype-filtered-alleles" type="boolean" truevalue="--genotype-filtered-alleles" falsevalue="" optional="true" checked="false" label="Genotype Filtered Alleles" help="Whether to genotype all given alleles, even filtered ones, --genotyping_mode is GENOTYPE_GIVEN_ALLELES"/>
+    <param name="genotyping-mode" argument="--genotyping-mode" type="select" optional="true" label="Genotyping Mode" help="Specifies how to determine the alternate alleles to use for genotyping"/>
+    <param name="graph-output" argument="--graph-output" type="text" optional="true" value="null" label="Graph Output" help="Write debug assembly graph information to this file"/>
+    <param name="gvcf-gq-bands" argument="--gvcf-gq-bands" type="data" optional="true" format="" label="Gvcf Gq Bands" help="Exclusive upper bounds for reference confidence GQ bands (must be in [1, 100] and specified in increasing order)"/>
+    <param name="heterozygosity" argument="--heterozygosity" type="float" optional="true" value="0.001" min="" max="" label="Heterozygosity" help="Heterozygosity value used to compute prior likelihoods for any locus.  See the GATKDocs for full details on the meaning of this population genetics concept"/>
+    <param name="heterozygosity-stdev" argument="--heterozygosity-stdev" type="float" optional="true" value="0.01" min="" max="" label="Heterozygosity Stdev" help="Standard deviation of heterozygosity for SNP and indel calling."/>
+    <param name="indel-heterozygosity" argument="--indel-heterozygosity" type="float" optional="true" value="1.25E-4" min="" max="" label="Indel Heterozygosity" help="Heterozygosity for indel calling.  See the GATKDocs for heterozygosity for full details on the meaning of this population genetics concept"/>
+    <param name="indel-size-to-eliminate-in-ref-model" argument="--indel-size-to-eliminate-in-ref-model" type="integer" optional="true" value="10" min="" max="" label="Indel Size To Eliminate In Ref Model" help="The size of an indel to check for in the reference model"/>
+    <param name="input" argument="--input" type="data" optional="false" format="" label="Input" help="BAM/SAM/CRAM file containing reads"/>
+    <param name="input-prior" argument="--input-prior" type="data" optional="true" format="" label="Input Prior" help="Input prior for calls"/>
+    <param name="interval-exclusion-padding" argument="--interval-exclusion-padding" type="integer" optional="true" value="0" min="" max="" label="Interval Exclusion Padding" help="Amount of padding (in bp) to add to each interval you are excluding."/>
+    <param name="interval-merging-rule" argument="--interval-merging-rule" type="select" optional="true" label="Interval Merging Rule" help="Interval merging rule for abutting intervals"/>
+    <param name="interval-padding" argument="--interval-padding" type="integer" optional="true" value="0" min="" max="" label="Interval Padding" help="Amount of padding (in bp) to add to each interval you are including."/>
+    <param name="interval-set-rule" argument="--interval-set-rule" type="select" optional="true" label="Interval Set Rule" help="Set merging approach to use for combining interval inputs"/>
+    <param name="intervals" argument="--intervals" type="data" optional="true" format="" label="Intervals" help="One or more genomic intervals over which to operate"/>
+    <param name="kmer-size" argument="--kmer-size" type="data" optional="true" format="" label="Kmer Size" help="Kmer size to use in the read threading assembler"/>
+    <param name="max-alternate-alleles" argument="--max-alternate-alleles" type="integer" optional="true" value="6" min="" max="" label="Max Alternate Alleles" help="Maximum number of alternate alleles to genotype"/>
+    <param name="max-assembly-region-size" argument="--max-assembly-region-size" type="integer" optional="true" value="300" min="" max="" label="Max Assembly Region Size" help="Maximum size of an assembly region"/>
+    <param name="max-genotype-count" argument="--max-genotype-count" type="integer" optional="true" value="1024" min="" max="" label="Max Genotype Count" help="Maximum number of genotypes to consider at any site"/>
+    <param name="max-mnp-distance" argument="--max-mnp-distance" type="integer" optional="true" value="0" min="" max="" label="Max Mnp Distance" help="Two or more phased substitutions separated by this distance or less are merged into MNPs."/>
+    <param name="max-num-haplotypes-in-population" argument="--max-num-haplotypes-in-population" type="integer" optional="true" value="128" min="" max="" label="Max Num Haplotypes In Population" help="Maximum number of haplotypes to consider for your population"/>
+    <param name="max-prob-propagation-distance" argument="--max-prob-propagation-distance" type="integer" optional="true" value="50" min="" max="" label="Max Prob Propagation Distance" help="Upper limit on how many bases away probability mass can be moved around when calculating the boundaries between active and inactive assembly regions"/>
+    <param name="max-reads-per-alignment-start" argument="--max-reads-per-alignment-start" type="integer" optional="true" value="50" min="" max="" label="Max Reads Per Alignment Start" help="Maximum number of reads to retain per alignment start position. Reads above this threshold will be downsampled. Set to 0 to disable."/>
+    <param name="min-assembly-region-size" argument="--min-assembly-region-size" type="integer" optional="true" value="50" min="" max="" label="Min Assembly Region Size" help="Minimum size of an assembly region"/>
+    <param name="min-base-quality-score" argument="--min-base-quality-score" type="integer" optional="true" value="10" min="" max="" label="Min Base Quality Score" help="Minimum base quality required to consider a base for calling"/>
+    <param name="min-dangling-branch-length" argument="--min-dangling-branch-length" type="integer" optional="true" value="4" min="" max="" label="Min Dangling Branch Length" help="Minimum length of a dangling branch to attempt recovery"/>
+    <param name="min-pruning" argument="--min-pruning" type="integer" optional="true" value="2" min="" max="" label="Min Pruning" help="Minimum support to not prune paths in the graph"/>
+    <param name="native-pair-hmm-threads" argument="--native-pair-hmm-threads" type="integer" optional="true" value="4" min="" max="" label="Native Pair Hmm Threads" help="How many threads should a native pairHMM implementation use"/>
+    <param name="native-pair-hmm-use-double-precision" argument="--native-pair-hmm-use-double-precision" type="boolean" truevalue="--native-pair-hmm-use-double-precision" falsevalue="" optional="true" checked="false" label="Native Pair Hmm Use Double Precision" help="use double precision in the native pairHmm. This is slower but matches the java implementation better"/>
+    <param name="num-pruning-samples" argument="--num-pruning-samples" type="integer" optional="true" value="1" min="" max="" label="Num Pruning Samples" help="Number of samples that must pass the minPruning threshold"/>
+    <param name="num-reducers" argument="--num-reducers" type="integer" optional="true" value="0" min="" max="" label="Num Reducers" help="For tools that shuffle data or write an output, sets the number of reducers. Defaults to 0, which gives one partition per 10MB of input."/>
+    <param name="num-reference-samples-if-no-call" argument="--num-reference-samples-if-no-call" type="integer" optional="true" value="0" min="" max="" label="Num Reference Samples If No Call" help="Number of hom-ref genotypes to infer at sites not present in a panel"/>
+    <param name="output" argument="--output" type="text" optional="false" value="null" label="Output" help="Single file to which variants should be written"/>
+    <param name="output-mode" argument="--output-mode" type="select" optional="true" label="Output Mode" help="Specifies which type of calls we should output"/>
+    <param name="output-shard-tmp-dir" argument="--output-shard-tmp-dir" type="text" optional="true" value="null" label="Output Shard Tmp Dir" help="when writing a bam, in single sharded mode this directory to write the temporary intermediate output shards, if not specified .parts/ will be used"/>
+    <param name="pair-hmm-gap-continuation-penalty" argument="--pair-hmm-gap-continuation-penalty" type="integer" optional="true" value="10" min="" max="" label="Pair Hmm Gap Continuation Penalty" help="Flat gap continuation penalty for use in the Pair HMM"/>
+    <param name="pair-hmm-implementation" argument="--pair-hmm-implementation" type="select" optional="true" label="Pair Hmm Implementation" help="The PairHMM implementation to use for genotype likelihood calculations"/>
+    <param name="pcr-indel-model" argument="--pcr-indel-model" type="select" optional="true" label="Pcr Indel Model" help="The PCR indel model to use"/>
+    <param name="pedigree" argument="--pedigree" type="data" optional="true" format="" label="Pedigree" help="Pedigree file for determining the population &amp;quot;founders&amp;quot;"/>
+    <param name="phred-scaled-global-read-mismapping-rate" argument="--phred-scaled-global-read-mismapping-rate" type="integer" optional="true" value="45" min="" max="" label="Phred Scaled Global Read Mismapping Rate" help="The global assumed mismapping rate for reads"/>
+    <param name="population-callset" argument="--population-callset" type="data" optional="true" format="" label="Population Callset" help="Callset to use in calculating genotype priors"/>
+    <param name="program-name" argument="--program-name" type="text" optional="true" value="null" label="Program Name" help="Name of the program running"/>
+    <param name="read-filter" argument="--read-filter" type="data" optional="true" format="" label="Read Filter" help="Read filters to be applied before analysis"/>
+    <param name="read-index" argument="--read-index" type="data" optional="true" format="" label="Read Index" help="Indices to use for the read inputs. If specified, an index must be provided for every read input and in the same order as the read inputs. If this argument is not specified, the path to the index for each input will be inferred automatically."/>
+    <param name="read-shard-padding" argument="--read-shard-padding" type="integer" optional="true" value="100" min="" max="" label="Read Shard Padding" help="Each read shard has this many bases of extra context on each side. Read shards must have as much or more padding than assembly regions."/>
+    <param name="read-shard-size" argument="--read-shard-size" type="integer" optional="true" value="5000" min="" max="" label="Read Shard Size" help="Maximum size of each read shard, in bases. For good performance, this should be much larger than the maximum assembly region size."/>
+    <param name="read-validation-stringency" argument="--read-validation-stringency" type="select" optional="true" label="Read Validation Stringency" help="Validation stringency for all SAM/BAM/CRAM/SRA files read by this program.  The default stringency value SILENT can improve performance when processing a BAM file in which variable-length data (read, qualities, tags) do not otherwise need to be decoded."/>
+    <param name="recover-dangling-heads" argument="--recover-dangling-heads" type="boolean" truevalue="--recover-dangling-heads" falsevalue="" optional="true" checked="false" label="Recover Dangling Heads" help="This argument is deprecated since version 3.3"/>
+    <param name="reference" argument="--reference" type="text" optional="false" value="null" label="Reference" help="Reference sequence file"/>
+    <param name="sample-name" argument="--sample-name" type="text" optional="true" value="null" label="Sample Name" help="Name of single sample to use from a multi-sample bam"/>
+    <param name="sample-ploidy" argument="--sample-ploidy" type="integer" optional="true" value="2" min="" max="" label="Sample Ploidy" help="Ploidy (number of chromosomes) per sample. For pooled data, set to (Number of samples in each pool * Sample Ploidy)."/>
+    <param name="sharded-output" argument="--sharded-output" type="boolean" truevalue="--sharded-output" falsevalue="" optional="true" checked="false" label="Sharded Output" help="For tools that write an output, write the output in multiple pieces (shards)"/>
+    <param name="smith-waterman" argument="--smith-waterman" type="select" optional="true" label="Smith Waterman" help="Which Smith-Waterman implementation to use, generally FASTEST_AVAILABLE is the right choice"/>
+    <param name="spark-master" argument="--spark-master" type="text" optional="true" value="local[*]" label="Spark Master" help="URL of the Spark Master to submit jobs to when using the Spark pipeline runner."/>
+    <param name="standard-min-confidence-threshold-for-calling" argument="--standard-min-confidence-threshold-for-calling" type="float" optional="true" value="10.0" min="" max="" label="Standard Min Confidence Threshold For Calling" help="The minimum phred-scaled confidence threshold at which variants should be called"/>
+    <param name="use-alleles-trigger" argument="--use-alleles-trigger" type="boolean" truevalue="--use-alleles-trigger" falsevalue="" optional="true" checked="false" label="Use Alleles Trigger" help="Use additional trigger on variants found in an external alleles file"/>
+    <param name="use-filtered-reads-for-annotations" argument="--use-filtered-reads-for-annotations" type="boolean" truevalue="--use-filtered-reads-for-annotations" falsevalue="" optional="true" checked="false" label="Use Filtered Reads For Annotations" help="Use the contamination-filtered read maps for the purposes of annotating variants"/>
+    <param name="use-jdk-deflater" argument="--use-jdk-deflater" type="boolean" truevalue="--use-jdk-deflater" falsevalue="" optional="true" checked="false" label="Use Jdk Deflater" help="Whether to use the JdkDeflater (as opposed to IntelDeflater)"/>
+    <param name="use-jdk-inflater" argument="--use-jdk-inflater" type="boolean" truevalue="--use-jdk-inflater" falsevalue="" optional="true" checked="false" label="Use Jdk Inflater" help="Whether to use the JdkInflater (as opposed to IntelInflater)"/>
+    <param name="use-new-qual-calculator" argument="--use-new-qual-calculator" type="boolean" truevalue="--use-new-qual-calculator" falsevalue="" optional="true" checked="false" label="Use New Qual Calculator" help="If provided, we will use the new AF model instead of the so-called exact model"/>
+    <param name="verbosity" argument="--verbosity" type="select" optional="true" label="Verbosity" help="Control verbosity of logging."/>
+    <section expanded="False" name="optional" title="Optional Parameters">
+      <expand macro="ref_sel"/>
+      <expand macro="seq_dict_sel"/>
+    </section>
+    <expand macro="picard_params"/>
+  </inputs>
+  <outputs>
+    <expand macro="picard_vcf_output_params"/>
+    <expand macro="picard_output_params"/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[\*******************************************************************************\*
+\* This tool DOES NOT match the output of HaplotypeCaller. \* \* It is
+still under development and should not be used for production work. \*
+\* For evaluation only. \* \* Use the non-spark HaplotypeCaller if you
+care about the results. \*
+\*******************************************************************************\*
+Call germline SNPs and indels via local re-assembly of haplotypes.
+
+This is an implementation of HaplotypeCaller using spark to distribute
+the computation. It is still in an early stage of development and does
+not yet support all the options that the non-spark version does.
+Specifically it does not support the --dbsnp, --comp, and --bamOutput
+options.
+
+Usage Example
+~~~~~~~~~~~~~
+
+::
+
+    gatk HaplotypeCallerSpark \
+    -R Homo_sapiens_assembly38.fasta \
+    -I input.bam \
+    -O output.vcf.gz
+    
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>
