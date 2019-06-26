@@ -74,17 +74,17 @@ def main():
 
     het_std = numpy.std(numpy.array(all_ab['0/1']))
 
-    if hom_ref >= 0.02 or hom_alt >= 0.02:
-        to_write = [sample_id, run_id, str(hom_ref), str(hom_alt), str(het)]
-        print('\t'.join(to_write))
+    # if hom_ref >= 0.02 or hom_alt >= 0.02:
+    #     to_write = [sample_id, run_id, str(hom_ref), str(hom_alt), str(het)]
+    #     print('\t'.join(to_write))
 
-    print("0/0: " + str(hom_ref))
-    print("0/1: " + str(het))
-    print("1/1: " + str(hom_alt))
+    # print("0/0: " + str(hom_ref))
+    # print("0/1: " + str(het))
+    # print("1/1: " + str(hom_alt))
 
-    print("0/0 std: " + str(numpy.std(numpy.array(all_ab['0/0']))))
-    print("0/1 std: " + str(het_std))
-    print("1/1 std: " + str(numpy.std(numpy.array(all_ab['1/1']))))
+    # print("0/0 std: " + str(numpy.std(numpy.array(all_ab['0/0']))))
+    print(str(het_std))
+    # print("1/1 std: " + str(numpy.std(numpy.array(all_ab['1/1']))))
 
     handle_out = open(args.outfile, 'w')
     out_metric = {'allele_balance_hom_ref': hom_ref, 'allele_balance_het_std': het_std}

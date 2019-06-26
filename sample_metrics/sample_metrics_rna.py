@@ -7,6 +7,7 @@
 # todo:
 #   optional arguments when tpm is empty.
 
+
 from __future__ import print_function
 
 import argparse
@@ -14,7 +15,7 @@ import json
 import numpy
 from pybedtools import BedTool
 
-VERSION = '0.22.0'
+VERSION = '0.2.0'
 
 
 def main():

@@ -1,0 +1,28 @@
+<tool id="calc_norm" name="Normalize from HTSeq" version="0.4.0" >
+    <description>Calculate TPM, FPKM, and FPKM-UQ values from an existing HTSeq-Count counts table. </description>
+
+    <command interpreter="python">
+        calc_norm.py $input_htseq $input_gtf $output_fpkm $output_fpkm_uq $output_tpm
+    </command>
+
+    <inputs>
+        <param name="input_htseq" type="data" format="txt" label="HTSeq Counts Table" help="Input HTSeq-Count tab separated file." />
+        <param name="input_gtf" type="data" format="gtf" label="GTF File" help="Should be the same GTF file used to generate counts tables. Works with Homo_sapiens.GRCh37.75.gtf." />
+    </inputs>
+
+    <outputs>
+      <data format="txt" name="output_fpkm" label="${tool.name} on ${on_string}: FPKM" help="Outputs HTSeq-Count formatted file (FPKM)." />
+      <data format="txt" name="output_fpkm_uq" label="${tool.name} on ${on_string}: FPKM-UQ" help="Outputs HTSeq-Count formatted file (FPKM-UQ)." />
+      <data format="txt" name="output_tpm" label="${tool.name} on ${on_string}: TPM" help="Outputs HTSeq-Count formatted file (TPM)." />
+    </outputs>
+
+    <tests></tests>
+
+    <help><![CDATA[
+    python calc_norm.py -h    
+  ]]></help>
+
+    <citations></citations>
+
+</tool>
+
