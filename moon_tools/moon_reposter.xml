@@ -1,0 +1,19 @@
+<tool id="moon_reposter" name="Moon Reposter" version="1.0">
+  <description>Creates a new Moon sample based on an old Moon sample with a new VCF.</description>
+  <command detect_errors="exit_code"><![CDATA[
+    ln -s $new_vcf ${sample_name}.vcf &&
+    ln -s $cnv_vcf cnv_vcf.vcf &&
+    ln -s $__tool_directory__/moon_api.py moon_api.py &&
+    $__tool_directory__/mito_merge.sh $moon_id ${sample_name}.vcf cnv_vcf.vcf > $log
+  ]]></command>
+
+  <inputs>
+    <param name="sample_name" type="text" label="New Sample Name" help="Name for the new sample in Moon. Example 15-5380-WM"/>
+    <param name="moon_id" type="integer" value="0" label="Current Moon ID" help="To find the Moon ID go to the Moon page for the sample in question and look in the url. example: https://oregon.moon.diploid.com/samples/7079/analysis the Moon ID is 7079."/>
+    <param name="new_vcf" type="data" format="vcf" label="New VCF"/>
+    <param name="cnv_vcf" type="data" format="vcf" label="CNV VCF"/>
+  </inputs>
+  <outputs>
+    <data name="log" format="txt" label="${tool.name} on ${on_string}: Log"/>
+  </outputs>
+</tool>

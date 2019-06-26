@@ -1,0 +1,37 @@
+<tool id="gatk4_sortvcf" name="GATK4 SortVcf (Picard)" profile="17.09" version="@WRAPPER_VERSION@0">
+  <description>- Sorts one or more VCF files.</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[#include source=$vcf_tabix_multi#
+@CMD_BEGIN@ SortVcf
+#include source=$picard_opts#
+#include source=$picard_vcf_output_opts#
+#include source=$vcf_input_multi_picard#
+#include source=$picard_ref_opts_opt#
+#include source=$picard_seqdict_opts#]]></command>
+  <inputs>
+    <expand macro="vcf_input_params_multi"/>
+    <expand macro="gzip_vcf_params"/>
+    <section expanded="False" name="optional" title="Optional Parameters">
+      <expand macro="ref_sel"/>
+      <expand macro="seq_dict_sel"/>
+    </section>
+    <expand macro="picard_params"/>
+  </inputs>
+  <outputs>
+    <expand macro="gzip_vcf_output_params"/>
+    <expand macro="picard_output_params"/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[Sorts one or more VCF files according to the order of the contigs in the
+header/sequence dictionary and then by coordinate. Can accept an
+external dictionary. If no external dictionary is supplied, multiple
+inputs' headers must have the same sequence dictionaries
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>

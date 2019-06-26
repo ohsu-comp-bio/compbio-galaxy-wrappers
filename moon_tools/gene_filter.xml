@@ -1,0 +1,19 @@
+<tool id='cnv_filter' name='CNV Filter' version='0.0.2'>
+    <description>Filter a CNV list by a gene list and by frequency.</description>
+    
+    <command detect_errors="exit_code"><![CDATA[
+        python $__tool_directory__/gene_filter.py "$cnv_list" "$gene_list"
+    ]]></command>
+    
+    <inputs>
+        <param type='data' name='cnv_list' label='CNV List' help='Complete list of CNVs found.'/>
+        <param type='data' name='gene_list' label='Gene List' help='List of relevant genes.'/>
+    </inputs>
+    <outputs>
+        <data format='tsv' name='f_gene' label='All Relevant Genes $on_string' from_work_dir='filtered.tsv' help='List of all CNVs in relevant genes'/>
+        <data format='tsv' name='u5' label='Under 5 $on_string' from_work_dir='u5.tsv' help='List of CNVs in relevant genes with frquency less than 5%.'/>
+        <data format='tsv' name='u1' label='Under 1 $on_string' from_work_dir='u1.tsv' help='List of CNVs in relevant genes with frquency less than 1%.'/>
+    </outputs>
+    <help>Takes a list of CNVs and filters by a list of genes to return the list of CNVs in relevant genes. Then filters that list by frequency returning a list of those CNVs under 5% and a seperate list of under 1%.</help>
+
+</tool>

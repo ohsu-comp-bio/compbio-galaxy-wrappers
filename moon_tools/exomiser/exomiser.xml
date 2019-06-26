@@ -1,0 +1,153 @@
+<tool id="exomiser11" name="Exomiser v11.0.0" version="11.0.0.0" >
+  <description>A Tool to Annotate and Prioritize Exome Variants</description>
+  <requirements>
+    <requirement type="package" version="4.0.5.1">gatk4</requirement>
+  </requirements>
+  <command detect_errors="exit_code"><![CDATA[
+  echo "starting" >> $log &&
+  export JAVA8_PATH="\$JAVA8_PATH" &&
+  java -version >> $log &&
+  ln -s $proband index_needed.vcf &&
+  gatk IndexFeatureFile -F index_needed.vcf 2>> $log &&
+  gatk RenameSampleInVcf -I index_needed.vcf -O proband.vcf --NEW_SAMPLE_NAME proband 2>> $log &&
+  #if $trio.trio_on:
+    gatk RenameSampleInVcf -I $trio.mother -O mother.vcf --NEW_SAMPLE_NAME mother 2>> $log &&
+    gatk RenameSampleInVcf -I $trio.father -O father.vcf --NEW_SAMPLE_NAME father 2>> $log &&
+    gatk CombineGVCFs -O trio.vcf -V proband.vcf -V mother.vcf -V father.vcf 
+    #if $trio.reference_source.reference_source_selector != "no_ref"
+            #if $trio.reference_source.reference_source_selector != "history"
+                --reference ${trio.reference_source.reference_sequence.fields.path}
+            #else
+                --reference ${trio.reference_source.reference_sequence}
+            #end if
+    #end if
+    2>> $log &&
+    ln -s $__tool_directory__/${trio.gender}.ped ${trio.gender}.ped &&
+  #end if
+
+  #if $hpo_selector.source == "moon":
+    ln -s $__tool_directory__/moon_api.py moon_api.py &&
+    $__tool_directory__/hpo_from_moon_python.sh $hpo_selector.moon_id 2>> $log &&  
+  #else if $hpo_selector.source == "text_input":
+    echo '$hpo_selector.hpo_terms' > hpo_pre.txt &&
+    sed "s/__sq__/'/g" hpo_pre.txt > hpo.txt &&
+  #else:
+    ln -s $hpo_selector.hpo_terms hpo.txt &&
+  #end if
+
+
+  cat 
+  #if $trio.trio_on:
+    $__tool_directory__/trio_pre_${trio.gender}.yml
+  #else:
+    $__tool_directory__/pre.yml
+  #end if
+  
+  hpo.txt
+
+  $__tool_directory__/post.yml > analysis.yml &&
+
+  \$JAVA8_PATH -Xms2g -Xmx4g -jar $__tool_directory__/exomiser-cli-11.0.0/exomiser-cli-11.0.0.jar --analysis analysis.yml >> $log &&
+  Rscript $__tool_directory__/exomiser_merger.R output_AR.variants.tsv output_AD.variants.tsv output_XD.variants.tsv output_XR.variants.tsv output_MT.variants.tsv >> $log
+]]>
+    
+  </command>
+
+  <inputs>
+    <param name="proband" type="data" format="vcf" label="VCF of Proband"/>
+    <conditional name="trio">
+      <param name="trio_on" type="boolean" checked="false" label="Trio?" help="If running a trio, you must use GVCFs."/>
+      <when value="true">
+        <param name="mother" type="data" format="vcf" label="VCF of Mother"/>
+        <param name="father" type="data" format="vcf" label="VCF of Father"/>
+        <param name="gender" type="select" label="Gender">
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+          <option value="other">Other</option>
+        </param>
+        <conditional name="reference_source">
+            <param name="reference_source_selector" type="select" label="Choose the source for the reference list">
+                <option value="cached">Locally cached</option>
+                <option value="history">History</option>
+                <option value="no_ref" selected="true">Do not pass</option>
+            </param>
+            <when value="cached">
+                <param name="reference_sequence" type="select" label="Reference" help="Reference sequence file." >
+                    <options from_data_table="bwa_indexes" >
+                        <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file" />
+                    </options>
+                </param>
+            </when>
+            <when value="history">
+                <param name="reference_sequence" type="data" format="fasta" label="Reference" help="Reference sequence file." />
+            </when>
+        </conditional>
+      </when>
+    </conditional> 
+    <conditional name="hpo_selector">
+      <param name="source" type="select" label="Select Source for HPO terms">
+        <option value="text_input">Input Text</option>
+        <option value="file_input">Choose File</option>
+        <option value="moon" selected="true">Query Moon</option>
+      </param>
+      <when value="text_input">
+        <param name="hpo_terms" type="text" label="HPO Terms"/>
+      </when>
+      <when value="file_input">
+        <param name="hpo_terms" type="data" format="txt" label="File with properly formatted HPO terms."/>
+      </when>
+      <when value="moon">
+        <param name="moon_id" type="integer" label="Moon ID" value="0" help="Find the case in Moon, the ID is the number in the URL."/>
+	<param name="requestor" type="select" label="Requestor" help="Whether to use curl or python to request the information from Moon.">
+          <option value="curl">curl</option>
+          <option value="python" selected="true">python</option>
+        </param>
+      </when>
+    </conditional>
+
+  </inputs>
+
+  <outputs>
+    <data name="AD_genes" format="tsv" from_work_dir="output_AD.genes.tsv" label="${tool.name} on ${on_string}: AD Genes"/>
+    <data name="AD_variants" format="tsv" from_work_dir="output_AD.variants.tsv" label="${tool.name} on ${on_string}: AD Variants"/>
+    <data name="AD_vcf" format="vcf" from_work_dir="output_AD.vcf" label="${tool.name} on ${on_string}: AD VCF"/>
+    <data name="AR_genes" format="tsv" from_work_dir="output_AR.genes.tsv" label="${tool.name} on ${on_string}: AR Genes"/>
+    <data name="AR_variants" format="tsv" from_work_dir="output_AR.variants.tsv" label="${tool.name} on ${on_string}: AR Variants"/>
+    <data name="AR_vcf" format="vcf" from_work_dir="output_AR.vcf" label="${tool.name} on ${on_string}: AR VCF"/>
+    <data name="MT_genes" format="tsv" from_work_dir="output_MT.genes.tsv" label="${tool.name} on ${on_string}: MT Genes"/>
+    <data name="MT_variants" format="tsv" from_work_dir="output_MT.variants.tsv" label="${tool.name} on ${on_string}: MT Variants"/>
+    <data name="MT_vcf" format="vcf" from_work_dir="output_MT.vcf" label="${tool.name} on ${on_string}: MT VCF"/>
+    <data name="XD_genes" format="tsv" from_work_dir="output_XD.genes.tsv" label="${tool.name} on ${on_string}: XD Genes"/>
+    <data name="XD_variants" format="tsv" from_work_dir="output_XD.variants.tsv" label="${tool.name} on ${on_string}: XD Variants"/>
+    <data name="XD_vcf" format="vcf" from_work_dir="output_XD.vcf" label="${tool.name} on ${on_string}: XD VCF"/>
+    <data name="XR_genes" format="tsv" from_work_dir="output_XR.genes.tsv" label="${tool.name} on ${on_string}: XR Genes"/>
+    <data name="XR_variants" format="tsv" from_work_dir="output_XR.variants.tsv" label="${tool.name} on ${on_string}: XR Variants"/>
+    <data name="XR_vcf" format="vcf" from_work_dir="output_XR.vcf" label="${tool.name} on ${on_string}: XR VCF"/>
+    <data name="html_output" format="html" from_work_dir="output.html" label="${tool.name} on ${on_string}: HTML"/>
+    <data name="json_output" format="json" from_work_dir="output.json" label="${tool.name} on ${on_string}: JSON"/>
+    <data name="analysis_file" label="Exomiser YML" from_work_dir="analysis.yml" format="txt"/>
+    <data name="log" format="txt" label="Exomiser log"/>
+    <data name="merged_sorted" format="csv" from_work_dir="merged_sorted.csv" label="${tool.name} on ${on_string}: Merged and Sorted"/>
+    <data name="top_ten" format="csv" from_work_dir="top_ten.csv" label="${tool.name} on ${on_string}: Top Ten"/>
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+The Exomiser is a Java program that finds potential disease-causing variants from whole-exome or whole-genome sequencing data.
+
+Starting from a VCF file and a set of phenotypes encoded using the Human Phenotype Ontology (HPO) it will annotate, filter and prioritise likely causative variants. The program does this based on user-defined criteria such as a variant's predicted pathogenicity, frequency of occurrence in a population and also how closely the given phenotype matches the known phenotype of diseased genes from human and model organism data.
+
+The functional annotation of variants is handled by Jannovar and uses UCSC KnownGene transcript definitions and hg19 genomic coordinates.
+
+Variants are prioritised according to user-defined criteria on variant frequency, pathogenicity, quality, inheritance pattern, and model organism phenotype data. Predicted pathogenicity data is extracted from the dbNSFP resource. Variant frequency data is taken from the 1000 Genomes, ESP and ExAC datasets. Subsets of these frequency and pathogenicity data can be defined to further tune the analysis. Cross-species phenotype comparisons come from our PhenoDigm tool powered by the OWLTools OWLSim algorithm.
+
+The Exomiser was developed by the Computational Biology and Bioinformatics group at the Institute for Medical Genetics and Human Genetics of the Charité - Universitätsmedizin Berlin, the Mouse Informatics Group at the Sanger Institute and other members of the Monarch initiative.
+  </help>
+
+  <citations>
+    <citation type="doi">10.1101/gr.160325.113</citation>
+  </citations>
+
+</tool>
+
