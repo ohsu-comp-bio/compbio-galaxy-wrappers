@@ -1,0 +1,7 @@
+categories: 
+  - "CompBio Galaxy Wrappers"
+description: Variant Annotation Tool
+homepage_url: https://portals.broadinstitute.org/oncotator/
+name: oncotator
+owner: creason
+remote_repository_url: https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/oncotator

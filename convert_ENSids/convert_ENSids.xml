@@ -1,0 +1,26 @@
+<tool id="convert_ENSids" name="Ensembl to Refseq Identifiers" version="0.1.0" >
+    <description>Convert Ensembl identifiers to Refseq identifiers also adds HGVS ids. </description>
+
+    <command interpreter="python">
+        convert_ENSids.py $input $input_txIDtrans $output
+    </command>
+
+    <inputs>
+        <param name="input" type="data" format="txt" label="input" help="tab delmited matrix with ensembl tx in 1st column" />
+        <param name="input_txIDtrans" type="data" format="txt" label="transcriptID_translation" help="Translation file made with BioMart grch37.ensembl.org (biomaRt_2.34.1). " />
+    </inputs>
+
+    <outputs>
+      <data format="txt" name="output" label="${tool.name} on ${on_string}: refseq.out" help="Output has Refseq IDs and HGVS Ids annotation." />
+    </outputs>
+
+    <tests></tests>
+
+    <help><![CDATA[
+    python convert_ENSids.py -h
+  ]]></help>
+
+    <citations></citations>
+
+</tool>
+

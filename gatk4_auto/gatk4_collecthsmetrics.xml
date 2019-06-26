@@ -1,0 +1,138 @@
+<tool id="gatk4_collecthsmetrics" name="GATK4 CollectHsMetrics (Picard)" profile="17.09" version="@WRAPPER_VERSION@0">
+  <description>- Collects hybrid-selection (HS) metrics for a SAM or BAM file.</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[#include source=$picard_bam_index#
+@CMD_BEGIN@ CollectHsMetrics
+#if $optional.ALLELE_FRACTION:
+--ALLELE_FRACTION $optional.ALLELE_FRACTION
+#end if
+--BAIT_INTERVALS $BAIT_INTERVALS
+#if $optional.BAIT_SET_NAME:
+--BAIT_SET_NAME $optional.BAIT_SET_NAME
+#end if
+#if $optional.CLIP_OVERLAPPING_READS:
+$optional.CLIP_OVERLAPPING_READS
+#end if
+#if $optional.COVERAGE_CAP:
+--COVERAGE_CAP $optional.COVERAGE_CAP
+#end if
+--INPUT $INPUT
+#if $optional.METRIC_ACCUMULATION_LEVEL:
+--METRIC_ACCUMULATION_LEVEL $optional.METRIC_ACCUMULATION_LEVEL
+#end if
+#if $optional.MINIMUM_BASE_QUALITY:
+--MINIMUM_BASE_QUALITY $optional.MINIMUM_BASE_QUALITY
+#end if
+#if $optional.MINIMUM_MAPPING_QUALITY:
+--MINIMUM_MAPPING_QUALITY $optional.MINIMUM_MAPPING_QUALITY
+#end if
+#if $optional.NEAR_DISTANCE:
+--NEAR_DISTANCE $optional.NEAR_DISTANCE
+#end if
+--OUTPUT $OUTPUT
+#if $optional.PER_BASE_COVERAGE:
+--PER_BASE_COVERAGE $optional.PER_BASE_COVERAGE
+#end if
+#if $optional.PER_TARGET_COVERAGE:
+--PER_TARGET_COVERAGE $optional.PER_TARGET_COVERAGE
+#end if
+#if $optional.SAMPLE_SIZE:
+--SAMPLE_SIZE $optional.SAMPLE_SIZE
+#end if
+--TARGET_INTERVALS $TARGET_INTERVALS
+#if $optional.THEORETICAL_SENSITIVITY_OUTPUT:
+--THEORETICAL_SENSITIVITY_OUTPUT $optional.THEORETICAL_SENSITIVITY_OUTPUT
+#end if
+#include source=$picard_opts#]]></command>
+  <inputs>
+    <param name="BAIT_INTERVALS" argument="--BAIT_INTERVALS" type="data" optional="false" format="picard_interval_list" label="Bait_Intervals" help="An interval list file that contains the locations of the baits used."/>
+    <param name="INPUT" argument="--INPUT" type="data" optional="false" format="sam,bam" label="Input" help="An aligned SAM or BAM file."/>
+    <param name="TARGET_INTERVALS" argument="--TARGET_INTERVALS" type="data" optional="false" format="picard_interval_list" label="Target_Intervals" help="An interval list file that contains the locations of the targets."/>
+    <section expanded="False" name="optional" title="Optional Parameters">
+      <param name="ALLELE_FRACTION" argument="--ALLELE_FRACTION" type="text" optional="true" value="" label="Allele_Fraction" help="Allele fraction for which to calculate theoretical sensitivity."/>
+      <param name="BAIT_SET_NAME" argument="--BAIT_SET_NAME" type="text" optional="true" value="" label="Bait_Set_Name" help="Bait set name. If not provided it is inferred from the filename of the bait intervals."/>
+      <param name="CLIP_OVERLAPPING_READS" argument="--CLIP_OVERLAPPING_READS" type="boolean" truevalue="--CLIP_OVERLAPPING_READS" falsevalue="" optional="true" checked="true" label="Clip_Overlapping_Reads" help="True if we are to clip overlapping reads, false otherwise."/>
+      <param name="COVERAGE_CAP" argument="--COVERAGE_CAP" type="integer" optional="true" value="200" label="Coverage_Cap" help="Parameter to set a max coverage limit for Theoretical Sensitivity calculations. Default is 200."/>
+      <param name="METRIC_ACCUMULATION_LEVEL" argument="--METRIC_ACCUMULATION_LEVEL" type="text" optional="true" value="ALL_READS" label="Metric_Accumulation_Level" help="The level(s) at which to accumulate metrics."/>
+      <param name="MINIMUM_BASE_QUALITY" argument="--MINIMUM_BASE_QUALITY" type="integer" optional="true" value="20" label="Minimum_Base_Quality" help="Minimum base quality for a base to contribute coverage."/>
+      <param name="MINIMUM_MAPPING_QUALITY" argument="--MINIMUM_MAPPING_QUALITY" type="integer" optional="true" value="20" label="Minimum_Mapping_Quality" help="Minimum mapping quality for a read to contribute coverage."/>
+      <param name="NEAR_DISTANCE" argument="--NEAR_DISTANCE" type="integer" optional="true" value="250" label="Near_Distance" help="The maximum distance between a read and the nearest probe/bait/amplicon for the read to be considered &amp;apos;near probe&amp;apos; and included in percent selected."/>
+      <param name="PER_BASE_COVERAGE" argument="--PER_BASE_COVERAGE" type="data" optional="true" format="" label="Per_Base_Coverage" help="An optional file to output per base coverage information to. The per-base file contains one line per target base and can grow very large. It is not recommended for use with large target sets."/>
+      <param name="PER_TARGET_COVERAGE" argument="--PER_TARGET_COVERAGE" type="data" optional="true" format="" label="Per_Target_Coverage" help="An optional file to output per target coverage information to."/>
+      <param name="SAMPLE_SIZE" argument="--SAMPLE_SIZE" type="integer" optional="true" value="10000" label="Sample_Size" help="Sample Size used for Theoretical Het Sensitivity sampling. Default is 10000."/>
+      <param name="THEORETICAL_SENSITIVITY_OUTPUT" argument="--THEORETICAL_SENSITIVITY_OUTPUT" type="data" optional="true" format="" label="Theoretical_Sensitivity_Output" help="Output for Theoretical Sensitivity metrics where the allele fractions are provided by the ALLELE_FRACTION argument."/>
+    </section>
+    <expand macro="picard_params"/>
+  </inputs>
+  <outputs>
+    <data name="OUTPUT" argument="--OUTPUT" type="data" optional="false" format="tabular" label="${tool.name} on ${on_string}: tabular" help="The output file to write the metrics to."/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[This tool takes a SAM/BAM file input and collects metrics that are
+specific for sequence datasets generated through hybrid-selection.
+Hybrid-selection (HS) is the most commonly used technique to capture
+exon-specific sequences for targeted sequencing experiments such as
+exome sequencing; for more information, please see the corresponding
+`GATK Dictionary
+entry <http://www.broadinstitute.org/gatk/guide/article?id=6331>`__.
+
+This tool requires an aligned SAM or BAM file as well as bait and target
+interval files in Picard interval_list format. You should use the bait
+and interval files that correspond to the capture kit that was used to
+generate the capture libraries for sequencing, which can generally be
+obtained from the kit manufacturer. If the baits and target intervals
+are provided in BED format, you can convert them to the Picard
+interval_list format using Picard's
+`BedToInterval <http://broadinstitute.github.io/picard/command-line-overview.html#BedToIntervalList>`__
+tool.
+
+If a reference sequence is provided, this program will calculate both
+AT_DROPOUT and GC_DROPOUT metrics. Dropout metrics are an attempt to
+measure the reduced representation of reads, in regions that deviate
+from 50% G/C content. This reduction in the number of aligned reads is
+due to the increased numbers of errors associated with sequencing
+regions with excessive or deficient numbers of G/C bases, ultimately
+leading to poor mapping efficiencies and low coverage in the affected
+regions.
+
+If you are interested in getting G/C content and mean sequence depth
+information for every target interval, use the PER_TARGET_COVERAGE
+option.
+
+Note: Metrics labeled as percentages are actually expressed as
+fractions!
+
+Usage Example:
+^^^^^^^^^^^^^^
+
+::
+
+    java -jar picard.jar CollectHsMetrics \\
+
+          I=input_reds.bam \\
+
+          O=output_hs_metrics.txt \\
+   "
+          R=reference.fasta \\
+
+          BAIT_INTERVALS=bait.interval_list \\
+
+          TARGET_INTERVALS=target.interval_list
+    
+
+Please see
+`CollectHsMetrics <http://broadinstitute.github.io/picard/picard-metric-definitions.html#HsMetrics>`__
+for detailed descriptions of the output metrics produced by this tool.
+
+--------------
+
+See HsMetricCollector and CollectTargetedMetrics for more details.
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>

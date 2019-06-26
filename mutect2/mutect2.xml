@@ -1,0 +1,107 @@
+<tool id="mutect2" name="MuTect2" version="0.5">
+  <description>Call somatic variants from tumor with matched normal or tumor with matched panel of normals.</description>
+  <command interpreter="python">mutect2.py
+    \${MUTECT2_PATH}
+    #if $reference_source.reference_source_selector != "history":
+    ${reference_source.ref_file.fields.path}
+    #end if
+    #if $reference_source.reference_source_selector == "history":    
+    $reference_source.ref_file
+    #end if
+    $input_bam_tumor
+    "${output_vcf}"
+    "${output_log}"
+    #if $panel_of_normals:
+    --panel_of_normals $panel_of_normals
+    #end if
+    #if $dbsnp:
+    --dbsnp $dbsnp
+    #end if
+    #if $cosmic:
+    --cosmic $cosmic
+    #end if
+    #if $intervals:
+    --intervals $intervals
+    #end if
+
+    #if $initial_tumor_lod:
+    --initial_tumor_lod $initial_tumor_lod
+    #end if
+    #if $initial_normal_lod:
+    --initial_normal_lod $initial_normal_lod
+    #end if
+    #if $tumor_lod:
+    --tumor_lod $tumor_lod
+    #end if
+    #if $normal_lod:
+    --normal_lod $normal_lod
+    #end if
+    #if $dbsnp_normal_lod:
+    --dbsnp_normal_lod $dbsnp_normal_lod
+    #end if
+    #if $min_base_quality_score:
+    --min_base_quality_score $min_base_quality_score
+    #end if
+    #if $stand_call_conf:
+    --stand_call_conf $stand_call_conf
+    #end if
+    #if $stand_emit_conf:
+    --stand_emit_conf $stand_emit_conf
+    #end if
+
+    #if $min_pruning:
+    --min_pruning $min_pruning
+    #end if
+    #if $min_dangling_branch_length:
+    --min_dangling_branch_length $min_dangling_branch_length
+    #end if
+
+  </command>
+
+  <inputs>
+    <conditional name="reference_source">
+      <param name="reference_source_selector" type="select" label="Choose the source for the reference list">
+	<option value="cached">Locally cached</option>
+	<option value="history">History</option>
+      </param>
+      <when value="cached">
+	<param name="ref_file" type="select" label="Using reference genome" help="-R,--reference_sequence &amp;lt;reference_sequence&amp;gt;" >
+	  <options from_data_table="gatk2_picard_indexes" />
+	</param>
+      </when>
+      <when value="history">
+	<param name="ref_file" type="data" format="fasta" label="Using reference file" help="-R,--reference_sequence &amp;lt;reference_sequence&amp;gt;" />
+      </when>
+    </conditional>
+
+    <param name="input_bam_tumor" type="data" format="bam" label="Tumor BAM file" />
+    <param name="intervals" type="data" format="gatk_interval" optional="true" label="GATK Interval List" />
+    <param name="panel_of_normals" type="data" format="vcf" optional="true" label="Panel of Normals" />
+    <param name="cosmic" type="data" format="vcf" optional="true" label="COSMIC Data Source" />
+    <param name="dbsnp" type="data" format="vcf" optional="true" label="dbSNP Data Source" />
+
+    <param name="initial_tumor_lod" type="float" optional="true" label="initial_tumor_lod" help="Initial LOD threshold for calling tumor variant"/>
+    <param name="initial_normal_lod" type="float" optional="true" label="initial_normal_lod" help="Initial LOD threshold for calling normal variant"/>
+    <param name="tumor_lod" type="float" optional="true" label="tumor_lod" help="LOD threshold for calling tumor variant"/>
+    <param name="normal_lod" type="float" optional="true" label="normal_lod" help="LOD threshold for calling normal non-germline"/>
+    <param name="dbsnp_normal_lod" type="float" optional="true" label="dbsnp_normal_lod" help="LOD threshold for calling normal non-variant at dbsnp sites"/>
+    <param name="stand_call_conf" type="float" value="30.0" optional="true" label="standard_min_confidence_threshold_for_calling" help="--standard_min_confidence_threshold_for_calling / -stand_call_conf  The minimum phred-scaled confidence threshold at which variants should be called"/>
+    <param name="stand_emit_conf" type="float" value="30.0" optional="true" label="standard_min_confidence_threshold_for_emitting" help="--standard_min_confidence_threshold_for_emitting / -stand_emit_conf  The minimum phred-scaled confidence threshold at which variants should be emitted (and filtered with LowQual if less than the calling threshold)"/>
+    <param name="min_base_quality_score" type="integer" value="0" optional="true" label="min_base_quality_score" help="--min_base_quality_score / -mbq  Minimum base quality required to consider a base for calling"/>
+
+    <param name="min_dangling_branch_length" type="integer" value="4" optional="true" label="min_dangling_branch_length" help="Minimum length of a dangling branch to attempt recovery"/>
+    <param name="min_pruning" type="integer" value="2" optional="true" label="min_pruning" help="Minimum support to not prune paths in the graph"/>
+
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="${tool.name} output (VCF)" />
+    <data format="txt" name="output_log" label="${tool.name} logging (TXT)" />
+  </outputs>
+
+  <tests>
+  </tests>
+  <help>
+    This is MuTect2.
+  </help>
+</tool>

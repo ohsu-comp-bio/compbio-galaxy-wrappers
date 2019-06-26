@@ -1,0 +1,141 @@
+<tool id="mutect2" name="MuTect2" version="0.5.7">
+  <description>Call somatic variants from tumor with matched normal or tumor with matched panel of normals.</description>
+  <command interpreter="python">mutect2.py
+    \${MUTECT2_PATH}
+    #if $reference_source.reference_source_selector != "history":
+    ${reference_source.ref_file.fields.path}
+    #end if
+    #if $reference_source.reference_source_selector == "history":    
+    $reference_source.ref_file
+    #end if
+    $input_bam_tumor
+    "${output_vcf}"
+    "${output_log}"
+    #if $panel_of_normals:
+    --panel_of_normals $panel_of_normals
+    #end if
+    #if $dbsnp:
+    --dbsnp $dbsnp
+    #end if
+    #if $cosmic:
+    --cosmic $cosmic
+    #end if
+    #if $intervals:
+    --intervals $intervals
+    #end if
+    #if $interval_str:
+    --interval_str $interval_str
+    #end if
+
+    #if $interval_padding:
+    --interval_padding $interval_padding
+    #end if
+    #if $initial_tumor_lod:
+    --initial_tumor_lod $initial_tumor_lod
+    #end if
+    #if $initial_normal_lod:
+    --initial_normal_lod $initial_normal_lod
+    #end if
+    #if $tumor_lod:
+    --tumor_lod $tumor_lod
+    #end if
+    #if $normal_lod:
+    --normal_lod $normal_lod
+    #end if
+    #if $dbsnp_normal_lod:
+    --dbsnp_normal_lod $dbsnp_normal_lod
+    #end if
+    #if $min_base_quality_score:
+    --min_base_quality_score $min_base_quality_score
+    #end if
+    #if $active_region_in:
+    --active_region_in $active_region_in
+    #end if
+
+    #if $min_pruning:
+    --min_pruning $min_pruning
+    #end if
+    #if $min_dangling_branch_length:
+    --min_dangling_branch_length $min_dangling_branch_length
+    #end if
+
+    #if $kmerSize:
+    --kmerSize $kmerSize
+    #end if
+    #if $max_alternate_alleles:
+    --max_alternate_alleles $max_alternate_alleles
+    #end if
+    #if $downsampling_type == 'NO_SELECT':
+    #pass
+    #else
+    --downsampling_type '${downsampling_type}'
+    #end if
+    #if $dontUseSoftClippedBases:
+    --dontUseSoftClippedBases
+    #end if
+
+  </command>
+
+  <inputs>
+    <conditional name="reference_source">
+      <param name="reference_source_selector" type="select" label="Choose the source for the reference list">
+	<option value="cached">Locally cached</option>
+	<option value="history">History</option>
+      </param>
+      <when value="cached">
+	<param name="ref_file" type="select" label="Using reference genome" help="-R,--reference_sequence &amp;lt;reference_sequence&amp;gt;" >
+	  <options from_data_table="gatk2_picard_indexes" />
+	</param>
+      </when>
+      <when value="history">
+	<param name="ref_file" type="data" format="fasta" label="Using reference file" help="-R,--reference_sequence &amp;lt;reference_sequence&amp;gt;" />
+      </when>
+    </conditional>
+
+    <param name="input_bam_tumor" type="data" format="bam" label="Tumor BAM file" />
+    <param name="intervals" type="data" format="gatk_interval,vcf" optional="true" label="GATK Interval List File" />
+    <param name="interval_str" type="text" optional="true" label="GATK Interval List" />
+    <param name="active_region_in" type="data" format="gatk_interval,vcf" optional="true" label="active_region_in" help="Use this interval list file as the active regions to process" />
+    <param name="panel_of_normals" type="data" format="vcf" optional="true" label="Panel of Normals" />
+    <param name="cosmic" type="data" format="vcf" optional="true" label="COSMIC Data Source" />
+    <param name="dbsnp" type="data" format="vcf" optional="true" label="dbSNP Data Source" />
+
+    <param name="interval_padding" type="integer" value="0" optional="true" label="interval_padding" help="Amount of padding in bp to add to each interval"/>
+    <param name="initial_tumor_lod" type="float" value="4.0" optional="true" label="initial_tumor_lod" help="Initial LOD threshold for calling tumor variant"/>
+    <param name="initial_normal_lod" type="float" value="0.5" optional="true" label="initial_normal_lod" help="Initial LOD threshold for calling normal variant"/>
+    <param name="tumor_lod" type="float" value="6.3" optional="true" label="tumor_lod" help="LOD threshold for calling tumor variant"/>
+    <param name="normal_lod" type="float" value="2.2" optional="true" label="normal_lod" help="LOD threshold for calling normal non-germline"/>
+    <param name="dbsnp_normal_lod" type="float" value="5.5" optional="true" label="dbsnp_normal_lod" help="LOD threshold for calling normal non-variant at dbsnp sites"/>
+    <param name="min_base_quality_score" type="integer" value="0" optional="true" label="min_base_quality_score" help="--min_base_quality_score / -mbq  Minimum base quality required to consider a base for calling"/>
+
+    <param name="min_dangling_branch_length" type="integer" value="4" optional="true" label="min_dangling_branch_length" help="Minimum length of a dangling branch to attempt recovery"/>
+    <param name="min_pruning" type="integer" value="2" optional="true" label="min_pruning" help="Minimum support to not prune paths in the graph"/>
+
+    <param name="kmerSize" type="integer" optional="true" label="kmerSize" help="Kmer size to use in the read threading assembler.  Do not adjust this unless you know what you are doing."/>
+    <param name="max_alternate_alleles" value="6" type="integer" optional="true" label="max_alternate_alleles" help=" Maximum number of alternate alleles to genotype."/>
+    <param name="downsampling_type" type="select" optional="true" label="downsampling_type" help="Type of read downsampling to employ at a given locus [NONE, ALL_READS, BY_SAMPLE]">
+      <option value="NO_SELECT" selected="true">NO_SELECT</option>
+      <option value="NONE">NONE</option>
+      <option value="ALL_READS">ALL_READS</option>
+      <option value="BY_SAMPLE">BY_SAMPLE</option>
+    </param>
+    <param name="dontUseSoftClippedBases" type="boolean" checked="false" optional="true" label="dontUseSoftClippedBases" help="If specified, we will not analyze soft clipped bases in the reads" />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="${tool.name} output (VCF)" />
+    <data format="txt" name="output_log" label="${tool.name} logging (TXT)" />
+  </outputs>
+
+  <tests>
+  </tests>
+  <help>
+    Overview
+    MuTect2 is a somatic SNP and indel caller that combines the DREAM challenge-winning somatic genotyping engine of the original MuTect (Cibulskis et al., 2013) with the assembly-based machinery of HaplotypeCaller.
+
+    The basic operation of MuTect2 proceeds similarly to that of the HaplotypeCaller
+
+    Differences from HaplotypeCaller
+    While the HaplotypeCaller relies on a ploidy assumption (diploid by default) to inform its genotype likelihood and variant quality calculations, MuTect2 allows for a varying allelic fraction for each variant, as is often seen in tumors with purity less than 100%, multiple subclones, and/or copy number variation (either local or aneuploidy). MuTect2 also differs from the HaplotypeCaller in that it does apply some hard filters to variants before producing output.
+  </help>
+</tool>

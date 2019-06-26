@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<tool id="gatk4_filtervcf" name="GATK4 FilterVcf (Picard)" version="@WRAPPER_VERSION@0" profile="17.09">
+
+    <description>- Hard filters a VCF.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    <expand macro="requirements"/>
+    <expand macro="version_cmd"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        #include source=$vcf_tabix#
+
+        @CMD_BEGIN@ FilterVcf
+        --JAVASCRIPT_FILE ${optional.javascript_file}
+        --MAX_FS ${optional.max_fs}
+        --MIN_AB ${optional.min_ab}
+        --MIN_DP ${optional.min_dp}
+        --MIN_GQ ${optional.min_gq}
+        --MIN_QD ${optional.min_qd}
+        #include source=$picard_opts#
+        #include source=$picard_vcf_output_opts#
+        #include source=$vcf_input#
+        #include source=$picard_ref_opts#
+
+    ]]></command>
+
+    <inputs>
+        <expand macro="picard_vcf_params" />
+        <param name="input" argument="--INPUT" type="data" optional="false" format="vcf,vcf_bgzip" label="Input" help="The INPUT VCF or BCF file." />
+        <section name="optional" title="Optional Parameters" expanded="False">
+            <param name="javascript_file" argument="--JAVASCRIPT_FILE" type="data" optional="true" format="vcf,vcf_bgzip" label="Javascript_File" help="Filters a VCF file with a javascript expression interpreted by the java javascript engine.  The script puts the following variables in the script context:  &apos;variant&apos; a VariantContext ( https://samtools.github.io/htsjdk/javadoc/htsjdk/htsjdk/variant/variantcontext/VariantContext.html ) and  &apos;header&apos; a VCFHeader ( https://samtools.github.io/htsjdk/javadoc/htsjdk/htsjdk/variant/vcf/VCFHeader.html ). Last value of the script should be a boolean to tell whether we should accept or reject the record." />
+            <param name="max_fs" argument="--MAX_FS" type="float" optional="true" value="1.7976931348623157E308" label="Max_Fs" help="The maximum phred scaled fisher strand value before a site will be filtered out." />
+            <param name="min_ab" argument="--MIN_AB" type="float" optional="true" value="0.0" label="Min_Ab" help="The minimum allele balance acceptable before filtering a site. Allele balance is calculated for heterozygotes as the number of bases supporting the least-represented allele over the total number of base observations. Different heterozygote genotypes at the same locus are measured independently. The locus is filtered if any allele balance is below the limit." />
+            <param name="min_dp" argument="--MIN_DP" type="integer" optional="true" value="0" label="Min_Dp" help="The minimum sequencing depth supporting a genotype before the genotype will be filtered out." />
+            <param name="min_gq" argument="--MIN_GQ" type="integer" optional="true" value="0" label="Min_Gq" help="The minimum genotype quality that must be achieved for a sample otherwise the genotype will be filtered out." />
+            <param name="min_qd" argument="--MIN_QD" type="float" optional="true" value="0.0" label="Min_Qd" help="The minimum QD value to accept or otherwise filter out the variant." />
+
+            <expand macro="ref_sel" />
+        </section>
+        <expand macro="picard_params" />
+    </inputs>
+
+    <outputs>
+        <expand macro="picard_vcf_output_params" />
+        <expand macro="picard_output_params" />
+
+    </outputs>
+
+    <tests>
+    </tests>
+
+    <help><![CDATA[
+    Applies a set of hard filters to Variants and to Genotypes within a VCF.
+
+    ]]></help>
+
+    <expand macro="citations"/>
+
+</tool>

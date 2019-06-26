@@ -41,8 +41,9 @@ def parse_pon(args):
 #                avg_af = line[7].split(';')[4].split('=')[0]
                 if int(seen) >= 3 and cosmic == 'F':
                     drop_list.append((line[0], line[1], line[3], line[4]))
-                elif int(seen) >= 5 and cosmic == 'T':
-                    drop_list.append((line[0], line[1], line[3], line[4]))
+                # nixed
+                # elif int(seen) >= 5 and cosmic == 'T':
+                #     drop_list.append((line[0], line[1], line[3], line[4]))
                 else:
                     annot_list.append((line[0], line[1], line[3], line[4]))
 

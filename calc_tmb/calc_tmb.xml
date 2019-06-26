@@ -1,4 +1,4 @@
-<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.3.0" >
+<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.4.2" >
     <description>Calculate TMB from VCF annotations.</description>
 
     <command detect_errors="exit_code"><![CDATA[
@@ -14,15 +14,26 @@
         --gnomad_af '${gnomad_af}'
         --m2_tlod '${m2_tlod}'
         --min_ab '${min_ab}'
+        --min_ab_pon_ov '${min_ab_pon_ov}'
+        --min_dp_fb '${min_dp_fb}'
+        --min_dp_m2 '${min_dp_m2}'
         --seq_space '${seq_space}'
+        #if $send_placeholder
+            --send_placeholder '${send_placeholder}'
+        #end if
+
     ]]></command>
 
     <inputs>
         <param name="infile" type="data" multiple="true" format="vcf" label="Input VCF(s)" help="Input VCF(s)" />
         <param name="gnomad_af" type="float" value="0.00001" label="GNOMAD VAF" help="GNOMAD VAF to filter list upon.  Values greater than this will not be utilized." />
-        <param name="m2_tlod" type="float" value="20.0" label="Mutect2 TLOD" help="M2 TLOD score to filter list upon.  Values less than this will not be utilized." />
+        <param name="m2_tlod" type="float" value="40.0" label="Mutect2 TLOD" help="M2 TLOD score to filter list upon.  Values less than this will not be utilized." />
         <param name="min_ab" type="float" value="0.05" label="Variant Allele Balance" help="Variant allele frequency (balance) to filter list upon.  Values less than this will not be utilized." />
+        <param name="min_ab_pon_ov" type="float" value="0.15" label="Variant Allele Balance PON_OV" help="Variant allele frequency (balance) to filter list upon when FILTER contains PON_OV.  Values less than this will not be utilized." />
+        <param name="min_dp_fb" type="integer" value="500" label="Min Depth FreeBayes" help="Minimum read depth for FreeBayes variants used in calculation.  Values less than this will not be utilized." />
+        <param name="min_dp_m2" type="integer" value="250" label="Min Depth Mutect2" help="Minimum read depth for Mutect2 variants used in calculation.  Values less than this will not be utilized." />
         <param name="seq_space" type="float" value="0.61" label="Genomic Target Size" help="Total genomic sequence target size, in Mb." />
+        <param name="send_placeholder" type="float" optional="true" label="Placeholder Value" help="Output this value, instead of the result of the TMB calculation." />
     </inputs>
 
     <outputs>
@@ -33,14 +44,16 @@
     <tests></tests>
 
     <help><![CDATA[
-usage: calc_tmb.py [-h] [--infile INFILE] [--outfile OUTFILE]
+usage: calc_tmb.py [-h] [--infile INFILE [INFILE ...]] [--outfile OUTFILE]
                    [--variants VARIANTS] [--gnomad_af GNOMAD_AF]
                    [--m2_tlod M2_TLOD] [--min_ab MIN_AB]
-                   [--seq_space SEQ_SPACE] [--version]
+                   [--min_ab_pon_ov MIN_AB_PON_OV] [--min_dp_fb MIN_DP_FB]
+                   [--min_dp_m2 MIN_DP_M2] [--seq_space SEQ_SPACE] [--version]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --infile INFILE       Input VCF
+  --infile INFILE [INFILE ...]
+                        Input VCF
   --outfile OUTFILE     Output JSON
   --variants VARIANTS   Output list of variants
   --gnomad_af GNOMAD_AF
@@ -50,6 +63,18 @@ optional arguments:
                         this will not be utilized.
   --min_ab MIN_AB       Variant allele frequency (balance) to filter list
                         upon. Values less than this will not be utilized.
+  --min_ab_pon_ov MIN_AB_PON_OV
+                        Variant allele frequency (balance) to filter list upon
+                        when FILTER contains PON_OV. Values less than this
+                        will not be utilized.
+  --min_dp_fb MIN_DP_FB
+                        Minimum read depth for FreeBayes variants used in
+                        calculation. Values less than this will not be
+                        utilized.
+  --min_dp_m2 MIN_DP_M2
+                        Minimum read depth for Mutect2 variants used in
+                        calculation. Values less than this will not be
+                        utilized.
   --seq_space SEQ_SPACE
                         Total genomic size of sequence targets, in Mb.
   --version             show program's version number and exit

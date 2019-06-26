@@ -1,0 +1,36 @@
+<tool id="hop_vcf_filt" name="HOP Filter" version="0.2.0" >
+  <description>Filter a HOP multi-sample VCF.</description>
+  <command detect_errors="exit_code"><![CDATA[
+  python $__tool_directory__/hop_vcf_filt.py
+    --infile "${input}"
+    --infile_genes "${input_genes}"
+    --outfile output.vcf
+    --outfile_bad "${output_bad}"
+    #if $chrom:
+      #if $coord:
+        --chrom "${chrom}"
+        --coord "${coord}"
+      #end if
+    #end if
+    && python $__tool_directory__/vcf_reformat.py
+     output.vcf "${output_tsv}"
+  ]]></command>
+
+  <inputs>
+    <param name="input" format="vcf" type="data" label="Input VCF" />
+    <param name="input_genes" format="txt" type="data" label="Input HGNC Gene List" />
+    <param name="chrom" type="text" optional="true" label="Optional Chromosome (both chrom and coord must be specified)" />
+    <param name="coord" type="text" optional="true" label="Optional Coordinate (both chrom and coord must be specified)" />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output" label="${tool.name} on ${on_string}: vcf" from_work_dir="output.vcf"/>
+    <data format="vcf" name="output_bad" label="${tool.name} on ${on_string}: Filtered Sites VCF" />
+    <data format="tabular" name="output_tsv" label="${tool.name} on ${on_string}: Filtered Sites TSV" />
+  </outputs>
+  <tests>
+  </tests>
+  <help><![CDATA[
+  ]]></help>
+</tool>
+

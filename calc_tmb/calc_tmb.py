@@ -4,7 +4,7 @@ import argparse
 import json
 import vcf
 
-VERSION = '0.3.0'
+VERSION = '0.4.2'
 
 def supply_args():
     """
@@ -18,7 +18,11 @@ def supply_args():
     parser.add_argument('--gnomad_af', default=0.00001, type=float, help='GNOMAD VAF to filter list upon.  Values greater than this will not be utilized.')
     parser.add_argument('--m2_tlod', default=40.0, type=float, help='M2 TLOD score to filter list upon.  Values less than this will not be utilized.')
     parser.add_argument('--min_ab', default=0.05, type=float, help='Variant allele frequency (balance) to filter list upon.  Values less than this will not be utilized.')
+    parser.add_argument('--min_ab_pon_ov', default=0.15, type=float, help='Variant allele frequency (balance) to filter list upon when FILTER contains PON_OV.  Values less than this will not be utilized.')
+    parser.add_argument('--min_dp_fb', default=500, type=int, help='Minimum read depth for FreeBayes variants used in calculation.  Values less than this will not be utilized.')
+    parser.add_argument('--min_dp_m2', default=250, type=int, help='Minimum read depth for Mutect2 variants used in calculation.  Values less than this will not be utilized.')
     parser.add_argument('--seq_space', default=0.61, type=float, help='Total genomic size of sequence targets, in Mb.')
+    parser.add_argument('--send_placeholder', type=float, help="Lab isn't interested in our TMB calculation, but we need to send something so they can edit the value in CGD.")
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
@@ -30,6 +34,8 @@ class VcfRec(object):
         self.chrom = str(rec.CHROM)
         self.coord = str(rec.POS)
         self.ab = float(rec.samples[0]['AF'])
+        self.dp = int(rec.samples[0]['DP'])
+        self.filt = str(rec.FILTER)
 
         try:
             self.gnomad = float(rec.INFO['gnomad.AF'][0])
@@ -45,6 +51,28 @@ class VcfRec(object):
             self.tlod = float(rec.INFO['TLOD'][0])
         except:
             self.tlod = None
+
+        try:
+            self.hgnc = [x.split('|')[3] for x in rec.INFO['ANN']]
+        except:
+            self.hgnc = None
+
+        self.bad_gene = self._check_gene()
+
+
+    def _check_gene(self):
+        """
+        Check to see if the gene is in the list of ignored genes.
+        :return:
+        """
+        gene_ignore = ('HLA-A', 'HLA-B', 'HLA-C')
+        for entry in self.hgnc:
+            if entry in gene_ignore:
+                return True
+        return False
+
+
+
 
     def check_snpeff(self):
         """
@@ -73,11 +101,14 @@ class WholeVcf(object):
     """
 
     """
-    def __init__(self, filename, gnomad_af, m2_tlod, min_ab):
+    def __init__(self, filename, gnomad_af, m2_tlod, min_ab, min_ab_pon_ov, min_dp_fb, min_dp_m2):
         self.vcf_reader = vcf.Reader(open(filename, 'r'))
         self.gnomad_af = gnomad_af
         self.m2_tlod = m2_tlod
         self.min_ab = min_ab
+        self.min_ab_pon_ov = min_ab_pon_ov
+        self.min_dp_fb = min_dp_fb
+        self.min_dp_m2 = min_dp_m2
         self.to_write = []
         self.tmb_cnt = 0.0
         self._find_matches()
@@ -93,9 +124,28 @@ class WholeVcf(object):
                 if entry.gnomad < self.gnomad_af:
                     if entry.check_snpeff():
                         if entry.tlod > self.m2_tlod:
-                            if entry.ab > self.min_ab:
-                                self.tmb_cnt += 1
-                                self.to_write.append(record)
+                            if 'PON' not in entry.filt:
+                                if not entry.bad_gene:
+                                    if 'm2' in entry.filt:
+                                        if entry.dp > self.min_dp_m2:
+                                            if 'PON_OV' in entry.filt:
+                                                if entry.ab > self.min_ab_pon_ov:
+                                                    self.tmb_cnt += 1
+                                                    self.to_write.append(record)
+                                            else:
+                                                if entry.ab > self.min_ab:
+                                                    self.tmb_cnt += 1
+                                                    self.to_write.append(record)
+                                    elif 'fb' in entry.filt or 'm2_fb' in entry.filt:
+                                        if entry.dp > self.min_dp_fb:
+                                            if 'PON_OV' in entry.filt:
+                                                if entry.ab > self.min_ab_pon_ov:
+                                                    self.tmb_cnt += 1
+                                                    self.to_write.append(record)
+                                            else:
+                                                if entry.ab > self.min_ab:
+                                                    self.tmb_cnt += 1
+                                                    self.to_write.append(record)
 
 class VcfCollector(object):
     """
@@ -141,12 +191,12 @@ class Writer(object):
     """
 
     """
-    def __init__(self, vcf_reader, outfile, vcf_out, collector):
+    def __init__(self, vcf_reader, outfile, vcf_out, tmb, vars):
         self.outfile = outfile
         self.vcf_out = vcf_out
-        self.tmb = collector.tmb_cnt
+        self.tmb = tmb
         self.vcf_reader = vcf_reader
-        self.vars = collector.vars
+        self.vars = vars
 
     def write_json_out(self):
         """
@@ -170,9 +220,13 @@ class Writer(object):
 
 def main():
     args = supply_args()
-    vars = [WholeVcf(vcf, args.gnomad_af, args.m2_tlod, args.min_ab) for vcf in args.infile]
+    vars = [WholeVcf(vcf, args.gnomad_af, args.m2_tlod, args.min_ab, args.min_ab_pon_ov, args.min_dp_fb, args.min_dp_m2) for vcf in args.infile]
     all_vcfs = VcfCollector(args.seq_space, vars)
-    writer = Writer(vars[0].vcf_reader, args.outfile, args.variants, all_vcfs)
+    if not args.send_placeholder:
+        writer = Writer(vars[0].vcf_reader, args.outfile, args.variants, all_vcfs.tmb, all_vcfs.vars)
+    else:
+        writer = Writer(vars[0].vcf_reader, args.outfile, args.variants, args.send_placeholder, all_vcfs.vars)
+
     writer.write_json_out()
     writer.write_vcf_out()
 

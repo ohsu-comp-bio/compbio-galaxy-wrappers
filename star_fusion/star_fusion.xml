@@ -1,11 +1,11 @@
-<tool id="star_fusion" name="STAR-Fusion" version="1.4.0.0" profile="17.01">
+<tool id="star_fusion" name="STAR-Fusion" version="@VERSION@.1" profile="17.01">
     <description>detect fusion genes in RNA-Seq data</description>
-    <requirements>
-        <!-- Bio-conda -->
-        <requirement type="package" version="1.4.0">star-fusion</requirement>
-        <requirement type="package" version="0.1.19">samtools</requirement>  
-	<requirement type="package" version="3.2">hmmer</requirement>  
-    </requirements>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    <expand macro="requirements"/>
 
     <stdio>
         <regex match="command not found" source="stderr" level="fatal"/>
@@ -47,40 +47,37 @@
         #end if
 
         ## 2. Link in fastq files so they have appropriate extensions
-        #if str($input_params.input_source) != "use_chimeric":
+        #if $input_params.left_fq:
             #if $input_params.left_fq.is_of_type("fastq.gz"):
                 #set read1 = 'input_1.fastq.gz'
             #else:
                 #set read1 = 'input_1.fastq'
             #end if
-            ln -f -s '${input_params.left_fq}' input_1.fastq &&
+            ln -f -s $input_params.left_fq $read1 &&
 
-            #if $input_params.right_fq:
-                #if $input_params.right_fq.is_of_type("fastq.gz"):
-                    #set read2 = 'input_2.fastq.gz'
-                #else:
-                    #set read2 = 'input_2.fastq'
-                #end if
-                ln -f -s '${input_params.right_fq}' input_2.fastq &&
+        #end if
+
+        #if $input_params.right_fq:
+            #if $input_params.right_fq.is_of_type("fastq.gz"):
+                #set read2 = 'input_2.fastq.gz'
+            #else:
+                #set read2 = 'input_2.fastq'
             #end if
+            ln -f -s $input_params.right_fq $read2 &&
         #end if
         
         ## 3. Run STAR-Fusion
-	ln -f -s '${input_params.left_fq}' input_1.fastq &&
-
-	#if $input_params.right_fq:
-	ln -f -s '${input_params.right_fq}' input_2.fastq &&
-	#end if
-
-	STAR-Fusion
+	    STAR-Fusion
             #if str($input_params.input_source) == "use_chimeric":
                 --chimeric_junction '${input_params.chimeric_junction}'
             #end if
 
-            --left_fq input_1.fastq
+            #if $input_params.left_fq:
+            --left_fq ${read1}
+            #end if
     
             #if $input_params.right_fq:
-                --right_fq input_2.fastq
+            --right_fq ${read2}
             #end if
 
 	    #if $genome_lib_type.genome_lib_type_selector == "build_lib":

@@ -1,0 +1,46 @@
+<tool id="add_clinvar_vcf" name="Add ClinVar Annotations VCF" version="0.1.0" >
+  <description>Include INFO annotations from ClinVar VCF in your VCF.</description>
+  <command detect_errors="exit_code"><![CDATA[
+  python $__tool_directory__/add_clinvar_vcf.py
+    --input "${input}"
+    --output "${output}"
+    --resource "${resource}"
+    --resource_lbl "${resource_lbl}"
+    --info
+    #for $i, $s in enumerate($infos)
+        '${s.info}'
+    #end for
+  ]]></command>
+
+  <inputs>
+    <param name="input" format="vcf" type="data" label="Input VCF" />
+    <param name="resource" format="vcf,vcf_bgzip" type="data" label="Resource VCF" />
+    <param name="resource_lbl" type="text" label="Resource VCF label, to be used in annotation resource_lbl.info" />
+    <repeat name="infos" title="Annotations">
+        <param name="info" type="text" label="Resource VCF label." help="Will be placed in output file annotation." />
+    </repeat>
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output" label="${tool.name} on ${on_string}: vcf" />
+  </outputs>
+  <tests>
+  </tests>
+  <help><![CDATA[
+usage: add_clinvar_vcf.py [-h] [--input INPUT] [--output OUTPUT]
+                          [--info [INFO [INFO ...]]] [--resource RESOURCE]
+                          [--resource_lbl RESOURCE_LBL] [--version]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --input INPUT         Input VCF to annotate with ClinVar.
+  --output OUTPUT       Output VCF
+  --info [INFO [INFO ...]]
+                        INFO annotation to pull.
+  --resource RESOURCE   Resource VCF
+  --resource_lbl RESOURCE_LBL
+                        Resource VCF Label
+  --version             show program's version number and exit
+  ]]></help>
+</tool>
+

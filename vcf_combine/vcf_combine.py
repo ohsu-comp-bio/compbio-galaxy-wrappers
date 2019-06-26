@@ -8,7 +8,7 @@ from __future__ import print_function
 from collections import OrderedDict
 import argparse
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 
 
 def supply_args():
@@ -39,7 +39,7 @@ def build_cands(filename, outfile):
         for line in myfile:
             if not line.startswith('#'):
                 sline = line.rstrip('\n').split('\t')
-                variants = (sline[0], sline[1])
+                variants = (sline[0], sline[1], sline[3], sline[4])
                 cands[variants] = line
             else:
                 handle_out.write(line)
@@ -47,7 +47,7 @@ def build_cands(filename, outfile):
     return cands, handle_out
 
 
-def remove_cands(cands, infile, outfile, outfile_base):
+def remove_cands(cands, infile, outfile):
     """
     Remove variants in cands from this file.
     :param filename:
@@ -61,18 +61,20 @@ def remove_cands(cands, infile, outfile, outfile_base):
                 handle_out.write(line)
             else:
                 sline = line.rstrip('\n').split('\t')
-                filt = sline[6]
-                variant = (sline[0], sline[1])
+                variant = (sline[0], sline[1], sline[3], sline[4])
+                sline[6] = 'scalpel'
+
                 if variant not in cands:
-                    handle_out.write(line)
+                    handle_out.write('\t'.join(sline))
+                    handle_out.write('\n')
                 else:
-                    annots[variant] = filt
+                    annots[variant] = 'scalpel'
 
     handle_out.close()
     return annots
 
 
-def add_filt(filename, annots, cands, handle_out):
+def add_filt(annots, cands, handle_out):
     for variant in cands:
         if variant not in annots:
             handle_out.write(cands[variant])
@@ -91,8 +93,8 @@ def main():
 
     args = supply_args()
     cands, handle_out = build_cands(args.vcf_cands, args.output_vcf_base)
-    annots = remove_cands(cands, args.remove_vcf, args.output_vcf, args.output_vcf_base)
-    add_filt(args.output_vcf_base, annots, cands, handle_out)
+    annots = remove_cands(cands, args.remove_vcf, args.output_vcf)
+    add_filt(annots, cands, handle_out)
 
 if __name__ == "__main__":
     main()

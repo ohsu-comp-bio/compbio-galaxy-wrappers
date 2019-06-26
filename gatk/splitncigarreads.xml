@@ -1,0 +1,55 @@
+<tool id="splitncigarreads" name="GATK v3.7 SplitNCigarReads" version="3.7.2" >
+  <description>Splits reads that contain Ns in their CIGAR string</description>
+
+  <version_command></version_command>
+
+  <command detect_errors="exit_code"><![CDATA[
+  #set index_path = $indexes.fields.path
+
+  ln -f -s "${input}" input.bam &&
+  samtools index input.bam &&
+
+  \${JAVA8_PATH} -jar \${GATK3}
+  -T SplitNCigarReads
+  -R $index_path
+  -I input.bam
+  -o "${output}"
+  
+  -rf ReassignOneMappingQuality
+  -RMQF 255
+  -RMQT 60
+  -U ALLOW_N_CIGAR_READS
+  ]]></command>
+
+  <inputs>   
+    <param name="indexes" type="select" label="Select the reference genome">
+      <options from_data_table="bwa_indexes">
+        <validator type="no_options" message="No genome indexes are available" />
+      </options>
+    </param>
+    <param name="input" type="data" format="bam" label="Input BAM" help="Input BAM file." />
+  </inputs>
+
+  <outputs>
+    <data format="bam" name="output" label="${tool.name} on ${on_string}: SplitNCigarReads BAM" help="Output BAM file." />
+  </outputs>
+
+  <tests></tests>
+
+  <help>This tool identifies all N cigar elements in sequence reads, and creates k+1 new reads (where k is the number of N cigar elements) that correspond to the segments of the original read beside/between the splicing events represented by the Ns in the original CIGAR. The first read includes the bases that are to the left of the first N element, while the part of the read that is to the right of the N (including the Ns) is hard clipped, and so on for the rest of the new reads.
+
+    Tool is currently run with the following options by default:
+
+  -rf ReassignOneMappingQuality
+  -RMQF 255
+  -RMQT 60
+  -U ALLOW_N_CIGAR_READS
+
+  </help>
+
+  <citations>
+    <citation type="doi">10.1101/gr.107524.110</citation>
+  </citations>
+
+</tool>
+

@@ -1,4 +1,4 @@
-<tool id="parse_star_splicesites" name="Filter STAR Splicesites Output" version="0.1.1" >
+<tool id="parse_star_splicesites" name="Filter STAR Splicesites Output" version="0.1.2" >
     <description>This tool will accept a STAR SJ.out.tab file as input and filter it based on whether the splicesite is biologically standard.</description>
 
     <version_command>python $__tool_directory__/parse_star_splicesites.py --version</version_command>

@@ -1,0 +1,22 @@
+<tool id="vcf_avg_af" name="Allele Balance VCF" version="0.1.0" >
+  <description>Find an allele balance from the homozygous reference allele in a VCF.</description>
+  <command detect_errors="exit_code"><![CDATA[
+  python $__tool_directory__/vcf_avg_af.py
+    --infile '${infile}'
+    --outfile '${outfile}'
+    #if $runid:
+        --runid '${runid}'
+    #end if
+  ]]></command>
+  <inputs>
+    <param name="infile" format="vcf" type="data" label="Input VCF" help="Input VCF"/>
+    <param name="runid" type="text" optional="true" label="Run Identifier" help="Input a run id, as opposed to parsing from command line."/>
+  </inputs>
+  <outputs>
+    <data format="txt" name="outfile" label="${tool.name} on ${on_string}: JSON METRICS" />
+  </outputs>
+  <tests></tests>
+  <help><![CDATA[
+    Find an allele balance from the homozygous reference allele in a VCF.
+  ]]></help>
+</tool>

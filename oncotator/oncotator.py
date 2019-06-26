@@ -17,7 +17,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.9.2.0.1'
+VERSION = '1.9.9.0.1'
 
 def oncotator_argparse():
     parser = ArgumentParser(description='Run Oncotator')
@@ -27,6 +27,7 @@ def oncotator_argparse():
     parser.add_argument('input_file', type=str, help='Input file to be annotated.  Type is specified through options.')
     parser.add_argument('output_file', type=str, help='Output file name of annotated file.')
     parser.add_argument('genome_build', metavar='genome_build', type=str, help="Genome build.  For example: hg19", choices=["hg19"])
+    parser.add_argument('--output_format', type=str, default="TCGAMAF", choices=['TCGAMAF', 'VCF', 'SIMPLE_TSV', 'TCGAVCF', 'SIMPLE_BED', 'GENE_LIST'])
     parser.add_argument('--skip-no-alt', dest="skip-no-alt", action='store_true', help="If specified, any mutation with annotation alt_allele_seen of 'False' will not be annotated or rendered.  Do not use if output format is a VCF.  If alt_allele_seen annotation is missing, render the mutation.")
     parser.add_argument('--prepend', dest="prepend", action='store_true', help="If specified for TCGAMAF output, will put a 'i_' in front of fields that are not directly rendered in Oncotator TCGA MAFs")
     parser.add_argument('--infer-onps', dest="infer-onps", action='store_true', help="Will merge adjacent SNPs,DNPs,TNPs,etc if they are in the same sample.  This assumes that the input file is position sorted.  This may cause problems with VCF -> VCF conversion, and does not guarantee input order is maintained.")
@@ -40,7 +41,7 @@ def oncotator_argparse():
 
 def create_opts(arg_dict):
     args = []
-    flag_opts = set(('canonical-tx-file', 'skip-no-alt','prepend','infer-onps', 'input_format', 'db-dir'))
+    flag_opts = set(('canonical-tx-file', 'skip-no-alt','prepend','infer-onps', 'input_format', 'output_format', 'db-dir'))
     wrapper_arguments = set(('input_file', 'output_file', 'genome_build'))
     for option, value in arg_dict.items():
         if option in wrapper_arguments:

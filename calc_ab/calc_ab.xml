@@ -1,8 +1,8 @@
-<tool id="calc_ab" name="Calculate Allele Balance" version="0.0.1" >
+<tool id="calc_ab" name="Calculate Allele Balance" version="0.0.3" >
     <description>Calculate allele balance from variant calls.</description>
 
     <command detect_errors="exit_code"><![CDATA[
-        python $__tool_directory__/calc_tmb.py
+        python $__tool_directory__/calc_ab.py
         --infile '${infile}'
         --outfile '${outfile}'
     ]]></command>

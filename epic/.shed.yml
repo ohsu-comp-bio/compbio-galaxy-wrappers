@@ -1,0 +1,12 @@
+owner: "creason"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/epic"
+homepage_url: "https://github.com/GfellerLab/EPIC"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  epic:
+    description: "EPIC estimates the proportion of immune, stromal, endothelial and cancer or other cells from bulk gene expression data"
+    include:
+        - epic.xml
+        - macros.xml
+        - data/tref_ensembl_hugo_map.txt
