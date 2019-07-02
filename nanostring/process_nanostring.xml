@@ -1,0 +1,62 @@
+<tool id='process_nanostring' name='Process and Normalize RCC Files' version='0.0.1'>
+    <description>Process and normalize RCC output from nanostring.</description>
+    
+    <command detect_errors="exit_code"><![CDATA[
+        python $_tool_directory__/process_nanostring.py 
+          "${rcc1}" 
+          "${rcc2}" 
+          "${rcc3}" 
+          "${rcc4}" 
+          "${rcc5}" 
+          "${rcc6}"
+          "${rcc7}"
+          "${rcc8}"
+          "${rcc9}"
+          "${rcc10}"
+          "${rcc11}"
+          "${rcc12}"
+          --samplesheet "${samplesheet}"
+          --abfile "${ab_reference}"
+    ]]></command>
+    
+    <inputs>
+	<param type='data' name='samplesheet' label='Samplesheet' help='samplesheet.txt'/>
+        <param type='data' name='rcc1' label='RCC Files' help='rcc file lane 1'/>
+        <param type='data' name='rcc2' label='RCC Files' help='rcc file lane 2'/>
+        <param type='data' name='rcc3' label='RCC Files' help='rcc file lane 3'/>
+        <param type='data' name='rcc4' label='RCC Files' help='rcc file lane 4'/>
+        <param type='data' name='rcc5' label='RCC Files' help='rcc file lane 5'/>
+        <param type='data' name='rcc6' label='RCC Files' help='rcc file lane 6'/>
+        <param type='data' name='rcc7' label='RCC Files' help='rcc file lane 7'/>
+        <param type='data' name='rcc8' label='RCC Files' help='rcc file lane 8'/>
+        <param type='data' name='rcc9' label='RCC Files' help='rcc file lane 9'/>
+        <param type='data' name='rcc10' label='RCC Files' help='rcc file lane 10'/>
+        <param type='data' name='rcc11' label='RCC Files' help='rcc file lane 11'/>
+        <param type='data' name='rcc12' label='RCC Files' help='rcc file lane 12'/>
+        <param type='csv' name='ab_reference' label='antibody_reference.csv' help='antibody_reference file changes antibody names from the existing ones in RCC files'/>
+    </inputs>
+    <outputs>
+        <data format='tsv' name='rawdata' label='Raw Data $on_string' from_work_dir='rawdata.txt' help=''/>
+        <data format='tsv' name='corrected' label='Corrected Output $on_string' from_work_dir='corrected.tsv' help=''/>
+        <data format='tsv' name='run_metrics' label='Run metrics' from_work_dir='run_metrics.tsv' help=''/>
+    </outputs>
+    <help>
+
+This tool takes multiple RCC files, the output from Nanostring. There is an RCC file per sample in a batch of Nanostring data. 
+
+**Input: 
+ - RCC files 
+ - Nanostring Samplesheet
+ - antibody reference file
+
+**Output:
+ - rawdata.txt: tab-delimited file with the raw data from nanostring
+ - run_metrics.txt: tab-delimited file with run and lane quality metrics
+ - corrected.txt: rawdata numbers corrected for:
+	1. ERCC control, loading contro
+ 	2. Sample level mean for all antibodies per sample
+	3. Immunoglobulin ratio
+
+    </help>
+
+</tool>
