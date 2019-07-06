@@ -1,0 +1,148 @@
+
+<tool id="run_gsva" name="Run gene expression data through Gene Set Variation Analysis (GSVA)" version="0.1.0">
+    <requirements>
+        <requirement type="package" version="3.0.0">R</requirement>
+        <requirement type="package" version="1.32.0">GSVA</requirement>
+        <requirement type="package" version="1.17.4">GSEABase</requirement>
+        <requirement type="package" version="1.4.3">reshape2</requirement>
+        <requirement type="package" version="0.7.6">dplyr</requirement>
+    </requirements>
+    <command interpreter="Rscript" >
+        run_gsva.R $gene_expression $gene_sets $min_size_set $max_size_set $expression_cutoff_quantifications $expression_cutoff_samples $log_transform_expression $kernel $max_diff $num_of_cores $verbose $output_gsva_tsv
+    </command>
+    <inputs>
+        <param format="tsv" name="gene_expression" type="data" label="TSV file containing gene expression data."/>
+        <param format="tsv" name="gene_sets" type="data" label="TSV/GMT file containing gene sets to use in the analysis."/> 
+        <param name="min_size_set" type="integer" label="Minimum number of genes needed in a valid gene set." value="5"/>  
+        <param name="max_size_set" type="integer" label="Maximum number of genes allowed in a valid gene set." value="200"/>  
+        <param name="expression_cutoff_quantifications" type="float" label="Minimum expression threshold. Value should reflect the quantification method used (e.g., raw counts, CPMs, TPMs)." value="1.0"/>  
+        <param name="expression_cutoff_samples" type="integer" label="Number of samples the expression threshold needs to be met to use the gene in the analysis." value="3"/> 
+        <param name="log_transform_expression" type="select" label="log2 transform the gene expression values after the threshold is applied?"> 
+			<option value="1">Yes</option>
+            <option value="0">No</option>
+        </param> 
+        <param name="kernel" type="select" label="Guassion or Poisson kernel.">
+            <option value="Gaussian">Gaussian</option>
+            <option value="Poisson">Poisson</option>
+        </param>
+        <param name="max_diff" type="select" label="Maximum deviation from zero or maximum difference.">
+            <option value="0">Maximum deviation from zero (mx.diff = FALSE)</option>
+            <option value="1">Maximum difference (mx.diff = TRUE)</option>
+        </param>
+        <param name="num_of_cores" type="select" label="Number of cores to run the analysis on.">
+            <option value="1">1</option>
+        </param>  
+        <param name="verbose" type="select" label="Print additional information during analysis?" value="0">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+        </param>
+    </inputs>
+    <outputs>
+        <data format="tsv" name="output_gsva_tsv" type="data" label="TSV file containing GSVA enrichment scores."/>
+    </outputs>
+    <help>
+        https://bioconductor.org/packages/release/bioc/html/GSVA.html
+
+        GSVA assesses the relative enrichment of gene sets across samples 
+        using a non-parametric approach. Conceptually, GSVA transforms a 
+        p-gene by n-sample gene expression matrix into a geneset by n-sample 
+        pathway enrichment matrix. This facilitates many forms of statistical 
+        analysis in the ’space’ of pathways rather than genes, providing a 
+        higher level of interpretability. The gsva()function first maps the 
+        identifiers in the gene sets to the identifiers in the input expression 
+        data leading to a filtered collection of gene sets. This collection can 
+        be further filtered to require a minimun and/or maximum size of the gene 
+        sets for which we want to calculate GSVA enrichment scores, by using the 
+        arguments min.sz and max.sz.
+
+        Parameters:
+
+        expr: Gene expression data which can be given either as an
+        ‘ExpressionSet’ object or as a matrix of expression values
+        where rows correspond to genes and columns correspond to
+        samples.
+
+        gset.idx.list: Gene sets provided either as a ‘list’ object or as a
+        ‘GeneSetCollection’ object.
+
+        annotation: In the case of calling ‘gsva()’ with expression data in a
+        ‘matrix’ and gene sets as a ‘GeneSetCollection’ object, the
+        ‘annotation’ argument can be used to supply the name of the
+        Bioconductor package that contains annotations for the class
+        of gene identifiers occurring in the row names of the
+        expression data matrix. By default ‘gsva()’ will try to match
+        the identifiers in ‘expr’ to the identifiers in
+        ‘gset.idx.list’ just as they are, unless the ‘annotation’
+        argument is set.
+
+        method: Method to employ in the estimation of gene-set enrichment
+        scores per sample. By default this is set to ‘gsva’
+        (Hänzelmann et al, 2013) and other options are ‘ssgsea’
+        (Barbie et al, 2009), ‘zscore’ (Lee et al, 2008) or ‘plage’
+        (Tomfohr et al, 2005). The latter two standardize first
+        expression profiles into z-scores over the samples and, in
+        the case of ‘zscore’, it combines them together as their sum
+        divided by the square-root of the size of the gene set, while
+        in the case of ‘plage’ they are used to calculate the
+        singular value decomposition (SVD) over the genes in the gene
+        set and use the coefficients of the first right-singular
+        vector as pathway activity profile.
+
+        kcdf: Character string denoting the kernel to use during the
+        non-parametric estimation of the cumulative distribution
+        function of expression levels across samples when
+        ‘method="gsva"’.  By default, ‘kcdf="Gaussian"’ which is
+        suitable when input expression values are continuous, such as
+        microarray fluorescent units in logarithmic scale, RNA-seq
+        log-CPMs, log-RPKMs or log-TPMs.  When input expression
+        values are integer counts, such as those derived from RNA-seq
+        experiments, then this argument should be set to
+        ‘kcdf="Poisson"’.
+
+        abs.ranking: Flag used only when ‘mx.diff=TRUE’. When
+        ‘abs.ranking=FALSE’ (default) a modified Kuiper statistic is
+        used to calculate enrichment scores, taking the magnitude
+        difference between the largest positive and negative random
+        walk deviations. When ‘abs.ranking=TRUE’ the original Kuiper
+        statistic that sums the largest positive and negative random
+        walk deviations, is used. In this latter case, gene sets with
+        genes enriched on either extreme (high or low) will be
+        regarded as 'highly' activated.
+
+        min.sz: Minimum size of the resulting gene sets.
+
+        max.sz: Maximum size of the resulting gene sets.
+
+        parallel.sz: Number of processors to use when doing the calculations in 
+        parallel. This requires to previously load either the ‘parallel’ or the 
+        ‘snow’ library. If ‘parallel’ is loaded and this argument is left with its 
+        default value (‘parallel.sz=0’) then it will use all available core 
+        processors unless we set this argument with a smaller number. If ‘snow’ is 
+        loaded then we must set this argument to a positive integer number that 
+        specifies the number of processors to employ in the parallel calculation.
+
+        parallel.type: Type of cluster architecture when using ‘snow’.
+
+        mx.diff: Offers two approaches to calculate the enrichment statistic
+        (ES) from the KS random walk statistic. ‘mx.diff=FALSE’: ES
+        is calculated as the maximum distance of the random walk from
+        0. ‘mx.diff=TRUE’ (default): ES is calculated as the
+        magnitude difference between the largest positive and
+        negative random walk deviations.
+
+        tau: Exponent defining the weight of the tail in the random walk
+        performed by both the ‘gsva’ (Hänzelmann et al., 2013) and
+        the ‘ssgsea’ (Barbie et al., 2009) methods. By default, this
+        ‘tau=1’ when ‘method="gsva"’ and ‘tau=0.25’ when
+        ‘method="ssgsea"’ just as specified by Barbie et al. (2009)
+        where this parameter is called ‘alpha’.
+
+        ssgsea.norm: Logical, set to ‘TRUE’ (default) with ‘method="ssgsea"’
+        runs the SSGSEA method from Barbie et al. (2009) normalizing
+        the scores by the absolute difference between the minimum and
+        the maximum, as described in their paper. When‘ssgsea.norm=FALSE’ this 
+        last normalization step is skipped.
+
+        verbose: Gives information about each calculation step. Default: ‘FALSE’.
+    </help>
+</tool>
