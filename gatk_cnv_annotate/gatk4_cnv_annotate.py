@@ -1,7 +1,7 @@
 import argparse
 import gffutils
 
-VERSION = '0.2.2'
+VERSION = '0.2.3'
 
 def supply_args():
     """
@@ -448,7 +448,10 @@ class GeneCentricCnv(object):
                                 'MEAN_LOG2_COPY_RATIO': str(entry['MEAN_LOG2_COPY_RATIO']),
                                 'RAW_COPY_NUMBER': self._calc_raw_copy_number(str(entry['MEAN_LOG2_COPY_RATIO'])),
                                 'TUMOR_COPY_NUMBER': self._calc_tumor_copy(self.tumor_pct, str(entry['MEAN_LOG2_COPY_RATIO'])),
-                                'CALL': entry['CALL']}
+                                'CALL': entry['CALL'],
+                                'REGION_CHROM': entry['CONTIG'],
+                                'REGION_START': entry['START'],
+                                'REGION_STOP': entry['END']}
                     if gene == entry['START_GENE']:
                         to_write['START_EXON'] = str(entry['START_EXON'])
                     else:
@@ -522,7 +525,8 @@ def main():
     write_order = ['CONTIG', 'START', 'END', 'NUM_POINTS_COPY_RATIO', 'MEAN_LOG2_COPY_RATIO', 'CALL',
                    'START_GENE', 'START_EXON', 'END_GENE', 'END_EXON']
     gene_write_order = ['GENE_CHROM', 'GENE_START', 'GENE_STOP', 'GENE', 'NUM_POINTS_SEGMENT',
-                        'NUM_POINTS_GENE', 'MEAN_LOG2_COPY_RATIO', 'RAW_COPY_NUMBER', 'TUMOR_COPY_NUMBER', 'CALL']
+                        'NUM_POINTS_GENE', 'MEAN_LOG2_COPY_RATIO', 'RAW_COPY_NUMBER', 'TUMOR_COPY_NUMBER', 'CALL',
+                        'REGION_CHROM', 'REGION_START', 'REGION_STOP']
     to_write = []
     for ival in pic_ints.regions:
         to_write.append(KdlCopyInterval(ival, dbname, common_to_refseq, args.genes).ival)
