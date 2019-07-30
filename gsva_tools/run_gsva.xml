@@ -1,0 +1,277 @@
+<!-- Author: Jonah Hocum -->
+<!-- Email: hocumj@ohsu.edu -->
+<!-- Description: A simple galaxy wrapper tool to run GSVA. -->
+<!-- TODO (hocumj 7/15/2019): Consider moving some code to a macro.xml file. -->
+<!-- TODO (hocumj 7/15/2019): Handle different delimiters. -->
+<!-- TODO (hocumj 7/15/2019): Implement try/except error handling. -->
+<!-- TODO (hocumj 7/15/2019): Provide default gene sets. -->
+<!-- TODO (hocumj 7/15/2019): Allow combining gene sets from multiple files. -->
+<!-- TODO (hocumj 7/15/2019): Add preprocessing step to handle missing Ensembl ID versions. E.g., ENSG00000171223.5 compared to ENSG00000171223 -->
+<!-- TODO (hocumj 7/15/2019): Implement some tests for running with non-default parameters. -->
+
+<tool id="run_gsva" name="Run GSVA:" version="0.1.0">
+    <description>Estimate gene set enrichment statistics from gene expression values.</description>
+    <requirements>
+        <requirement type="package" version="3.0.0">R</requirement>
+        <requirement type="package" version="1.32.0">GSVA</requirement>
+        <requirement type="package" version="1.17.4">GSEABase</requirement>
+        <requirement type="package" version="1.4.3">reshape2</requirement>
+        <requirement type="package" version="0.7.6">dplyr</requirement>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+        Rscript $run "\${GALAXY_SLOTS:-4}"
+    ]]></command>
+
+    <configfiles>
+        <configfile name="run">
+            ## Setup R error handling to go to stderr
+            options( show.error.messages=F, error = function () { cat( geterrmessage(), file=stderr() ); q( "no", 1, F ) } )
+
+            library(GSVA)
+            library(GSEABase)
+            library(reshape2)
+            library(dplyr)
+
+            args = commandArgs(TRUE)
+            num_of_threads = as.numeric(args[1])
+
+            gene_expression_values = read.csv("$gene_expression_file", sep="\t", header=TRUE, row.names=1, check.names=FALSE)
+            ## Prepare gene sets.
+            gene_sets = GeneSetCollection(c(getGmt("$gene_sets_file")))
+
+            ## Subset genes based on expression.
+            gene_expression_values = gene_expression_values[apply(gene_expression_values, 1, function(X) length(X[X >= $expression_cutoff_quantifications]) >= $expression_cutoff_samples), ]
+
+            ## Adding 1 to all values to avoid -infinity issues from log(0)
+            #if $log_transform_expression
+              gene_expression_values = log(gene_expression_values + 1, base = 2)
+            #end if
+
+            ## Calculate Enrichment Scores with GSVA.
+            gsva_results = gsva(as.matrix(gene_expression_values), gene_sets, min.sz = $min_size_set, max.sz = $max_size_set, kcdf = "$kernel", mx.diff = ${enrichment_statistic.max_diff}, abs.ranking = ${enrichment_statistic.absolute_ranking}, method = "${method.score}", tau = ${method.tau}, ssgsea.norm = ${method.ssgsea_norm}, verbose = TRUE, parallel.sz = num_of_threads)
+
+            ## Prepare GSVA output.
+            gsva_results = melt(gsva_results)
+            colnames(gsva_results) = c("Pathway", "Sample", "EnrichmentScore")
+
+            write.table(gsva_results, file = "$gsva_out", col.names = TRUE, row.names = FALSE, quote = FALSE, sep = "\t")
+        </configfile>
+    </configfiles>
+
+    <!-- Note on boolean elements: "TRUE" and "FALSE" are used if the values are used directly in R code, "true" and "false" are used if the values are used in a Cheetah if else decision. -->
+    <!-- Note on hidden elements within conditional elements: Some of the GSVA parameters are only used conditionally. For example, abs.ranking is only used if mx.diff = TRUE. To avoid 'ojbect not found' errors and using multiple if else decisions when calling GSVA, these conditional parameters are set to a value within a hidden element when they are not relevant. Then these values/parameters will simply be ignored by GSVA in these situations.  -->
+    <inputs>
+        <param format="tsv,tabular,txt" name="gene_expression_file" type="data" multiple="false" label="TSV file containing gene expression data." argument="--expr" help="p genes by n samples"/>
+        <param format="tsv,tabular,txt" name="gene_sets_file" type="data" multiple="false" label="TSV/GMT file containing gene sets to use in the analysis." argument="--gset.idx.list" help="All gene sets should be in 1 file."/> 
+        <!-- Parameters for pre-processing data. -->
+        <param name="expression_cutoff_quantifications" type="float" label="Minimum expression threshold." help="Value should reflect the quantification method used (e.g., TPMs, CPMs, raw counts). See `help` section for an example." value="1.0"/>  
+        <param name="expression_cutoff_samples" type="integer" label="Minimum samples threshold." help="Number of samples the minimum expression threshold needs to be met to use the gene in the analysis. See `help` section for an example." value="2"/> 
+        <param name="log_transform_expression" type="boolean" checked="true" truevalue="true" falsevalue="false" label="log2 transform the gene expression values? Uses a pseudo-count of 1 (log2(x + 1))." help="Applied after the expression thresholds are applied."/> 
+        <!-- GSVA parameters. -->
+        <param name="min_size_set" type="integer" label="Minimum number of genes required for a valid gene set." argument="--min.sz" help="Any gene sets with less genes than this value will be discarded." value="5"/>  
+        <param name="max_size_set" type="integer" label="Maximum number of genes allowed in a valid gene set." argument="--max.sz" help="Any gene sets with a greater number of genes than this value will be discarded." value="200"/>  
+        <param name="kernel" type="select" label="Kernel for estimation of the cumulative distribution function of expression levels across samples." argument="--kcdf" help="Guassian is intended for continous data (e.g., log-transformed TPMs or microarray data) and Poisson for discrete data (e.g. RNA-seq counts).">
+            <option value="Gaussian" selected="true">Gaussian</option>
+            <option value="Poisson">Poisson</option>
+        </param>
+        <conditional name="enrichment_statistic">
+            <param name="max_diff" type="select" label="Enrichment statistic method." argument="--mx.diff" help="The 'Magnitude difference' option may be more appropriate if the gene sets are seperated into up and down expressed genes.">
+                <option value="FALSE" selected="true">Maximum distance of the random walk from 0.</option>
+                <option value="TRUE">Magnitude difference between the largest positive and negative random walk deviations.</option>
+            </param>
+            <when value="FALSE">
+                <param name="absolute_ranking" type="boolean" checked="false" truevalue="TRUE" falsevalue="FALSE" hidden="true" label="Use absolute ranking? (Not applicable when 'Enrichment statistic method' = FALSE.)" argument="--abs.ranking" help="Advanded usage. See `help` section for more information."/>
+            </when>
+            <when value="TRUE">
+                <param name="absolute_ranking" type="boolean" checked="false" truevalue="TRUE" falsevalue="FALSE" label="Use absolute ranking?" argument="--abs.ranking" help="Advanded usage. See `help` section for more information."/>
+            </when>
+        </conditional>
+        <conditional name="method">
+            <param name="score" type="select" label="Method to employ in the estimation of gene-set enrichment statistics." argument="--method" help="'GSVA' is the recommended and default option.">
+                <option value="gsva" selected="true">GSVA</option>
+                <option value="ssgsea">SSGSEA (Advanced usage)</option>
+                <option value="zscore">Z-score (Advanced usage)</option>
+                <option value="plage">PLAGE (Advanced usage)</option>
+            </param>
+            <when value="gsva">
+                <param name="tau" type="float" value="1.0" label="Exponent defining the weight of the tail in the random walk."  argument="--tau" help="Advanded usage. See `help` section for more information."/>
+                <param name="ssgsea_norm" type="boolean" checked="false" truevalue="TRUE" falsevalue="FALSE" hidden="true" label="Normalize the scores by the absolute difference between the minimum and the maximum? (Not applicable to GSVA method.)" argument="--ssgsea.norm" help="Advanded usage. See `help` section for more information."/>
+            </when>
+            <when value="ssgsea">
+                <param name="tau" type="float" value="0.25" label="Exponent defining the weight of the tail in the random walk." argument="--tau" help="Advanded usage. See `help` section for more information."/>
+                <param name="ssgsea_norm" type="boolean" checked="true" truevalue="TRUE" falsevalue="FALSE" label="Normalize the scores by the absolute difference between the minimum and the maximum?" argument="--ssgsea.norm" help="Advanded usage. See `help` section for more information."/>
+            </when>
+            <when value="zscore">
+                <param name="tau" type="float" value="1.0" hidden="true" label="Exponent defining the weight of the tail in the random walk. (Not applicable to Z-score method.)" argument="--tau" help="Advanded usage. See `help` section for more information."/>
+                <param name="ssgsea_norm" type="boolean" checked="false" truevalue="TRUE" falsevalue="FALSE" hidden="true" label="Normalize the scores by the absolute difference between the minimum and the maximum? (Not applicable to Z-score method.)" argument="--ssgsea.norm" help="Advanded usage. See `help` section for more information."/>
+            </when>
+            <when value="plage">
+                <param name="tau" type="float" value="1.0" hidden="true" label="Exponent defining the weight of the tail in the random walk. (Not applicable to PLAGE method.)" argument="--tau" help="Advanded usage. See `help` section for more information."/>
+                <param name="ssgsea_norm" type="boolean" checked="false" truevalue="TRUE" falsevalue="FALSE" hidden="true" label="Normalize the scores by the absolute difference between the minimum and the maximum? (Not applicable to PLAGE method.)" argument="--ssgsea.norm" help="Advanded usage. See `help` section for more information."/>
+            </when>
+        </conditional>
+    </inputs>
+
+    <outputs>
+        <!-- Remove any original input file extension. -->
+        <data format="tsv" name="gsva_out" type="data" label="${os.path.splitext(os.path.basename($gene_expression_file.name))[0]}_GSVA_out"/>
+    </outputs>
+
+    <tests>
+        <!-- All default parameters test. -->
+        <test>
+            <param name="gene_expression_file" value="gsva_tests/ccle_20_breast_cancer_cell_lines_expression.tsv" ftype="tsv"/>
+            <param name="gene_sets_file" value="gsva_tests/hallmark_all_v6_2.gmt" ftype="tsv"/>
+            <param name="expression_cutoff_quantifications" value="1.0"/>
+            <param name="expression_cutoff_samples" value="2"/>
+            <param name="log_transform_expression" value="true"/>
+            <param name="min_size_set" value="5"/>
+            <param name="max_size_set" value="200"/>
+            <param name="kernel" value="Gaussian"/>
+            <param name="max_diff" value="FALSE"/>
+            <param name="absolute_ranking" value="FALSE"/>
+            <param name="score" value="gsva"/>
+            <param name="tau" value="1.0"/>
+            <param name="ssgsea_norm" value="FALSE"/>
+            <output name="gsva_out" file="gsva_tests/ccle_all_default_parameters_GSVA_out.tsv" ftype="tsv" />
+        </test>
+    </tests>
+
+    <help>
+        **Gene expression threshold example:**
+
+        .. image:: /static/images/gsva_expression_threshold_example.png
+            :height: 198
+            :width: 539
+        
+        **Description**: 
+        GSVA assesses the relative enrichment of gene sets across samples 
+        using a non-parametric approach. Conceptually, GSVA transforms a 
+        p-gene by n-sample gene expression matrix into a geneset by n-sample 
+        pathway enrichment matrix. This facilitates many forms of statistical 
+        analysis in the ’space’ of pathways rather than genes, providing a 
+        higher level of interpretability. The gsva()function first maps the 
+        identifiers in the gene sets to the identifiers in the input expression 
+        data leading to a filtered collection of gene sets. This collection can 
+        be further filtered to require a minimun and/or maximum size of the gene 
+        sets for which we want to calculate GSVA enrichment scores, by using the 
+        arguments min.sz and max.sz.
+
+        **GSVA parameters in bold can be set by the user**:
+
+        **expr**: Gene expression data which can be given either as an
+        ‘ExpressionSet’ object or as a matrix of expression values
+        where rows correspond to genes and columns correspond to
+        samples.
+
+        **gset.idx.list**: Gene sets provided either as a ‘list’ object or as a
+        ‘GeneSetCollection’ object.
+
+        annotation: In the case of calling ‘gsva()’ with expression data in a
+        ‘matrix’ and gene sets as a ‘GeneSetCollection’ object, the
+        ‘annotation’ argument can be used to supply the name of the
+        Bioconductor package that contains annotations for the class
+        of gene identifiers occurring in the row names of the
+        expression data matrix. By default ‘gsva()’ will try to match
+        the identifiers in ‘expr’ to the identifiers in
+        ‘gset.idx.list’ just as they are, unless the ‘annotation’
+        argument is set.
+
+        **method**: Method to employ in the estimation of gene-set enrichment
+        scores per sample. By default this is set to ‘gsva’
+        (Hänzelmann et al, 2013) and other options are ‘ssgsea’
+        (Barbie et al, 2009), ‘zscore’ (Lee et al, 2008) or ‘plage’
+        (Tomfohr et al, 2005). The latter two standardize first
+        expression profiles into z-scores over the samples and, in
+        the case of ‘zscore’, it combines them together as their sum
+        divided by the square-root of the size of the gene set, while
+        in the case of ‘plage’ they are used to calculate the
+        singular value decomposition (SVD) over the genes in the gene
+        set and use the coefficients of the first right-singular
+        vector as pathway activity profile.
+
+        **kcdf**: Character string denoting the kernel to use during the
+        non-parametric estimation of the cumulative distribution
+        function of expression levels across samples when
+        ‘method="gsva"’.  By default, ‘kcdf="Gaussian"’ which is
+        suitable when input expression values are continuous, such as
+        microarray fluorescent units in logarithmic scale, RNA-seq
+        log-CPMs, log-RPKMs or log-TPMs.  When input expression
+        values are integer counts, such as those derived from RNA-seq
+        experiments, then this argument should be set to
+        ‘kcdf="Poisson"’.
+
+        **abs.ranking**: Flag used only when ‘mx.diff=TRUE’. When
+        ‘abs.ranking=FALSE’ (default) a modified Kuiper statistic is
+        used to calculate enrichment scores, taking the magnitude
+        difference between the largest positive and negative random
+        walk deviations. When ‘abs.ranking=TRUE’ the original Kuiper
+        statistic that sums the largest positive and negative random
+        walk deviations, is used. In this latter case, gene sets with
+        genes enriched on either extreme (high or low) will be
+        regarded as 'highly' activated.
+
+        **min.sz**: Minimum size of the resulting gene sets.
+
+        **max.sz**: Maximum size of the resulting gene sets.
+
+        parallel.sz: Number of processors to use when doing the calculations in 
+        parallel. This requires to previously load either the ‘parallel’ or the 
+        ‘snow’ library. If ‘parallel’ is loaded and this argument is left with its 
+        default value (‘parallel.sz=0’) then it will use all available core 
+        processors unless we set this argument with a smaller number. If ‘snow’ is 
+        loaded then we must set this argument to a positive integer number that 
+        specifies the number of processors to employ in the parallel calculation.
+
+        parallel.type: Type of cluster architecture when using ‘snow’.
+
+        **mx.diff**: Offers two approaches to calculate the enrichment statistic
+        (ES) from the KS random walk statistic. ‘mx.diff=FALSE’: ES
+        is calculated as the maximum distance of the random walk from
+        0. ‘mx.diff=TRUE’ (default): ES is calculated as the
+        magnitude difference between the largest positive and
+        negative random walk deviations.
+
+        **tau**: Exponent defining the weight of the tail in the random walk
+        performed by both the ‘gsva’ (Hänzelmann et al., 2013) and
+        the ‘ssgsea’ (Barbie et al., 2009) methods. By default, this
+        ‘tau=1’ when ‘method="gsva"’ and ‘tau=0.25’ when
+        ‘method="ssgsea"’ just as specified by Barbie et al. (2009)
+        where this parameter is called ‘alpha’.
+
+        **ssgsea.norm**: Logical, set to ‘TRUE’ (default) with ‘method="ssgsea"’
+        runs the SSGSEA method from Barbie et al. (2009) normalizing
+        the scores by the absolute difference between the minimum and
+        the maximum, as described in their paper. When‘ssgsea.norm=FALSE’ this 
+        last normalization step is skipped.
+
+        verbose: Gives information about each calculation step. Default: ‘FALSE’.
+    </help>
+
+    <citations>
+        <citation type="bibtex">
+            @article{Hanzelmann2013,
+            abstract = {Gene set enrichment (GSE) analysis is a popular framework for condensing information from gene expression profiles into a pathway or signature summary. The strengths of this approach over single gene analysis include noise and dimension reduction, as well as greater biological interpretability. As molecular profiling experiments move beyond simple case-control studies, robust and flexible GSE methodologies are needed that can model pathway activity within highly heterogeneous data sets. To address this challenge, we introduce Gene Set Variation Analysis (GSVA), a GSE method that estimates variation of pathway activity over a sample population in an unsupervised manner. We demonstrate the robustness of GSVA in a comparison with current state of the art sample-wise enrichment methods. Further, we provide examples of its utility in differential pathway activity and survival analysis. Lastly, we show how GSVA works analogously with data from both microarray and RNA-seq experiments. GSVA provides increased power to detect subtle pathway activity changes over a sample population in comparison to corresponding methods. While GSE methods are generally regarded as end points of a bioinformatic analysis, GSVA constitutes a starting point to build pathway-centric models of biology. Moreover, GSVA contributes to the current need of GSE methods for RNA-seq data. GSVA is an open source software package for R which forms part of the Bioconductor project and can be downloaded at 
+                                http://www.bioconductor.org
+                                
+                            .},
+            author = {H{\"{a}}nzelmann, Sonja and Castelo, Robert and Guinney, Justin},
+            doi = {10.1186/1471-2105-14-7},
+            file = {:Users/hocumj/Documents/Mendeley Desktop/H{\"{a}}nzelmann, Castelo, Guinney - 2013 - GSVA gene set variation analysis for microarray and RNA-Seq data.pdf:pdf},
+            issn = {1471-2105},
+            journal = {BMC Bioinformatics},
+            keywords = {Algorithms,Bioinformatics,Combinatorial Libraries,Computational Biology/Bioinformatics,Computer Appl. in Life Sciences,Microarrays},
+            mendeley-groups = {OHSU - Precision Oncology},
+            month = {jan},
+            number = {1},
+            pages = {7},
+            publisher = {BioMed Central},
+            title = {{GSVA: gene set variation analysis for microarray and RNA-Seq data}},
+            url = {http://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-7},
+            volume = {14},
+            year = {2013}
+            }
+        </citation>
+    </citations>
+</tool>
