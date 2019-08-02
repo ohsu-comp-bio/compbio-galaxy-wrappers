@@ -1,5 +1,8 @@
 <tool id='gender_check' name="Gender Check" version='1.0.0'>
     <description>Check the gender of a sample against the gender given in the samplesheet.</description>
+    <requirements>
+        <requirement type="package" version="4.0.5.1">gatk4</requirement>
+    </requirements>
     <command detect_errors="exit_code"><![CDATA[
         $__tool_directory__/gender_check.sh $gender $input
 ]]>
