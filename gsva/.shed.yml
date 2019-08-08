@@ -1,4 +1,3 @@
-
 owner: "hocumj"
 remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/gsva_tools"
 homepage_url: "https://bioconductor.org/packages/release/bioc/html/GSVA.html"
@@ -8,6 +7,6 @@ repositories:
   gsva_tools:
     description: "Use GSVA to estimate gene set enrichment statistics from gene expression values."
     include:
-      - run_gsva.xml
+      - gsva.xml
       - static/**
       - test-data/**

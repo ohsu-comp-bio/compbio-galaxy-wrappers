@@ -9,14 +9,14 @@
 <!-- TODO (hocumj 7/15/2019): Add preprocessing step to handle missing Ensembl ID versions. E.g., ENSG00000171223.5 compared to ENSG00000171223 -->
 <!-- TODO (hocumj 7/15/2019): Implement some tests for running with non-default parameters. -->
 
-<tool id="run_gsva" name="Run GSVA:" version="0.1.0">
+<tool id="gsva" name="GSVA" version="0.1.0">
     <description>Estimate gene set enrichment statistics from gene expression values.</description>
     <requirements>
-        <requirement type="package" version="3.0.0">R</requirement>
-        <requirement type="package" version="1.32.0">GSVA</requirement>
-        <requirement type="package" version="1.17.4">GSEABase</requirement>
-        <requirement type="package" version="1.4.3">reshape2</requirement>
-        <requirement type="package" version="0.7.6">dplyr</requirement>
+        <requirement type="package" version="3.6.1">r-base</requirement>
+        <requirement type="package" version="1.46.0">bioconductor-gseabase</requirement>
+        <requirement type="package" version="1.32.0">bioconductor-gsva</requirement>
+        <requirement type="package" version="1.4.3">r-reshape2</requirement>
+        <requirement type="package" version="0.8.3">r-dplyr</requirement>
     </requirements>
 
     <command detect_errors="exit_code"><![CDATA[
