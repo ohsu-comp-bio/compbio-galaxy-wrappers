@@ -1,0 +1,51 @@
+<tool id='process_nanostring' name='Process and Normalize RCC Files' version='1.0.0'>
+    <description>Process and normalize RCC output from nanostring.</description>    
+    <command detect_errors="exit_code"><![CDATA[
+        
+        #for $num, $file in enumerate($rcc)
+                    ln -s $file input${num}.RCC &&
+        #end for
+        python $__tool_directory__/proc_norm.py 
+        #for $num, $file in enumerate($rcc)
+            input${num}.RCC
+        #end for
+          --samplesheet "${samplesheet}"
+          --abfile "${ab_reference}"
+        #if $ctrl
+            -ctrl
+        #end if
+    ]]></command>
+    
+    <inputs>
+        <param format="tabular" type="data" name="samplesheet" label="Samplesheet" help="Samplesheet is tab delimited of RCC file name in column 1 and sample name in column 2."/>
+        <param format="xml" type="data" name="rcc" label="RCC Files (reporter code count)" multiple="true" help=""/>
+        <param format="data" type="data" name="ab_reference" label="ANTIBODY_REFERENCE.csv" optional="true" help="antibody_reference file changes antibody names from the existing ones in RCC files"/>
+        <param type="boolean" name="ctrl" label="Normalize using all samples" help="YES = Normalize using all RCC samples.  NO = Normalize only using cell lines MCF7, HCC1954, BT474, HeyA8, MDA468 control, MDA468control, MDA468+EGF as controls"/>
+    </inputs>
+    <outputs>
+        <data format="tsv" name="rawdata" label="raw_data $on_string" from_work_dir="rawdata.txt"/>
+        <data format="tsv" name="run_metrics" label="run_metrics $on_string" from_work_dir="run_metrics.txt"/>
+        <data format="tsv" name="ercc" label="1_ERCC_Normalized" from_work_dir="1_ERCC_NORMALIZED.tsv"/>
+        <data format="tsv" name="geomean" label="2_Geomean_Normalized" from_work_dir="2_GEOMEAN_NORMALIZED.tsv"/>
+        <data format="tsv" name="igg" label="3_IGG_Normalized" from_work_dir="3_IGG_NORMALIZED.tsv"/>
+        <data format="tsv" name="log_2" label="4_Log2_Normalized" from_work_dir="4_LOG_2_NORMALIZED.tsv"/>
+    </outputs>
+    <help><![CDATA[
+This tool takes multiple RCC files, the output from Nanostring. There is an RCC file per sample in a batch of Nanostring data. 
+
+*Input*: 
+ - RCC files 
+ - Nanostring Samplesheet
+ - antibody reference file
+
+*Output*:
+ - rawdata.txt: tab-delimited file with the raw data from nanostring
+ - run_metrics.txt: tab-delimited file with run and lane quality metrics
+ - corrected tables: rawdata numbers corrected for:
+    1. ERCC control, loading contro
+    2. Sample level mean for all antibodies per sample
+    3. Immunoglobulin ratio
+
+    ]]></help>
+
+</tool>

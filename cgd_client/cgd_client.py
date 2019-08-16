@@ -22,7 +22,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.7.1'
+VERSION = '1.2.8.2'
 
 
 def supply_args():
@@ -32,7 +32,7 @@ def supply_args():
 
     parser.add_argument('stdout_log', help='')
     parser.add_argument('endpoint', help='')
-    parser.add_argument('java8_path', help='Java 8 PATH as defined in JAVA8_PATH.')
+#    parser.add_argument('java8_path', help='Java 8 PATH as defined in JAVA8_PATH.')
     parser.add_argument('--report_vcf', help='Output VCF if utilizing '
                                              'reportvariants endpoint.')
     parser.add_argument('--report_bed', help='Output BED if utilizing '
@@ -122,7 +122,7 @@ def build_cmd(args, recvd_prof=False):
     """
     Build the command that will send data to the CGD.
     """
-    cmd = [args.java8_path, '-jar', args.cgd_client, "-n", args.endpoint, "-c", args.cgd_config]
+    cmd = ['java', '-jar', args.cgd_client, "-n", args.endpoint, "-c", args.cgd_config]
     newfile = ""
 
     if args.servicebase:

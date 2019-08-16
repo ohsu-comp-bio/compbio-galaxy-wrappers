@@ -1,4 +1,4 @@
-<tool id="png_to_pdf" name="PNG to PDF Converter" version="1.0.1">
+<tool id="png_to_pdf" name="PNG to PDF Converter" version="1.1.0">
   <description>Converts a PNG to a PDF.</description>
   <command detect_errors="exit_code"><![CDATA[
     #for $filenum, $input in enumerate($png_inputs)

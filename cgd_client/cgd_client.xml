@@ -1,10 +1,16 @@
-<tool id="cgd_client" name="CGD Import Client" version="1.2.7.1" >
+<tool id="cgd_client" name="CGD Import Client" version="1.2.8.2" >
 
     <description>Send a pipeline output file to the CGD via cgd_client.jar.  Files that can be sent are the interval and
-        gene metrics files, VCF, SeattleSeq output, and FastQC output.</description>
+        gene metrics files, VCF, SeattleSeq output, and FastQC output.
+    </description>
+
+    <requirements>
+      <requirement type="package" version="1.3.0">scipy</requirement>
+      <requirement type="package" version="0.6.8">pyvcf</requirement>
+    </requirements>
 
     <command interpreter="python" detect_errors="exit_code">
-        cgd_client.py $output $endpoint_choice.endpoint "\${JAVA8_PATH}"
+        cgd_client.py $output $endpoint_choice.endpoint
         --cgd_config "\${CGD_CLIENT_CONFIG}"
 
         --cgd_client $cgd_client
@@ -59,6 +65,10 @@
         #end if
 
         #if $endpoint_choice.endpoint=="illuminavcf"
+        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+        #end if
+
+        #if $endpoint_choice.endpoint=="sequenceVariant"
         --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
         #end if
 
@@ -162,6 +172,7 @@
                 <option value="reportedvariants">Reported Variants</option>
                 <option value="samplesheet">SampleSheet</option>
                 <option value="seattleseq">SeattleSeq .tsv</option>
+                <option value="sequenceVariant">RNA Variants</option>
                 <option value="snpProfile">SNP Profile</option>
                 <option value="splicevariant">Splice Variants</option>
                 <option value="tumornormal">Tumor Normal</option>
@@ -243,6 +254,12 @@
             </when>
 
             <when value="illuminavcf">
+                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="runid" type="text" label="Galaxy Run ID: " />
+                <param name="barcodeid" type="text" label="Barcode ID: " />
+            </when>
+
+            <when value="sequenceVariant">
                 <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />

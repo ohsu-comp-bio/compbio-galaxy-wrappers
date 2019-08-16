@@ -1,4 +1,4 @@
-<tool id="gatk4_cnv_annotate" name="Annotate GATK4 CNV" version="0.2.2" >
+<tool id="gatk4_cnv_annotate" name="Annotate GATK4 CNV" version="0.2.3" >
         <description>Annotate results from GATK4 CNV workflow output.</description>
 
     <version_command></version_command>
