@@ -94,6 +94,7 @@ e.sampleid)])
   <inputs>
     <param name="input_file" type="data" label="Input File to Move" help="Move this input file to some location on the file syst
 em." />
+    <param name="dummy_file" type="data" label="Dummy Input File (OPTIONAL)" help="Optional file(s) to keep job from starting until dummy file is sent." optional="true" multiple="true"/>
     <conditional name="move_type">
 
       <param name="move_type_sel" type="select" label="Choose file move type.">
