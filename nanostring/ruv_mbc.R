@@ -67,9 +67,8 @@ pcaplt <- function (mat, title = "PCA Plot", repdf) {
 }
 ## OUTPUT PREP ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-dir.create(paste0(dirname(normalizePath(input_file)), "/OUTPUT"), showWarnings = F)
-output_dir = paste0(dirname(normalizePath(input_file)), "/OUTPUT")
-dir.create(file.path(paste0(dirname(normalizePath(input_file)), "/OUTPUT/ruv_figures")), showWarnings = F)
+output_dir = "."
+dir.create("ruv_figures", showWarnings = F)
 
 ## VALIDATION DATA ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 igg_geosamp = read.csv(validation_file, sep= "\t", row.names = 1)
@@ -123,7 +122,7 @@ ctl_validation$status = ifelse(ctl_validation$new_batch < ctl_validation$mean.mi
                                       ctl_validation$new_batch - ctl_validation$mean.plus.2sd, "PASS"))
 
 
-write.table(ctl_validation, file = paste0(output_dir, "/", "qc_controls.tsv"), 
+write.table(ctl_validation, file = paste0(output_dir, "/", "QC_controls.tsv"), 
             sep="\t", quote = F, row.names = T, col.names = NA)
 
 ## QC LINEAR MODEL ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
