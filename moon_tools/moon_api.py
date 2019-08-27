@@ -8,10 +8,10 @@ def supply_args():
   parser.add_argument('-mode', help='info, post, or analyse')
   parser.add_argument('-snp', help='SNP VCF file')
   parser.add_argument('-cnv', help='CNV VCF file')
-  parser.add_argument('-age', help='Patient Age')
-  parser.add_argument('-gender', help='Patient Gender')
-  parser.add_argument('-consang', help='Is the patient Consanguinious?')
-  parser.add_argument('-hp', help="HPO Terms")
+  parser.add_argument('-age', help='Patient Age', default="999")
+  parser.add_argument('-gender', help='Patient Gender', default="Unknown")
+  parser.add_argument('-consang', help='Is the patient Consanguinious?', default="false")
+  parser.add_argument('-hp', help="HPO Terms", default="")
   parser.add_argument('-family', help="Family Members", default="none")
   args = parser.parse_args()
   return args
@@ -32,7 +32,7 @@ def get_patient_info(moon_id):
   info.close()
   return "info.txt"
 
-def post_sample(snp, cnv, age, gender, consang, hp, family = "none" ):
+def post_sample(snp, cnv = "none", age = 999, gender = "unknown", consang = "false", hp = "", family = "none" ):
   at_snp = "@/Users/campbena/Documents/galaxy-dev/tools/my_tools/" + snp
   at_cnv = "@/Users/campbena/Documents/galaxy-dev/tools/my_tools/" + cnv
   int_age = int(age)
@@ -43,6 +43,12 @@ def post_sample(snp, cnv, age, gender, consang, hp, family = "none" ):
   
   if family == "none":
     parameters.pop("family_members")
+    
+  if cnv == "none":
+    parameters.pop("sv_vcf_file")
+    
+  if age == "999":
+    parameters.pop("age")
     
   patient_url = "https://oregon.moon.diploid.com/samples.json"
   
@@ -72,6 +78,7 @@ def main():
     return get_patient_info(args.id)
   if args.mode == "post":
     return post_sample(args.snp, args.cnv, args.age, args.gender, args.consang, args.hp, args.family)
+    
   if args.mode == "analyse":
     return analyse_sample(args.id)
 
