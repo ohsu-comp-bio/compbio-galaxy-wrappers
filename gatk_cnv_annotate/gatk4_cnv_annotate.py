@@ -1,7 +1,7 @@
 import argparse
 import gffutils
 
-VERSION = '0.2.3'
+VERSION = '0.2.4'
 
 def supply_args():
     """
@@ -525,8 +525,8 @@ def main():
     write_order = ['CONTIG', 'START', 'END', 'NUM_POINTS_COPY_RATIO', 'MEAN_LOG2_COPY_RATIO', 'CALL',
                    'START_GENE', 'START_EXON', 'END_GENE', 'END_EXON']
     gene_write_order = ['GENE_CHROM', 'GENE_START', 'GENE_STOP', 'GENE', 'NUM_POINTS_SEGMENT',
-                        'NUM_POINTS_GENE', 'MEAN_LOG2_COPY_RATIO', 'RAW_COPY_NUMBER', 'TUMOR_COPY_NUMBER', 'CALL',
-                        'REGION_CHROM', 'REGION_START', 'REGION_STOP']
+                        'NUM_POINTS_GENE', 'MEAN_LOG2_COPY_RATIO', 'RAW_COPY_NUMBER', 'TUMOR_COPY_NUMBER',
+                        'TUMOR_COPY_RATIO', 'CALL', 'REGION_CHROM', 'REGION_START', 'REGION_STOP']
     to_write = []
     for ival in pic_ints.regions:
         to_write.append(KdlCopyInterval(ival, dbname, common_to_refseq, args.genes).ival)
