@@ -1,0 +1,140 @@
+<tool id="cnvkit_heatmap" name="CNVkit Heatmap" version="@VERSION@.0" profile="17.09">
+    <description>CNVKit, a command-line toolkit for copy number analysis.</description>
+    
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+
+    <requirements>
+        <requirement type="package" version="0.9.4a0">cnvkit</requirement>
+    </requirements>
+
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ heatmap 
+
+        #if $by_bin:
+        --by-bin
+        #end if
+
+        #if $restrict_analysis.restrict_to == "chromosome":
+        --chromosome ${restrict_analysis.chromosome} 
+        #else if $restrict_analysis.restrict_to == "region":
+        --chromosome ${restrict_analysis.chromosome}:${restrict_analysis.reg_start}-${restrict_analysis.reg_end} 
+        #end if
+
+        #if $desaturate:
+        --desaturate
+        #end if
+
+        #if $sex == "Male":
+        --sample-sex Male
+        #else if $sex == "Female":
+        --sample-sex Female
+        #end if
+
+        #if $disable_xy:
+        --no-shift-xy
+        #end if
+
+        #for $sample in $samples:
+        '${sample}'
+        #end for
+
+        #if $output.output_type == "file":
+        -o '${output}'
+
+    ]]></command>
+
+
+    <inputs>
+        <param name="samples" type="data" format="text,tabular,tsv" multiple="true" label="Copy Number Files"/>
+        
+        <param name="by_bin" type="boolean" label="Graph By Bin" help="Plot x-coordinates by bin indices instead of genomic coordinates."/>
+        <param name="desaturate" type="boolean" label="Desaturate" help="Desaturate color of low-amplitude regions"/>
+        <param name="disable_xy" type="boolean" label="Disable X/Y Chromosome Correction" help="Explanation needed."/>
+ 
+        <param name="sex" type="select" label="Sex of Samples">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+        </param>
+
+        <conditional name="restrict_analysis">
+            <param name="restrict_to" type="select" label="Restrict Analysis" help="Restrict analysis to single chromosome or chromosome region">
+                <option value="whole">Whole Sequence</option>
+                <option value="chromosome">Whole Chromosome</option>
+                <option value="region">Chromosome Region</option>
+            </param>
+
+            <when value="whole">
+            </when>
+            <when value="chromosome">
+                <param name="chromosome" type="text" label="Chromosome"/>
+            </when>
+            <when value="region">
+                <param name="chromosome" type="text" label="Chromosome"/>
+                <param name="reg_start" type="integer" label="Region starting index" help="Region will start on, and include, this index."/>
+                <param name="reg_end" type="integer" label="Region end index" help="Region will run up to, and not including, this index."/>
+            </when>
+        </conditional>
+
+<!--
+        <conditional name="output">
+            <param name="output_type" type="select" label="Output Type">
+                <option value="screen">Screen</option>
+                <option value="file">File</option>
+            </param>
+            <when value="file">
+                <param name="output_file" type="text" label="Output File Name"/>
+            </when>
+        </conditional>
+-->
+    </inputs>
+
+    <outputs>
+        <data name="output" format="pdf" label="${tool.name} on ${on_string}"/>
+    </outputs>
+
+    <help><![CDATA[
+        usage: cnvkit.py heatmap [-h] [-b] [-c CHROMOSOME] [-d] [-y]
+                                 [-x {m,y,male,Male,f,x,female,Female}]
+                                 [--no-shift-xy] [-o FILENAME]
+                                 filenames [filenames ...]
+
+        positional arguments:
+          filenames             Sample coverages as raw probes (.cnr) or segments
+                                (.cns).
+
+        optional arguments:
+          -h, --help            show this help message and exit
+          -b, --by-bin          Plot data x-coordinates by bin indices instead of
+                                genomic coordinates. All bins will be shown with equal
+                                width, no blank regions will be shown, and x-axis
+                                values indicate bin number (within chromosome) instead
+                                of genomic position.
+          -c CHROMOSOME, --chromosome CHROMOSOME
+                                Chromosome (e.g. 'chr1') or chromosomal range (e.g.
+                                'chr1:2333000-2444000') to display. If a range is
+                                given, all targeted genes in this range will be shown,
+                                unless '--gene'/'-g' is already given.
+          -d, --desaturate      Tweak color saturation to focus on significant
+                                changes.
+          -y, --male-reference, --haploid-x-reference
+                                Assume inputs were normalized to a male reference
+                                (i.e. female samples will have +1 log-CNR of chrX;
+                                otherwise male samples would have -1 chrX).
+          -x {m,y,male,Male,f,x,female,Female}, --sample-sex {m,y,male,Male,f,x,female,Female}, -g {m,y,male,Male,f,x,female,Female}, --gender {m,y,male,Male,f,x,female,Female}
+                                Specify the chromosomal sex of all given samples as
+                                male or female. (Default: guess each sample from
+                                coverage of X and Y chromosomes).
+          --no-shift-xy         Don't adjust the X and Y chromosomes according to
+                                sample sex.
+          -o FILENAME, --output FILENAME
+                                Output PDF file name.
+    ]]></help>
+
+    <expand macro="citations"/>
+    
+</tool>
