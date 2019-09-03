@@ -20,7 +20,36 @@
         --center-at ${centering.offset}
         #end if
 
-        #if not $filter ==
+        #if not $filter == "None":
+        --filter $filter
+
+        #if ${method.name} == "threshold":
+        --method threshold --thresholds $method.thresh1,$method.thresh2,$method.thresh3,$method.thresh4
+        #else if ${method.name} == "clonal":
+        --method clonal
+        #else
+        --method none
+        #end if
+
+        --ploidy $ploidy
+
+        #if ${purity.known} == "known":
+        --purity ${purity.percentage}
+        #end if
+
+        #if $drop:
+        --drop-low-coverage
+        #end if
+
+        #if ${sample_sex.known} == "known":
+        --sample-sex ${sample_sex.sex}
+
+        #if $reference_male:
+        --male-reference
+
+        -o "${output}"+".cns"
+
+        "$input_file"
     ]]></command>
 
     <inputs>
@@ -38,6 +67,7 @@
                     <option value="median">Median</option>
                     <option value="mode">Mode</option>
                     <option value="biweight">Biweight</option>
+                </param>
             </when>
             <when value="manual">
                 <param name="offset" type="float" value="0.0"/>
@@ -54,9 +84,9 @@
 
         <conditional name="method">
             <param name="name" type="select" label="Calling Method">
+                <option value="na">None</option>
                 <option value="threshold">Threshold</option>
                 <option value="clonal">Clonal</option>
-                <option value="none">None</option>
             </param>
             <when value="threshold">
                 <param name="thresh1" type="float" value="-1.1" label="Threshold 1"/>
@@ -70,8 +100,8 @@
 
         <conditional name="purity">
             <param name="known" type="select" label="Sample Purity Status">
-                <option value="known">Known</option>
                 <option value="unknown">Unknown</option>
+                <option value="known">Known</option>
             </param>
             <when value="known">
                 <param name="percentage" type="float" value="0.0" label="Percentage"/>
@@ -84,8 +114,8 @@
 
         <conditional name="sample_sex">
             <param name="known" type="select" label="Sample Sex">
-                <option value="known">Known</option>
                 <option value="unknown">Unknown</option>
+                <option value="known">Known</option>
             </param>
             <when value="known">
                 <param name="sex" type="select" label="Sex">
@@ -99,10 +129,11 @@
     </inputs>
 
     <outputs>
+        <data name="output" format="tabular" label="${input.name} on ${on_string}"/>
     </outputs>
 
     <help><![CDATA[
-    CNVkit batch: Run the complete CNVkit pipeline on one or more BAM files.
+    CNVkit call: Process a single BAM file into a segemented copy number file.
     ]]></help>
 
     <expand macro="citations" />
