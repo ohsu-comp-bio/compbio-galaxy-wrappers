@@ -12,7 +12,15 @@
     </requirements>
 
     <command detect_errors="exit_code"><![CDATA[
-        @CMD_BEGIN@ batch
+        @CMD_BEGIN@ call
+
+        #if ${centering.center_mode}=="measure_of_center":
+        --center ${centering.measure}
+        #else if ${centering.center_mode}=="manual":
+        --center-at ${centering.offset}
+        #end if
+
+        #if not $filter ==
     ]]></command>
 
     <inputs>
@@ -32,7 +40,7 @@
                     <option value="biweight">Biweight</option>
             </when>
             <when value="manual">
-                <param name="center" type="integer" value="0"/>
+                <param name="offset" type="float" value="0.0"/>
             </when>
         </conditional>
 
@@ -58,11 +66,7 @@
             </when>
         </conditional>
 
-        <param name="ploidy" type="select" label="Ploidy">
-            <option value="unspecified">Unspecified</option>
-            <option value="2">2</option>
-            <option value="4">4</option>
-        </param>
+        <param name="ploidy" type="integer" value="2" label="Ploidy"/>
 
         <conditional name="purity">
             <param name="known" type="select" label="Sample Purity Status">
@@ -84,11 +88,14 @@
                 <option value="unknown">Unknown</option>
             </param>
             <when value="known">
-                <param name="
+                <param name="sex" type="select" label="Sex">
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                </param>
             </when>
         </conditional>
 
-
+        <param name="reference_male" type="boolean" checked="False" label="Male reference"/>
     </inputs>
 
     <outputs>
