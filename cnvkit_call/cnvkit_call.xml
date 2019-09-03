@@ -1,0 +1,103 @@
+<tool id="cnvkit_call" name="CNVkit Call" version="@VERSION@.0" profile="17.09">
+    <description>CNVkit, a command-line toolkit for copy number analysis.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <requirements>
+      <requirement type="package" version="0.9.4a0">cnvkit</requirement>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ batch
+    ]]></command>
+
+    <inputs>
+        <param name="input_file" type="data" format="bam" multiple="false" label="File to process"/>
+
+        <conditional name="centering">
+            <param name="center_mode" type="select" label="Center Mode">
+                <option value="default">Default</option>
+                <option value="measure_of_center">Measure of Center</option>
+                <option value="manual">Manual Center</option>
+            </param>
+            <when value="measure_of_center">
+                <param name="measure" type="select" label="Measure">
+                    <option value="mean">Mean</option>
+                    <option value="median">Median</option>
+                    <option value="mode">Mode</option>
+                    <option value="biweight">Biweight</option>
+            </when>
+            <when value="manual">
+                <param name="center" type="integer" value="0"/>
+            </when>
+        </conditional>
+
+        <param name="filter" type="select" label="Merge flagged segements">
+            <option value="None">No Merging</option>
+            <option value="ampdel">Merge using ampdel</option>
+            <option value="cn">Merge using cn</option>
+            <option value="ci">Merge using ci</option>
+            <option value="sem">Merge using sem</option>
+        </param>
+
+        <conditional name="method">
+            <param name="name" type="select" label="Calling Method">
+                <option value="threshold">Threshold</option>
+                <option value="clonal">Clonal</option>
+                <option value="none">None</option>
+            </param>
+            <when value="threshold">
+                <param name="thresh1" type="float" value="-1.1" label="Threshold 1"/>
+                <param name="thresh2" type="float" value="-0.25" label="Threshold 2"/>
+                <param name="thresh3" type="float" value="0.2" label="Threshold 3"/>
+                <param name="thresh4" type="float" value="0.7" label="Threshold 4"/>
+            </when>
+        </conditional>
+
+        <param name="ploidy" type="select" label="Ploidy">
+            <option value="unspecified">Unspecified</option>
+            <option value="2">2</option>
+            <option value="4">4</option>
+        </param>
+
+        <conditional name="purity">
+            <param name="known" type="select" label="Sample Purity Status">
+                <option value="known">Known</option>
+                <option value="unknown">Unknown</option>
+            </param>
+            <when value="known">
+                <param name="percentage" type="float" value="0.0" label="Percentage"/>
+            </when>
+            <when value="unknown">
+            </when>
+        </conditional>
+
+        <param name="drop" type="boolean" label="Drop Low-Coverage Bins"/>
+
+        <conditional name="sample_sex">
+            <param name="known" type="select" label="Sample Sex">
+                <option value="known">Known</option>
+                <option value="unknown">Unknown</option>
+            </param>
+            <when value="known">
+                <param name="
+            </when>
+        </conditional>
+
+
+    </inputs>
+
+    <outputs>
+    </outputs>
+
+    <help><![CDATA[
+    CNVkit batch: Run the complete CNVkit pipeline on one or more BAM files.
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>

@@ -1,0 +1,11 @@
+<tables>
+    <!-- Locations of all fasta files under genome directory -->
+    <table name="cnvkit_ref_cnn" comment_char="#">
+        <columns>value, dbkey, name, path</columns>
+        <file path="tool-data/cnvkit_ref_cnn.loc" />
+    </table>
+    <table name="cnvkit_ref_genome" comment_char="#">
+        <columns>value, dbkey, name, path</columns>
+        <file path="tool-data/all_fasta.loc" />
+    </table>
+</tables>
