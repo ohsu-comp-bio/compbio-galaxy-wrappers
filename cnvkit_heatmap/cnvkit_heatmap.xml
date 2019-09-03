@@ -44,11 +44,10 @@
         #end if
 
         #for $sample in $samples:
-        '${sample}'+'.cnn'
+        '${sample}'
         #end for
 
-        -o '${output}'
-
+        -o '${output}'.pdf
     ]]></command>
 
 
@@ -79,8 +78,8 @@
             </when>
             <when value="region">
                 <param name="chromosome" type="text" label="Chromosome"/>
-                <param name="reg_start" type="integer" label="Region starting index" help="Region will start on, and include, this index."/>
-                <param name="reg_end" type="integer" label="Region end index" help="Region will run up to, and not including, this index."/>
+                <param name="reg_start" type="integer" value="0" label="Region starting index" help="Region will start on, and include, this index."/>
+                <param name="reg_end" type="integer" value="0" label="Region end index" help="Region will run up to, and not including, this index."/>
             </when>
         </conditional>
 
