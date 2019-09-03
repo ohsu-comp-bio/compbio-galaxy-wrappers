@@ -13,48 +13,12 @@
 
     <command detect_errors="exit_code"><![CDATA[
         @CMD_BEGIN@ call
-
-        #if ${centering.center_mode}=="measure_of_center":
-        --center ${centering.measure}
-        #else if ${centering.center_mode}=="manual":
-        --center-at ${centering.offset}
-        #end if
-
-        #if not $filter == "None":
-        --filter $filter
-
-        #if ${method.name} == "threshold":
-        --method threshold --thresholds $method.thresh1,$method.thresh2,$method.thresh3,$method.thresh4
-        #else if ${method.name} == "clonal":
-        --method clonal
-        #else
-        --method none
-        #end if
-
-        --ploidy $ploidy
-
-        #if ${purity.known} == "known":
-        --purity ${purity.percentage}
-        #end if
-
-        #if $drop:
-        --drop-low-coverage
-        #end if
-
-        #if ${sample_sex.known} == "known":
-        --sample-sex ${sample_sex.sex}
-
-        #if $reference_male:
-        --male-reference
-
-        -o "${output}"+".cns"
-
         "$input_file"
     ]]></command>
 
     <inputs>
         <param name="input_file" type="data" format="bam" multiple="false" label="File to process"/>
-
+<!--
         <conditional name="centering">
             <param name="center_mode" type="select" label="Center Mode">
                 <option value="default">Default</option>
@@ -126,6 +90,7 @@
         </conditional>
 
         <param name="reference_male" type="boolean" checked="False" label="Male reference"/>
+-->
     </inputs>
 
     <outputs>
