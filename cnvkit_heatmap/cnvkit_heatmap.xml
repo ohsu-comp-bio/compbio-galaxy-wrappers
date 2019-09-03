@@ -29,10 +29,14 @@
         --desaturate
         #end if
 
-        #if $sex == "Male":
+        #if $sample_sex == "Male":
         --sample-sex Male
-        #else if $sex == "Female":
+        #else if $sample_sex == "Female":
         --sample-sex Female
+        #end if
+
+        #if $reference_male:
+        --male-reference
         #end if
 
         #if $disable_xy:
@@ -40,10 +44,9 @@
         #end if
 
         #for $sample in $samples:
-        '${sample}'
+        '${sample}'+'.cnn'
         #end for
 
-        #if $output.output_type == "file":
         -o '${output}'
 
     ]]></command>
@@ -53,10 +56,11 @@
         <param name="samples" type="data" format="text,tabular,tsv" multiple="true" label="Copy Number Files"/>
         
         <param name="by_bin" type="boolean" label="Graph By Bin" help="Plot x-coordinates by bin indices instead of genomic coordinates."/>
-        <param name="desaturate" type="boolean" label="Desaturate" help="Desaturate color of low-amplitude regions"/>
+        <param name="desaturate" type="boolean" label="Desaturate" help="Desaturate color of low-amplitude regions."/>
         <param name="disable_xy" type="boolean" label="Disable X/Y Chromosome Correction" help="Explanation needed."/>
+        <param name="reference_male" type="boolean" label="Reference sex male" help="Indicate whether the reference was male."/>
  
-        <param name="sex" type="select" label="Sex of Samples">
+        <param name="sample_sex" type="select" label="Sex of Samples">
             <option value="Male">Male</option>
             <option value="Female">Female</option>
         </param>
@@ -80,17 +84,6 @@
             </when>
         </conditional>
 
-<!--
-        <conditional name="output">
-            <param name="output_type" type="select" label="Output Type">
-                <option value="screen">Screen</option>
-                <option value="file">File</option>
-            </param>
-            <when value="file">
-                <param name="output_file" type="text" label="Output File Name"/>
-            </when>
-        </conditional>
--->
     </inputs>
 
     <outputs>
