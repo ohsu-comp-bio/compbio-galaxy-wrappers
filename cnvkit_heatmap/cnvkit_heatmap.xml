@@ -1,5 +1,8 @@
-<tool id="cnvkit_heatmap" name="CNVkit Heatmap" version="@VERSION@.0" profile="17.09">
-    <description>CNVKit, a command-line toolkit for copy number analysis.</description>
+<tool id="cnvkit_heatmap" name="CNVkit Heatmap" version="@VERSION@.0" 
+      profile="17.09">
+    <description>
+        CNVKit, a command-line toolkit for copy number analysis.
+    </description>
     
 
     <macros>
@@ -52,12 +55,18 @@
 
 
     <inputs>
-        <param name="samples" type="data" format="text,tabular,tsv" multiple="true" label="Copy Number Files"/>
+        <param name="samples" type="data" format="text,tabular,tsv" 
+               multiple="true" label="Copy Number Files"/>
         
-        <param name="by_bin" type="boolean" label="Graph By Bin" help="Plot x-coordinates by bin indices instead of genomic coordinates."/>
-        <param name="desaturate" type="boolean" label="Desaturate" help="Desaturate color of low-amplitude regions."/>
-        <param name="disable_xy" type="boolean" label="Disable X/Y Chromosome Correction" help="Explanation needed."/>
-        <param name="reference_male" type="boolean" label="Reference sex male" help="Indicate whether the reference was male."/>
+        <param name="by_bin" type="boolean" label="Graph By Bin" 
+               help="Plot x-coordinates by bin indices instead of genomic\
+                     coordinates."/>
+        <param name="desaturate" type="boolean" label="Desaturate" 
+               help="Desaturate color of low-amplitude regions."/>
+        <param name="disable_xy" type="boolean" label="Disable X/Y Chromosome\
+               Correction" help="Explanation needed."/>
+        <param name="reference_male" type="boolean" label="Reference sex male" 
+               help="Indicate whether the reference was male."/>
  
         <param name="sample_sex" type="select" label="Sex of Samples">
             <option value="Male">Male</option>
@@ -65,7 +74,9 @@
         </param>
 
         <conditional name="restrict_analysis">
-            <param name="restrict_to" type="select" label="Restrict Analysis" help="Restrict analysis to single chromosome or chromosome region">
+            <param name="restrict_to" type="select" label="Restrict Analysis" 
+                   help="Restrict analysis to single chromosome or chromosome\
+                         region">
                 <option value="whole">Whole Sequence</option>
                 <option value="chromosome">Whole Chromosome</option>
                 <option value="region">Chromosome Region</option>
@@ -78,53 +89,25 @@
             </when>
             <when value="region">
                 <param name="chromosome" type="text" label="Chromosome"/>
-                <param name="reg_start" type="integer" value="0" label="Region starting index" help="Region will start on, and include, this index."/>
-                <param name="reg_end" type="integer" value="0" label="Region end index" help="Region will run up to, and not including, this index."/>
+                <param name="reg_start" type="integer" value="0" label="Region\
+                       starting index" help="Region will start on, and include,\
+                       this index."/>
+                <param name="reg_end" type="integer" value="0" label="Region\
+                       end index" help="Region will run up to, and not \
+                       including, this index."/>
             </when>
         </conditional>
 
     </inputs>
 
     <outputs>
-        <data name="output" format="pdf" from_work_dir="output.pdf" label="${tool.name} on ${on_string}"/>
+        <data name="output" format="pdf" from_work_dir="output.pdf" 
+              label="${tool.name} on ${on_string}"/>
     </outputs>
 
     <help><![CDATA[
-        usage: cnvkit.py heatmap [-h] [-b] [-c CHROMOSOME] [-d] [-y]
-                                 [-x {m,y,male,Male,f,x,female,Female}]
-                                 [--no-shift-xy] [-o FILENAME]
-                                 filenames [filenames ...]
-
-        positional arguments:
-          filenames             Sample coverages as raw probes (.cnr) or segments
-                                (.cns).
-
-        optional arguments:
-          -h, --help            show this help message and exit
-          -b, --by-bin          Plot data x-coordinates by bin indices instead of
-                                genomic coordinates. All bins will be shown with equal
-                                width, no blank regions will be shown, and x-axis
-                                values indicate bin number (within chromosome) instead
-                                of genomic position.
-          -c CHROMOSOME, --chromosome CHROMOSOME
-                                Chromosome (e.g. 'chr1') or chromosomal range (e.g.
-                                'chr1:2333000-2444000') to display. If a range is
-                                given, all targeted genes in this range will be shown,
-                                unless '--gene'/'-g' is already given.
-          -d, --desaturate      Tweak color saturation to focus on significant
-                                changes.
-          -y, --male-reference, --haploid-x-reference
-                                Assume inputs were normalized to a male reference
-                                (i.e. female samples will have +1 log-CNR of chrX;
-                                otherwise male samples would have -1 chrX).
-          -x {m,y,male,Male,f,x,female,Female}, --sample-sex {m,y,male,Male,f,x,female,Female}, -g {m,y,male,Male,f,x,female,Female}, --gender {m,y,male,Male,f,x,female,Female}
-                                Specify the chromosomal sex of all given samples as
-                                male or female. (Default: guess each sample from
-                                coverage of X and Y chromosomes).
-          --no-shift-xy         Don't adjust the X and Y chromosomes according to
-                                sample sex.
-          -o FILENAME, --output FILENAME
-                                Output PDF file name.
+    Take a set of tabular (cnn and cnr, or cns) copy number files to generate
+    a heatmap visualizing the relative copy numbers of genes across the samples.
     ]]></help>
 
     <expand macro="citations"/>
