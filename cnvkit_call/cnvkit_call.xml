@@ -59,7 +59,8 @@
     ]]></command>
 
     <inputs>
-        <param name="input_file" type="data" format="tabular,tsv" multiple="false" label="File to process"/>
+        <param name="input_file" type="data" format="tabular,tsv" 
+               multiple="false" label="File to process"/>
         <conditional name="centering">
             <param name="center_mode" type="select" label="Center Mode">
                 <option value="default">Default</option>
@@ -94,10 +95,14 @@
                 <option value="clonal">Clonal</option>
             </param>
             <when value="threshold">
-                <param name="thresh1" type="float" value="-1.1" label="Threshold 1"/>
-                <param name="thresh2" type="float" value="-0.25" label="Threshold 2"/>
-                <param name="thresh3" type="float" value="0.2" label="Threshold 3"/>
-                <param name="thresh4" type="float" value="0.7" label="Threshold 4"/>
+                <param name="thresh1" type="float" value="-1.1" 
+                       label="Threshold 1"/>
+                <param name="thresh2" type="float" value="-0.25" 
+                       label="Threshold 2"/>
+                <param name="thresh3" type="float" value="0.2" 
+                       label="Threshold 3"/>
+                <param name="thresh4" type="float" value="0.7" 
+                       label="Threshold 4"/>
             </when>
         </conditional>
 
@@ -109,7 +114,8 @@
                 <option value="known">Known</option>
             </param>
             <when value="known">
-                <param name="percentage" type="float" value="0.0" label="Percentage"/>
+                <param name="percentage" type="float" value="0.0" 
+                       label="Percentage"/>
             </when>
             <when value="unknown">
             </when>
@@ -130,15 +136,19 @@
             </when>
         </conditional>
 
-        <param name="reference_male" type="boolean" checked="False" label="Male reference"/>
+        <param name="reference_male" type="boolean" checked="False" 
+               label="Male reference"/>
     </inputs>
 
     <outputs>
-        <data name="output" format="tabular" label="${tool.name} on ${on_string}"/>
+        <data name="output" format="tabular" 
+              label="${tool.name} on ${on_string}"/>
     </outputs>
 
     <help><![CDATA[
-    CNVkit call: Process a single BAM file into a segemented copy number file.
+    CNVkit call: Process a cns (tabular) file to calculate the copy number
+    estimates using the segemented log2 ratios. Outputs a cns file with an
+    additional column containing the integer copy number.
     ]]></help>
 
     <expand macro="citations" />
