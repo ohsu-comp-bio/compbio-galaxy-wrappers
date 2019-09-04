@@ -13,12 +13,53 @@
 
     <command detect_errors="exit_code"><![CDATA[
         @CMD_BEGIN@ call
+
+        #if $centering.center_mode == "measure_of_center":
+        --center ${centering.measure}
+        #else if $centering.center_mode == "manual":
+        --center-at ${centering.offset}
+        #end if
+
+        #if $filter != "NA":
+        --filter $filter
+        #end if
+
+        #if $method.name == "NA":
+        --method none
+        #else if $method.name == "clonal":
+        --method clonal
+        #else if $method.name == "threshold":
+        --method thresholds=${method.thresh1},\
+                            ${method.thresh2},\
+                            ${method.thresh3},\
+                            $method.thresh4}
+        #end if
+
+        --ploidy $ploidy
+
+        #if $purity.known == "known":
+        --purity ${purity.percentage}
+        #end if
+
+        #if $drop:
+        --drop-low-coverage
+        #end if
+
+        #if $sample_sex.known == "known":
+        --sample-sex ${sample_sex.sex}
+        #end if
+
+        #if $reference_male
+        --male-reference
+        #end if
+
+        -o ${output}
+
         "$input_file"
     ]]></command>
 
     <inputs>
-        <param name="input_file" type="data" format="bam" multiple="false" label="File to process"/>
-<!--
+        <param name="input_file" type="data" format="tabular,tsv" multiple="false" label="File to process"/>
         <conditional name="centering">
             <param name="center_mode" type="select" label="Center Mode">
                 <option value="default">Default</option>
@@ -39,7 +80,7 @@
         </conditional>
 
         <param name="filter" type="select" label="Merge flagged segements">
-            <option value="None">No Merging</option>
+            <option value="NA">No Merging</option>
             <option value="ampdel">Merge using ampdel</option>
             <option value="cn">Merge using cn</option>
             <option value="ci">Merge using ci</option>
@@ -48,7 +89,7 @@
 
         <conditional name="method">
             <param name="name" type="select" label="Calling Method">
-                <option value="na">None</option>
+                <option value="NA">None</option>
                 <option value="threshold">Threshold</option>
                 <option value="clonal">Clonal</option>
             </param>
@@ -90,11 +131,10 @@
         </conditional>
 
         <param name="reference_male" type="boolean" checked="False" label="Male reference"/>
--->
     </inputs>
 
     <outputs>
-        <data name="output" format="tabular" label="${input.name} on ${on_string}"/>
+        <data name="output" format="tabular" label="${tool.name} on ${on_string}"/>
     </outputs>
 
     <help><![CDATA[
