@@ -54,6 +54,26 @@
         #end if
 
         -o ${output}
+        
+        #if $baf_params.vcf_file:
+        --vcf "${baf_params.vcf_file}"
+        #end if
+
+        #if $baf_params.sample_id:
+        --sample-id "${baf_params.sample_id}"
+        #end if
+
+        #if $baf_params.normal_id:
+        --normal-id "${baf_params.normal_id}"
+        #end if
+
+        #if $baf_params.min_var_depth:
+        --min-variant-depth ${baf_params.min_var_depth}
+        #end if
+
+        #if $baf_params.zygosity_freq:
+        --zygosity-freq ${baf_params.zygosity_freq}
+        #end if
 
         "$input_file"
     ]]></command>
@@ -138,6 +158,20 @@
 
         <param name="reference_male" type="boolean" checked="False" 
                label="Male reference"/>
+
+        <section name="baf_params" title="BAF Calculations from SNPs"
+                 expanded="false">
+            <param name="vcf_file" type="data" format="vcf" label="VCF File"
+                   optional="true"/>
+            <param name="sample_id" type="text" label="Sample ID"
+                   optional="true"/>
+            <param name="normal_id" type="text" label="Normal ID"
+                   optional="true"/>
+            <param name="min_var_depth" type="integer" optional="true"
+                   label="Minimum variant depth"/>
+            <param name="zygosity_freq" type="float" optional="true"
+                   label="Infer Zygosity From Given Frequency"/>
+        </section>
     </inputs>
 
     <outputs>
