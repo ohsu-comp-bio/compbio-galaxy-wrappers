@@ -1,0 +1,111 @@
+<tool id="depth_of_coverage" name="DepthOfCoverage" version="3.7.0" >
+    <description>Assess sequence coverage by a wide array of metrics, partitioned by sample, read group, or library</description>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    <command detect_errors="exit_code"><![CDATA[
+    #include source=$bam_index#
+    #include source=$pre_gatk_ints_chth#
+    java8 -jar \${GATK_JAR_PATH} -T DepthOfCoverage
+
+    #include source=$gatk_bam_input#
+    #include source=$ref_opts#
+    #include source=$gatk_ints_chth#
+
+    #if str( $input_calculate_coverage_over_genes ) != "None":
+        --calculateCoverageOverGenes "${input_calculate_coverage_over_genes}"
+    #end if
+    #if str( $partition_type ) != "None":
+        #for $pt in str( $partition_type ).split( ',' ):
+            --partitionType "${pt}"
+        #end for
+    #end if
+    --out "${output_per_locus_coverage}"
+
+    #for $ct_group in $summary_coverage_threshold_group:
+        --summaryCoverageThreshold "${ct_group.summary_coverage_threshold}"
+    #end for
+    --outputFormat "${output_format}"
+    ]]></command>
+
+    <inputs>
+        <param name="partition_type" type="select" label="Partition type for depth of coverage" multiple="True" display="checkboxes" help="-pt,--partitionType &amp;lt;partitionType&amp;gt;">
+            <option value="sample" selected="True">sample</option>
+            <option value="readgroup">readgroup</option>
+            <option value="library">library</option>
+        </param>
+
+        <repeat name="summary_coverage_threshold_group" title="Summary coverage threshold" help="-ct,--summaryCoverageThreshold &amp;lt;summaryCoverageThreshold&amp;gt;">
+            <param name="summary_coverage_threshold" type="integer" value="15" label="for summary file outputs, report the % of bases covered to &gt;= this number" />
+        </repeat>
+        <param name="output_format" type="select" label="Output format" help="--outputFormat &amp;lt;outputFormat&amp;gt;" >
+            <option value="csv">csv</option>
+            <option value="table">table</option>
+            <option value="rtable" selected="True">rtable</option>
+        </param>
+        <param name="ignore_deletion_sites" type="boolean" truevalue="--ignoreDeletionSites" falsevalue="" checked="False" label="Ignore sites consisting only of deletions" help="--ignoreDeletionSites" />
+        <param name="include_deletions" type="boolean" truevalue="--includeDeletions" falsevalue="" checked="False" label="Include information on deletions" help="-dels,--includeDeletions" />
+        <param name="max_base_quality" type="integer" value="127" label="Maximum quality of bases to count towards depth" help="--maxBaseQuality &amp;lt;maxBaseQuality&amp;gt;" />
+        <param name="min_base_quality" type="integer" value="-1" label="Minimum quality of bases to count towards depth" help="-mbq,--minBaseQuality &amp;lt;minBaseQuality&amp;gt;" />
+        <param name="max_mapping_quality" type="integer" value="2147483647" label="Maximum mapping quality of reads to count towards depth." help="--maxMappingQuality &amp;lt;maxMappingQuality&amp;gt;" />
+        <param name="min_mapping_quality" type="integer" value="127" label="Minimum mapping quality of reads to count towards depth" help="-mmq,--minMappingQuality &amp;lt;minMappingQuality&amp;gt;" />
+        <param name="n_bins" type="integer" value="499" label="Number of bins to use for granular binning" help="--nBins &amp;lt;nBins&amp;gt;" />
+        <param name="omit_depth_output_at_each_base" type="boolean" truevalue="--omitDepthOutputAtEachBase" falsevalue="" checked="False" label="Omit the output of the depth of coverage at each base" help="-omitBaseOutput,--omitDepthOutputAtEachBase" />
+        <param name="omit_interval_statistics" type="boolean" truevalue="--omitIntervalStatistics" falsevalue="" checked="False" label="Omit the per-interval statistics section" help="-omitIntervals,--omitIntervalStatistics" />
+        <param name="omit_locus_table" type="boolean" truevalue="--omitLocusTable" falsevalue="" checked="False" label="Do not calculate the per-sample per-depth counts of loci" help="-omitLocusTable,--omitLocusTable" />
+        <param name="omit_per_sample_stats" type="boolean" truevalue="--omitPerSampleStats" falsevalue="" checked="False" label="Omit the summary files per-sample." help="-omitSampleSummary,--omitPerSampleStats" />
+        <param name="print_base_counts" type="boolean" truevalue="--printBaseCounts" falsevalue="" checked="False" label="Add base counts to per-locus output" help="-baseCounts,--printBaseCounts" />
+        <param name="include_ref_n_sites" type="boolean" truevalue="--includeRefNSites" falsevalue="" checked="False" label="Include sites where the reference is N" help="--includeRefNSites" />
+        <param name="print_bin_endpoints_and_exit" type="boolean" truevalue="--printBinEndpointsAndExit" falsevalue="" checked="False" label="Print the bin values and exits immediately" help="--printBinEndpointsAndExit" />
+        <param name="start" type="integer" value="1" label="Starting (left endpoint) for granular binning" help="--start &amp;lt;start&amp;gt;" />
+        <param name="stop" type="integer" value="500" label="Ending (right endpoint) for granular binning" help="--stop &amp;lt;stop&amp;gt;" />
+        <param name="count_type" type="select" label="Partition type for depth of coverage" help="How should overlapping reads from the same fragment be handled? --countType&amp;lt;countType&amp;gt;">
+            <option value="COUNT_READS" selected="True">COUNT_READS</option>
+            <option value="COUNT_FRAGMENTS">COUNT_FRAGMENTS</option>
+            <option value="COUNT_FRAGMENTS_REQUIRE_SAME_BASE">COUNT_FRAGMENTS_REQUIRE_SAME_BASE</option>
+        </param>
+    </inputs>
+
+
+    <outputs>
+        <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: INDEL VCF" help="Output VCF with indel calls." from_work_dir="./outdir/variants.indel.vcf">
+            <filter>analysis['analysis_mode'] == 'single'</filter>
+        </data>
+        <data format="vcf" name="output_vcf_filt" label="${tool.name} on ${on_string}: FILTERED INDEL VCF" help="Output VCF with filtered indel calls." >
+            <filter>analysis['analysis_mode'] == 'single'</filter>
+            <filter>analysis['scalpel_export_single']['filt_single'] == 'filt_yes'</filter>
+        </data>
+        <data format="vcf" name="tumor_vcf" label="${tool.name} on ${on_string}: SOMATIC INDEL VCF" help="Somatic VCF with indel calls." from_work_dir="./outdir/main/somatic.indel.vcf">
+            <filter>analysis['analysis_mode'] == 'somatic'</filter>
+        </data>
+        <data format="vcf" name="tumor_vcf_filt" label="${tool.name} on ${on_string}: FILTERED SOMATIC INDEL VCF" help="Somatic VCF with filtered indel calls.">
+            <filter>analysis['analysis_mode'] == 'somatic'</filter>
+            <filter>analysis['scalpel_export_somatic']['filt_somatic'] == 'filt_yes'</filter>
+        </data>
+        <data format="vcf" name="normal_vcf" label="${tool.name} on ${on_string}: COMMON INDEL VCF" help="Common VCF with indel calls." from_work_dir="./outdir/main/common.indel.vcf">
+            <filter>analysis['analysis_mode'] == 'somatic'</filter>
+        </data>
+    </outputs>
+
+    <tests></tests>
+
+    <help><![CDATA[
+    As the second most common type of variation in the human genome, insertions and deletions (indels) have been linked
+    to many diseases, but the discovery of indels of more than a few bases in size from short-read sequencing data remains
+    challenging. Scalpel (http://scalpel.sourceforge.net) is an open-source software for reliable indel detection based
+    on the microassembly technique. It has been successfully used to discover mutations in novel candidate genes for
+    autism, and it is extensively used in other large-scale studies of human diseases. This protocol gives an overview
+    of the algorithm and describes how to use Scalpel to perform highly accurate indel calling from whole-genome and
+    whole-exome sequencing data. We provide detailed instructions for an exemplary family-based de novo study, but we
+    also characterize the other two supported modes of operation: single-sample and somatic analysis. Indel normalization,
+    visualization and annotation of the mutations are also illustrated. Using a standard server, indel discovery and
+    characterization in the exonic regions of the example sequencing data can be completed in ~5 h after read mapping.
+    ]]></help>
+
+    <citations>
+        <citation type="doi">10.1038/nprot.2016.150</citation>
+    </citations>
+
+</tool>
+
