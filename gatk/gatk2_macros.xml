@@ -1,9 +1,10 @@
 <macros>
   <xml name="requirements">
     <requirements>
-      <requirement type="package">gatk2</requirement>
-      <requirement type="set_environment">GATK2_PATH</requirement>
-      <requirement type="set_environment">GATK2_SITE_OPTIONS</requirement>
+        <requirement type="package" version="3.8">gatk</requirement>
+        <requirement type="package" version="1.9">samtools</requirement>
+        <requirement type="set_environment">GATK2_PATH</requirement>
+        <requirement type="set_environment">GATK2_SITE_OPTIONS</requirement>
     </requirements>
   </xml>
   <token name="@THREADS@">
