@@ -1,4 +1,4 @@
-<tool id="fastqc" name="FastQC" version="0.11.3.1">
+<tool id="fastqc" name="FastQC" version="0.11.8">
     <description>Read Quality reports</description>
     <requirements>
         <requirement type="package" version="0.11.2">FastQC</requirement>
@@ -18,7 +18,7 @@
         -f "$input_file.ext"
         -j "$input_file.name"
         -t "\${GALAXY_SLOTS:-4}"
-        -e "\$FASTQC_JAR_PATH/fastqc"
+        -e "fastqc"
         #if $contaminants.dataset and str($contaminants) > ''
             -c "$contaminants"
         #end if
