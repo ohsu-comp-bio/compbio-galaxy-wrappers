@@ -13,7 +13,7 @@ from file_types import vcfwriter
 import argparse
 import sys
 
-VERSION = '0.5.0'
+VERSION = '0.5.1'
 
 
 def supply_args():
@@ -63,13 +63,18 @@ class VcfRecDecomp(object):
         :return:
         """
         vrnt_updt = []
+        print(self.vrnt_info)
         for allele, vals in self.vrnt_info.items():
             new_vrnt = deepcopy(vrnt)
             new_vrnt.ALT = [allele]
             for val in vals:
                 new_vrnt.INFO[val] = vals[val]
-            for frmt in self.vrnt_samples[allele]:
-                new_vrnt.samples[frmt] = self.vrnt_samples[allele][frmt]
+
+            ind = 0
+            for samp in self.vrnt_samples:
+                for frmt in samp[allele]:
+                    new_vrnt.samples[ind][frmt] = samp[allele][frmt]
+                ind += 1
             vrnt_updt.append(new_vrnt)
 
         return vrnt_updt
@@ -79,24 +84,24 @@ class VcfRecDecomp(object):
         Decompose variant in to pieces, to be split.
         :return:
         """
-        split = {}
-        for entry in vrnt.samples:
-            for alt in vrnt.ALT:
-                idx = vrnt.ALT.index(alt)
-                if alt not in split:
-                    split[alt] = {}
-
-                if self.samples_number[entry] == 'A':
-                    split[alt][entry] = self._decomp_alt(vrnt.samples[entry], idx)
-                elif self.samples_number[entry] == 'R':
-                    split[alt][entry] = self._decomp_ref(vrnt.samples[entry], idx)
-                elif self.samples_number[entry] == 'G':
-                    split[alt][entry] = self._decomp_geno(vrnt.samples[entry], idx + 1)
-                elif entry == 'GT':
-                    split[alt][entry] = self._decomp_gt(vrnt.samples[entry])
-
-
-        return split
+        samp_changes = []
+        for samp in vrnt.samples:
+            split = {}
+            for entry in samp:
+                for alt in vrnt.ALT:
+                    idx = vrnt.ALT.index(alt)
+                    if alt not in split:
+                        split[alt] = {}
+                    if self.samples_number[entry] == 'A':
+                        split[alt][entry] = self._decomp_alt(samp[entry], idx)
+                    elif self.samples_number[entry] == 'R':
+                        split[alt][entry] = self._decomp_ref(samp[entry], idx)
+                    elif self.samples_number[entry] == 'G':
+                        split[alt][entry] = self._decomp_geno(samp[entry], idx + 1)
+                    elif entry == 'GT':
+                        split[alt][entry] = self._decomp_gt(samp[entry])
+            samp_changes.append(split)
+        return samp_changes
 
 
     def _decomp_info_vrnt(self, vrnt):
