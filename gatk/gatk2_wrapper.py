@@ -29,8 +29,8 @@ def gatk_filename_from_galaxy( galaxy_filename, galaxy_ext, target_dir = None, p
         target_dir = os.getcwd()
     gatk_filename = os.path.join( target_dir, "%s.%s" % ( prefix, suffix ) )
     #Adding a check for file existent or not
-    if not os.path.isfile(gatk_filename): 
-	os.symlink( galaxy_filename, gatk_filename )
+    if not os.path.isfile(gatk_filename):
+        os.symlink( galaxy_filename, gatk_filename )
     return gatk_filename
 
 def gatk_filename_from_galaxy_1( galaxy_filename, galaxy_ext, target_dir = None, prefix = None ):
@@ -41,8 +41,8 @@ def gatk_filename_from_galaxy_1( galaxy_filename, galaxy_ext, target_dir = None,
         target_dir = os.getcwd()
     gatk_filename = os.path.join( target_dir, "%s.%s" % ( prefix, suffix ) )
     #Adding a check for file existent or not
-    if not os.path.isfile(gatk_filename): 
-    	os.symlink( galaxy_filename, gatk_filename )
+    if not os.path.isfile(gatk_filename):
+        os.symlink( galaxy_filename, gatk_filename )
     return gatk_filename
 
 def gatk_filetype_argument_substitution( argument, galaxy_ext ):
@@ -60,7 +60,7 @@ def html_report_from_directory( html_out, dir ):
     html_out.write( '</ul>\n</body>\n</html>\n' )
 
 def index_bam_files( bam_filenames, tmp_dir ):
-    print "Indexing bam files: %s" % bam_filenames
+    print("Indexing bam files: %s" % bam_filenames)
     for bam_filename in bam_filenames:
         bam_index_filename = "%s.bai" % bam_filename
         if not os.path.exists( bam_index_filename ):
@@ -71,7 +71,7 @@ def index_bam_files( bam_filenames, tmp_dir ):
             return_code = proc.wait()
             if return_code:
                 for line in open( stderr_name ):
-                    print >> sys.stderr, line
+                    sys.stderr.write(line)
                 os.unlink( stderr_name ) #clean up
                 cleanup_before_exit( tmp_dir )
                 raise Exception( "Error indexing BAM file" )
@@ -108,7 +108,7 @@ def __main__():
     if options.datasets:
         for ( dataset_arg, filename, galaxy_ext, prefix ) in options.datasets:
             gatk_filename = gatk_filename_from_galaxy( filename, galaxy_ext, target_dir = tmp_dir, prefix = prefix )
-	    if dataset_arg == '-R':
+            if dataset_arg == '-R':
                 filename_1 = filename + ".fai"
                 galaxy_ext_1 = galaxy_ext + "_fai"
                 fileName2, fileExtension2 = os.path.splitext(filename)
@@ -116,8 +116,8 @@ def __main__():
                 galaxy_ext_2 = "_dict"
                 gatk_filename_from_galaxy_1( filename_1, galaxy_ext_1, target_dir = tmp_dir, prefix = prefix)
                 gatk_filename_from_galaxy_1( filename_2, galaxy_ext_2, target_dir = tmp_dir, prefix = prefix)
-	    if dataset_arg:
-		cmd = '%s %s "%s"' % ( cmd, gatk_filetype_argument_substitution( dataset_arg, galaxy_ext ), gatk_filename )
+            if dataset_arg:
+                cmd = '%s %s "%s"' % ( cmd, gatk_filetype_argument_substitution( dataset_arg, galaxy_ext ), gatk_filename )
             if galaxy_ext == "bam":
                 bam_filenames.append( gatk_filename )
     index_bam_files( bam_filenames, tmp_dir )
@@ -143,7 +143,7 @@ def __main__():
     while True:
         chunk = stderr.read( CHUNK_SIZE )
         if chunk:
-            stderr_target.write( chunk )
+            stderr.write( chunk )
         else:
             break
     stderr.close()
