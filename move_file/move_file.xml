@@ -1,5 +1,9 @@
-<tool id="move_file" name="Move Galaxy Dataset" version="0.3.0" >
+<tool id="move_file" name="Move Galaxy Dataset" version="0.3.1" >
   <description>Move a file (Galaxy dataset) to some location on the file system.</description>
+
+  <requirements>
+    <requirement type="package" version="1.9">samtools</requirement>
+  </requirements>
 
   <command><![CDATA[
     ## Based on the Galaxy defined datatype, set the appropriate file extension.
@@ -36,12 +40,10 @@
         #import datetime
         #set $date = datetime.date.today().year
         #set $move_dir = '/'.join([str($move_type.base_dir), str($move_type.test_name), str($date), str($move_type.runid)])
-        #set $move_location = '/'.join([str($move_type.base_dir), str($move_type.test_name), str($date), str($move_type.runid),
-str($move_type.sampleid)])
+        #set $move_location = '/'.join([str($move_type.base_dir), str($move_type.test_name), str($date), str($move_type.runid), str($move_type.sampleid)])
       #else
         #set $move_dir = '/'.join([str($move_type.base_dir), str($move_type.test_name), str($move_type.runid)])
-        #set $move_location = '/'.join([str($move_type.base_dir), str($move_type.test_name), str($move_type.runid), str($move_ty
-pe.sampleid)])
+        #set $move_location = '/'.join([str($move_type.base_dir), str($move_type.test_name), str($move_type.runid), str($move_type.sampleid)])
       #end if
 
       mkdir -p $move_dir &&
@@ -64,8 +66,7 @@ pe.sampleid)])
     ## File extension is whatever Galaxy says it is, unless modified above.
     #if str($move_type.move_type_sel) == "test_gender_sample":
       #set $move_dir = '/'.join([str($move_type.base_dir), str($move_type.test_name), str($move_type.gender)])
-      #set $move_location = '/'.join([str($move_type.base_dir), str($move_type.test_name), str($move_type.gender), str($move_typ
-e.sampleid)])
+      #set $move_location = '/'.join([str($move_type.base_dir), str($move_type.test_name), str($move_type.gender), str($move_type.sampleid)])
 
       mkdir -p $move_dir &&
 
@@ -91,15 +92,14 @@ e.sampleid)])
 
   ]]></command>
 
-  <inputs>
-    <param name="input_file" type="data" label="Input File to Move" help="Move this input file to some location on the file syst
-em." />
+  <inputs>   
+    <param name="input_file" type="data" label="Input File to Move" help="Move this input file to some location on the file system." />
     <param name="dummy_file" type="data" label="Dummy Input File (OPTIONAL)" help="Optional file(s) to keep job from starting until dummy file is sent." optional="true" multiple="true"/>
     <conditional name="move_type">
 
       <param name="move_type_sel" type="select" label="Choose file move type.">
         <option value="test_run">Test and Run</option>
-        <option value="test_run_sample">Test, Run, and Sample</option>
+        <option value="test_run_sample">Test, Run, and Sample</option> 
         <option value="test_gender_sample">Test, Gender, and Sample</option>
       </param>
 
@@ -110,12 +110,10 @@ em." />
 	    <option value="yes_set_ext">Set File Extension</option>
           </param>
 	  <when value="yes_set_ext">
-	    <param name="set_ext" type="text" label="File Extension" help="File extension to use for destination file. Include t
-he dot." />
+	    <param name="set_ext" type="text" label="File Extension" help="File extension to use for destination file. Include the dot." />
 	  </when>
 	</conditional>
-        <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full pa
-th that the file will be moved to." />
+        <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." />
         <param name="test_name" type="text" label="Test Name" help="Test name, will be used to create dest directory." />
         <param name="runid" type="text" label="Run ID" help="Run identifier to create subdirectory from." />
       </when>
@@ -130,10 +128,8 @@ th that the file will be moved to." />
 	    <param name="set_ext" type="text" label="File Extension" help="File extension to use for destination file." />
 	  </when>
 	</conditional>
-	<param name="add_date" type="boolean" label="Include Year?" help="Answering yes will include the year as part of the dir
-ectory structure.  This will be inserted right after the TEST NAME." />
-	<param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full pa
-th that the file will be moved to." />
+	<param name="add_date" type="boolean" label="Include Year?" help="Answering yes will include the year as part of the directory structure.  This will be inserted right after the TEST NAME." />
+	<param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." />
         <param name="test_name" type="text" label="Test Name" help="Test name, will be used to create dest directory." />
         <param name="runid" type="text" label="Run ID" help="Run identifier to create subdirectory from." />
         <param name="sampleid" type="text" label="Sample ID" help="Run identifier to create subdirectory from." />
@@ -149,8 +145,7 @@ th that the file will be moved to." />
 	    <param name="set_ext" type="text" label="File Extension" help="File extension to use for destination file." />
 	  </when>
 	</conditional>
-	<param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full pa
-th that the file will be moved to." />
+	<param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." />
         <param name="test_name" type="text" label="Test Name" help="Test name, will be used to create dest directory." />
         <param name="gender" type="select" label="Gender" help="Gender to be used in destination directory tree." >
 	  <option value="UNSPECIFIED" selected="true">UNSPECIFIED</option>
@@ -164,8 +159,7 @@ th that the file will be moved to." />
   </inputs>
 
   <outputs>
-    <data format="txt" name="output_log" label="${tool.name} on ${on_string}" help="Log containing stdout/stderr of rsync operat
-ion." />
+    <data format="txt" name="output_log" label="${tool.name} on ${on_string}" help="Log containing stdout/stderr of rsync operation." />
   </outputs>
 
   <tests></tests>
@@ -178,10 +172,11 @@ ion." />
    is set in the workflow, while TEST and RUN_ID are usually pulled in automatically during workflow generation.
 
   Test, Run, and Sample - Send a file to a directory composed of BASE_DIR, TEST, RUN_ID, and SAMPLE_ID. BASE_DIR
-   and TEST are set in the workflow, while RUN_ID and SAMPLE_ID are usually pulled in automatically during workflow
+   and TEST are set in the workflow, while RUN_ID and SAMPLE_ID are usually pulled in automatically during workflow 
    generation.  You can set file extension manually, or just utilize whatever Galaxy gives you.
 
   ]]></help>
   <citations></citations>
 
 </tool>
+
