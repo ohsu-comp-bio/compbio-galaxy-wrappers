@@ -1,0 +1,249 @@
+<tool id="vardict" name="VarDict" version="1">
+<description>Variant caller</description>
+<requirements>
+  <requirement type="package" version="2018.10.18">vardict</requirement>
+</requirements>
+<command detect_errors="exit_code"><![CDATA[
+    export PATH="/home/exacloud/lustre1/galaxydev/galaxy/tools/gatk4_auto/38_pipeline/commands/samtools-1.9:\${PATH}" &&
+    #for $num, $file in enumerate($input2):
+      ln -s $file input${num}.bam &&
+      samtools index input${num}.bam &&
+    #end for
+    vardict 
+    -G "$reference_source.reference_sequence.fields.path" 
+    $header
+    $splice
+    $pileup
+    $debug
+    $verbose
+    $dedup
+    $three_prime
+    $n_depth
+    #if $filter_reads:
+      -F $filter_reads
+    #end if
+    $one_based
+    #if $amplicon_integer:
+      --amplicon "$amplicon_integer:$amplicon_float"
+    #end if
+    $local_realign
+    #if $region:
+      -R $region
+    #end if
+    #if $delimiter:
+      -d $delimiter
+    #end if
+    #if $sample_expression:
+      -n $sample_expression
+    #end if
+    #if $sample:
+      -N $sample
+    #end if
+    #for $num, $file in enumerate($input2):
+      #if $num == 0:
+        -b input${num}.bam
+      #else:
+        :input${num}.bam
+      #end if
+    #end for
+    -c $chromosome
+    -S $start
+    -E $end 
+    #if $seg_start:
+      -s $seg_start
+    #end if
+    #if $seg_end:
+      -e $seg_end
+    #end if
+    #if $seg_an:
+      -g $seg_an
+    #end if
+    #if $nucl_ext:
+      -x $nucl_ext
+    #end if
+    -f "$input3" 
+    #if $min_reads_var:
+      -r $min_reads_var
+    #end if
+    #if $min_reads_str:
+      -B $min_reads_str
+    #end if
+    #if $min_qual:
+      -Q $min_qual
+    #end if
+    #if $min_score:
+      -q $min_score
+    #end if
+    #if $mismatch:
+      -m $mismatch
+    #end if
+    #if $trim: 
+      --trim $trim
+    #end if
+    #if $extension:
+      -X $extension
+    #end if
+    #if $position:
+      -P $position
+    #end if
+    #if $downsample:
+      --downsample $downsample
+    #end if
+    #if $qratio:
+      -o $qratio
+    #end if
+    #if $mapq:
+      -O $mapq
+    #end if
+    #if $freq:
+      -V $freq
+    #end if
+    #if $indel:
+      -I $indel
+    #end if
+    #if $min_matches:
+      -M $min_matches
+    #end if
+    -th \${GALAXY_SLOTS:-16}
+    #if $strictness:
+      -VS $strictness
+    #end if
+    $unique
+    $unique_first
+    $chimeric
+    $nosv
+    #if $length:
+      -L $length
+    #end if
+    #if $insert_size:
+      --insert-size $insert_size
+    #end if
+    #if $insert_std:
+      --insert-std $insert_std
+    #end if
+    #if $insert_std_amt:
+      -A $inster_std_amt
+    #end if
+    #if $ref_extension:
+      --ref-extension $ref_extension
+    #end if
+    $deldupvar
+    #if $default_printer:
+      --default-printer $default_printer
+    #end if
+    #if $adaptor:
+      --adaptor $adaptor
+    #end if
+    #if $crispr_filtering_bp:
+      -j $crispr_filtering_bp
+    #end if
+    #if $crispr_cutting_site:
+      --crispr $crispr_cutting_site
+    #end if
+    #if $input4:
+      "$input4" 
+    #end if
+    > "$output1"
+]]></command>
+<inputs>
+    <conditional name="reference_source">
+          <param name="reference_source_selector" type="select" label="Choose the source for the reference list">
+              <option value="cached">Locally cached</option>
+              <option value="history">History</option>
+              <option value="no_ref" selected="true">Do not pass</option>
+          </param>
+          <when value="cached">
+            <param name="reference_sequence" type="select" label="Reference" help="Reference sequence file." >
+                  <options from_data_table="bwa_indexes" >
+                      <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file" />
+                  </options>
+            </param>
+          </when>
+          <when value="history">
+              <param name="reference_sequence" type="data" format="fasta" label="Reference" help="Reference sequence file." />
+          </when>
+    </conditional>
+    <param type="data" name="input2" format="bam" label="The indexed BAM file." multiple="true"/>
+    <param type="float" name="input3" value="0.01" label="Minimum Allele Frequency"/>
+    <param type="data" name="input4" format="bed" label="Intervals" optional="true"/>
+    <param type="integer" name="chromosome" label="Chromosome Column" value="1"/>
+    <param type="integer" name="start" label="Region Start Column" value="2"/>
+    <param type="integer" name="end" label="Region End Column" value="3"/>
+    <param type="integer" name="seg_start" label="Segment Start Column" help="The column for a segment starts in the region, e.g. exon starts" optional="true"/>
+    <param type="integer" name="seg_end" label="Segment End Column" help="The column for a segment end in the region, e.g. exon end" optional="true"/>
+    <param type="integer" name="seg_an" label="Segment Annotation Column" help="The column for a gene name, or segment annotation" optional="true" value="4"/>
+    <param type="boolean" name="header" checked="false" truevalue="--header" falsevalue="" label="Print Header" help="Print a header row describing the columns."/>
+    <param type="boolean" name="splice" checked="false" truevalue="--splice" falsevalue="" label="Output splicing read counts"/>
+    <param type="boolean" name="pileup" checked="false" truevalue="-p" falsevalue="" label="Do pileup regardless the frequency"/>
+    <param type="boolean" name="debug" checked="false" truevalue="--debug" falsevalue="" label="Debug" help="Debug mode. Will print some error messaged and append full genotype at the end."/>
+    <param type="boolean" name="verbose" checked="false" truevalue="--verbose" falsevalue="" label="Verbose" help="Verbose mode. Will output variant calling process."/>
+    <param type="boolean" name="dedup" checked="false" truevalue="--dedup" falsevalue="" label="Dedup" help="Indicate to remove duplicated reads. Only one pair with identical start positions will be kept."/>
+    <param type="boolean" name="three_prime" checked="false" truevalue="-3" falsevalue="" label="3-prime" help="Indicate to move indels to 3-prime if alternative alignment can be achieved."/>
+    <param type="boolean" name="n_depth" checked="false" truevalue="-K" falsevalue="" label="Include Ns in the total depth calculation."/>
+    <param type="text" name="filter_reads" label="Filter Reads" help="The hexical to filter reads. Default: 0x504 (filter unmapped reads, 2nd alignments and duplicates). Use -F 0 to turn it off." optional="true"/>
+    <param type="boolean" name="one_based" checked="false" truevalue="-z 0" falsevalue="-z 1" label="1 based BED file" help="Indicate whether the BED file contains zero-based coordinates, the same way as the Genome browser IGV does. 'No' (-z 1) indicates that coordinates in a BED file start from 0. 'Yes' (-z 0) indicates that the coordinates start from 1. When using -R option, it is set to 0"/>
+    <param type="integer" name="amplicon_integer" optional="true" label="Amplicon Int" help="Indicate it is amplicon based calling. Reads that do not map to the amplicon will be skipped. A read pair is considered to belong to the amplicon if the edges are less than int bp to the amplicon, and overlap fraction is at least float. Default: 10:0.95"/>
+    <param type="float" name="amplicon_float" optional="true" label="Amplicon Float" help="Indicate it is amplicon based calling. Reads that do not map to the amplicon will be skipped. A read pair is considered to belong to the amplicon if the edges are less than int bp to the amplicon, and overlap fraction is at least float. Default: 10:0.95"/>
+    <param type="boolean" name="local_realign" checked="true" truevalue="-k 1" falsevalue="-k 0" label="Indicate whether to perform local realignment."/>
+    <param type="text" name="region" label="Region of Interest" help="The region of interest. In the format of chr:start-end. If chr is not start-end but start (end is omitted), then it is a single position. No BED is needed." optional="true"/>
+    <param type="text" name="delimiter" label="Delimiter for splitting region info." help="Default to tab '\t'" optional="true"/>
+    <param type="text" name="sample_expression" label="Regular expression to extract sample name" help="The regular expression to extract sample names from bam filenames. Defaults to: /([^\/\._]+?)_[^\/]*.bam/" optional="true"/>
+    <param type="text" name="sample" label="Sample Name" optional="true" help="The sample name to be used directly. Will overwrite the regular expression option."/>
+    <param type="integer" name="nucl_ext" label="Nucleotides to Extend" help="The number of nucleotides to extend for each segment, default: 0" optional="true"/>
+    <param type="integer" name="min_reads_var" label="Minimum Number of Variance Reads" help="default: 2" optional="true"/>
+    <param type="integer" label="Minimum Number of Reads to Determine Strand Bias" help="Default: 2" name="min_reads_str" optional="true"/>
+    <param type="integer" name="min_qual" label="Minimum Mapping Quality" help="If set, reads with mapping quality less than INT will be filtered and ignored" optional="true"/>
+    <param type="float" name="min_score" label="Minimum Phred Score" help="The phred score for a base to be considered a good call. Default: 22.5 (for Illumina). For PGM, set it to ~15, as PGM tends to underestimate base quality." optional="true"/>
+    <param type="integer" name="mismatch" label="Maximum Mismatch" help="If set, reads with mismatches more than INT will be filtered and ignored. Gaps are not counted as mismatches. Valid only for bowtie2/TopHat or BWA aln followed by sampe. BWA mem is calculated as NM - Indels. Default: 8, or reads with more than 8 mismatches will not be used." optional="true"/>
+    <param type="integer" name="trim" label="Trim After" help="Trim bases after [INT] bases in the reads" optional="true"/>
+    <param type="integer" name="extension" label="Extension" help="Extension of bp to look for mismatches after insersion or deletion. Default to 2 bp, or only calls when they are within 2 bp." optional="true"/>
+    <param type="integer" name="position" label="Read Position Filter" help="The read position filter. If the mean variants position is less that specified, it is considered false positive. Default: 5" optional="true"/>
+    <param type="float" name="downsample" label="Downsample" help="For downsampling fraction, e.g. 0.7 means roughly 70% downsampling. Default: No downsampling. Use with caution. The downsampling will be random and non-reproducible." optional="true"/>
+    <param type="float" name="qratio" label="Qratio" help="The Qratio of (good_quality_reads)/(bad_quality_reads+0.5). The quality is defined by -q option. Default: 1.5" optional="true"/>
+    <param type="float" name="mapq" label="Minimum Mean MapQ" help="The reads should have at least mean MapQ to be considered a valid variant. Default: no filtering" optional="true"/>
+    <param type="float" name="freq" label="Lowest frequency in normal sample allowed for a putative somatic mutations" help="Defaults to .05" optional="true"/>
+    <param type="integer" name="indel" label="INDEL size" help="The indel size. Default: 50bp. Be cautious with -I option, especially in the amplicon mode, as amplicon sequencing is not a way to find large indels. Increasing the search size might slow and the false positives may appear in low complexity regions. Increase it to 200-300 bp would recommend only for hybrid capture sequencing." optional="true"/>
+    <param type="integer" name="min_matches" label="Minimum Matches" help="The minimum matches for a read to be considered. If, after soft-clipping, the matched bp is less than INT, then the read is discarded. It's meant for PCR based targeted sequencing where there's no insert and the matching is only the primers. Default: 0, or no filtering" optional="true"/>
+    <param type="select" name="strictness" label="Strictness" help="How strict to be when reading a SAM or BAM. STRICT - throw an exception if something looks wrong. LENIENT - Emit warnings but keep going if possible. SILENT - Like LENIENT, only don't emit warning messages. Default: LENIENT" optional="true">
+      <option value="STRICT">Strict</option>
+      <option value="LENIENT">Lenient</option>
+      <option value="SILENT">Silent</option>
+    </param>
+    <param type="boolean" name="unique" label="Unique Mode Forward" help="Indicate unique mode, which when mate pairs overlap, the overlapping part will be counted only once using forward read only. Default: unique mode disabled, all reads are counted." checked="false" truevalue="-u" falsevalue=""/>
+    <param type="boolean" name="unique_first" label="Unique Mode First" help="Indicate unique mode, which when mate pairs overlap, the overlapping part will be counted only once using first read only. Default: unique mode disabled, all reads are counted." checked="false" truevalue="-UN" falsevalue=""/>
+    <param type="boolean" name="chimeric" label="Chimeric Filter" checked="true" truevalue="" falsevalue="--chimeric" help="Chimeric reads are artifacts from library construction, where a read can be split into two segments, each will be aligned within 1-2 read length distance, but in opposite direction. Default: filtering enabled"/>
+    <param type="boolean" name="nosv" label="Call Structural Variants" checked="true" truevalue="" falsevalue="--nosv"/>
+    <param type="integer" name="length" label="Minimum Length" help="The minimum structural variant length to be presented using DEL DUP INV INS, etc. Default: 1000. Any indel, complex variants less than this will be spelled out with exact nucleotides" optional="true"/>
+    <param type="integer" name="insert_size" label="Insert Size" help="The insert size. Used for SV calling. Default: 300" optional="true"/>
+    <param type="integer" name="insert_std" label="Insert Size STD" help="The insert size STD. Used for SV calling. Default: 100" optional="true"/>
+    <param type="integer" name="insert_std_amt" label="Insert Size STD Amount" help="The number of STD. A pair will be considered for DEL if INSERT > INSERT_SIZE + INSERT_STD_AMT * INSERT_STD. Default: 4" optional="true"/>
+    <param type="integer" name="ref_extension" label="Reference Extension" help="Extension of bp of reference to build lookup table. Default to 1200 bp. Increase the number will slowdown the program. The main purpose is to call large indels with 1000 bp that can be missed by discordant mate pairs." optional="true"/>
+    <param type="boolean" name="deldupvar" checked="false" truevalue="--deldupvar" falsevalue="" label="Delete Duplicate Variants" help="Turn on deleting of duplicate variants in output that can appear due to VarDict linear work on regions. Variants in this mode are considered and outputted only if start position of variant is inside the region interest."/>
+    <param type="text" name="default_printer" label="Default Printer" optional="true" help="The printer type used for different outputs. Default: OUT (i.e. System.out)."/>
+    <param type="text" name="adaptor" label="Adaptor" optional="true" help="Filter adaptor sequences so that they are not used in realignment. Multiple adaptors can be supplied by setting them with comma, like: ACGTTGCTC,ACGGGGTCTC,ACGCGGCTAG"/>
+    <param type="text" name="crispr_cutting_site" label="CRISPR Cutting Site" help="The genomic position that CRISPR/Cas9 suppose to cut, typically 3bp from the PAM NGG site and within the guide. For CRISPR mode only. It will adjust the variants (mostly In-Del) start and end sites to as close to this location as possible, if there are alternatives. The option should only be used for CRISPR mode." optional="true"/>
+    <param type="integer" name="crispr_filtering_bp" label="CRISPR Filtering bp" help="In CRISPR mode, the minimum amount in bp that a read needs to overlap with cutting site. If a read does not meet the criteria, it will not be used for variant calling, since it is likely just a partially amplified PCR. Default: not set, or no filtering" optional="true"/>
+</inputs>
+<outputs>
+    <data name="output1" format="vcf" label="${tool.name} on ${on_string}"/>
+</outputs>
+<tests/>
+<help><![CDATA[
+
+VarDictJava is a variant discovery program written in Java and Perl. It is a Java port of VarDict variant caller.
+
+The original Perl VarDict is a sensitive variant caller for both single and paired sample variant calling from BAM files. VarDict implements several novel features such as amplicon bias aware variant calling from targeted sequencing experiments, rescue of long indels by realigning bwa soft clipped reads and better scalability than many other Java based variant callers. The Java port is around 10x faster than the original Perl implementation.
+
+Please cite VarDict:
+
+Lai Z, Markovets A, Ahdesmaki M, Chapman B, Hofmann O, McEwen R, Johnson J, Dougherty B, Barrett JC, and Dry JR. VarDict: a novel and versatile variant caller for next-generation sequencing in cancer research. Nucleic Acids Res. 2016, pii: gkw227.
+
+The link to is article can be accessed through: https://academic.oup.com/nar/article/44/11/e108/2468301?searchresult=1
+
+Original coded by Zhongwu Lai 2014.
+
+VarDictJava can run in single sample (see Single sample mode section), paired sample (see Paired variant calling section), or amplicon bias aware modes. As input, VarDictJava takes reference genomes in FASTA format, aligned reads in BAM format, and target regions in BED format.
+
+]]></help>
+  <citations/>
+</tool>

@@ -41,7 +41,7 @@
     <expand macro="run_date_input"/>
   </inputs>
   <outputs>
-    <expand macro="bam_output"/>
+    <expand macro="sam_output"/>
     <expand macro="log_output"/>
   </outputs>
   <help><![CDATA[
