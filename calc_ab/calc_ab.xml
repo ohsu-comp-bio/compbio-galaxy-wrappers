@@ -1,4 +1,4 @@
-<tool id="calc_ab" name="Calculate Allele Balance" version="0.0.3" >
+<tool id="calc_ab" name="Calculate Allele Balance" version="0.1.0" >
     <description>Calculate allele balance from variant calls.</description>
 
     <command detect_errors="exit_code"><![CDATA[
