@@ -1,0 +1,11 @@
+categories:
+- "CompBio Galaxy Wrappers"
+homepage_url: "https://bioconductor.org/packages/release/bioc/html/RUVSeq.html"
+owner: "patterja"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/ruvseq"
+repositories:
+  ruvseq:
+    description: "Removal of Unwanted Variation on RNASeq Data"
+    include:
+      - ruvseq.xml
+      - test-data/

@@ -27,7 +27,7 @@
             <option value="FALSE">FALSE</option>
             <option value="TRUE">TRUE</option>
         </param>
-        <param name="ctrlregex" type="text" value="*UHR*" label="Regex of replicates/controls: Pattern match sample names indicating replicates or controls." help="Percent of samples (Percent filter) matching regex pattern (Regex for filtering) with counts greater than minimum counts (Minimum counts)."/>
+        <param name="ctrlregex" type="text" value="UHR" label="Regex of replicates/controls: Pattern match sample names indicating replicates or controls." help="Percent of samples (Percent filter) matching regex pattern (Regex for filtering) with counts greater than minimum counts (Minimum counts)."/>
         <param name="sampregex" type="text" value="*" label="Regex for filtering: " help=""/>
         <param name="filtperc" type="integer" value="10" label="Percent filter" help=""/>
         <param name="mincnt" type="integer" value="3" label="Minimum count" help=""/>
@@ -42,6 +42,13 @@
         <data name="normRUV" format="txt" from_work_dir="normRUV.txt" label="norm ${tool.name} on ${on_string}"/>
         <data name="ruv_plots" format="pdf" from_work_dir="normalization_plots.pdf" label="ruv_plots ${tool.name} on ${on_string}"/>
     </outputs>
+
+
+    <tests>
+        <test>
+            <param name="input" value="test_data/tpm_test.txt" ftype="tabular"/>
+        </test>
+    </tests>
 
     <help><![CDATA[
 
