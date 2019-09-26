@@ -1,7 +1,7 @@
 import argparse
 import gffutils
 
-VERSION = '0.2.4'
+VERSION = '0.2.5'
 
 def supply_args():
     """
@@ -413,7 +413,7 @@ class GeneCentricCnv(object):
         2*(2^MEAN_LOG2_COPY_RATIO)
         :return:
         """
-        return 2*(2**float(val))
+        return "%.2f" % (2*(2**float(val)))
 
     def _calc_tumor_copy(self, tumor_pct, val):
         """
@@ -424,7 +424,7 @@ class GeneCentricCnv(object):
         val = self._calc_raw_copy_number(val)
         t = int(tumor_pct)/100.0
         n = 1.0 - t
-        return (val-(2*n))/t
+        return "%.2f" % ((val-(2*n))/t)
 
     def _calc_tumor_copy_ratio(self, tval, nval):
         """

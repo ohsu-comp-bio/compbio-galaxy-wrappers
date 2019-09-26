@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
+from file_types import vcfreader
 import argparse
 import json
-import numpy
-import vcf
 
-VERSION = '0.0.3'
+VERSION = '0.1.0'
 
 def supply_args():
     """
@@ -19,120 +18,96 @@ def supply_args():
     args = parser.parse_args()
     return args
 
-class VcfRec(object):
-    def __init__(self, rec):
 
-        self.rec = rec
-        self.chrom = str(rec.CHROM)
-        self.coord = str(rec.POS)
-        try:
-            self.ad = rec.samples[0]['AD']
-            self.af = self.ad[1] / (self.ad[0] + self.ad[1] + 0.0)
-        except:
-            self.ad = [0, 0]
-            self.af = None
-        self.total_ad = self.ad[0] + self.ad[1]
-        self.gt = rec.samples[0]['GT']
-        if len(rec.alleles[1:]) > 1:
-            self.is_biallelic = False
-        else:
-            self.is_biallelic = True
-        if self.is_biallelic and self.ad != [0, 0]:
-            self.ab = self._calc_ab()
-        else:
-            self.ab = None
-
-    def _calc_ab(self):
-        """
-        Calculate for the variant
-        :return:
-        """
-        ratio = None
-        # Need at least some number of reads to assess the site.
-        if self.total_ad > 50:
-            if self.gt == '0/1':
-                # Hard to determine what this should be...
-                if self.af > 0.1 and self.af < 0.9:
-                    ratio = abs(0.5 - self.af)
-        # if self.gt == '0/0':
-        #     ratio = abs(af)
-        return ratio
-
-
-class WholeVcf(object):
+def write_json_out(metric, outfile):
     """
-
+    Prepare output json file.
+    :return:
     """
-    def __init__(self, filename):
-        self.vcf_reader = vcf.Reader(filename=filename)
-        # self.avg_ab = self._find_matches()
-        self.stdev = self._find_stdev()
+    outfile = open(outfile, 'w')
+    out_metric = {'allele_balance': metric}
+    json.dump(out_metric, outfile)
+    outfile.close()
 
-    def _find_stdev(self):
-        """
-        Find stdev of AF values.
-        :return:
-        """
-        avg_afs = []
-        for record in self.vcf_reader:
-            entry = VcfRec(record)
-            if entry.gt == '0/1' and entry.total_ad >= 50:
-                af_diff = abs(0.5 - entry.af)
-                if af_diff < 0.2:
-                    avg_afs.append(af_diff)
-            # if entry.gt == '0/0' and entry.total_ad >= 50:
-            #     avg_afs.append(entry.af)
 
-        num_arr = numpy.array(avg_afs)
-        if num_arr != []:
-            return numpy.std(num_arr, axis=0, ddof=1) * 100
+def calc_af(ad):
+    """
+    Given a comma sep list of ref and alt depths, return allele freq.
+    :param ad:
+    :return:
+    """
+    ref = int(ad.split(',')[0])
+    alt = int(ad.split(',')[1])
+
+    try:
+        return alt / (alt + ref + 0.0)
+    except ZeroDivisionError:
+        return None
+
+def af_list(samps):
+    """
+    Given a VcfSamples object, return a list of VAFs.
+    :return:
+    """
+    afs = []
+    for samp in samps:
+        if 'AF' in samp:
+            afs.append(float(samp['AF']))
+        elif 'AD' in samp:
+            afs.append(calc_af(samp['AD']))
         else:
-            return 100.0
+            raise Exception('FORMAT must currently contain either an AD or AF field to capture VAF.')
+    return afs
 
-    def _find_matches(self):
-        """
-        Find the variants that match the criteria.
-        :return:
-        """
-        total_ab = 0.0
-        cnt = 0
-        for record in self.vcf_reader:
-            entry = VcfRec(record)
-            if entry.ab is not None:
-                total_ab += entry.ab
-                cnt += 1
 
-        if cnt != 0:
-            val = (total_ab / cnt) * 100
-        else:
-            val = 100
-
-        return val
-
-class Writer(object):
+def create_af_counts(sample_list, my_vcf, min_vaf = 0.35, max_vaf = 0.65):
     """
-
+    Create a dictionary {SAMPLE: [BAD VAF, TOTAL]
+    :return:
     """
-    def __init__(self, vcf_reader, outfile):
-        self.outfile = outfile
-        self.vcf_reader = vcf_reader
+    af_dict = {}
+    for vrnt in my_vcf.myvcf.values():
 
-    def write_json_out(self, metric):
-        """
-        Prepare output json file.
-        :return:
-        """
-        outfile = open(self.outfile, 'w')
-        out_metric = {'allele_balance': metric}
-        json.dump(out_metric, outfile)
-        outfile.close()
+        i = 0
+        for samp in vrnt.samples:
+            if sample_list[i] not in af_dict:
+                af_dict[sample_list[i]] = {'TOTAL': 0,
+                                           'BAD_VAF': 0}
+            i += 1
 
+        if len(vrnt.ALT) == 1 and len(vrnt.REF) == 1:
+            if len(vrnt.ALT[0]) == 1 and len(vrnt.REF[0]) == 1:
+                if 'DP' in vrnt.INFO:
+                    if int(vrnt.INFO['DP']) >= 50:
+                        i = 0
+                        for samp in vrnt.samples:
+                            if samp['GT'] == '0/1':
+                                af_dict[sample_list[i]]['TOTAL'] += 1
+                                if af_list(vrnt.samples)[i] < min_vaf or af_list(vrnt.samples)[i] > max_vaf:
+                                    af_dict[sample_list[i]]['BAD_VAF'] += 1
+                            i += 1
+
+    return af_dict
 
 def main():
     args = supply_args()
-    my_vcf = WholeVcf(args.infile)
-    writer = Writer(my_vcf.vcf_reader, args.outfile)
-    writer.write_json_out(my_vcf.stdev)
+    my_vcf = vcfreader.VcfReader(args.infile)
+    sample_list = my_vcf.header.sample_list
+    af_dict = create_af_counts(sample_list, my_vcf)
+    if len(sample_list) == 1:
+        try:
+            bad_vaf = (af_dict[sample_list[0]]['BAD_VAF'] / (af_dict[sample_list[0]]['TOTAL'] + 0.0)) * 100
+        except ZeroDivisionError:
+            bad_vaf = '100'
+        write_json_out(bad_vaf, args.outfile)
+    else:
+        print('Multi sample functionality not completely implemented...')
+        for entry in af_dict:
+            try:
+                bad_vaf = (af_dict[entry]['BAD_VAF'] / (af_dict[entry]['TOTAL'] + 0.0)) * 100
+            except ZeroDivisionError:
+                bad_vaf = '100'
+            print('\t'.join([entry, str(bad_vaf)]))
 
 if __name__ == "__main__":
     main()

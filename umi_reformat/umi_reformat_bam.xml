@@ -1,10 +1,11 @@
-<tool id="umi_reformat_bam" name="UMI to BAM" version="0.3.0" >
+<tool id="umi_reformat_bam" name="UMI to BAM" version="0.3.1" >
   <description>Add a Unique Molecular Barcode sequence to a BAM tag.  This is generally RX or BX.</description>
 
   <command><![CDATA[
-  umi_reformat_bam.py
-  ${input_bam}
-  ${output_bam}
+  ln -s ${input_bam} input.bam &&
+  samtools index input.bam &&
+  python $__tool_directory__/umi_reformat_bam.py
+  input.bam ${output_bam}
   ]]></command>
 
   <inputs>   
