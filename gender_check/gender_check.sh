@@ -1,5 +1,7 @@
 #!/bin/bash
 
+VERSION='1.1.1'
+
 gatk CollectReadCounts -I $2 -L Y -O output.tsv -imr OVERLAPPING_ONLY -format TSV
 
 COUNT=$(
@@ -30,7 +32,11 @@ echo $GENDER >> "output.txt"
 if [ $GENDER = $1 ]; then
     echo "Gender matches Sample sheet"
 else
-    echo "Gender does not match Samplesheet"
+    if [ -z ${5} ]; then
+        echo "Gender does not match Samplesheet"
+    else
+        cat output.txt | mailx -s "$(hostname) Gender Check Tool Error" "${5}"
+    fi
     echo "Gender does not match Samplesheet" >&2
     exit 1
 fi
