@@ -7,7 +7,7 @@
     <command detect_errors="exit_code"><![CDATA[
         ln -s $input input.bam &&
         samtools index input.bam &&
-        $__tool_directory__/gender_check.sh $gender input.bam $fem_max $male_min $admin_email
+        $__tool_directory__/gender_check.sh $gender input.bam $fem_max $male_min "$admin_email"
 ]]>
     </command>
     <inputs>
@@ -19,7 +19,9 @@
         </param> 
         <param type="integer" name="fem_max" label="Female Max Counts" value="40000"/>
         <param type="integer" name="male_min" label="Male Minimum Counts" value="80000"/>
-        <param type="text" name="admin_email" label="Admin Email" help="Send failure reports to this email address."/>
+        <param type="text" name="admin_email" label="Admin Email" help="Send failure reports to this email address.">
+            <sanitizer sanitize='False' />
+        </param>
     </inputs>
     <outputs>
         <data format="txt" name="output" label="Dummy Gender Check Output" from_work_dir="output.txt"/>
