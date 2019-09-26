@@ -3,7 +3,7 @@
 gatk CollectReadCounts -I $2 -L Y -O output.tsv -imr OVERLAPPING_ONLY -format TSV
 
 COUNT=$(
-python3 << END
+python << END
 
 with open("output.tsv", "r") as count_file:
     count = 0
@@ -18,11 +18,11 @@ echo $COUNT
 echo $COUNT > "output.txt"
 
 if [ $COUNT -lt $3 ]; then
-    GENDER="Female"
+    GENDER="FEMALE"
 elif [ $COUNT -gt $4 ]; then
-    GENDER="Male"
+    GENDER="MALE"
 else
-    GENDER="Unknown"
+    GENDER="UNSPECIFIED"
 fi
 echo $GENDER
 echo $GENDER >> "output.txt"
