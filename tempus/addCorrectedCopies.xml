@@ -1,5 +1,8 @@
-<tool id='add_corrected_copies' name="Add Corrected Copies" version='1.0.0'>
+<tool id='add_corrected_copies' name="Add Corrected Copies" version='1.0.1'>
     <description>adds the tumor corrected copies to tempus CNV data.</description>
+    <requirements>
+      <requirement type="package" version="3.5.1">r</requirement>
+    </requirements>
     <command detect_errors="exit_code"><![CDATA[
     Rscript $__tool_directory__/addCorrectedCopies.R $tempus $tumor_percent $gene_file
 ]]>
