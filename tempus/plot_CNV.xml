@@ -6,7 +6,7 @@
         <requirement type="package" version="3.5.1">r</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
-    Rscript $__tool_directory__/gtrellis_CNV_Tempus.R $count_file $sample_name $chrom_file $upper_lim $lower_lim
+    Rscript $__tool_directory__/gtrellis_CNV_Tempus.R $count_file "$sample_name" $chrom_file $upper_lim $lower_lim
 ]]>
     </command>
     <inputs>
