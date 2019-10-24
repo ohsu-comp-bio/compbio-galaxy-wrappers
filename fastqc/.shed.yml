@@ -9,4 +9,3 @@ repositories:
     include:
         - fastqc.py
         - fastqc.xml
-        - tool_dependencies.xml
