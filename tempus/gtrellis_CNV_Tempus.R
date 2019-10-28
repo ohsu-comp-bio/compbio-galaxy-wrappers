@@ -35,8 +35,9 @@ cnvPoints <- read.table(countFile, header = TRUE, sep = "\t", comment.char = "@"
 
 #create a single location column
 cnvPoints$hg19Loc = paste0("chr", cnvPoints$Chr, ":", cnvPoints$Start, "-", cnvPoints$End)
-cnvPoints = cnvPoints[,c("Chr", "Start", "End", "TumorCorrectedCopies", "GENE")]
-
+cnvPoints = cnvPoints[,c("Chr", "Start", "End", "Copy.Number", "GENE")]
+colnames(cnvPoints) <- c("Chr", "Start", "End", "CopyNumber", "GENE")
+cnvPoints <- cnvPoints[complete.cases(cnvPoints[,"CopyNumber"]),]
 
 #cnvPoints <- mutate(cnvPoints, CONTIG = paste("chr", CONTIG, sep=''))
 cnvPoints$Chr = paste0("chr", cnvPoints$Chr)	
@@ -59,8 +60,8 @@ gtrellis_layout(n_track = 1,
                 title = SampleName,
                 title_fontsize = 32,
                 track_axis = TRUE,
-                track_ylim = c(-5, (log2(max(cnvPoints$TumorCorrectedCopies)) + 1)),
-                track_ylab = "Log2 tumor-corrected copies",
+                track_ylim = c(-5, (log2(max(cnvPoints$CopyNumber)) + 1)),
+                track_ylab = "Log2 Tempus copies",
                 lab_fontsize = 20,
                 axis_label_fontsize = 18,
                 xaxis = FALSE,
@@ -73,7 +74,7 @@ gtrellis_layout(n_track = 1,
 # color points differently if targets are within or outside STPv3 genes of interest
 # blue == within STPv3 gene of interest; grey == outside STPv3 gene of interest; red == neither
 # add lines across plots to demarcate 5 and 0.5 tumor-corrected copies; log2(5)=2.32; log2(0.5)= -1
-add_points_track(cnvPoints, log2(cnvPoints$TumorCorrectedCopies),
+add_points_track(cnvPoints, log2(cnvPoints$CopyNumber),
                  pch = 16, 
                  size = unit(2, "mm"),
                  gp = gpar(col = ifelse(is.na(cnvPoints$GENE), "grey", "blue"))
@@ -109,12 +110,12 @@ png(filename = "plot2.png",
 # ylim max is set to max segment value for sample, plus add 1 for buffer to prevent points from getting squished at top
 # ylim min is fixed at -5 for all samples; may cut out failed assays, but prevents individual failed assays from making min too low
 gtrellis_layout(n_track = 1, 
-                title = paste0(SampleName, ": Log2 tumor-corrected copies",sep=""),
+                title = paste0(SampleName, ": Log2 Tempus copies",sep=""),
                 title_fontsize = 32,
                 ncol = 6,
                 byrow = FALSE,
                 track_axis = TRUE,
-                track_ylim = c(-5, (log2(max(cnvPoints$TumorCorrectedCopies)) + 1)),
+                track_ylim = c(-5, (log2(max(cnvPoints$CopyNumber)) + 1)),
                 lab_fontsize = 20,
                 axis_label_fontsize = 16,
                 add_name_track = TRUE,
@@ -125,7 +126,7 @@ gtrellis_layout(n_track = 1,
 # color points differently if targets are within or outside STPv3 genes of interest
 # blue == within STPv3 gene of interest; grey == outside STPv3 gene of interest; red == neither
 # add lines across plots to demarcate 5 and 0.5 tumor-corrected copies; log2(5)=2.32; log2(0.5)= -1
-add_points_track(cnvPoints, log2(cnvPoints$TumorCorrectedCopies),
+add_points_track(cnvPoints, log2(cnvPoints$CopyNumber),
                  pch = 16, 
                  size = unit(1.5, "mm"),
                  gp = gpar(col = ifelse(is.na(cnvPoints$GENE), "grey", "blue"))

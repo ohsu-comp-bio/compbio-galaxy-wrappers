@@ -25,12 +25,9 @@ for( segment_row in 1:nrow(tempusData) ) {
 			} else {
 				if(segment_row==1){
 					tempusData[segment_row, "GENE"] = paste0(geneData[gene_row, "GeneSymbol"], ", ",  tempusData[segment_row, "GENE"])
-					print("point1")
 				} else if(is.na(tempusData[segment_row, "GENE"])){
-					print("Point2")
 					tempusData[segment_row, "GENE"] = toString(geneData[gene_row, "GeneSymbol"])
 				} else {
-					print("Point3")
 					tempusData[segment_row, "GENE"] = paste0(geneData[gene_row, "GeneSymbol"], ", ", tempusData[segment_row, "GENE"])
 				}
 			}
@@ -40,3 +37,9 @@ for( segment_row in 1:nrow(tempusData) ) {
 
 
 write.table(tempusData, file="output.tsv", row.names=FALSE, sep="\t")
+
+genes_only <- tempusData[complete.cases(tempusData[,"GENE"]),]
+
+filtered_genes <- genes_only[genes_only$Copy.Number >= 5 | genes_only$Copy.Number == 0,]
+
+write.table(filtered_genes, file="output2.tsv", row.names=FALSE, sep="\t")
