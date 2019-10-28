@@ -1,9 +1,0 @@
-#This file lists the locations and dbkeys of all the CNVkit CNN Reference files.
-#This file has the format (white space characters are TAB characters):
-#
-#<unique_build_id>  <dbkey> <display_name>  <file_path>
-#
-#So, cnvkit_ref_cnn.loc could look something like this:
-#
-#cnvkit_normals_v1	cnvkit_normals	CNVkit Normals	/path/to/cnvkit/ref/cnn/file.cnn
-#

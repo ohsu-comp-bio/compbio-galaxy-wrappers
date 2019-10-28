@@ -1,7 +1,7 @@
 <tool id="cnvkit_heatmap" name="CNVkit Heatmap" version="@VERSION@.0" 
       profile="17.09">
     <description>
-        CNVKit, a command-line toolkit for copy number analysis.
+        Heatmap tool takes cnn, cnr, or cns files and produces a heatmap indicating bin or segment amplifications or deletions.
     </description>
     
 
