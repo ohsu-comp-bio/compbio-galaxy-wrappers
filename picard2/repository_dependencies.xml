@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<repositories description="Picard suite of tools for manipulating high-throughput sequencing (HTs) data">
+    <repository name="suite_picard_addcommentstobam" owner="creason" />
+    <repository name="suite_picard_addorreplacereadgroups" owner="creason" />
+    <repository name="suite_picard_bedtointervallist" owner="creason" />
+    <repository name="suite_picard_cleansam" owner="creason" />
+    <repository name="suite_picard_casm" owner="creason" />
+    <repository name="suite_picard_collectbasedistributionbycycle" owner="creason" />
+    <repository name="suite_picard_collectgcbiasmetrics" owner="creason" />
+    <repository name="suite_picard_collectinsertsizemetrics" owner="creason" />
+    <repository name="suite_picard_collectrnaseqmetrics" owner="creason" />
+    <repository name="suite_picard_collectwgsmetrics" owner="creason" />
+    <repository name="suite_picard_downsamplesam" owner="creason" />
+    <repository name="suite_picard_estimatelibrarycomplexity" owner="creason" />
+    <repository name="suite_picard_fastqtosam" owner="creason" />
+    <repository name="suite_picard_filtersamreads" owner="creason" />
+    <repository name="suite_picard_fixmateinformation" owner="creason" />
+    <repository name="suite_picard_markduplicates" owner="creason" />
+    <repository name="suite_picard_markduplicateswithmatecigar" owner="creason" />
+    <repository name="suite_picard_meanqualitybycycle" owner="creason" />
+    <repository name="suite_picard_mergebamalignment" owner="creason" />
+    <repository name="suite_picard_mergesamfiles" owner="creason" />
+    <repository name="suite_picard_normalizefasta" owner="creason" />
+    <repository name="suite_picard_qualityscoredistribution" owner="creason" />
+    <repository name="suite_picard_reordersam" owner="creason" />
+    <repository name="suite_picard_replacesamheader" owner="creason" />
+    <repository name="suite_picard_revertoriginalbasequalitiesandaddmatecigar" owner="creason" />
+    <repository name="suite_picard_revertsam" owner="creason" />
+    <repository name="suite_picard_samTofastq" owner="creason" />
+    <repository name="suite_picard_sortsam" owner="creason" />
+    <repository name="suite_picard_validatesamfile" owner="creason" />
+</repositories>

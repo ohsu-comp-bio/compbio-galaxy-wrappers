@@ -1,65 +1,210 @@
-owner: "creason"
+owner: creason
 remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/picard2"
 homepage_url: "https://broadinstitute.github.io/picard/"
 categories:
   - "KDL Tools"
-suite:
-  name: "picard2"
-  description: "Picard suite of tools for manipulating high-throughput sequencing (HTS) data"
-  include_repositories:
-  - name: "picard_AddCommentsToBam"
-    owner: creason
-  - name: "picard_AddOrReplaceReadGroups"
-    owner: creason
-  - name: "picard_BedToIntervalList"
-    owner: creason
-  - name: "picard_CleanSam"
-    owner: creason
-  - name: "picard_CASM"
-    owner: creason
-  - name: "picard_CollectBaseDistributionByCycle"
-    owner: creason
-  - name: "picard_CollectGcBiasMetrics"
-    owner: creason
-  - name: "picard_CollectInsertSizeMetrics"
-    owner: creason
-  - name: "picard_CollectRnaSeqMetrics"
-    owner: creason
-  - name: "picard_CollectWgsMetrics"
-    owner: creason
-  - name: "picard_DownsampleSam"
-    owner: creason
-  - name: "picard_EstimateLibraryComplexity"
-    owner: creason
-  - name: "picard_FastqToSam"
-    owner: creason
-  - name: "picard_FilterSamReads"
-    owner: creason
-  - name: "picard_MarkDuplicates"
-    owner: creason
-  - name: "picard_MarkDuplicatesWithMateCigar"
-    owner: creason
-  - name: "picard_MeanQualityByCycle"
-    owner: creason
-  - name: "picard_MergeBamAlignment"
-    owner: creason
-  - name: "picard_MergeSamFiles"
-    owner: creason
-  - name: "picard_NormalizeFasta"
-    owner: creason
-  - name: "picard_QualityScoreDistribution"
-    owner: creason
-  - name: "picard_ReorderSam"
-    owner: creason
-  - name: "picard_ReplaceSamHeader"
-    owner: creason
-  - name: "picard_RevertOriginalBaseQualitiesAndAddMateCigar"
-    owner: creason
-  - name: "picard_RevertSam"
-    owner: creason
-  - name: "picard_SamToFastq"
-    owner: creason
-  - name: "picard_SortSam"
-    owner: creason
-  - name: "picard_ValidateSamFile"
+repositories:
+  suite_picard_addcommentstobam:
+    description: "The tool AddCommentsToBam from the Picard tool suite."
+    include: 
+      - picard_AddCommentsToBam.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_addorreplacereadgroups:
+    description: "The tool AddOrReplaceReadGroups from the Picard tool suite."
+    include: 
+      - picard_AddOrReplaceReadGroups.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_bedtointervallist:
+    description: "The tool BedToIntervalList from the Picard tool suite."
+    include: 
+      - picard_BedToIntervalList.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_cleansam:
+    description: "The tool CleanSam from the Picard tool suite."
+    include: 
+      - picard_CleanSam.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_casm:
+    description: "The tool CollectAlignmentSummaryMetrics from the Picard tool suite."
+    include: 
+      - picard_CollectAlignmentSummaryMetrics.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_collectbasedistributionbycycle:
+    description: "The tool CollectBaseDistributionByCycle from the Picard tool suite."
+    include: 
+      - picard_CollectBaseDistributionByCycle.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_collectgcbiasmetrics:
+    description: "The tool CollectGcBiasMetrics from the Picard tool suite."
+    include: 
+      - picard_CollectGcBiasMetrics.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_collectinsertsizemetrics:
+    description: "The tool CollectInsertSizeMetrics from the Picard tool suite."
+    include: 
+      - picard_CollectInsertSizeMetrics.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_collectrnaseqmetrics:
+    description: "The tool CollectRnaSeqMetrics from the Picard tool suite."
+    include: 
+      - picard_CollectRnaSeqMetrics.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_collectwgsmetrics:
+    description: "The tool CollectWgsMetrics from the Picard tool suite."
+    include: 
+      - picard_CollectWgsMetrics.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_downsamplesam:
+    description: "The tool DownsampleSam from the Picard tool suite."
+    include: 
+      - picard_DownsampleSam.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_estimatelibrarycomplexity:
+    description: "The tool EstimateLibraryComplexity from the Picard tool suite."
+    include: 
+      - picard_EstimateLibraryComplexity.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_fastqtosam:
+    description: "The tool FastqToSam from the Picard tool suite."
+    include: 
+      - picard_FastqToSam.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_filtersamreads:
+    description: "The tool FilterSamReads from the Picard tool suite."
+    include: 
+      - picard_FilterSamReads.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_fixmateinformation:
+    description: "The tool FixMateInformation from the Picard tool suite."
+    include:
+      - picard_FixMateInformation.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_markduplicates:
+    description: "The tool MarkDuplicates from the Picard tool suite."
+    include: 
+      - picard_MarkDuplicates.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_markduplicateswithmatecigar:
+    description: "The tool MarkDuplicatesWithMateCigar from the Picard tool suite."
+    include: 
+      - picard_MarkDuplicatesWithMateCigar.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_meanqualitybycycle:
+    description: "The tool MeanQualityByCycle from the Picard tool suite."
+    include: 
+      - picard_MeanQualityByCycle.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_mergebamalignment:
+    description: "The tool MergeBamAlignment from the Picard tool suite."
+    include: 
+      - picard_MergeBamAlignment.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_mergesamfiles:
+    description: "The tool MergeSamFiles from the Picard tool suite."
+    include: 
+      - picard_MergeSamFiles.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_normalizefasta:
+    description: "The tool NormalizeFasta from the Picard tool suite."
+    include: 
+      - picard_NormalizeFasta.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_qualityscoredistribution:
+    description: "The tool QualityScoreDistribution from the Picard tool suite."
+    include: 
+      - picard_QualityScoreDistribution.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_reordersam:
+    description: "The tool ReorderSam from the Picard tool suite."
+    include: 
+      - picard_ReorderSam.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_replacesamheader:
+    description: "The tool ReplaceSamHeader from the Picard tool suite."
+    include: 
+      - picard_ReplaceSamHeader.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_revertoriginalbasequalitiesandaddmatecigar:
+    description: "The tool RevertOriginalBaseQualitiesAndAddMateCigar from the Picard tool suite."
+    include: 
+      - picard_RevertOriginalBaseQualitiesAndAddMateCigar.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_revertsam:
+    description: "The tool RevertSam from the Picard tool suite."
+    include: 
+      - picard_RevertSam.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_samtofastq:
+    description: "The tool SamToFastq from the Picard tool suite."
+    include: 
+      - picard_SamToFastq.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_sortsam:
+    description: "The tool SortSam from the Picard tool suite."
+    include: 
+      - picard_SortSam.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
+  suite_picard_validatesamfile:
+    description: "The tool ValidateSamFile from the Picard tool suite."
+    include: 
+      - picard_ValidateSamFile.xml
+      - picard_macros.xml
+      - read_group_macros.xml
+      - repository_dependencies.xml
 
