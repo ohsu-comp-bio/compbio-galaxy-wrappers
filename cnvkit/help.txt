@@ -1,0 +1,73 @@
+usage: cnvkit.py scatter [-h] [-s FILENAME] [-c RANGE] [-g GENE]
+                         [-l RANGE_LIST] [-w WIDTH] [-o FILENAME]
+                         [-a CHARACTER] [--by-bin]
+                         [--segment-color SEGMENT_COLOR] [--title TITLE] [-t]
+                         [--y-max Y_MAX] [--y-min Y_MIN] [-v FILENAME]
+                         [-i SAMPLE_ID] [-n NORMAL_ID] [-m MIN_VARIANT_DEPTH]
+                         [-z [ALT_FREQ]]
+                         [filename]
+
+positional arguments:
+  filename              Processed bin-level copy ratios (*.cnr), the output of
+                        the 'fix' sub-command.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s FILENAME, --segment FILENAME
+                        Segmentation calls (.cns), the output of the 'segment'
+                        command.
+  -c RANGE, --chromosome RANGE
+                        Chromosome or chromosomal range, e.g. 'chr1' or
+                        'chr1:2333000-2444000', to display. If a range is
+                        given, all targeted genes in this range will be shown,
+                        unless -g/--gene is also given.
+  -g GENE, --gene GENE  Name of gene or genes (comma-separated) to display.
+  -l RANGE_LIST, --range-list RANGE_LIST
+                        File listing the chromosomal ranges to display, as
+                        BED, interval list or 'chr:start-end' text. Creates
+                        focal plots similar to -c/--chromosome for each listed
+                        region, combined into a multi-page PDF. The output
+                        filename must also be specified (-o/--output).
+  -w WIDTH, --width WIDTH
+                        Width of margin to show around the selected gene(s)
+                        (-g/--gene) or small chromosomal region
+                        (-c/--chromosome). [Default: 1000000]
+  -o FILENAME, --output FILENAME
+                        Output PDF file name.
+
+Plot aesthetics:
+  -a CHARACTER, --antitarget-marker CHARACTER
+                        Plot antitargets using this symbol when plotting in a
+                        selected chromosomal region (-g/--gene or
+                        -c/--chromosome). [Default: same as targets]
+  --by-bin              Plot data x-coordinates by bin indices instead of
+                        genomic coordinates. All bins will be shown with equal
+                        width, no blank regions will be shown, and x-axis
+                        values indicate bin number (within chromosome) instead
+                        of genomic position.
+  --segment-color SEGMENT_COLOR
+                        Plot segment lines in this color. Value can be any
+                        string accepted by matplotlib, e.g. 'red' or
+                        '#CC0000'.
+  --title TITLE         Plot title. [Default: sample ID, from filename or -i]
+  -t, --trend           Draw a smoothed local trendline on the scatter plot.
+  --y-max Y_MAX         y-axis upper limit.
+  --y-min Y_MIN         y-axis lower limit.
+
+To plot SNP b-allele frequencies:
+  -v FILENAME, --vcf FILENAME
+                        VCF file name containing variants to plot for SNV
+                        b-allele frequencies.
+  -i SAMPLE_ID, --sample-id SAMPLE_ID
+                        Name of the sample in the VCF to use for b-allele
+                        frequency extraction and as the default plot title.
+  -n NORMAL_ID, --normal-id NORMAL_ID
+                        Corresponding normal sample ID in the input VCF. This
+                        sample is used to select only germline SNVs to plot.
+  -m MIN_VARIANT_DEPTH, --min-variant-depth MIN_VARIANT_DEPTH
+                        Minimum read depth for a SNV to be used in the
+                        b-allele frequency calculation. [Default: 20]
+  -z [ALT_FREQ], --zygosity-freq [ALT_FREQ]
+                        Ignore VCF's genotypes (GT field) and instead infer
+                        zygosity from allele frequencies. [Default if used
+                        without a number: 0.25]
