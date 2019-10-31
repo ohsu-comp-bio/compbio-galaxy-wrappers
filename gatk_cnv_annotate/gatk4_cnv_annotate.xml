@@ -1,7 +1,9 @@
-<tool id="gatk4_cnv_annotate" name="Annotate GATK4 CNV" version="0.2.6" >
-        <description>Annotate results from GATK4 CNV workflow output.</description>
+<tool id="gatk4_cnv_annotate" name="Annotate GATK4 CNV" version="0.2.5" >
+    <description>Annotate results from GATK4 CNV workflow output.</description>
 
-    <version_command></version_command>
+    <requirements>
+      <requirement type="package" version="0.9">gffutils</requirement>
+    </requirements>
 
     <command><![CDATA[
     python $__tool_directory__/gatk4_cnv_annotate.py

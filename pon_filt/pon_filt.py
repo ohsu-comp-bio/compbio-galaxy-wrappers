@@ -11,7 +11,7 @@ from string import Template
 import argparse
 import numpy
 
-VERSION = '0.5.1'
+VERSION = '0.5.2'
 
 def supply_args():
     """

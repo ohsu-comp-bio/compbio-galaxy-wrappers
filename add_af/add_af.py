@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 ### Add an allele frequency and total depth entry, useful for Pindel VCF's.
 ### USAGE: python add_af.py <input VCF> <output VCF>
@@ -9,7 +9,7 @@
 import sys
 import argparse
 
-VERSION = '0.4.3'
+VERSION = '0.4.4'
 
 def createHeaderEntry(attrib):
     """
@@ -146,7 +146,7 @@ def main():
 
     args = supply_args()
 
-    handle_vcf = open(args.infile, 'rU')
+    handle_vcf = open(args.infile, 'r')
     handle_out = open(args.outfile, 'w')
     margin = args.margin
     thresh = args.thresh
@@ -207,13 +207,16 @@ def main():
 
                 ### For situation where there is not a matched normal.
                 elif len(split_variant) == 10:
-
                     tumor = split_variant[9]
                     if to_find == "DPR":
                         curr_index = findIndex(format, delim, to_find)
-                        tumor_ref = int(tumor.split(':')[curr_index].split(',')[0]) - \
-                            int(tumor.split(':')[curr_index].split(',')[1])
-                        tumor_alt = int(tumor.split(':')[curr_index].split(',')[1])
+                        dpr0 = int(tumor.split(':')[curr_index].split(',')[0])
+                        try:
+                            dpr1 = int(tumor.split(':')[curr_index].split(',')[1])
+                        except IndexError:
+                            dpr1 = 0
+                        tumor_ref = dpr0 - dpr1
+                        tumor_alt = dpr1
                         tumor_af = calcAF(tumor_ref, tumor_alt)
                     else:
                         try:

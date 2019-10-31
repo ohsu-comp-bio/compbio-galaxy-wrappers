@@ -9,7 +9,7 @@ import sys
 
 def main():
     
-    vcf_reader = vcf.Reader(open(sys.argv[1], 'rU'))
+    vcf_reader = vcf.Reader(open(sys.argv[1], 'r'))
     vcf_writer = vcf.Writer(open(sys.argv[2], 'w'), vcf_reader)
 
     for record in vcf_reader:

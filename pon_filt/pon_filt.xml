@@ -1,7 +1,10 @@
-<tool id="pon_filt" name="PON Filter" version="0.5.1" >
+<tool id="pon_filt" name="PON Filter" version="0.5.2" >
     <description>Filter or remove variants from a sample VCF based on a panel of normals VCF.</description>
-
     <version_command></version_command>
+
+    <requirements>
+      <requirement type="package" version="1.11.0">numpy</requirement>
+    </requirements>
 
     <command><![CDATA[
     python $__tool_directory__/pon_filt.py

@@ -417,7 +417,7 @@ def __main__():
     op.add_option('', '--maxramrecords', default='500000', help='Max records to hold in RAM.')
     op.add_option('', '--createindex', default='true', help='Create Index (true) or not (false).')
     op.add_option('', '--createmd5', default='false', help='Create MD 5 file (true) or not (false).')
-    op.add_option('', '--ProgramRecordID', default='MarkDuplicates', help='ProgramRecordID')
+    op.add_option('', '--ProgramRecordID', default='null', help='ProgramRecordID')
     # CollectInsertSizeMetrics
     op.add_option('', '--taillimit', default="0")
     op.add_option('', '--histwidth', default="0")

@@ -5,6 +5,11 @@
     targets (columns)
   </description>
 
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+
   <command><![CDATA[
     xhmm
     --mergeGATKdepths
@@ -14,7 +19,7 @@
     #end if
 
     #if $GATKdepthsSource.GATKdepths == "file_path":
-    --GATKdepths `ls -1 $GATKdepthsSource.file_path_name/*.dat | tr "\n" "," | sed "s/,$/\n/g"`
+    --GATKdepths `ls -1 $GATKdepthsSource.file_path_name/* | tr "\n" "," | sed "s/,$/\n/g"`
     #end if
 
     #if $GATKdepthsSource.GATKdepths == "history":

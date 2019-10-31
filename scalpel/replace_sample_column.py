@@ -4,7 +4,7 @@ import argparse
 import pysam
 import vcf
 
-VERSION = '0.0.1'
+VERSION = '0.1.0'
 
 
 def supply_args():

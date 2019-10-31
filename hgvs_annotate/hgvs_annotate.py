@@ -12,7 +12,7 @@ import hgvs.assemblymapper
 import hgvs.dataproviders.uta
 import hgvs.parser
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
 CHROM_MAP = {'1': 'NC_000001.10', '2': 'NC_000002.11', '3': 'NC_000003.11', '4': 'NC_000004.11', '5': 'NC_000005.9',
              '6': 'NC_000006.11', '7': 'NC_000007.14', '8': 'NC_000008.10', '9': 'NC_000009.11', '10': 'NC_000010.10',

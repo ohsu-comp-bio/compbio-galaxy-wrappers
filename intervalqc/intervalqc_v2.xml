@@ -1,5 +1,8 @@
-<tool id="intervalqc_v2" name="QC Coverage Metrics" version="1.0.3" >
+<tool id="intervalqc_v2" name="QC Coverage Metrics" version="1.0.4" >
   <description> Create QC metrics from GATK DepthOfCoverage per locus output.</description>
+  <requirements>
+    <requirement type="package" version="6.0.0">natsort</requirement>
+  </requirements>
   <command interpreter="python">intervalqc_v2.py
     $gff $bed $doc_0 $doc_30 $outfile_gene $outfile_probe $depth $picard_metrics 
     
