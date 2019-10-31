@@ -1,0 +1,18 @@
+<tool id='pam50' name="PAM50" version='1.0.0'>
+    <description>applies the PAM50 algorithm</description>
+    <requirements>
+        <requirement type="package" version="3.5.1">r</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+    Rscript $__tool_directory__/pam50.R $__tool_directory__/target_id.txt $__tool_directory__/pam50_centroids_update.txt $input "$hugo"
+]]>
+    </command>
+    <inputs>
+        <param type="data" name="input" label="Sample Matrix" format="tsv" help="All samples in matrix should be breast cancers for most accurate prediction of subtype."/>
+        <param type="boolean" name="hugo" label="Are the genes in your matrix already in HUGO format?" checked="false" help="HUGO format includes the recognizable gene names like ARF5, whereas ENSG format for ARF5 is ENSG00000004059.10." truevalue="TRUE" falsevalue="FALSE"/> 
+    </inputs>
+    <outputs>
+        <data format="tsv" name="output" label="${tool.name} on $on_string: PAM50 CORRELATION" from_work_dir="scor.tsv"/>
+        <data format="tsv" name="output2" label="${tool.name} on $on_string: EXPRESSION WITH HUGO GENES" from_work_dir="smmart_tmp.tsv"/>
+    </outputs>
+</tool>
