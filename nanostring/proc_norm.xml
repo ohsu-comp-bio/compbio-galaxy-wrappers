@@ -23,12 +23,12 @@
         <param type="boolean" name="ctrl" label="Normalize using all samples" help="YES = Normalize using all RCC samples.  NO = Normalize only using cell lines MCF7, HCC1954, BT474, HeyA8, MDA468 control, MDA468control, MDA468+EGF as controls"/>
     </inputs>
     <outputs>
-        <data format="tabular" name="rawdata" label="raw_data $on_string" from_work_dir="rawdata.txt"/>
-        <data format="tabular" name="run_metrics" label="run_metrics $on_string" from_work_dir="run_metrics.txt"/>
-        <data format="tabular" name="ercc" label="1_ERCC_Normalized" from_work_dir="1_ERCC_NORMALIZED.tsv"/>
-        <data format="tabular" name="geomean" label="2_Geomean_Normalized" from_work_dir="2_GEOMEAN_NORMALIZED.tsv"/>
-        <data format="tabular" name="igg" label="3_IGG_Normalized" from_work_dir="3_IGG_NORMALIZED.tsv"/>
-        <data format="tabular" name="log_2" label="4_Log2_Normalized" from_work_dir="4_LOG_2_NORMALIZED.tsv"/>
+        <data format="tabular" name="rawdata" label="raw_data.txt $on_string" from_work_dir="rawdata.txt"/>
+        <data format="tabular" name="run_metrics" label="run_metrics.txt $on_string" from_work_dir="run_metrics.txt"/>
+        <data format="tabular" name="ercc" label="1_ERCC_NORMALIZED.tsv" from_work_dir="1_ERCC_NORMALIZED.tsv"/>
+        <data format="tabular" name="geomean" label="2_GEOMEAN_NORMALIZED.tsv" from_work_dir="2_GEOMEAN_NORMALIZED.tsv"/>
+        <data format="tabular" name="igg" label="3_IGG_SUBTRACTED.tsv" from_work_dir="3_IGG_SUBTRACTED.tsv"/>
+        <data format="tabular" name="log_2" label="4_LOG_2_NORMALIZED.tsv" from_work_dir="4_LOG_2_NORMALIZED.tsv"/>
     </outputs>
     <help><![CDATA[
 This tool takes multiple RCC files, the output from Nanostring. There is an RCC file per sample in a batch of Nanostring data. 
