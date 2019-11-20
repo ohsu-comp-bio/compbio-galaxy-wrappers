@@ -1,0 +1,115 @@
+<tool id="cnvkit_heatmap" name="CNVkit Heatmap" version="@VERSION@.0" 
+      profile="17.09">
+    <description>
+        Heatmap tool takes cnn, cnr, or cns files and produces a heatmap indicating bin or segment amplifications or deletions.
+    </description>
+    
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+
+    <requirements>
+        <requirement type="package" version="0.9.4a0">cnvkit</requirement>
+    </requirements>
+
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ heatmap 
+
+        #if $by_bin:
+        --by-bin
+        #end if
+
+        #if $restrict_analysis.restrict_to == "chromosome":
+        --chromosome ${restrict_analysis.chromosome} 
+        #else if $restrict_analysis.restrict_to == "region":
+        --chromosome ${restrict_analysis.chromosome}:${restrict_analysis.reg_start}-${restrict_analysis.reg_end} 
+        #end if
+
+        #if $desaturate:
+        --desaturate
+        #end if
+
+        #if $sample_sex == "Male":
+        --sample-sex Male
+        #else if $sample_sex == "Female":
+        --sample-sex Female
+        #end if
+
+        #if $reference_male:
+        --male-reference
+        #end if
+
+        #if $disable_xy:
+        --no-shift-xy
+        #end if
+
+        #for $sample in $samples:
+        '${sample}'
+        #end for
+
+        -o output.pdf
+    ]]></command>
+
+
+    <inputs>
+        <param name="samples" type="data" format="text,tabular,tsv" 
+               multiple="true" label="Copy Number Files"/>
+        
+        <param name="by_bin" type="boolean" label="Graph By Bin" 
+               help="Plot x-coordinates by bin indices instead of genomic\
+                     coordinates."/>
+        <param name="desaturate" type="boolean" label="Desaturate" 
+               help="Desaturate color of low-amplitude regions."/>
+        <param name="disable_xy" type="boolean" label="Disable X/Y Chromosome\
+               Correction" help="Explanation needed."/>
+        <param name="reference_male" type="boolean" label="Reference sex male" 
+               help="Indicate whether the reference was male."/>
+ 
+        <param name="sample_sex" type="select" label="Sex of Samples">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+        </param>
+
+        <conditional name="restrict_analysis">
+            <param name="restrict_to" type="select" label="Restrict Analysis" 
+                   help="Restrict analysis to single chromosome or chromosome\
+                         region">
+                <option value="whole">Whole Sequence</option>
+                <option value="chromosome">Whole Chromosome</option>
+                <option value="region">Chromosome Region</option>
+            </param>
+
+            <when value="whole">
+            </when>
+            <when value="chromosome">
+                <param name="chromosome" type="text" label="Chromosome"/>
+            </when>
+            <when value="region">
+                <param name="chromosome" type="text" label="Chromosome"/>
+                <param name="reg_start" type="integer" value="0" label="Region\
+                       starting index" help="Region will start on, and include,\
+                       this index."/>
+                <param name="reg_end" type="integer" value="0" label="Region\
+                       end index" help="Region will run up to, and not \
+                       including, this index."/>
+            </when>
+        </conditional>
+
+    </inputs>
+
+    <outputs>
+        <data name="output" format="pdf" from_work_dir="output.pdf" 
+              label="${tool.name} on ${on_string}"/>
+    </outputs>
+
+    <help><![CDATA[
+    Take a set of tabular (cnn and cnr, or cns) copy number files to generate
+    a heatmap visualizing the relative copy numbers of genes across the samples.
+    ]]></help>
+
+    <expand macro="citations"/>
+    
+</tool>
