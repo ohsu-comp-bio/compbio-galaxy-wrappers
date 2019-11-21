@@ -14,8 +14,8 @@
     <command detect_errors="exit_code"><![CDATA[
         @CMD_BEGIN@ scatter 
 
-        #if $segments.include_segements:
-        --segment ${segements.segment_file}
+        #if $segments.include_segments:
+        --segment ${segments.segment_file}
         #if $segments.color.specify_color:
         --segment-color $segments.color.color
         #end if
@@ -25,30 +25,29 @@
         --chromosome ${restrict_analysis.chromosome}
         #else if $restrict_analysis.restrict_to == "region":
         --chromosome ${restrict_analysis.chromosome}:${restrict_analysis.start_idx}-${restrict_analysis.end_idx}
+        #else if $restrict_analysis.restrict_to == "genes":
+        --gene ${restrict_analysis.geneNames}
         #end if
 
-        #if $genes.by_genes:
-        --gene ${genes.names}
-        #end if
+        
+        -o scatter.pdf
 
-        ## Range List?
 
         #if $width.specify_width:
         --width ${width.width}
         #end if
-        
-        ## Output
+
 
         #if $plot.antitarget.specify_antitarget
         --antitarget-marker ${plot.antitarget.character}
         #end if
 
-        #if $plot.by_bit
+        #if $plot.by_bin
         --by-bin
         #end if
 
         #if $plot.title.specify_title 
-        --title ${plot.title.title} 
+        --title "${plot.title.title}"
         #end if
 
         #if $plot.trendline
@@ -79,20 +78,21 @@
         #end if
         #end if
 
-	    --rlibpath=/home/exacloud/lustre1/galaxy/galaxy/database/dependencies/_conda/envs/__cnvkit@0.9.4a0/lib/R/library
+        ${calls}
+
     ]]></command>
 
     <inputs>
-        <param name="calls" type="data" format="tsv" multiple="false" label="CNR File"/>
+        <param name="calls" type="data" format="tabular,tsv" multiple="false" label="CNR File"/>
         <conditional name="segments">
-            <param name="include_segments" type="boolean" label="Include Segments"/>
+            <param name="include_segments" type="boolean" value="false" label="Include Segments"/>
             <when value="true">
-                <param name="segment_file" type="data" format="tsv" multiple="false" label="Segments"/>
+                <param name="segment_file" type="data" format="tabular,tsv" multiple="false" label="Segments"/>
 
                 <conditional name="color">
-                    <param name="specify_color" type="boolean" label="Specify Segment Color"/>
+                    <param name="specify_color" type="boolean" value="false" label="Specify Segment Color"/>
                     <when value="true">
-                        <param name="color" type="text" label="Color"/>
+                        <param name="color" type="text" value="orange" label="Color"/>
                     </when>
                 </conditional>
 
@@ -104,6 +104,7 @@
                 <option value="whole">Whole</option>
                 <option value="chromosome">Chromosome</option>
                 <option value="region">Region</option>
+                <option value="genes">Genes</option>
             </param>
             <when value="whole">
             </when>
@@ -112,90 +113,87 @@
             </when>
             <when value="region">
                 <param name="chromosome" type="text" label="Chromosome"/>
-                <param name="start_idx" type="integer" label="Region starting index (inclusive)"/>
-                <param name="end_idx" types="integer" label="Region ending index (exclusive)"/>
+                <param name="start_idx" type="integer" value="0" label="Region starting index (inclusive)"/>
+                <param name="end_idx" type="integer" value="0" label="Region ending index (exclusive)"/>
+            </when>
+            <when value="genes">
+                <param name="geneNames" type="text" label="Gene Name(s)" help="Provide a comma separated list of gene names"/>
             </when>
         </conditional>
 
-        <conditional name="genes">
-            <param name="by_genes" type="boolean"  label="Genes by Name"/>
-            <when value="true">
-                <param name="names" type="text" label="Gene Names" help="Provide a comma separated list of gene names"/>
-            </when>
-        </conditional>
 
         <conditional name="width">
-            <param name="specify_width" type="boolean" label="Specify Width"/>
+            <param name="specify_width" type="boolean" value="false" label="Specify Width"/>
             <when value="true">
-                <param name="width" type="integer" label="Width"/>
+                <param name="width" type="integer" value="1" label="Width"/>
             </when>
         </conditional>
 
         <section name="plot" title="Plot Options" expanded="false">
-            <conditional name="antitarget">35
-                <param name="specify_antitarget" type="boolean" label="Antitargets"/>
+            <conditional name="antitarget">
+                <param name="specify_antitarget" type="boolean" value="false" label="Antitargets"/>
                 <when value="true">
                     <param name="character" type="text" label="Antitarget Label"/>
                 </when>
             </conditional>
 
-            <param name="by_bin" type="boolean" name="Plot By Bin"/>
+            <param name="by_bin" type="boolean" value="false" label="Plot By Bin"/>
 
             <conditional name="title">
-                <param name="specify_title" type="boolean" label="Specify Title"/>
+                <param name="specify_title" type="boolean" value="false" label="Specify Title"/>
                 <when value="true">
                     <param name="title" type="text" label="Plot Title"/>
                 </when>
             </conditional>
 
-            <param name="trendline" type="boolean" label="Include Trendline"/>
+            <param name="trendline" type="boolean" value="false" label="Include Trendline"/>
 
             <conditional name="plot_min">
-                <param name="specify_min" type="boolean" label="Specify Plot Minimum"/>
+                <param name="specify_min" type="boolean" value="false" label="Specify Plot Minimum"/>
                 <when value="true">
-                    <param name="min" type="integer" label="Minimum value"/>
+                    <param name="min" type="integer" value="-4" label="Minimum value"/>
                 </when>
             </conditional>
 
             <conditional name="plot_max">
-                <param name="specify_max" type="boolean" label="Specify Plot Maximum"/>
+                <param name="specify_max" type="boolean" value="false" label="Specify Plot Maximum"/>
                 <when value="true">
-                    <param name="max" type="integer" label="Maximum value"/>
+                    <param name="max" type="integer" value="4" label="Maximum value"/>
                 </when>
             </conditional>
         </section>
 
         <section name="SNP" title="SNV b-Allele Frequencies" expanded="false">
             <conditional name="vcf">
-                <param name="use_vcf" type="boolean" label="Use VCF File"/>
+                <param name="use_vcf" type="boolean" value="false" label="Use VCF File"/>
                 <when value="true">
                     <param name="vcf_file" type="data" format="tsv" label="VCF File"/>
 
                     <conditional name="sample">
-                        <param name="specify_id" type="boolean" label="Specify Sample ID"/>
+                        <param name="specify_id" type="boolean" value="false" label="Specify Sample ID"/>
                         <when value="true">
                             <param name="id" type="text" label="Sample ID"/>
                         </when>
                     </conditional> 
 
                     <conditional name="normal">
-                        <param name="specify_id" type="boolean" label="Specify Normal ID"/>
+                        <param name="specify_id" type="boolean" value="false" label="Specify Normal ID"/>
                         <when value="true">
                             <param name="id" type="text" label="Normal ID"/>
                         </when>
                     </conditional>
 
                     <conditional name="min_depth">
-                        <param name="specify_depth" type="boolean" label="Specify Minimum Read Depth" help="Used in the b-allele frequency calculation. Default 20."/>
+                        <param name="specify_depth" type="boolean" value="false" label="Specify Minimum Read Depth" help="Used in the b-allele frequency calculation. Default 20."/>
                         <when value="true">
-                            <param value="depth" type="integer" label="Minimum Read Depth"/>
+                            <param name="min_depth" type="integer" value="20" label="Minimum Read Depth"/>
                         </when>
                     </conditional>
 
                     <conditional name="zygosity">
-                        <param name="infer" type="boolean" label="Infer Zygosity"/>
+                        <param name="infer" type="boolean" value="true" label="Infer Zygosity"/>
                         <when value="true">
-                            <param name="freq" type="float" label="Value" option="true"/>
+                            <param name="freq" type="float" label="Value" optional="true"/>
                         </when>
                     </conditional>
                 </when>
@@ -205,7 +203,7 @@
     </inputs>
 
     <outputs>
-        <data name="scatterplot" format="pdf" label="${tool.name} on ${on_string}"/>
+        <data name="scatterplot" format="pdf" from_work_dir="scatter.pdf" label="${tool.name} on ${on_string}"/>
     </outputs>
 
     <help><![CDATA[
