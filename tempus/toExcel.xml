@@ -1,0 +1,36 @@
+<tool id='toexcel' name="To Excel" version='1.0.0'>
+    <description>combined TSVs and PNGs into a single Excel cocument</description>
+    <requirements>
+        <requirement type="package" version="0.6.1">r-xlsx</requirement>
+        <requirement type="package" version="3.5.1">r</requirement>
+        <requirement type="package" version="2.0.1">r-argparse</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+
+    #for $num, $file in enumerate($png_input)
+      ln -s $file pic${num}.png &&
+    #end for
+    Rscript $__tool_directory__/toExcel.R 
+    #if $tsv_input
+      --tsv
+      #for $num, $file in enumerate($tsv_input)
+          $file
+      #end for
+    #end if
+    #if $png_input
+      --png
+      #for $num, $file in enumerate($png_input)
+          pic${num}.png
+      #end for
+    #end if
+    
+]]>
+    </command>
+    <inputs>
+        <param type="data" name="tsv_input" label="TSV Inputs" format="tsv" multiple="true" optional="true"/>
+        <param type="data" name="png_input" label="PNG Inputs" format="png" multiple="true"/>
+    </inputs>
+    <outputs>
+        <data format="xlsx" name="output" label="${tool.name} on $on_string" from_work_dir="excelOutput.xlsx"/>
+    </outputs>
+</tool>

@@ -1,0 +1,26 @@
+<tool id='plot_cnv_tempus' name="Plot Tempus CNV" version='1.0.0'>
+    <description>plots tempus CNV data.</description>
+    <requirements>
+        <requirement type="package" version="1.14.0">bioconductor-gtrellis</requirement>
+        <requirement type="package" version="1.2.0">bioconductor-genomeinfodbdata</requirement>
+        <requirement type="package" version="3.5.1">r</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+    Rscript $__tool_directory__/gtrellis_CNV_Tempus.R $count_file "$sample_name" $chrom_file $upper_lim $lower_lim
+]]>
+    </command>
+    <inputs>
+        <param type="data" name="count_file" label="Count File" format="tsv" help="File from Add Corrected Copies"/>
+        <param type="text" name="sample_name" label="Sample Name"/>
+        <param type="data" name="chrom_file" label="Chromosome File" format="txt"/>
+        <param type="float" name="upper_lim" label="Upper Limit" value="5"/>
+        <param type="float" name="lower_lim" label="Lower Limit" value=".5"/>
+    </inputs>
+    <outputs>
+        <data format="png" name="output1" label="${tool.name} on $on_string: PLOT 1" from_work_dir="plot1.png"/>
+        <data format="png" name="output2" label="${tool.name} on $on_string: PLOT 2" from_work_dir="plot2.png"/>
+    </outputs>
+    <citations>
+        <citation type="doi">10.18129/B9.bioc.gtrellis</citation>
+    </citations>
+</tool>

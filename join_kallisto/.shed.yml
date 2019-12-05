@@ -1,0 +1,9 @@
+owner: "creason"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/join_kallisto"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  join_kallisto:
+    description: "Join output from Kallisto into a gene expression matrix"
+    include: 
+      - join_kallisto.xml

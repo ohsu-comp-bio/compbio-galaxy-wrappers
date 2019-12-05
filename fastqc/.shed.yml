@@ -1,0 +1,11 @@
+owner: "creason"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/fastqc"
+homepage_url: "https://www.bioinformatics.babraham.ac.uk/projects/fastqc/"
+categories:
+  - "KDL Tools"
+repositories:
+  fastqc:
+    description: "A quality control tool for high throughput sequence data."
+    include:
+        - fastqc.py
+        - fastqc.xml

@@ -1,0 +1,44 @@
+<tool id='ruvs' name="RUVs" version='1.0.1'>
+    <description>removes unwated variation based on replicate samples.</description>
+    <requirements>
+        <requirement type="package" version="1.18.0">bioconductor-ruvseq</requirement>
+        <requirement type="package" version="3.5.1">r</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+    Rscript $__tool_directory__/RUVs.R $input $factors $minNumReads $minNumSamples $repID 
+    #if $allgenes.all == "all":
+        all
+    #else if $allgenes.all == "grep":
+        "$allgenes.cIdx"
+    #else:
+        "$allgenes.genes"
+    #end if
+]]>
+    </command>
+    <inputs>
+        <param type="data" name="input" label="Input File" format="txt"/>
+        <param type="text" name="repID" label="Replicate Identification" help="String that occurs in all the replicates by which they can be found." value="UHR"/>
+        <conditional name="allgenes">
+            <param name="all" type="select" label="Control Genes">
+                <option value="all" selected="True">Use all genes</option>
+                <option value="grep">Search by string</option>
+                <option value="enter">Enter gene list</option>
+            </param>
+            <when value="grep">
+                <param type="text" name="cIdx" label="Control Identification" help="String that occurs in all the control genes." value="^ENS"/>
+            </when>
+            <when value="enter">
+                <param type="text" name="genes" label="Genes" help="A comma seperated list of all control genes."/>
+            </when>
+        </conditional>
+        <param type="integer" name="factors" label="Factors" value="1"/>
+        <param type="integer" name="minNumReads" label="Minimum Number of Reads" value="5"/>
+        <param type="integer" name="minNumSamples" label="Minimum Number of Samples" value="2"/>
+    </inputs>
+    <outputs>
+        <data format="pdf" name="plots" label="${tool.name} on $on_string: Plots" from_work_dir="Rplots.pdf"/>
+        <data format="txt" name="pData" label="${tool.name} on $on_string: Weights" from_work_dir="pData.txt"/>
+        <data format="tsv" name="matrix" label="${tool.name} on $on_string: Normalized Matrix" from_work_dir="matrix.tsv"/>
+        <data format="tsv" name="differences" label="${tool.name} on $on_string: Groups Matrix" from_work_dir="makeGroups.tsv"/>
+    </outputs>
+</tool>
