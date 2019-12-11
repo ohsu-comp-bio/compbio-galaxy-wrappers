@@ -32,7 +32,7 @@ class BkgdEst(object):
 
         :return:
         """
-        return stats.binom_test(success, tries, self.pval, alternative='two-sided')
+        return stats.binom_test(success, tries, self.bkgd, alternative='two-sided')
 
     def check_val(self, val):
         """
@@ -53,14 +53,14 @@ def main():
     myvcf.filters['IN_BKGD'] = vcf.parser._Filter('IN_BKGD', desc_str)
     vcf_writer = vcf.Writer(open(args.outfile, 'w'), myvcf)
     for entry in myvcf:
-        depth = entry.samples[0]['DP']
+        depth = entry.samples[0]['AD'][0] + entry.samples[0]['AD'][1]
         alt = entry.samples[0]['AD'][1]
         pval = bkgd_tester.find_binom_pval(alt, depth)
         if not entry.FILTER:
             if bkgd_tester.check_val(pval) or depth < 10:
                 entry.FILTER = ['IN_BKGD']
         else:
-            if not bkgd_tester.check_val(pval) or depth < 10:
+            if bkgd_tester.check_val(pval) or depth < 10:
                 entry.FILTER.append('IN_BKGD')
         vcf_writer.write_record(entry)
     vcf_writer.close()
