@@ -7,7 +7,7 @@ import argparse
 import re
 import json
 
-VERSION = '0.1.3'
+VERSION = '0.1.4'
 
 def supply_args():
     """
