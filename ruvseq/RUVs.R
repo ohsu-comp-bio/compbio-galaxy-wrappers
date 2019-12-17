@@ -1,89 +1,84 @@
+#!/usr/bin/env Rscript
 
+usage = "Rcript /Users/patterja/galaxy/tools/compbio-galaxy-wrappers/ruvseq/RUVs.R /Users/patterja/galaxy/database/files/000/dataset_215.dat FALSE 3 3 1 all"
 
-#### Package Install ####
+version="0.2.0"
+
 ruvSeqPackageExists <- require ("RUVSeq")
+if ( !ruvSeqPackageExists ) {install.packages ("RUVSeq")}
 
-if ( !ruvSeqPackageExists ) {
-  install.packages ("RUVSeq")
-  library ("RUVSeq")
-  
-}
-
-# rcolorPackageExists <- require ("RColorBrewer")
-
-# if ( !rcolorPackageExists ) {
-  # install.packages ("RColorBrewer")
-  # library ("RColorBrewer")
-  
-# }
-
-#########################
+library(RUVSeq)
 
 #Get the inputs
 args <- commandArgs(TRUE)
 dataFile <- args[1]
-factors <- as.double(args[2])
+normalize = args[2]
 minNumReads <- as.double(args[3])
 minNumSamples <- as.double(args[4])
-repID <- args[5]
-cIdx <- args[6]
+factors <- as.double(args[5])
+repID <- args[6]
+cIdx <- args[7]
 
-phenoData <- read.table(dataFile, header = TRUE, sep="\t")
+#read datafile
+data <- read.table(dataFile, header = TRUE, sep="\t", row.names=1)
 
-filter <-  apply(phenoData, 1, function(x) length(x[x>minNumReads])>=minNumSamples)
-filtered <- phenoData[filter,]
+#BCCL is included then use counts and normalize
+if (normalize==TRUE){
+    cpm = apply(data,2, function(x) (x/sum(x))*1000000)
+    ndata = cpm
+} else {
+    ndata = data
+}
 
-rownames(filtered) <- filtered[,1]
+#filter for smmart samples that are larger then thresholds
+# TODO: filter that only includes UHR only/samples only (not both)
+# i don't know of a better way to do this. 
+smmartsamps = colnames(ndata[,!grepl("ACXX|AAXX|RNA170328LH|RNA170329LH|^X170322_NS500642", colnames(ndata))])
+smmartcpm = cpm[,smmartsamps]
+#FILTER
+filter <-  apply(smmartcpm, 1, function(x) length(x[x>minNumReads])>=minNumSamples)
+filtered <- ndata[filter,]
 
-filtered <- filtered[-c(1)]
-
-
-genes <- rownames(filtered)[grep(cIdx, rownames(filtered))]
-spikes <- rownames(filtered)[grep("^ERCC", rownames(filtered))]
-
+#select genes to use for normalization
 if (cIdx=="all"){
 	genes <- rownames(filtered)
-}
-
-if (grepl(",", cIdx, fixed=TRUE)) {
+} else if (cIdx=="regex"){
+        genes = rownames(filtered)[grep(cIdx, rownames(filtered))]
+} else if (cIdx=="genes"){
 	genes <- strsplit(cIdx, ",")
 	genes <- unlist(genes, use.names=FALSE)
-}
-
-x <- colnames(filtered)
-
-for (index in 1:length(x)) {
-	name=x[index]
-	if (regexpr(repID, name)!=-1){
-		x[index]=repID
-	}
+} else {
+      print("invalid cIdx")
 }
 
 
-matrix <- as.matrix(filtered)
+#prepare for ruvs
+matx <- as.matrix(filtered)
+matfiltered <- round(matx, 0)
 
-counts <- round(matrix, 0)
-set <- newSeqExpressionSet(counts, phenoData = data.frame(x, row.names=colnames(filtered)))
+#identify replicates for ruvs input
+samp_reps <- colnames(filtered)
+reps = unlist(lapply(unlist(strsplit(repID,",")), trimws))
+for (rep in reps){
+   samp_reps[grep(rep, samp_reps, value=FALSE)] = rep
+}
 
-factorX <- as.factor(c(x))
-differences <- makeGroups(factorX)
+factorX <- as.factor(c(samp_reps))
+groupings <- makeGroups(factorX)
 
-set2 <- RUVs(set, genes, k=factors, differences, isLog=FALSE)
-set1 <- RUVs(counts, genes, k=factors, differences, isLog=FALSE)
-
-
-capture.output(pData(set2), file="pData.txt")
-
-write.table(set1$normalizedCounts, "matrix.tsv", sep="\t", row.names=TRUE, col.names=NA, quote=F)
-write.table(set1$W, "ruv_weights.tsv", sep="\t", row.names=TRUE, col.names=NA, quote=F)
-write.table(differences, "makeGroups.tsv", sep="\t", row.names=FALSE, col.names=FALSE, quote=F)
+ruv <- RUVs(matfiltered, cIdx=genes, k=factors, scIdx=groupings, isLog=FALSE)
 
 
-
-#colors <- brewer.pal(3, "Set2")
-#plotRLE(set2, outline=FALSE, ylim=c(-4,4), col=colors[x])
-#plotPCA(set2, col=colors[x], cex=1.2)
-
-plotRLE(set2, outline=FALSE, ylim=c(-4,4), las=2, main="Relative Log Expression Plot")
-plotPCA(set2, cex=1.2, main="PCA Plot")
-
+#output
+write.table(ruv$normalizedCounts, "normalized.tsv", sep="\t", row.names=TRUE, col.names=NA, quote=F)
+write.table(ruv$W, "ruv_weights", sep="\t", row.names=TRUE, col.names=TRUE, quote=F)
+write.table(groupings, "groupings", sep="\t", row.names=FALSE, col.names=FALSE, quote=F)
+#plotting
+colors <- rep("gray", length(factorX))
+colors[which(factorX=="replicate_control")] = "red"
+pdf("Rplots.pdf")
+plotRLE(matx, outline=FALSE, ylim=c(-4,4), las=2, main="Pre RUV: Relative Log Expression Plot",col= colors)
+plotPCA(matx, cex=1.2, col=colors, main="Pre RUV: PCA Plot")
+plotRLE(ruv$normalizedCounts, outline=FALSE, ylim=c(-4,4), las=2, main="Post RUV: Relative Log Expression Plot", col=colors)
+plotPCA(matx, cex=1.2, col=colors, main="Post RUV: PCA Plot")
+dev.off()

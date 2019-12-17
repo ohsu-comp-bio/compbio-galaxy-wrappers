@@ -1,30 +1,35 @@
-<tool id='ruvs' name="RUVs" version='1.0.1'>
+<tool id='ruvs' name="RUVs" version='1.0.2'>
     <description>removes unwated variation based on replicate samples.</description>
     <requirements>
         <requirement type="package" version="1.18.0">bioconductor-ruvseq</requirement>
-        <requirement type="package" version="3.5.1">r</requirement>
+        <requirement type="package" version="3.6.1">r</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
-    Rscript $__tool_directory__/RUVs.R $input $factors $minNumReads $minNumSamples $repID 
-    #if $allgenes.all == "all":
+    Rscript $__tool_directory__/RUVs.R $input $norm $minNumReads $minNumSamples $factors $repID
+    #if $genes.all == "all":
         all
-    #else if $allgenes.all == "grep":
-        "$allgenes.cIdx"
+    #else if $genes.all == "regex":
+        "$genes.cIdx"
     #else:
-        "$allgenes.genes"
+        "$genes.genes"
     #end if
-]]>
+    ]]>
     </command>
     <inputs>
         <param type="data" name="input" label="Input File" format="txt"/>
-        <param type="text" name="repID" label="Replicate Identification" help="String that occurs in all the replicates by which they can be found." value="UHR"/>
-        <conditional name="allgenes">
+        <param type="select" name="norm" label="Normalize to counts per million (CPM)" help="">
+            <option value="TRUE">Yes</option>
+            <option value="FALSE">No</option>
+        </param>
+        <param type="text" name="repID" label="Replicate Identification" help="String that occurs in all the replicates by which they can be found. 
+If BCCL inluded: UHR,SkBr3,T47D,HCC1954" value="UHR"/>
+        <conditional name="genes">
             <param name="all" type="select" label="Control Genes">
                 <option value="all" selected="True">Use all genes</option>
-                <option value="grep">Search by string</option>
+                <option value="regex">Search by string</option>
                 <option value="enter">Enter gene list</option>
             </param>
-            <when value="grep">
+            <when value="regex">
                 <param type="text" name="cIdx" label="Control Identification" help="String that occurs in all the control genes." value="^ENS"/>
             </when>
             <when value="enter">
@@ -32,13 +37,38 @@
             </when>
         </conditional>
         <param type="integer" name="factors" label="Factors" value="1"/>
-        <param type="integer" name="minNumReads" label="Minimum Number of Reads" value="5"/>
+        <param type="integer" name="minNumReads" label="Minimum Number of Expression (after normalization)" value="5"/>
         <param type="integer" name="minNumSamples" label="Minimum Number of Samples" value="2"/>
     </inputs>
     <outputs>
-        <data format="pdf" name="plots" label="${tool.name} on $on_string: Plots" from_work_dir="Rplots.pdf"/>
-        <data format="txt" name="pData" label="${tool.name} on $on_string: Weights" from_work_dir="pData.txt"/>
-        <data format="tsv" name="matrix" label="${tool.name} on $on_string: Normalized Matrix" from_work_dir="matrix.tsv"/>
-        <data format="tsv" name="differences" label="${tool.name} on $on_string: Groups Matrix" from_work_dir="makeGroups.tsv"/>
+        <data format="pdf" name="plots" label="${tool.name} on $on_string: ruv plots.pdf" from_work_dir="Rplots.pdf"/>
+        <data format="tsv" name="ruv_weights" label="${tool.name} on $on_string: ruv weights" from_work_dir="ruv_weights"/>
+        <data format="tsv" name="normalized_matrix" label="${tool.name} on $on_string: ruv normalized.tsv" from_work_dir="normalized.tsv"/>
+        <data format="tsv" name="groupings" label="${tool.name} on $on_string: ruv groupings" from_work_dir="groupings"/>
     </outputs>
+   <help><![CDATA[
+
+Runs Davide Risso's version of RUVseq optimized for RNAseq normalized counts. The output
+is just the weights from factor analysis removed from observed variables(genes).
+Not an ideal way to perform factor analysis or perform RUV analysis. The output are the 
+weights from factor analysis removed from the signal. 
+
+If data matrix includes breast cancer cell lines use *counts per million*. Filter 10% of 
+samples with mincnt = 10 and setk=7. Replicates are based on whether the data include the 
+BCCL data replicates are: SkBr3, T47D, HCC1954.
+
+If data matrix does not include cancer cell lines with replicates then reccommend using 
+TPM matrix, use filtperc=10, mincnt = 3, setk=1.
+
+Risso et.al. Nature Biotechnology volume 32, (2014)
+
+Inputs:
+1.  mat=matrix
+3.  ctrlregex = regexpr that repeats are based off. ie. \"*UHR*\"
+5.  minNumSamples: minimum number of samples with counts/tpm/rpkm less that
+filt_cnt filtered out.
+6.  minNumReads: minimum number of counts/tpm/rpkm to be filtered out
+8.  number of factors to remove
+
+    ]]></help>
 </tool>
