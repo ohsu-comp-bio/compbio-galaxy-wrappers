@@ -23,7 +23,7 @@
 
     <inputs>
         <param name="combined_expression" type="data" format="tsv,tabular" label="Combined expression matrix of training and test data" help=""/>
-        <param name="str_train_idx" type="text" default="c(1:70)" label="index of training data" help=""/>
+        <param name="str_train_idx" type="text" value="c(1:70)" label="index of training data" help=""/>
         <param name="cell_line_response" type="data" label="RData file of breast cancer cell line drug response" help=""/>
         <param name="targetid" type="data" format="tsv,tabular" label="mapping file for ENSG to HUGO names" help=""/>
         <param name="genelist" type="data" format="tsv,tabular,csv" label="Gene list to filter genes.TruSight_genes.csv" help=""/>
