@@ -1,0 +1,40 @@
+<tool id="post_freak" name="Freak Post Processing" version="@VERSION@.0" profile="17.09">
+
+    <description>Post Processing for Freak Output</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <expand macro="requirements"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+    python3 post_processing_freak.py -d "$freak_data" "$ref" -o "$output"
+    ]]></command>
+
+    <inputs>
+        <param type="data" name="freak_data" format="txt,tsv,tabular" label="Freak Output" help=""/>
+        <param type="data" name="ref" format="txt,tsv,tabular" label="CNA Reference" help=""/>
+    </inputs>
+
+    <outputs>
+        <data name="output" format="tsv" label="freak_out.tsv"/>
+    </outputs>
+
+    <help><![CDATA[
+    usage: post_processing_freak.py [-h] [-d] [-o OUTPUT] freak_out variant_ref
+    
+    Post processing for freak output
+    
+    positional arguments:
+      freak_out
+      variant_ref
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      -d, --no-dups
+      -o OUTPUT, --output OUTPUT
+    ]]></help>
+</tool>
