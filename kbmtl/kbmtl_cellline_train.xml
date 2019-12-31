@@ -1,9 +1,8 @@
 <tool id='kbmtl_train_celllines' name='KBMTL Drug Prediction: Train on Breast Cancer Cell Lines' version='1.0.0'>
     <description>Train on drug response and RNA expression of breast cancer cell lines</description>    
-
-    <macros>
-      <import>macros.xml</import>
-    </macros>
+    <requirements>
+      <requirement type="package" version="0.1.0">kbmtl</requirement>
+    </requirements>
     <command detect_errors="exit_code"><![CDATA[
         Rscript $run
     ]]></command>
