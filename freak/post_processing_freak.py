@@ -1,31 +1,41 @@
+#!/usr/bin/python3
 import sys
 import pandas as pd
 import argparse
 
-# Define function for filtering
+'''
+Post processing functions
+
+Should follow the format shown in the 'identity' function, where the Freak 
+output file and reference file and taken as inputs and returned as an output 
+tuple. Each post processing function may make alterations to either DataFrame 
+before returning, but the effects of these operations should be considered 
+when determining the order in which they should be invoked.
+'''
 def identity(freak, ref):
+    '''
+    An "identity" function which return the Freak output and reference file 
+    without altering them. Used as a default function in the argparser.
+    '''
     return freak, ref
 
 def remove_duplicates(freak, ref):
     '''
-    result = freak.copy()
-    # Inefficient, find a better way
-    print('In remove dupes', file=sys.stderr)
-    for i, row in ref.iterrows():
-        chrm = row['Chromosome'][4:]
-        start = row['Position Start']
-        base = row['Variant Base']
-        result = result[(result['rname']!=chrm)
-                        | (result['start (1-based, inclusive)']!=start)
-                        | (result['variant']==base)]
+    Removes rows from the Freak output file which have bases that do not match 
+    the reference file, returns the modified Freak file and the reference as 
+    a tuple
     '''
     result = freak.copy()
+    # Create an array of tuples with the chromosome and start index from the 
+    # freak output file
     locations = set([(row['rname'],row['start (1-based, inclusive)']) for i, row in freak.iterrows()])
-    print(locations)
+    # Interate through the array...
     for chrm, idx in locations:
-        print(f'{chrm},{idx}')
-        var = ref[(ref['Chromosome'].str.slice(start=3)==chrm) & (ref['Position Start']==idx)]['Variant Base'].values[0]
-        print(var)
+        # Find the variant base specified in the reference file
+        var = ref[(ref['Chromosome'].str.slice(start=3)==chrm) 
+                  & (ref['Position Start']==idx)]['Variant Base'].values[0]
+        # Select the rows that either do not occur as this location, or which 
+        # have the variant base from the reference file
         result = result[(result['variant']==var)
                         | ~(result['start (1-based, inclusive)']==idx)
                         | ~(result['rname']==chrm)]
