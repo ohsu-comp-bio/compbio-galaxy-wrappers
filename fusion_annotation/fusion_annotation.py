@@ -7,7 +7,7 @@ import argparse
 import re
 import json
 
-VERSION = '0.1.3'
+VERSION = '0.1.4'
 
 def supply_args():
     """
@@ -66,7 +66,7 @@ def reverse_complement(seq):
     return bases
 
 
-def get_nucleotides_with_samtools(mafline, genome_refpath):
+def get_nucleotides_with_samtools(mafline, genome_refpath, fusionside):
     """
     Use samtools faidx to find genomic sequences 25 nts upstream (if maflite_left), downatream (if maflite_right).
     Args:
@@ -79,17 +79,22 @@ def get_nucleotides_with_samtools(mafline, genome_refpath):
     """
     #sequence_list=[]
     #for item in mafline:
-    interval = mafline[0] + ':' + mafline[1] + '-' + str(int(mafline[1])+25)
+    if fusionside=='left':
+        if mafline[4]=="-":
+            interval = mafline[0] + ':' + mafline[1] + '-' + str(int(mafline[1])+25)
+        else:
+            interval = mafline[0] + ':' + str(int(mafline[2])-25) +'-' + mafline[2]
+
+    if fusionside=='right':
+        if mafline[4]=="-":
+            interval = mafline[0] + ':' + str(int(mafline[2])-25) +'-' + mafline[2]
+        else:
+            interval = mafline[0] + ':' + mafline[1] + '-' + str(int(mafline[1])+25)
+
     cmd = ['samtools', 'faidx', genome_refpath, interval]
     seq = subprocess.check_output(cmd)
     seq_strip = seq.strip().split()
-    if mafline[4] == '-':
-        print "reverse complementing"
-        revseq = reverse_complement(seq_strip[1])
-        fseq = [seq_strip[0],revseq]
-    else:
-        fseq = seq_strip
-    return fseq
+    return seq_strip
 
 def main():
     args = supply_args()
@@ -104,58 +109,47 @@ def main():
     if args.f:
         # filterout = ""
         hard_filter = ["ATP6", "ATP8", "COX1", "COX2", "COX3", "CYTB", "ND1", 
-                       "ND2", "ND3", "ND4", "ND4L", "ND5", "ND6", "RNR1", "RNR2", 
-                       "TRNA", "TRNC", "TRND", "TRNE", "TRNF", "TRNG", "TRNH", 
-                       "TRNI", "TRNK", "TRNL1", "TRNL2", "TRNM", "TRNN", "TRNP", 
-                       "TRNQ", "TRNR", "TRNS1", "TRNS2", "TRNT", "TRNV", "TRNW", "TRNY"]
+                   "ND2", "ND3", "ND4", "ND4L", "ND5", "ND6", "RNR1", "RNR2", 
+                   "TRNA", "TRNC", "TRND", "TRNE", "TRNF", "TRNG", "TRNH", 
+                   "TRNI", "TRNK", "TRNL1", "TRNL2", "TRNM", "TRNN", "TRNP", 
+                   "TRNQ", "TRNR", "TRNS1", "TRNS2", "TRNT", "TRNV", "TRNW", "TRNY"]
         with open(args.starfusion, 'r') as sf_handle:
             for line in sf_handle:
                 if not line.startswith('#'):
-                    gene1 = line.rstrip('\n').split('\t')[4].split('^')[0]
-                    gene2 = line.rstrip('\n').split('\t')[6].split('^')[0]
                     # Removing this statement since filterout is empty.
                     # not re.search(filterout, line)
-                    if (gene1 not in hard_filter) and (gene2 not in hard_filter):
-                        linebedpe = convert_starfusion_to_bedpe(line)
-
-                        #calculate on-target cpm from junction & spanning frag count and sample level metrics
-                        # JL: Lab has requested junction and spanning be summed for this calculation.
-                        j_s_cpm = ((float(linebedpe[10]) + float(linebedpe[11])) / ontarget_count) * 1e6
-
-                        #get seqs left and right
-                        mafline_left = [linebedpe[0], linebedpe[1], linebedpe[2], linebedpe[18][0], linebedpe[8]]
-                        mafline_right = [linebedpe[3], linebedpe[4], linebedpe[5], linebedpe[20][0], linebedpe[9]]
-                        seq_left = get_nucleotides_with_samtools(mafline_left, args.path_to_fasta)
-                        seq_right = get_nucleotides_with_samtools(mafline_right, args.path_to_fasta)
-
-                        linebedpe.extend([round(j_s_cpm, 3)])
-                        linebedpe.extend(seq_left)
-                        linebedpe.extend(seq_right)
-                        bedpe.append(linebedpe)
-    else:
-        with open(args.starfusion, 'r') as sf_handle:
-            for line in sf_handle:
-                if not line.startswith('#'):
                     linebedpe = convert_starfusion_to_bedpe(line)
 
-                    # calculate on-target cpm from junction & spanning frag count and sample level metrics
+                    #calculate on-target cpm from junction & spanning frag count and sample level metrics
                     # JL: Lab has requested junction and spanning be summed for this calculation.
                     j_s_cpm = ((float(linebedpe[10]) + float(linebedpe[11])) / ontarget_count) * 1e6
 
-                    # get seqs left and right
+                    #get seqs left and right
                     mafline_left = [linebedpe[0], linebedpe[1], linebedpe[2], linebedpe[18][0], linebedpe[8]]
                     mafline_right = [linebedpe[3], linebedpe[4], linebedpe[5], linebedpe[20][0], linebedpe[9]]
-                    seq_left = get_nucleotides_with_samtools(mafline_left, args.path_to_fasta)
-                    seq_right = get_nucleotides_with_samtools(mafline_right, args.path_to_fasta)
+                    seq_left = get_nucleotides_with_samtools(mafline_left, args.path_to_fasta, "left")
+                    seq_right = get_nucleotides_with_samtools(mafline_right, args.path_to_fasta, "right")
 
                     linebedpe.extend([round(j_s_cpm, 3)])
                     linebedpe.extend(seq_left)
                     linebedpe.extend(seq_right)
-                    bedpe.append(linebedpe)
-
-
-    sfoutcolumns = ["chrom1","start1","end1","chrom2","start2","end2","name","score","strand1","strand2","JunctionReadCount","SpanningFragCount","SpliceType","HGVSGene1","EnsGene1","HGVSGene2","EnsGene2","LargeAnchorSupport","LeftBreakDinuc","LeftBreakEntropy","RightBreakDinuc","RightBreakEntropy","J_FFPM","S_FFPM", "NormalizedFrags", "leftgene","leftseq","rightgene","rightseq"]
-
+                    if linebedpe[8] == "-":
+                        combined_left = reverse_complement(seq_left[1])
+                    else:
+                        combined_left = seq_left[1]
+                    if linebedpe[9] == "-":
+                        combined_right = reverse_complement(seq_right[1])
+                    else:
+                        combined_right = seq_right[1]
+                    combinedseq = combined_left + combined_right
+                    linebedpe.append(combinedseq)
+                    if args.f:
+                        if (linebedpe[13] not in hard_filter) and (linebedpe[15] not in hard_filter): 
+                            bedpe.append(linebedpe)
+                            
+     
+    sfoutcolumns = ["chrom1","start1","end1","chrom2","start2","end2","name","score","strand1","strand2","JunctionReadCount","SpanningFragCount","SpliceType","HGVSGene1","EnsGene1","HGVSGene2","EnsGene2","LargeAnchorSupport","LeftBreakDinuc","LeftBreakEntropy","RightBreakDinuc","RightBreakEntropy","J_FFPM","S_FFPM", "NormalizedFrags", "leftgene","leftseq","rightgene","rightseq", "combinedseq"]
+    
     with open("starfusion_output.bedpe", 'w') as sf_out:
         sf_out.writelines('\t'.join(sfoutcolumns))
         sf_out.write('\n')

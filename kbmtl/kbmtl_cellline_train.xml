@@ -1,0 +1,63 @@
+<tool id='kbmtl_train_celllines' name='KBMTL Drug Prediction: Train on Breast Cancer Cell Lines' version='1.0.0'>
+    <description>Train on drug response and RNA expression of breast cancer cell lines</description>    
+
+    <macros>
+      <import>macros.xml</import>
+    </macros>
+    <command detect_errors="exit_code"><![CDATA[
+        Rscript $run
+    ]]></command>
+
+    <configfiles>
+        <configfile name="run">
+            ## Setup R error handling to go to stderr
+            options( show.error.messages=F, error = function () { cat( geterrmessage(), file=stderr() ); q( "no", 1, F ) } )
+
+            library(kbmtl)
+            idx = eval(parse(text="${str_train_idx}"))
+            state = train_classification_celllines(combined_matrix = "${combined_expression}", train_idx = idx, cell_line_response = "${cell_line_response}", targetid = "${targetid}", genelist = "${genelist}")
+
+            save(state, file="$state_out")
+        </configfile>
+    </configfiles>
+
+    <inputs>
+        <param name="combined_expression" type="data" format="tsv,tabular" label="Combined expression matrix of training and test data" help=""/>
+        <param name="str_train_idx" type="text" value="c(1:70)" label="index of training data" help=""/>
+        <param name="cell_line_response" type="data" label="RData file of breast cancer cell line drug response" help=""/>
+        <param name="targetid" type="data" format="tsv,tabular" label="mapping file for ENSG to HUGO names" help=""/>
+        <param name="genelist" type="data" format="tsv,tabular,csv" label="Gene list to filter genes.TruSight_genes.csv" help=""/>
+    </inputs>
+
+    <outputs>
+        <data name="state_out" format="rdata" label="smmart_trained_machine_learning_model.RData"/>
+    </outputs>
+    <tests>
+      <test>
+      </test>
+    </tests>
+    
+    <help><![CDATA[
+
+KBMTL Drug Prediction: Training
+This tool is optimized for training a Kernalized Baysian Multi-task Learning algorithm using breast cancer cell line. The algorithm is first introduced here:
+
+    Daemen, A., Griffith, O.L., Heiser, L.M., Wang, N.J., Enache, O.M., Sanborn, Z., Pepin, F., Durinck, S., Korkola, J.E., Griffith, M., Hur, J.S., Huh, N., Chung, J., Cope, L., Fackler, M.J., Umbricht, C., Sukumar, S., Seth, P., Sukhatme, V.P., Jakkula, L.R., Lu, Y., Mills, G.B., Cho, R.J., Collisson, E.A., van’t Veer, L.J., Spellman, P.T., Gray, J.W., 2013. Modeling precision treatment of breast cancer. Genome Biology 14, R110. https://doi.org/10.1186/gb-2013-14-10-r110
+
+
+Input:
+* combined_matrix (string): Tab separated table containing training and test data. Genes are in the rows and samples are in the columns. 
+* train_idx (numeric): Numeric comma separated list of index of the columns that contain the training data from the table in path_to_combined. Index 0 is the gene names. Ranges are colon spearated. eg. 1,2,4:10
+* cell_line_response (string): cell_line_response_threshold_0.50_large_and_small_screen.RData
+* targetid (string): path to target_id.txt. Used to filter protein_coding genes only. 
+* genelist (string): path to gene list Trusight.csv. Used to filter genes associated with cancer
+
+Output:
+ * 
+   
+]]></help>
+
+    <citations>
+    <citation type="doi">10.1093/nar/gkz433</citation>
+    </citations>
+</tool>

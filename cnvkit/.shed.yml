@@ -8,6 +8,8 @@ repositories:
     description: "Command line toolkit for copy number analysis"
     include:
         - cnvkit_batch.xml
+        - cnvkit_call.xml
+        - cnvkit_heatmap.xml
         - macros.xml
         - tool_data_table_conf.xml.sample
-        - tool-data/* 
+        - tool-data/*

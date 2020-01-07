@@ -1,0 +1,64 @@
+<tool id="join_kallisto" name="Join Kallisto Matrix" version="0.1.0">
+    <requirements>
+        <requirement type="package" version="3.6">python</requirement>
+        <requirement type="package" version="0.23.4">pandas</requirement>
+        <requirement type="package" version="">argparse</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+        python "$script"
+    ]]></command>
+    <configfiles>
+        <configfile name="script">
+import pandas as pd
+import argparse
+import os
+from functools import reduce
+
+def format_df(df, sample, ids, unit):
+    cols = ["ensembl_txn", "ensembl_gene", "otthum_gene", "otthum_txn", "hugo_txn", "hugo_gene", "len", "func","empty"]
+    df[cols] = df['target_id'].str.split('|',expand=True)
+    df = df[[ids, unit]]
+    df = df.groupby(ids).sum()
+    df.columns = [sample]
+    df.index.name = "GeneID"
+    return df
+
+dfs = []
+files="$files".split(",")
+for f in files:
+    sample = os.path.splitext(os.path.basename(f))[0]
+    df = pd.read_csv(f,sep="\t")
+    df = format_df(df,sample, "$ids", "$unit")
+    dfs.append(df)
+
+    exp_df = reduce(lambda  left,right: pd.merge(left,right, left_index=True, right_index=True, how='outer'), dfs)
+
+#if $matrix:
+mat = pd.read_csv("$matrix",sep="\t",index_col=0)
+exp_df = pd.merge(exp_df,mat, left_index=True, right_index=True, how='outer')
+#end if
+
+exp_df.to_csv("expression_matrix.tsv", sep="\t")
+        </configfile>
+    </configfiles>
+
+    <inputs>
+        <param name="files" format="tsv,txt,tabular" type="data" multiple="true" label=""/>
+        <param name="matrix" format="tsv,txt,tabular" type="data" optional="true" label="Matrix of Gene expression to combine"/>
+        <param name="ids" type="select" label="Identifiers to use: ">
+            <option value="ensembl_gene" selected="true">ensembl_gene</option>
+            <option value="otthum_gene">otthum_gene</option>
+            <option value="hugo_gene">hugo_gene</option>
+        </param>
+        <param name="unit" type="select" label="Value type: ">
+            <option value="tpm" selected="true">tpm</option>
+            <option value="est_counts">est_counts</option>
+        </param>
+    </inputs>
+    <outputs>
+        <data format="tsv" name="expression_matrix" from_work_dir="expression_matrix.tsv" label="${tool.name} on ${on_string}: Kallisto Matrix"/>
+    </outputs>
+    <help><![CDATA[
+        TODO: Fill in help.
+    ]]></help>
+</tool>
