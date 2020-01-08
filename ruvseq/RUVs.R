@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript
+#!/usr/bin/env R
 
 usage = "Rcript /Users/patterja/galaxy/tools/compbio-galaxy-wrappers/ruvseq/RUVs.R /Users/patterja/galaxy/database/files/000/dataset_215.dat FALSE 3 3 1 all"
 
@@ -15,9 +15,10 @@ dataFile <- args[1]
 normalize = args[2]
 minNumReads <- as.double(args[3])
 minNumSamples <- as.double(args[4])
-factors <- as.double(args[5])
-repID <- args[6]
-cIdx <- args[7]
+idxSamples <-args[5]
+factors <- as.double(args[6])
+repID <- args[7]
+cIdx <- args[8]
 
 #read datafile
 data <- read.table(dataFile, header = TRUE, sep="\t", row.names=1)
@@ -33,7 +34,9 @@ if (normalize==TRUE){
 #filter for smmart samples that are larger then thresholds
 # TODO: filter that only includes UHR only/samples only (not both)
 # i don't know of a better way to do this. 
-smmartsamps = colnames(ndata[,!grepl("ACXX|AAXX|RNA170328LH|RNA170329LH|^X170322_NS500642", colnames(ndata))])
+
+
+smmartsamps = colnames(ndata)[eval(parse(text=idxSamples))]
 smmartcpm = cpm[,smmartsamps]
 #FILTER
 filter <-  apply(smmartcpm, 1, function(x) length(x[x>minNumReads])>=minNumSamples)
