@@ -32,6 +32,7 @@ def remove_duplicates(freak, ref):
     # Interate through the array...
     for chrm, idx in locations:
         # Find the variant base specified in the reference file
+        print('{}'.format(ref))
         var = ref[(ref['Chromosome'].str.slice(start=3)==chrm) 
                   & (ref['Position Start']==idx)]['Variant Base'].values[0]
         # Select the rows that either do not occur as this location, or which 
@@ -47,6 +48,7 @@ parser = argparse.ArgumentParser(description='Post processing for freak output')
 # Add arguments to the arg parser, and then parse
 parser.add_argument('freak_out', action='store')
 parser.add_argument('variant_ref', action='store')
+parser.add_argument('sample', action='store')
 parser.add_argument('-d','--no-dups',action='store_const',const=remove_duplicates,default=identity,dest='do_dupes')
 parser.add_argument('-o','--output',action='store',default=None,dest='output')
 args = parser.parse_args()
@@ -54,10 +56,10 @@ args = parser.parse_args()
 # Read in Freak's output and the reference 
 freak_out = pd.read_csv(args.freak_out, sep='\t', header=0)
 variant_ref = pd.read_csv(args.variant_ref, sep='\t', header=0)
-
+variant_subset = variant_ref[variant_ref['Sample Code']==int(args.sample)]
 
 # Apply all of the appropriate filters 
-freak_out, variant_ref = args.do_dupes(freak_out, variant_ref)
+freak_out, variant_subset = args.do_dupes(freak_out, variant_subset)
 
 
 # Output the results of the post processing
