@@ -9,7 +9,7 @@
 <!-- TODO (hocumj 7/15/2019): Add preprocessing step to handle missing Ensembl ID versions. E.g., ENSG00000171223.5 compared to ENSG00000171223 -->
 <!-- TODO (hocumj 7/15/2019): Implement some tests for running with non-default parameters. -->
 
-<tool id="gsva" name="GSVA" version="0.1.0">
+<tool id="gsva" name="GSVA" version="0.1.1">
     <description>Estimate gene set enrichment statistics from gene expression values.</description>
     <requirements>
         <requirement type="package" version="3.6.1">r-base</requirement>
@@ -52,10 +52,22 @@
             gsva_results = gsva(as.matrix(gene_expression_values), gene_sets, min.sz = $min_size_set, max.sz = $max_size_set, kcdf = "$kernel", mx.diff = ${enrichment_statistic.max_diff}, abs.ranking = ${enrichment_statistic.absolute_ranking}, method = "${method.score}", tau = ${method.tau}, ssgsea.norm = ${method.ssgsea_norm}, verbose = TRUE, parallel.sz = num_of_threads)
 
             ## Prepare GSVA output.
-            gsva_results = melt(gsva_results)
-            colnames(gsva_results) = c("Pathway", "Sample", "EnrichmentScore")
+            gsva_melt = melt(gsva_results)
+            colnames(gsva_melt) = c("Pathway", "Sample", "EnrichmentScore")
 
-            write.table(gsva_results, file = "$gsva_out", col.names = TRUE, row.names = FALSE, quote = FALSE, sep = "\t")
+            write.table(gsva_melt, file = "$gsva_out", col.names = TRUE, row.names = FALSE, quote = FALSE, sep = "\t")
+
+            ## Peform the data visualizations
+            source("${__tool_directory__}/table_visualization.R")
+            options(repr.plot.width=15, repr.plot.height=10) 
+            #if $viz.box_plots.do == "do"
+                box = make.box(gsva_melt, "$viz.box_plots.sample", feature.name="Pathway", value.name="EnrichmentScore")
+                ggsave("gsva_box_plot.png", box)
+            #end if
+            #if $viz.heatmap.do == "do"
+            hm = make.heatmap(gsva_results)
+                ggsave("gsva_heatmap.png", hm)
+            #end if
         </configfile>
     </configfiles>
 
@@ -111,11 +123,39 @@
                 <param name="ssgsea_norm" type="boolean" checked="false" truevalue="TRUE" falsevalue="FALSE" hidden="true" label="Normalize the scores by the absolute difference between the minimum and the maximum? (Not applicable to PLAGE method.)" argument="--ssgsea.norm" help="Advanded usage. See `help` section for more information."/>
             </when>
         </conditional>
+        
+        <section name="viz" title="Data Visualizations" expanded="false">
+            <conditional name="box_plots">
+                <param name="do" type="select" label="Produce Box and Whisker Plots">
+                    <option value="do">Do</option>
+                    <option value="dont">Don't</option>
+                </param>
+                <when value="do">
+                    <param name="box_name" type="text" label="Plot Name" value="gsva_box_plot.png" />
+                    <param name="sample" type="text" label="Sample ID" help="Sample identifier, as specified by the study cohort" />
+                </when>
+                <when value="dont">
+                </when>
+            </conditional>
+            <conditional name="heatmap">
+                <param name="do" type="select" label="Produce Clustered Heatmap">
+                    <option value="do">Do</option>
+                    <option value="dont">Don't</option>
+                </param>
+                <when value="do">
+                    <param name="hm_name" type="text" label="Plot name" value="gsva_heatmap.png" />
+                </when>
+                <when value="dont">
+                </when>
+            </conditional>
+        </section>
     </inputs>
 
     <outputs>
         <!-- Remove any original input file extension. -->
         <data format="tsv" name="gsva_out" type="data" label="${os.path.splitext(os.path.basename($gene_expression_file.name))[0]}_GSVA_out"/>
+        <data format="png" name="box_out" type="data" from_work_dir="gsva_box_plot.png" label="gsva_box_plot.png" />
+        <data format="png" name="heapmap_out" type="data" from_work_dir="gsva_heatmap.png" label="gsva_heatmap.png" />
     </outputs>
 
     <tests>
