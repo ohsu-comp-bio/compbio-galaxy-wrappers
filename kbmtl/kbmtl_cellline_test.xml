@@ -1,9 +1,8 @@
 <tool id='kbmtl_test_celllines' name='KBMTL Drug Prediction: Test' version='1.0.0'>
     <description>Predict drug response using trained model</description>    
-
-    <macros>
-      <import>macros.xml</import>
-    </macros>
+    <requirements>
+       <requirement type="package" version="0.1.0">kbmtl</requirement>
+    </requirements>
     <command detect_errors="exit_code"><![CDATA[
         Rscript $run
     ]]></command>
