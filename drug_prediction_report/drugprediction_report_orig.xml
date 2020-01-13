@@ -1,0 +1,66 @@
+<tool id='drugprediction_report' name="Drug Prediction Report" version='1.0.0'>
+    <description>removes unwated variation based on replicate samples.</description>
+    <requirements>
+        <requirement type="package" version="1.26">r-knitr</requirement>
+        <requirement type="package" version="1.4.3">r-reshape2</requirement>
+        <requirement type="package" version="1.1.0">r-kableextra</requirement>
+        <requirement type="package" version="3.2.1">r-ggplot2</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+        #tooldir='$__tool_directory__'
+        Rscript $run $__tool_directory__ $basemat_filename $response $sample $prediction_file $drug_table_file
+
+    ]]></command>
+
+    <configfiles>
+        <configfile name="run">
+            ## Setup R error handling to go to stderr
+            options( show.error.messages=F, error = function () { cat( geterrmessage(), file=stderr() ); q( "no", 1, F ) } )
+            library(knitr)
+            library(reshape2)
+            library(kableExtra)
+            library(ggplot2)
+
+            # ---- md ----
+            usage = paste0("Rscript drugprediction_report.R basemat_filename response sample prediction_file drug_table_file")
+
+            args = commandArgs(trailingOnly=TRUE)
+
+            if (length(args) != 6) {
+                stop(print(usage), call.=FALSE)
+            } else {
+                tooldir = args[1]
+                basemat_filename = args[2]
+                response = args[3]
+                sample = args[4]
+                prediction_file = args[5]
+                drug_table_file = args[6]
+                print(args)
+
+                rmarkdown::render(paste0(tooldir,"/drugprediction_report.Rmd"), params = list(basemat_filename = basemat_filename,
+                                                             response = response,
+                                                             sample = sample,
+                                                             prediction_file=prediction_file,
+                                                             drug_table_file = drug_table_file))
+            }
+
+        </configfile>
+    </configfiles>
+
+    <inputs>
+        <param name="basemat_filename" type="data" format="tsv,tabular" label="Combined base matrix for versioning"/>
+        <param name="response" type="data" label="RData file of breast cancer cell line drug response. cell_line_response_threshold_0.50_large_and_small_screen.RData"/>
+        <param name="sample" type="text" value="" label="sample name, must be in prediction"/>
+        <param name="prediction_file" type="data" format="tsv,tabular" label="prediction results from KBMTL Test" help=""/>
+        <param name="drug_table_file" type="data" format="tsv,tabular" label="SMMART Drug List" help=""/>
+    </inputs>
+    <outputs>
+        <data format="html" name="report" label="drugprediction_report.html" from_work_dir="drugprediction_report.html"/>
+        <data format="png" name="figure" label="figure.png" from_work_dir="figures/drugsignature.png"/>
+
+    </outputs>
+   <help><![CDATA[
+
+Drug Prediction Report version 1.0.0
+    ]]></help>
+</tool>
