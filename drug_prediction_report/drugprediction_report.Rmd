@@ -1,0 +1,181 @@
+---
+title: "SMMART Drug Prediction Report"
+output:
+  html_document:
+    keep_tex: true
+    latex_engine: xelatex
+  pdf_document:
+    fig_caption: true
+header-includes:
+- \usepackage{lscape}
+- \newcommand{\blandscape}{\begin{landscape}}
+- \newcommand{\elandscape}{\end{landscape}}
+mainfont: Calibri
+fontsize: 11pt
+params: 
+  basemat_filename: ''
+  response: ''
+  sample: ''
+  prediction_file: ''
+  drug_table_file: ''
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+---
+
+**This report represents the drug sensitivity results from cell line analyses, which is used to predict the sensitivity of an individual patient biopsy sample. Sensitivity is determined based on an analysis of RNA expression patterns between patients and cell lines. The sensitivity in cell lines is used to predict the sensitivity in a patient sample. However, the algorithm has not been confirmed by an orthogonal approach on patient samples and thus must be interpreted with caution.**
+
+***
+
+```{r, echo=FALSE}
+v_GR_threshold = "0.50"
+version_report = "5.0"
+version_basematrix = params$basemat_filename
+drop = c("Gemcitabine_small", "Carboplatin_small", "Trametinib_small","BIBW2992_small")
+
+```
+
+
+```{r, echo=FALSE, warning=FALSE}
+options(knitr.table.format = "html")
+
+#table prediction
+load(params$response)
+sample=params$sample
+predResp = read.table(params$prediction_file, sep="\t", header=T, row.names = 1)
+drug_table = read.table(file=params$drug_table_file, sep="\t", header=T, stringsAsFactors = F)
+
+
+if (!(sample %in% rownames(predResp))){
+  print("Sample name is not in the prediction table. Check sample name.")
+  stop()
+}
+```
+
+
+Patient Information
+-------------------
+
+SAMPLE ID: ``r paste0(sample)``
+
+
+Cohort Versions
+-------
+
+* version base matrix = ``r paste0(version_basematrix)``
+
+* version_GR_threshold = ```r v_GR_threshold```
+
+
+**Disclaimer**:  The version of the normalization cohort will change the results. Normalization of the RNAseq cohort adjusts and account for factors that prevent direct comparison of expression measures.
+
+ * version 20190214: includes 20 SMMART breast cancers
+ * version 20190801: includse 40 SMMART breast cancers
+ * version with the sample name ammended have been normalized using by including that single sample within one of the versions of the SMMART cohorts with that corresponding batch control (UHR) correction. 
+
+***
+
+
+# PREDICITON OF THERAPEUTIC RESPONSE
+
+### Approach
+
+This test is designed to assess the likelihood that a tumor sample will respond to a therapeutic inhibitor. 
+
+Gene expression data obtained from RNA sequencing are corrected for sequencing library sizes followed by factor analysis using a novel method of bias removal called removing unwanted variation (RUV) (Gagnon-Bartch et al. 2013, Risso et al. 2014). A batch control is used to capture the unwanted variation associated with batch variation. The batch corrected expression is input into a machine learning classification algorithm (Gonen, et. al. 2014), trained on experimental data from breast cancer cell lines corrected in the same manner. This data consists of growth inhibition data at clinically achievable serum concentrations in an in-vitro assay to provide drug response predictions. A  growth rate inhibition of GR50 at 0.5 was used to determine sensitive and resistant cell lines. The results from this classifier returns the probability level that a sample will respond to various therapeutic inhibitors. 
+
+Figure 3. Predicted Response. The probability (blue) and the proportion of resistant cell lines in the training data (gray), representing the bias in the cell line trainng data. The drugs are ordered by increasing difference between the probability of the prediction algorithm and the proportion resistant in the breast cancer cell line training data set.  A prediction where the blue bar is higher than the gray bars indicates potential sensitivity for that drug (> a difference of -0.3), while a prediction where the gray bar is significantly above the blue bar indicates resistance to that drug.
+
+```{r cell line bias, echo=FALSE}
+
+
+cell_line_response_filt = cell_line_response[,!(colnames(cell_line_response) %in% drop)]
+
+drug_threshold =  data.frame("threshold" = apply(cell_line_response_filt, 2,function(response_list){
+  1-(sum(response_list, na.rm=T)/(length(response_list) - sum(is.na(response_list))))}))
+#drug_threshold$short_name = gsub("_small|_large","", rownames(drug_threshold))
+
+```
+
+
+```{r predicted response, echo=F}
+
+
+sampresp = t(predResp[which(rownames(predResp)==sample),!(colnames(predResp) %in% drop)])
+
+drug_order = rownames(sampresp)
+
+dT = setNames(data.frame(drug_order, 
+              round(sampresp[drug_order,,drop=F],2), 
+              round(drug_threshold[drug_order,"threshold",drop=F],2)), 
+              c("Drug", "Sample", "Threshold"))
+
+#rownames(dT) = sapply(strsplit(rownames(dT), "_"), `[`, 1)
+dT$Drug = gsub("_small|_large","", rownames(dT))
+
+dT = data.frame(dT, "Drug_Label"= paste0(drug_order, " (",drug_table$Target[unlist(lapply(dT$Drug, function(x) grep(x,drug_table$SMMART.Compound)[1]))], ")"),
+                "diff"=dT$Sample-dT$Threshold)
+```
+
+
+
+```{r, drugprediction, echo=FALSE, warning=FALSE, fig.height = 5, fig.width = 7}
+
+#melt
+data_fig = melt(as.matrix(dT[,c("Sample","Threshold")]))
+data_fig$Var1 = factor(data_fig$Var1, levels=rownames(dT)[order(dT$diff)])
+
+p0 <- ggplot(data_fig) +
+  geom_col(aes(x=Var1, y=value, fill=Var2), position = "identity", alpha = 0.5, show.legend = T) +
+  scale_fill_manual(name = "", values = c("Sample" = "#0078d7",  "Threshold" = "gray50")) +
+  labs(title=paste0(sample,"\nDrug Prediction"), x="Drug", y="") +
+  ylim(0,1) +
+  theme(panel.background = element_rect(fill = "white"),
+         panel.grid.major=element_line(colour="gray"),
+         plot.title = element_text(hjust = 0.5, vjust=1, size=11),
+         legend.text=element_text(size=5),
+         legend.title =element_blank(),
+         legend.position="right",
+         axis.text.x = element_text(angle = 90, hjust = 1, size=8, colour="black", vjust=0.5),
+         axis.text.y = element_text(size=10),
+         axis.title.y = element_text(size = 11, angle = 90),
+         axis.title.x = element_text(size = 11),
+         panel.grid.minor.x=element_blank(),
+         panel.grid.major.x=element_blank())
+
+p0
+
+dir.create(path = paste0("./figures"), showWarnings = F)
+ggsave(filename = paste0("./figures/drugsignature.png"), plot=p0,width = 6, height = 5)
+kable(setNames(dT[order(dT$diff), c("Sample", "Threshold", "Drug_Label")] ,
+               c("Sample", "Proportions in Breast Cancer Cell Line", "Drug Label")),align="c") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+
+```
+
+**Gene expressions and inhibitor response is optimized for breast cancers. Predictions on samples that are not breast cancers must be interpreted with caution.**
+
+
+
+Compounds
+---------
+
+The compounds predicted are compounds that exhibited a dynamic range of drug sensitivity during initial screening on breast cancer cell lines. If a compounds was not available we have omitted them. This list includes SMMART compounds and compounds tested in the drug screen for the prediciton algorithms. 
+
+
+\tiny
+
+```{r, echo=FALSE}
+
+
+kable(drug_table) %>%
+  kable_styling(bootstrap_options = "striped", font_size = 9, full_width = T)
+```
+
+\normalsize
+
+
+Table Description:
+-----------------
+Normalization: Counts per million followed RUV (Removal of Unwanted Variation)
+
+KBMTL (kernalized baysian machine transfer learning): z-scale normalization across samples per gene, using training (BCCL), mean and sd. 
