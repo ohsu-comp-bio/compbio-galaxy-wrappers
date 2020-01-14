@@ -5,7 +5,7 @@
     ln -s $cnv_vcf cnv_vcf.vcf &&
     #if $repost.is_repost:
       ln -s $__tool_directory__/moon_api.py moon_api.py &&
-      $__tool_directory__/mito_merge.sh $repost.moon_id ${sample_name}.vcf cnv_vcf.vcf > $log
+      $__tool_directory__/mito_merge.sh $repost.moon_id ${sample_name}.vcf cnv_vcf.vcf $user $token > $log
     #else:
       python $__tool_directory__/moon_api.py -snp ${sample_name}.vcf -cnv cnv_vcf.vcf -mode post -gender $repost.gender -user $user -token $token> $log
     #end if
