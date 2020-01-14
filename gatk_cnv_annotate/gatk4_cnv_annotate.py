@@ -1,7 +1,7 @@
 import argparse
 import gffutils
 
-VERSION = '0.2.5'
+VERSION = '0.2.6'
 
 def supply_args():
     """
@@ -215,7 +215,7 @@ class GeneImport(object):
 
     def _file_to_list(self):
         genes = []
-        with open(self.filename, 'r') as myfile:
+        with open(self.filename, 'rU') as myfile:
             for line in myfile:
                 if len(line.split('\t')) > 1:
                     raise Exception("Line has more than one column.")
@@ -244,7 +244,7 @@ class PicardIntervals(object):
         :return:
         """
         header = []
-        with open(self.filename, 'r') as myfile:
+        with open(self.filename, 'rU') as myfile:
             for line in myfile:
                 if line.startswith('@'):
                     header.append(line)
@@ -255,7 +255,7 @@ class PicardIntervals(object):
         Place titles in a list.
         :return:
         """
-        with open(self.filename, 'r') as myfile:
+        with open(self.filename, 'rU') as myfile:
             for line in myfile:
                 if line.startswith(self.header_start):
                     return line.rstrip('\n').split('\t')
@@ -266,7 +266,7 @@ class PicardIntervals(object):
         :return:
         """
         regions = []
-        with open(self.filename, 'r') as myfile:
+        with open(self.filename, 'rU') as myfile:
             for line in myfile:
                 if not line.startswith('@') and not line.startswith(self.header_start):
                     ival = PicardInterval(line.rstrip('\n').split('\t'), self.titles)
@@ -433,7 +433,10 @@ class GeneCentricCnv(object):
         :param nval:
         :return:
         """
-        return float(tval)/float(nval)
+        try:
+            return float(tval)/float(nval)
+        except ZeroDivisionError:
+            return 'NA'
 
     def _gene_based_create(self):
         gene_output = []
@@ -446,8 +449,8 @@ class GeneCentricCnv(object):
                                 'GENE': gene,
                                 'NUM_POINTS_SEGMENT': str(entry['NUM_POINTS_COPY_RATIO']),
                                 'MEAN_LOG2_COPY_RATIO': str(entry['MEAN_LOG2_COPY_RATIO']),
-                                'RAW_COPY_NUMBER': self._calc_raw_copy_number(str(entry['MEAN_LOG2_COPY_RATIO'])),
-                                'TUMOR_COPY_NUMBER': self._calc_tumor_copy(self.tumor_pct, str(entry['MEAN_LOG2_COPY_RATIO'])),
+                                'RAW_COPY_NUMBER': str(self._calc_raw_copy_number(str(entry['MEAN_LOG2_COPY_RATIO']))),
+                                'TUMOR_COPY_NUMBER': str(self._calc_tumor_copy(self.tumor_pct, str(entry['MEAN_LOG2_COPY_RATIO']))),
                                 'CALL': entry['CALL'],
                                 'REGION_CHROM': entry['CONTIG'],
                                 'REGION_START': entry['START'],
@@ -467,8 +470,8 @@ class GeneCentricCnv(object):
                                                                           to_write['END_EXON'],
                                                                           entry['START'],
                                                                           entry['END']))
-                    to_write['TUMOR_COPY_RATIO'] = str(self._calc_tumor_copy_ratio(to_write['TUMOR_COPY_NUMBER'],
-                                                                                   to_write['RAW_COPY_NUMBER']))
+                    # to_write['TUMOR_COPY_RATIO'] = str(self._calc_tumor_copy_ratio(self._calc_tumor_copy(self.tumor_pct, str(entry['MEAN_LOG2_COPY_RATIO'])),
+                    #                                                                self._calc_raw_copy_number(str(entry['MEAN_LOG2_COPY_RATIO']))))
                     gene_output.append(to_write)
         return gene_output
 
@@ -526,7 +529,7 @@ def main():
                    'START_GENE', 'START_EXON', 'END_GENE', 'END_EXON']
     gene_write_order = ['GENE_CHROM', 'GENE_START', 'GENE_STOP', 'GENE', 'NUM_POINTS_SEGMENT',
                         'NUM_POINTS_GENE', 'MEAN_LOG2_COPY_RATIO', 'RAW_COPY_NUMBER', 'TUMOR_COPY_NUMBER',
-                        'TUMOR_COPY_RATIO', 'CALL', 'REGION_CHROM', 'REGION_START', 'REGION_STOP']
+                        'CALL', 'REGION_CHROM', 'REGION_START', 'REGION_STOP']
     to_write = []
     for ival in pic_ints.regions:
         to_write.append(KdlCopyInterval(ival, dbname, common_to_refseq, args.genes).ival)
