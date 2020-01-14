@@ -1,17 +1,15 @@
 <macros>
   <xml name="requirements">
     <requirements>
-        <requirement type="package" version="3.8">gatk</requirement>
-        <requirement type="package" version="1.9">samtools</requirement>
-        <requirement type="set_environment">GATK2_PATH</requirement>
-        <requirement type="set_environment">GATK2_SITE_OPTIONS</requirement>
+	<requirement type="package" version="0.1.19">samtools</requirement>
+	<requirement type="package" version="3.7">gatk</requirement>
     </requirements>
   </xml>
   <token name="@THREADS@">
     --num_threads \${GALAXY_SLOTS:-4}
   </token>
   <token name="@JAR_PATH@">
-    java -Xms16g -Xmx32g -jar \${GATK_JAR_PATH}
+    gatk
   </token>
   <token name="@DBSNP_OPTIONS@">
     #if $dbsnp_rod_bind_type.dbsnp_rod_bind_type_selector == 'set_dbsnp'

@@ -1,6 +1,12 @@
-<tool id="replace_sample_column" name="Replace Sample Column VCF" version="0.0.1" >
+<tool id="replace_sample_column" name="Replace Sample Column VCF" version="0.1.0" >
 
     <description>If the sample column in your VCF says something you don't like, replace it with a sample name from a BAM header.</description>
+
+    <requirements>
+      <requirement type="package" version="0.6.8">pyvcf</requirement>
+      <requirement type="package" version="0.15.3">pysam</requirement>
+    </requirements>
+
     <command detect_errors="exit_code"><![CDATA[
       python $__tool_directory__/replace_sample_column.py
        --bam '${bam}'

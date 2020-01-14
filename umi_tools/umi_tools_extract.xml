@@ -1,7 +1,9 @@
-<tool id="umi_tools_extract" name="UMI-tools extract" version="0.5.3.0">
+<tool id="umi_tools_extract" name="UMI-tools extract" version="0.5.3.2">
   <description>Tools for dealing with Unique Molecular Identifiers</description>
 
-  <requirements></requirements>
+  <requirements>
+    <requirement type="package" version="0.5.3">umi_tools</requirement>
+  </requirements>
 
   <stdio>
     <exit_code range="1:" />
@@ -10,13 +12,34 @@
   <version_command>umi_tools extract --version</version_command>
 
   <command><![CDATA[
+
+  #if $read_type.input_fq.is_of_type("fastq.gz")
+    ln -s $read_type.input_fq input_r1.fastq.gz &&
+  #end if
+
+  #if $read_type.input_fq_2
+    #if $read_type.input_fq_2.is_of_type("fastq.gz")
+      ln -s $read_type.input_fq_2 input_r2.fastq.gz &&
+    #end if
+  #end if
+
   umi_tools extract
-  -I "${read_type.input_fq}"
+
+  #if $read_type.input_fq.is_of_type("fastq.gz")  
+    -I "input_r1.fastq.gz"
+  #else
+    -I "${read_type.input_fq}"
+  #end if
+
   -p "${read_type.bc_pattern}"
   -S "${output_fq}"
 
   #if str( $read_type.read_type_selector ) == "paired":
-  --read2-in "${read_type.input_fq_2}"
+  #if $read_type.input_fq_2.is_of_type("fastq.gz")  
+    --read2-in "input_r2.fastq.gz"
+  #else
+    --read2-in "${read_type.input_fq_2}"
+  #end if
     #if $read_type.bc_pattern_2:
     --bc-pattern2 "${read_type.bc_pattern_2}"
     #end if
@@ -43,13 +66,13 @@
         <option value="single">Single End</option>
       </param>
       <when value="paired">
-	<param name="input_fq" type="data" format="fastq" label="Input FASTQ R1" help="Extract UMI sequence from this input R1 FASTQ formatted file."/>
-	<param name="input_fq_2" type="data" format="fastq" label="Input FASTQ R2" help="Extract UMI sequence from this input R2 FASTQ formatted file."/>
+	<param name="input_fq" type="data" format="fastq,fastq.gz" label="Input FASTQ R1" help="Extract UMI sequence from this input R1 FASTQ formatted file."/>
+	<param name="input_fq_2" type="data" format="fastq,fastq.gz" label="Input FASTQ R2" help="Extract UMI sequence from this input R2 FASTQ formatted file."/>
 	<param name="bc_pattern" type="text" size="26" value="NNNNNNNNNNNN" label="Barcode Pattern" help="Barcode pattern. Ns are random bases X's fixed"/>
 	<param name="bc_pattern_2" type="text" size="26" label="Barcode Pattern" help="Barcode pattern for read 2. Ns are random bases X's fixed"/>
       </when>
       <when value="single">
-	<param name="input_fq" type="data" format="fastq" label="Input FASTQ" help="Extract UMI sequence from this input FASTQ formatted file."/>
+	<param name="input_fq" type="data" format="fastq,fastq.gz" label="Input FASTQ" help="Extract UMI sequence from this input FASTQ formatted file."/>
 	<param name="bc_pattern" type="text" size="26" value="NNNNNNNNNNNN" label="Barcode Pattern" help="Barcode pattern. Ns are random bases X's fixed"/>
       </when>
     </conditional>
@@ -64,8 +87,8 @@
   </inputs>
 
   <outputs>
-    <data format_source="input_fq" name="output_fq" label="${tool.name} on ${on_string}: output.fq"/>
-    <data format_source="input_fq_2" name="output_fq_2" label="${tool.name} on ${on_string}: output2.fq">
+    <data format="fastqsanger" name="output_fq" label="${tool.name} on ${on_string}: output.fq"/>
+    <data format="fastqsanger" name="output_fq_2" label="${tool.name} on ${on_string}: output2.fq">
       <filter>read_type['read_type_selector'] == "paired"</filter>
     </data>
     <data name="log_out" format="txt" label="${tool.name} on ${on_string}: log.txt"/>

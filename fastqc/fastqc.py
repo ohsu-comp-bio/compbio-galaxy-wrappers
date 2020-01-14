@@ -73,12 +73,12 @@ class FastQCRunner(object):
             if not zipfile.is_zipfile(self.opts.input):
                 trimext = True
         if trimext:
-            f = open(self.opts.input)
-            try:
-                f.readline()
-            except:
-                raise Exception("Input file corruption, could not identify the filetype")
-        infname = os.path.splitext(infname)[0]
+			f = open(self.opts.input)
+			try:
+				f.readline()
+			except:
+				raise Exception("Input file corruption, could not identify the filetype")
+		infname = os.path.splitext(infname)[0]
         
         # Replace unwanted or problematic charaters in the input file name
         self.fastqinfilename = re.sub(ur'[^a-zA-Z0-9_\-\.]', '_', os.path.basename(infname))

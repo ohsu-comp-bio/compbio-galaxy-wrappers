@@ -4,6 +4,11 @@
     Sort all target intervals, merge overlapping ones, and print the resulting interval list
   </description>
 
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+
   <command>
     xhmm --prepareTargets
     --targets $input

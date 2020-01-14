@@ -4,6 +4,11 @@
     Apply PCA factors in order to normalize read depth matrix
   </description>
 
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+
   <command>
     ln -s $PC_LOADINGS "./xhmm_pca_out.txt.PC_LOADINGS.txt";
     ln -s $PC_SD "./xhmm_pca_out.txt.PC_SD.txt";

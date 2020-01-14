@@ -1,8 +1,9 @@
-<tool id="stpv3_cnv_plotter_nt" name="STPv3 CNV Plotter (NT)" version="1.0.1">
+<tool id="stpv3_cnv_plotter_nt" name="STPv3 CNV Plotter (NT)" version="1.0.2">
   <description>Creates two plots of CNVs using gtrellis (Does not use tidyverse).</description>
   <requirements>
     <requirement type="package" version="1.14.0">bioconductor-gtrellis</requirement>
     <requirement type="package" version="1.2.0">bioconductor-genomeinfodbdata</requirement>
+    <requirement type="package" version="3.5.1">r</requirement>
   </requirements>
   <command detect_errors="exit_code"><![CDATA[
     Rscript $__tool_directory__/gtrellis_CNV_NT.R 

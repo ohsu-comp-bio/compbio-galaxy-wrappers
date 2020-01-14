@@ -11,7 +11,7 @@
     <inputs>
         <param name="infile" type="data" format="vcf" label="Input VCF" help="" />
         <param name="hotspots" type="data" format="vcf" label="Hotspots VCF" help="" />
-        <param name="cosmic" type="data" format="vcf" label="Input COSMIC VCF" help="" />
+        <param name="cosmic" type="data" format="vcf,vcf_bgzip" label="Input COSMIC VCF" help="" />
     </inputs>
 
     <outputs>

@@ -1,6 +1,9 @@
-<tool id="umi_tools_dedup" name="UMI-tools dedup" version="0.5.3.1">
+<tool id="umi_tools_dedup" name="UMI-tools dedup" version="0.5.3.2">
   <description>Tools for dealing with Unique Molecular Identifiers</description>
-  <requirements></requirements>
+  <requirements>
+    <requirement type="package" version="0.5.3">umi_tools</requirement>
+    <requirement type="package" version="1.9">samtools</requirement>
+  </requirements>
   <stdio>
     <exit_code range="1:" />
   </stdio>
@@ -16,20 +19,20 @@
 
   #set stub = "stats"
 
-  #if "${run_stats}":
+  #if $run_stats
     --output-stats="${stub}"
   #end if
 
   --method "${method}"
-  #if $chrom:
+  #if $chrom
     --chrom="${chrom}"
   #end if
 
-  #if $read_length:
+  #if $read_length
     --read-length
   #end if
 
-  #if $paired:
+  #if $paired
     --paired
   #end if
 

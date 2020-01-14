@@ -1,6 +1,6 @@
-<tool id="bwa_mem" name="BWA-MEM" version="0.7.9">
+<tool id="bwa_mem" name="BWA-MEM" version="0.7.9a">
   <requirements>
-    <requirement type="package" version="0.7.9"> </requirement>
+    <requirement type="package" version="0.7.9a">bwa</requirement>
   </requirements>
   <description>Map low-divergent sequences against a large reference genome.</description>
   <version_command>bwa 2&gt;&amp;1 | grep "Version: " | sed -e 's/Version: //'</version_command>

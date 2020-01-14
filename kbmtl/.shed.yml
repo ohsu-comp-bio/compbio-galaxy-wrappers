@@ -1,0 +1,11 @@
+categories:
+- "CompBio Galaxy Wrappers"
+homepage_url: 
+owner: "patterja"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/kbmtl"
+repositories:
+  kbmtl:
+    description: "Kernalized baysian multi-task learning package tool"
+    include:
+      - kbmtl_cellline_test.xml
+      - kbmtl_cellline_train.xml

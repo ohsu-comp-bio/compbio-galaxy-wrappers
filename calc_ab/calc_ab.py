@@ -98,7 +98,7 @@ def main():
         try:
             bad_vaf = (af_dict[sample_list[0]]['BAD_VAF'] / (af_dict[sample_list[0]]['TOTAL'] + 0.0)) * 100
         except ZeroDivisionError:
-            bad_vaf = '100'
+            bad_vaf = '-1'
         write_json_out(bad_vaf, args.outfile)
     else:
         print('Multi sample functionality not completely implemented...')
@@ -106,7 +106,7 @@ def main():
             try:
                 bad_vaf = (af_dict[entry]['BAD_VAF'] / (af_dict[entry]['TOTAL'] + 0.0)) * 100
             except ZeroDivisionError:
-                bad_vaf = '100'
+                bad_vaf = '-1'
             print('\t'.join([entry, str(bad_vaf)]))
 
 if __name__ == "__main__":
