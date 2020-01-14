@@ -7,7 +7,6 @@ from __future__ import print_function
 
 import argparse
 import sys
-#sys.path.append('/home/groups/clinical/users/letaw/jhl_tools')
 
 from file_types.gatk_intervals import PerLocusRead
 from file_types.gatk_intervals import ProbeQcRead
