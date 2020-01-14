@@ -7,5 +7,5 @@ repositories:
   ruvseq:
     description: "Removal of Unwanted Variation on RNASeq Data"
     include:
-      - ruvseq.xml
+      - RUVs.xml
       - test-data/
