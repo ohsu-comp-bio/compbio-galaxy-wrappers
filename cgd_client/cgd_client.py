@@ -22,7 +22,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.8.1'
+VERSION = '1.2.8.2'
 
 
 def supply_args():
@@ -32,7 +32,7 @@ def supply_args():
 
     parser.add_argument('stdout_log', help='')
     parser.add_argument('endpoint', help='')
-#    parser.add_argument('java8_path', help='Java 8 PATH as defined in JAVA8_PATH.')
+    parser.add_argument('--java8_path', default='/home/exacloud/clinical/installedTest/jdk1.8.0_144/bin/java', help='Java 8 PATH as defined in JAVA8_PATH.')
     parser.add_argument('--report_vcf', help='Output VCF if utilizing '
                                              'reportvariants endpoint.')
     parser.add_argument('--report_bed', help='Output BED if utilizing '
@@ -108,9 +108,7 @@ def run_cmd(cmd):
     elif type(json.loads(stdout)) is list:
         pass
     elif 'errors' in json.loads(stdout):
-        if json.loads(stdout)['errors'] == ['Could not find patient to provide previously reported variants']:
-            return None
-        elif json.loads(stdout)['errors']:
+        if json.loads(stdout)['errors']:
             raise Exception(json.loads(stdout)['errors'])
     elif 'message' in json.loads(stdout):
         if json.loads(stdout)['message'] == 'error_patient_not_found':
@@ -124,7 +122,7 @@ def build_cmd(args, recvd_prof=False):
     """
     Build the command that will send data to the CGD.
     """
-    cmd = ['java', '-jar', args.cgd_client, "-n", args.endpoint, "-c", args.cgd_config]
+    cmd = [args.java8_path, '-jar', args.cgd_client, "-n", args.endpoint, "-c", args.cgd_config]
     newfile = ""
 
     if args.servicebase:
@@ -155,7 +153,7 @@ def build_cmd(args, recvd_prof=False):
     elif args.endpoint == "snpProfile" and recvd_prof:
         cmd.extend(["-j", args.json_out])
     elif args.endpoint == "none":
-        cmd = ["java", "-jar", args.cgd_client, "-f", args.pipeline_out, "-u", args.cgd_url]
+        cmd = [args.java8_path, "-jar", args.cgd_client, "-f", args.pipeline_out, "-u", args.cgd_url]
     else:
         cmd.extend(["-f", args.pipeline_out])
 
@@ -192,27 +190,19 @@ def prepare_reported(outfile, regions, stdout):
     :return:
     """
     empty = '.'
-    
-    if stdout:
-        for entry in json.loads(stdout):
-            if json.loads(stdout):
-                chrom = entry['chromosome'][3:]
-                pos = entry['positionStart']
-                ref = entry['referenceBase']
-                alt = entry['variantBase']
-                outfile.write('\t'.join([chrom, str(pos), empty, ref, alt, empty, empty, empty]))
-                outfile.write('\n')
-                start = pos - 1
-                regions.write('\t'.join([chrom, str(start), str(pos)]))
-                regions.write('\n')
-
-        if not json.loads(stdout):
-            outfile.write('\t'.join(['1', '3', empty, 'T', 'C', empty, empty, empty]))
+    for entry in json.loads(stdout):
+        if json.loads(stdout):
+            chrom = entry['chromosome'][3:]
+            pos = entry['positionStart']
+            ref = entry['referenceBase']
+            alt = entry['variantBase']
+            outfile.write('\t'.join([chrom, str(pos), empty, ref, alt, empty, empty, empty]))
             outfile.write('\n')
-            regions.write('\t'.join(['1', '1', '2']))
+            start = pos - 1
+            regions.write('\t'.join([chrom, str(start), str(pos)]))
             regions.write('\n')
 
-    else:
+    if not json.loads(stdout):
         outfile.write('\t'.join(['1', '3', empty, 'T', 'C', empty, empty, empty]))
         outfile.write('\n')
         regions.write('\t'.join(['1', '1', '2']))
