@@ -1,4 +1,4 @@
-<tool id='plot_cnv_tempus' name="Plot Tempus CNV" version='1.0.0'>
+<tool id='plot_cnv_tempus' name="Plot Tempus CNV" version='1.1.0'>
     <description>plots tempus CNV data.</description>
     <requirements>
         <requirement type="package" version="1.14.0">bioconductor-gtrellis</requirement>
