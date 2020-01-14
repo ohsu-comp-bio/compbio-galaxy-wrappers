@@ -7,7 +7,7 @@
       ln -s $__tool_directory__/moon_api.py moon_api.py &&
       $__tool_directory__/mito_merge.sh $repost.moon_id ${sample_name}.vcf cnv_vcf.vcf > $log
     #else:
-      python $__tool_directory__/moon_api.py -snp ${sample_name}.vcf -cnv cnv_vcf.vcf -mode post -gender $repost.gender > $log
+      python $__tool_directory__/moon_api.py -snp ${sample_name}.vcf -cnv cnv_vcf.vcf -mode post -gender $repost.gender -user $user -token $token> $log
     #end if
   ]]></command>
 
@@ -28,6 +28,8 @@
         </param>
       </when>
     </conditional>
+    <param name="user" type="text" label="User email on Moon"/>
+    <param name="token" type="text" label="User token on Moon"/>
   </inputs>
   <outputs>
     <data name="log" format="txt" label="${tool.name} on ${on_string}: Log"/>
