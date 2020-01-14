@@ -15,6 +15,7 @@ tempusData$Check = (tempusData$RoundedCopies==tempusData$Copy.Number)
 
 geneData <- read.table(geneFile, header = TRUE, sep="\t")
 
+first = TRUE
 for( segment_row in 1:nrow(tempusData) ) {
 	for( gene_row in 1:nrow(geneData) ) {
 		if (geneData[gene_row, "Contig"] == tempusData[segment_row, "Chr"]) {
@@ -23,8 +24,9 @@ for( segment_row in 1:nrow(tempusData) ) {
 			} else if(tempusData[segment_row, "End"] < geneData[gene_row, "START"]) {
 				next
 			} else {
-				if(segment_row==1){
-					tempusData[segment_row, "GENE"] = paste0(geneData[gene_row, "GeneSymbol"], ", ",  tempusData[segment_row, "GENE"])
+				if(first){
+					tempusData[segment_row, "GENE"] = paste0(geneData[gene_row, "GeneSymbol"])
+					first = FALSE
 				} else if(is.na(tempusData[segment_row, "GENE"])){
 					tempusData[segment_row, "GENE"] = toString(geneData[gene_row, "GeneSymbol"])
 				} else {
