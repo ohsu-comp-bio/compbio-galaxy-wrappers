@@ -20,7 +20,6 @@ def supply_args():
 
 def get_patient_info(moon_id):
   parameters = {"user_token": "iSUQvGmVNSjq834g9fP5", "user_email": "campbena@ohsu.edu"}
-
   patient_url = "https://oregon.moon.diploid.com/samples/" + moon_id + "/patient-info"
   patient_info = requests.get(patient_url, params = parameters)
 
