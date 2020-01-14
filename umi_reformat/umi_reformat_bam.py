@@ -7,7 +7,7 @@
 import argparse
 import pysam
 
-VERSION = '0.3.1'
+VERSION = '0.3.0'
 
 def supply_args():
     """                                                                                                                                                                     
@@ -32,8 +32,16 @@ def main():
     for align in mybam:
         ident = align.query_name
         umi = ident.split(':')[-1].split('_')[1]
+        #        this_seq = align.query_sequence
+#        umi = this_seq[:12]
+#        align.query_sequence = this_seq[22:]
         align.set_tag('RX', umi)
         outbam.write(align)
+
+        # Reorganize this.  This is for the situation where we are parsing bcl2fastq UMI trimmings.
+        # ident = align.query_name
+        # umi = ident.split(':')[-1]
+        # align.query_name = ':'.join(ident.split(':')[:-1])
 
     outbam.close()
     mybam.close()

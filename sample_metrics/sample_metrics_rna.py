@@ -15,7 +15,7 @@ import json
 import numpy
 from pybedtools import BedTool
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 
 
 def main():

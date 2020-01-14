@@ -7,6 +7,11 @@
     out relevant targets.
   </description>
 
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+
   <command>
     xhmm --matrix
     --readDepths $input1

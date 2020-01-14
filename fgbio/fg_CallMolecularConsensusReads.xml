@@ -5,7 +5,7 @@
   </macros>
   <command detect_errors="exit_code"><![CDATA[
     @CMD_BEGIN@ CallMolecularConsensusReads
-    #include source=$input_output_cmd#
+    #include source=$input_bam_output_cmd#
     #include source=$rejects_cmd#
     #include source=$tag_cmd#
     #include source=$read_name_prefix_cmd#

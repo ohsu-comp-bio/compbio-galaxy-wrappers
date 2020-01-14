@@ -10,7 +10,7 @@ import argparse
 import pysam
 import re
 
-VERSION = '0.1.3'
+VERSION = '0.1.4'
 
 
 def supply_args():
@@ -267,7 +267,7 @@ def fix_cigar(cigar):
 
 def main():
     args = supply_args()
-    samfile = open(args.bamfile, 'rU')
+    samfile = open(args.bamfile, 'r')
     outfile = open(args.outfile, 'w')
     primer_coords = bed.ExtBedReader(args.bed, header=True, strand=5).get_primer_ends()
     mismatch = False
@@ -326,7 +326,7 @@ def main():
 
                 # If first read is mapped to fwd strand.
                 if not (flag & 0x10):
-                    seqloc = (chrom, xrange(pos + sco, pos + tlen))
+                    seqloc = (chrom, range(pos + sco, pos + tlen))
                     primer_choices = set(primer_coords[seqloc[0]][
                                 '1']).intersection(set(seqloc[1]))
 
@@ -353,7 +353,7 @@ def main():
                             outfile.write('\t'.join(line2))
                             outfile.write('\n')
                 else:
-                    seqloc = (chrom, xrange(pos, (pnext - tlen) - sco))
+                    seqloc = (chrom, range(pos, (pnext - tlen) - sco))
                     primer_choices = set(primer_coords[seqloc[0]][
                                 '0']).intersection(set(seqloc[1]))
                     if primer_choices:
@@ -414,7 +414,7 @@ def main2():
                 (chrom in primer_coords):
             sco = soft_clip_offset(line1.cigar)
             if (line1.flag & 0x10 == 0):
-                seqloc = (chrom, xrange(line1.pos + sco, line1.pos +
+                seqloc = (chrom, range(line1.pos + sco, line1.pos +
                                         line1.tlen))
                 z = set(primer_coords[seqloc[0]]['1']).intersection(
                     set(seqloc[1]))
@@ -436,7 +436,7 @@ def main2():
                         outfile.write(line2)
 
             else:
-                seqloc = (chrom, xrange(line1.pos, (line1.pnext - line1.tlen) - sco))
+                seqloc = (chrom, range(line1.pos, (line1.pnext - line1.tlen) - sco))
                 z = set(primer_coords[seqloc[0]]['0']).intersection(
                     set(seqloc[1]))
                 if z:

@@ -1,4 +1,4 @@
-<tool id="rna_star2" name="RNA STAR for RNA_Access_Fusions_Variants" version="2.5.2b-1" profile="17.01">
+<tool id="rna_star2" name="RNA STAR for RNA_Access_Fusions_Variants" version="2.5.3a-1" profile="17.01">
     <description>RNA-seq Aligner more universal for RNA Access panel</description>
     <macros>
         <import>macros.xml</import>
@@ -22,7 +22,7 @@
     Cheers
     Alex
 -->
-    <command><![CDATA[
+    <command detect_errors="exit_code"><![CDATA[
     ## Create temporary index for custom reference
     #if str($refGenomeSource.geneSource) == 'history':
         mkdir -p tempstargenomedir &&
@@ -119,7 +119,8 @@
             --chimSegmentReadGapMax 3              ## not an option in STAR 2.4.0
             --alignSJstitchMismatchNmax 5 -1 5 5   ## not an option in STAR 2.4.0
          &&
-          samtools view -S -b Chimeric.out.sam > Chimeric.out.bam
+         samtools sort Chimeric.out.sam -O BAM -l 5 -@ 7 -o Chimeric.out.bam 
+	 ## samtools view -S -b Chimeric.out.sam > Chimeric.out.bam
         #elif str( $params.settingsType ) == "full":
             ## Extended parameter options
 

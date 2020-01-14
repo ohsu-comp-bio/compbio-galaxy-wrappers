@@ -4,6 +4,11 @@
     Run PCA to create normalization factors for read depth matrix
   </description>
 
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+
   <command>
     xhmm --PCA
     --readDepths $readDepths

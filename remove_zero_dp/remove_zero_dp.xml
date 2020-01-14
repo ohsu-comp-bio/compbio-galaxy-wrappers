@@ -1,5 +1,8 @@
-<tool id="remove_zero_dp" name="Remove DP=0 entries" version="0.1" >
+<tool id="remove_zero_dp" name="Remove DP=0 entries" version="0.1.1" >
   <description>Remove VCF entries that contain DP=0 in the SAMPLE field.</description>
+  <requirements>
+    <requirement type="package" version="0.6.8">pyvcf</requirement>
+  </requirements>
   <command interpreter="python">remove_zero_dp.py
     $input_vcf $output_vcf
   </command>

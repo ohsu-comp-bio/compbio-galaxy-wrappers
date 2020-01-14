@@ -8,7 +8,7 @@
    -j "\${PICARD_PATH}/SortSam.jar" -d "${html_file.files_path}" 
    -t "${html_file}" -e "${input_file.ext}"
   </command>
-  <requirements><requirement type="package" version="1.110.0">picard</requirement></requirements>
+  <requirements></requirements>
   <description>Sorts the input SAM or BAM.</description>
   <inputs>
     <param format="bam,sam" name="input_file" type="data" label="SAM/BAM dataset to mark duplicates in"

@@ -1,5 +1,10 @@
-<tool id="calc_norm" name="Normalize from HTSeq" version="0.4.0" >
+<tool id="calc_norm" name="Normalize from HTSeq" version="0.5.0" >
     <description>Calculate TPM, FPKM, and FPKM-UQ values from an existing HTSeq-Count counts table. </description>
+
+    <requirements>
+      <requirement type="package" version="1.11.0">numpy</requirement>
+      <requirement type="package" version="3.2.7">subprocess32</requirement>
+    </requirements>
 
     <command interpreter="python">
         calc_norm.py $input_htseq $input_gtf $output_fpkm $output_fpkm_uq $output_tpm
