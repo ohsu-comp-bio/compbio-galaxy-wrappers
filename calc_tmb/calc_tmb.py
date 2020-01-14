@@ -4,7 +4,7 @@ import argparse
 import json
 import vcf
 
-VERSION = '0.4.3'
+VERSION = '0.4.4'
 
 def supply_args():
     """
@@ -123,29 +123,30 @@ class WholeVcf(object):
             if entry.gnomad:
                 if entry.gnomad < self.gnomad_af:
                     if entry.check_snpeff():
-                        if entry.tlod > self.m2_tlod:
-                            if 'PON' not in entry.filt:
-                                if not entry.bad_gene:
-                                    if 'm2' in entry.filt:
-                                        if entry.dp > self.min_dp_m2:
-                                            if 'PON_OV' in entry.filt:
-                                                if entry.ab > self.min_ab_pon_ov:
-                                                    self.tmb_cnt += 1
-                                                    self.to_write.append(record)
-                                            else:
-                                                if entry.ab > self.min_ab:
-                                                    self.tmb_cnt += 1
-                                                    self.to_write.append(record)
-                                    elif 'fb' in entry.filt or 'm2_fb' in entry.filt:
-                                        if entry.dp > self.min_dp_fb:
-                                            if 'PON_OV' in entry.filt:
-                                                if entry.ab > self.min_ab_pon_ov:
-                                                    self.tmb_cnt += 1
-                                                    self.to_write.append(record)
-                                            else:
-                                                if entry.ab > self.min_ab:
-                                                    self.tmb_cnt += 1
-                                                    self.to_write.append(record)
+                        if entry.tlod:
+                            if entry.tlod > self.m2_tlod:
+                                if 'PON' not in entry.filt:
+                                    if not entry.bad_gene:
+                                        if 'm2' in entry.filt:
+                                            if entry.dp > self.min_dp_m2:
+                                                if 'PON_OV' in entry.filt:
+                                                    if entry.ab > self.min_ab_pon_ov:
+                                                        self.tmb_cnt += 1
+                                                        self.to_write.append(record)
+                                                else:
+                                                    if entry.ab > self.min_ab:
+                                                        self.tmb_cnt += 1
+                                                        self.to_write.append(record)
+                                        elif 'fb' in entry.filt or 'm2_fb' in entry.filt:
+                                            if entry.dp > self.min_dp_fb:
+                                                if 'PON_OV' in entry.filt:
+                                                    if entry.ab > self.min_ab_pon_ov:
+                                                        self.tmb_cnt += 1
+                                                        self.to_write.append(record)
+                                                else:
+                                                    if entry.ab > self.min_ab:
+                                                        self.tmb_cnt += 1
+                                                        self.to_write.append(record)
 
 class VcfCollector(object):
     """

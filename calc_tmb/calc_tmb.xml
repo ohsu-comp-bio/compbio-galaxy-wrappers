@@ -1,4 +1,4 @@
-<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.4.3" >
+<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.4.4" >
     <description>Calculate TMB from VCF annotations.</description>
 
     <requirements>
