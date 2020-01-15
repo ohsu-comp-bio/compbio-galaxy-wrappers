@@ -29,7 +29,13 @@
   --autosomal-ref-copy-number $optional.autosomal_ref_copy_number
 #end if
 
---calls-shard-path $calls_shard_path
+
+#if $calls_shard_path_rpt
+#for $arg in $calls_shard_path_rpt
+--calls-shard-path "${arg.calls_shard_path}/$sample_name-calls"
+#end for
+#end if
+
 #if $optional.cloud_index_prefetch_buffer
   --cloud-index-prefetch-buffer $optional.cloud_index_prefetch_buffer
 #end if
@@ -38,7 +44,7 @@
   --cloud-prefetch-buffer $optional.cloud_prefetch_buffer
 #end if
 
---contig-ploidy-calls $contig_ploidy_calls
+--contig-ploidy-calls "$contig_ploidy_calls/$sample_name-calls"
 #if $optional.disable_bam_index_caching
   $optional.disable_bam_index_caching
 #end if
@@ -126,11 +132,19 @@
 #end if
 ]]></command>
   <inputs>
-    <param name="calls_shard_path" argument="--calls-shard-path" type="data" optional="false" multiple="false" format="txt" label="Calls Shard Path" help="List of paths to GermlineCNVCaller call directories."/>
-    <param name="contig_ploidy_calls" argument="--contig-ploidy-calls" type="data" optional="false" multiple="false" format="txt" label="Contig Ploidy Calls" help="Path to contig-ploidy calls directory (output of DetermineGermlineContigPloidy)."/>
-    <param name="model_shard_path" argument="--model-shard-path" type="data" optional="false" multiple="false" format="txt" label="Model Shard Path" help="List of paths to GermlineCNVCaller model directories."/>
-    <param name="output_genotyped_intervals" argument="--output-genotyped-intervals" type="data" optional="false" multiple="false" format="txt" label="Output Genotyped Intervals" help="Output intervals VCF file."/>
-    <section expanded="False" name="optional" title="Optional Parameters">
+
+    <param name="sample_name" type="text" label="Sample Name"/>
+    <param name="dummy_germline_cnv" type="data" format="txt" multiple="true" label="Dummy Input from GermlineCNVCaller"/>
+    <repeat name="calls_shard_path_rpt" title="calls_shard_path">
+      <param name="calls_shard_path" argument="--calls-shard-path" type="text" optional="false" value="" label="Calls Shard Path" help="List of paths to GermlineCNVCaller call directories."/>
+    </repeat>
+    <repeat name="model_shard_path_rpt" title="model_shard_path">
+      <param name="model_shard_path" argument="--model-shard-path" type="text" optional="false" value="" label="Model Shard Path" help="List of paths to GermlineCNVCaller model directories."/>
+    </repeat>
+    <param name="dummy_contig_ploidy_calls" argument="--contig-ploidy-calls" type="data" optional="false" multiple="false" format="txt" label="Dummy Contig Ploidy Calls" help="Path to contig-ploidy calls directory (output of DetermineGermlineContigPloidy)."/>
+    <param name="contig_ploidy_calls" type="text" label="Contig Ploidy Calls"/>
+    <section name="optional" title="Optional Parameters" expanded="False">
+
       <expand macro="gatk_ints"/>
       <expand macro="ref_sel"/>
       <param name="allosomal_contig" argument="--allosomal-contig" type="text" optional="true" value="" label="Allosomal Contig" help="Contigs to treat as allosomal (i.e. choose their reference copy-number allele according to the sample karyotype)."/>
@@ -181,7 +195,11 @@
       </param>
     </section>
   </inputs>
-  <outputs/>
+  <outputs>
+    <data format="tsv" name="output_denoised_copy_ratios" label="${tool.name} on ${on_string}: output_denoised_copy_ratios tsv" help="Output denoised copy ratio file."/>
+    <data format="vcf" name="output_genotyped_intervals" label="${tool.name} on ${on_string}: output_genotyped_intervals vcf" help="Output intervals VCF file."/>
+    <data format="vcf" name="output_genotyped_segments" label="${tool.name} on ${on_string}: output_genotyped_segments vcf" help="Output segments VCF file."/>
+  </outputs>
   <tests/>
   <help><![CDATA[Postprocesses the output of GermlineCNVCaller and generates VCF files.
 
