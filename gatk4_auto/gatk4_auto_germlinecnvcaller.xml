@@ -49,7 +49,7 @@
   --cnv-coherence-length $optional.cnv_coherence_length
 #end if
 
---contig-ploidy-calls $contig_ploidy_calls
+--contig-ploidy-calls "$contig_ploidy_calls/$sample_name-calls"
 #if $optional.convergence_snr_averaging_window
   --convergence-snr-averaging-window $optional.convergence_snr_averaging_window
 #end if
@@ -217,8 +217,13 @@
 #end if
 ]]></command>
   <inputs>
-    <param name="contig_ploidy_calls" argument="--contig-ploidy-calls" type="text" optional="false" value="" label="Contig Ploidy Calls" help="Input contig-ploidy calls directory (output of DetermineGermlineContigPloidy)."/>
-    <param name="input" argument="--input" type="data" optional="false" multiple="false" format="h5" label="Input" help="Input read-count files containing integer read counts in genomic intervals for all samples.  All intervals specified via -L must be contained; if none are specified, then intervals must be identical and in the same order for all samples."/>
+    <param name="sample_name" type="text" label="Sample Name"/>
+    <repeat name="input_rpt" title="input">
+      <param name="input" argument="--input" type="data" optional="false" multiple="true" format="h5,tsv" label="Input" help="Input read-count files containing integer read counts in genomic intervals for all samples.  All intervals specified via -L must be contained; if none are specified, then intervals must be identical and in the same order for all samples."/>
+    </repeat>
+    <param name="dummy_contig_ploidy_calls" argument="--contig-ploidy-calls" type="data" optional="false" multiple="false" format="txt" label="Dummy Contig Ploidy Calls" help="Input contig-ploidy calls directory (output of DetermineGermlineContigPloidy)."/>
+    <param name="contig_ploidy_calls" arguments="--contig-ploidy-calls" type="text" optional="false" label="Contig Ploidy Calls"/>
+    <param name="output" argument="--output" type="text" optional="false" value="" label="Output" help="Output directory.  This will be created if it does not exist."/>
     <param name="output_prefix" argument="--output-prefix" type="text" optional="false" value="" label="Output Prefix" help="Prefix for output filenames."/>
     <param name="run_mode" argument="--run-mode" type="select" optional="false" multiple="false" label="Run Mode" help="Tool run-mode.">
       <option selected="false" value="COHORT">COHORT</option>
