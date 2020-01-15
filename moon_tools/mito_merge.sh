@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#curl -X GET -d "user_token=iSUQvGmVNSjq834g9fP5" -d "user_email=campbena@ohsu.edu" https://oregon.moon.diploid.com/samples/$1/patient-info > info.txt
-python moon_api.py -id $1 -mode info
+python moon_api.py -id $1 -mode info -user $4 -token $5
 
 HPOS=$( grep 'showterm?id=HP:' info.txt | sed "s/[<][^>]*[>]//g")
 
@@ -106,50 +105,21 @@ PARENTS=$(less parents.txt)
 NEW_ID=$1
 
 if [[ ! -z $TRIO_CHECK ]]; then
-echo "  curl -F ?user_token=iSUQvGmVNSjq834g9fP5?\ "
-echo "       -F ?user_email=campbena@ohsu.edu?\ "
-echo "       -F ?snp_vcf_file=@$2?\ "
-echo "       -F ?sv_vcf_file=@$3?\ "
-echo "       -F ?age=$AGE?\ "
-echo "       -F ?gender=$GENDER?\ "
-echo "       -F ?is_consanguinous=$IS_CONSANG?\ "
-echo "       -F ?hpo_terms=$HPO_TERMS?\ "
-echo "       -F ?family_members=$PARENTS?\ "
-echo "       https://oregon.moon.diploid.com/samples.json"
 
-python moon_api.py -snp $2 -cnv $3 -mode post -age $AGE -gender $GENDER -consang $IS_CONSANG -hp $HPO_TERMS -family $PARENTS
-  #NEW_ID=$(curl -F "user_token=j4yKzsZivJuCXzoxdUM6"\
-       #-F "user_email=potteram@ohsu.edu"\
-       #-F "snp_vcf_file=@$2"\
-       #-F "sv_vcf_file=@$3"\
-       #-F "age=$AGE"\
-       #-F "gender=$GENDER"\
-       #-F "is_consanguinous=$IS_CONSANG"\
-       #-F "hpo_terms=$HPO_TERMS"\
-       #-F "family_members=$PARENTS"\
-       #https://oregon.moon.diploid.com/samples.json | sed 's/[^0-9]*//g' )
+python moon_api.py -snp $2 -cnv $3 -mode post -age $AGE -gender $GENDER -consang $IS_CONSANG -hp $HPO_TERMS -family $PARENTS -user $4 -token $5
+
 else
 
-  python moon_api.py -snp $2 -cnv $3 -mode post -age $AGE -gender $GENDER -consang $IS_CONSANG -hp $HPO_TERMS
-  
-#  NEW_ID=$(curl -F "user_token=j4yKzsZivJuCXzoxdUM6"\
-#       -F "user_email=potteram@ohsu.edu"\
-#       -F "snp_vcf_file=@$2"\
-#       -F "sv_vcf_file=@$3"\
-#       -F "age=$AGE"\
-#       -F "gender=$GENDER"\
-#       -F "is_consanguinous=$IS_CONSANG"\
-#       -F "hpo_terms=$HPO_TERMS"\
-#       https://oregon.moon.diploid.com/samples.json | sed 's/[^0-9]*//g' )
+  python moon_api.py -snp $2 -cnv $3 -mode post -age $AGE -gender $GENDER -consang $IS_CONSANG -hp $HPO_TERMS -user $4 -token $5
 
 fi
  
 NEW_ID=$(sed 's/[^0-9]*//g' new_id.txt)
 echo $NEW_ID
 
-python moon_api.py -id $NEW_ID -mode analyse
+python moon_api.py -id $NEW_ID -mode analyse -user $4 -token $5
 
-#curl -F "user_token=iSUQvGmVNSjq834g9fP5" -F "user_email=campbena@ohsu.edu" https://oregon.moon.diploid.com/samples/$NEW_ID/analysis.json       
+
        
        
        

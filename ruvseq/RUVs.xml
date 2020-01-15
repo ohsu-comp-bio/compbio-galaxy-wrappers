@@ -5,7 +5,7 @@
         <requirement type="package" version="3.6.1">r</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
-    Rscript $__tool_directory__/RUVs.R $input $norm $minNumReads $minNumSamples $factors $repID
+    Rscript $__tool_directory__/RUVs.R '$input' '$norm' '$minNumReads' '$minNumSamples' '$idxSamples' '$factors' '$repID'
     #if $genes.all == "all":
         all
     #else if $genes.all == "regex":
@@ -17,12 +17,21 @@
     </command>
     <inputs>
         <param type="data" name="input" label="Input File" format="txt"/>
-        <param type="select" name="norm" label="Normalize to counts per million (CPM)" help="">
+        <param type="select" name="norm" value="Yes" label="Normalize to counts per million (CPM)" help="">
             <option value="TRUE">Yes</option>
             <option value="FALSE">No</option>
         </param>
         <param type="text" name="repID" label="Replicate Identification" help="String that occurs in all the replicates by which they can be found. 
-If BCCL inluded: UHR,SkBr3,T47D,HCC1954" value="UHR"/>
+If BCCL inluded: UHR,SkBr3,T47D$,HCC1954" value="UHR">
+          <sanitizer>
+            <valid initial="string.printable">
+              <remove value="&apos;"/>
+            </valid>
+            <mapping initial="none">
+             <add source="&apos;" target="__sq__"/>
+            </mapping>
+           </sanitizer>
+        </param>
         <conditional name="genes">
             <param name="all" type="select" label="Control Genes">
                 <option value="all" selected="True">Use all genes</option>
@@ -36,9 +45,10 @@ If BCCL inluded: UHR,SkBr3,T47D,HCC1954" value="UHR"/>
                 <param type="text" name="genes" label="Genes" help="A comma seperated list of all control genes."/>
             </when>
         </conditional>
-        <param type="integer" name="factors" label="Factors" value="1"/>
-        <param type="integer" name="minNumReads" label="Minimum Number of Expression (after normalization)" value="5"/>
-        <param type="integer" name="minNumSamples" label="Minimum Number of Samples" value="2"/>
+        <param type="integer" name="factors" value="7" label="Factors"/>
+        <param type="integer" name="minNumReads" label="Minimum number of reads, filtering performed after normalization if selected" value="10"/>
+        <param type="text" name="idxSamples" label="Indices of samples required to have minimum number reads. 1:ncol(ndata) if using all columns" value="81:ncol(ndata)"/>
+        <param type="integer" name="minNumSamples" label="Minimum number of samples in the indexed samples with minimum number of reads" value="6"/>
     </inputs>
     <outputs>
         <data format="pdf" name="plots" label="${tool.name} on $on_string: ruv plots.pdf" from_work_dir="Rplots.pdf"/>
@@ -50,25 +60,40 @@ If BCCL inluded: UHR,SkBr3,T47D,HCC1954" value="UHR"/>
 
 Runs Davide Risso's version of RUVseq optimized for RNAseq normalized counts. The output
 is just the weights from factor analysis removed from observed variables(genes).
-Not an ideal way to perform factor analysis or perform RUV analysis. The output are the 
-weights from factor analysis removed from the signal. 
+Not an ideal way to perform factor analysis or perform RUV analysis. The output are the
+weights from factor analysis removed from the signal.
 
-If data matrix includes breast cancer cell lines use *counts per million*. Filter 10% of 
-samples with mincnt = 10 and setk=7. Replicates are based on whether the data include the 
-BCCL data replicates are: SkBr3, T47D, HCC1954.
+If data matrix includes breast cancer cell lines then normalized to *counts per million* (CPM).
+The 20190801 matrix was filtered by 10% of SMMART and UHR samples (minNumSamples = 6 in columns 81:144)
+with counts greater then 10 CPM (minNumReads = 10). Replicates are based on whether the data include the
+BCCL data replicates are: SkBr3, T47D, HCC1954, T47D (not T47DKbluc).
 
-If data matrix does not include cancer cell lines with replicates then reccommend using 
-TPM matrix, use filtperc=10, mincnt = 3, setk=1.
+-  Minimum number of reads = 10
+-  Indices of samples = 81:144
+-  Minimum Number of Samples= 6
+-  k=7
+
+If data matrix is TPM with only UHRs and SMMART samples. Input matrix of TPM no normalization
+necessary. 20190801 was filtered by 10% SMMART samples and UHR samples (6 samples) have tpm
+greater then a minimum tpm of 3
+
+- Minimum Number of Expression (after normalization) = 3
+- Indices of samples = 81:144
+- Minimum Number of Samples= 6
+- k=1
 
 Risso et.al. Nature Biotechnology volume 32, (2014)
 
 Inputs:
-1.  mat=matrix
-3.  ctrlregex = regexpr that repeats are based off. ie. \"*UHR*\"
-5.  minNumSamples: minimum number of samples with counts/tpm/rpkm less that
-filt_cnt filtered out.
-6.  minNumReads: minimum number of counts/tpm/rpkm to be filtered out
-8.  number of factors to remove
 
+ $input $norm $minNumReads $minNumSamples $idxSamples $factors $repID
+
+1.  input=matrix
+2.  norm = normalize by CPM or no normalization
+3.  minNumReads: minimum number of counts/tpm/rpkm to be filtered out
+4.  Indices of samples: indices of input matrix that filtering is applied to
+5.  minNumSamples: minimum number of samples (defined by indices) with counts/tpm/rpkm less that minNumReads filtered out.
+6.  number of factors to remove
+7.  regex defining replicates
     ]]></help>
 </tool>

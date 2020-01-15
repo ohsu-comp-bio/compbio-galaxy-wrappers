@@ -1,0 +1,260 @@
+<?xml version='1.0' encoding='utf-8'?>
+<toolbox tool_path="/home/groups/clinical/clinglxydev/compbio-galaxy-wrappers">
+  <section id="DNA_sequencing" name="DNA sequencing tools">
+    <label id="BWA" text="BWA-MEM 0.7.9a" />
+    <tool file="bwa/bwa_mem.xml" />
+    <label id="Samtools" text="Samtools version 0.1.19"/>
+    <tool file="sam_to_bam/sam_to_bam.xml" />
+    <tool file="samtools_flagstat/samtools_flagstat.xml" />
+    <tool file="samtools_index/samtools_index.xml" />
+    <label id="Scalpel" text="Scalpel Microaligner"/>
+    <tool file="scalpel/scalpel.xml" />
+    <!-- <label id="GATK4_auto" text="GATK4 Auto-generated tools"/> -->
+    <!-- <tool file="gatk4_auto/gatk4_genotypegvcfs.xml"/> -->
+    <!-- <tool file="gatk4_auto/gatk4_combinegvcfs.xml"/> -->
+    <!-- <tool file="gatk4_auto/gatk4_selectvariants.xml"/> -->
+    <!-- <tool file="gatk4_auto/gatk4_variantannotator.xml"/> -->
+    <!-- <tool file="gatk4_auto/gatk4_collectreadcounts.xml"/> -->
+    <!-- <tool file="gatk4_auto/gatk4_plotdenoisedcopyratios.xml"/> -->
+    <!-- <tool file="gatk4_auto/gatk4_denoisereadcounts.xml"/> -->
+    <!-- <tool file="gatk4_auto/gatk4_modelsegments.xml"/> -->
+    <!-- <tool file="gatk4_auto/gatk4_callcopyratiosegments.xml"/> -->
+    <!-- <tool file="gatk4_auto/gatk4_plotmodeledsegments.xml"/> -->
+    <!-- <tool file="gatk4_auto/gatk4_collectalleliccounts.xml"/> -->
+    <label id="GATK" text="GATK version 3.2"/>
+    <tool file="gatk/realigner_target_creator.xml" />
+    <tool file="gatk/indel_realigner.xml" />
+    <tool file="gatk/realigner_target_creator_basic.xml" />
+    <tool file="gatk/indel_realigner_basic.xml" />
+    <tool file="gatk/base_recalibrator.xml" />
+    <tool file="gatk/print_reads.xml" />
+    <tool file="gatk/haplotype_caller.xml"/>
+    <tool file="gatk/mutect2.xml"/>
+    <tool file="gatk/splitncigarreads.xml"/>
+    <tool file="gatk/unified_genotyper.xml"/>
+    <tool file="gatk/depth_of_coverage.xml"/>
+    <tool file="gatk/variant_filtration.xml"/>
+    <tool file="gatk/variant_annotator.xml"/>
+    <tool file="gatk/variant_combine.xml"/>
+    <tool file="gatk/variant_apply_recalibration.xml"/>
+    <tool file="gatk/variant_recalibrator.xml"/>
+    <tool file="gatk/variant_select.xml"/>
+    <label id="vt" text="VT Tools" />
+    <tool file="vt/vt_normalize.xml" />
+
+    <label id="GATK4" text="GATK4"/>
+    <tool file="gatk4/mutect2.xml"/>
+    <tool file="gatk4/mutect2_heme2.xml"/>
+    <!-- <tool file="gatk4/gatk4_haplotypecaller.xml"/> -->
+    <!-- <tool file="gatk4/gatk4_markduplicates.xml"/> -->
+    <!-- <tool file="gatk4/gatk4_clipreads.xml"/> -->
+    <label id="bedtools" text="Bedtools"/>
+    <tool file="bedtools/bamToFastq.xml" />
+
+    <!-- <label id="Picard" text="Picard version 1.110"/> -->
+    <!-- <tool file="picard/rgPicardMarkDups.xml" /> -->
+    <!-- <tool file="picard/picard_SamToFastq.xml" /> -->
+    <!-- <tool file="picard/rgPicardSamFormatConverter.xml" /> -->
+    <tool file="picard/rgPicardSortSam.xml" />
+    <tool file="picard/rgPicardASMetrics.xml" />
+    <!-- <tool file="picard/picard_AddOrReplaceReadGroups.xml" /> -->
+
+    <!-- <label id="Picard2" text="Picard version 2.7.1"/> -->
+    <!-- <tool file="picard2/picard_AddCommentsToBam.xml" /> -->
+    <!-- <tool file="picard2/picard_AddOrReplaceReadGroups.xml" /> -->
+    <!-- <tool file="picard2/picard_BedToIntervalList.xml" /> -->
+    <!-- <tool file="picard2/picard_CleanSam.xml" /> -->
+    <!-- <tool file="picard2/picard_CollectAlignmentSummaryMetrics.xml" /> -->
+    <!-- <tool file="picard2/picard_CollectBaseDistributionByCycle.xml" /> -->
+    <!-- <tool file="picard2/picard_CollectGcBiasMetrics.xml" /> -->
+    <!-- <tool file="picard2/picard_CollectInsertSizeMetrics.xml" /> -->
+    <!-- <tool file="picard2/picard_CollectRnaSeqMetrics.xml" /> -->
+    <!-- <tool file="picard2/picard_CollectWgsMetrics.xml" /> -->
+    <!-- <tool file="picard2/picard_DownsampleSam.xml" /> -->
+    <!-- <tool file="picard2/picard_EstimateLibraryComplexity.xml" /> -->
+    <!-- <tool file="picard2/picard_FastqToSam.xml" /> -->
+    <!-- <tool file="picard2/picard_FilterSamReads.xml" /> -->
+    <!-- <tool file="picard2/picard_FixMateInformation.xml" /> -->
+    <!-- <tool file="picard2/picard_MarkDuplicatesWithMateCigar.xml" /> -->
+    <!-- <tool file="picard2/picard_MarkDuplicates.xml" /> -->
+    <!-- <tool file="picard2/picard_MeanQualityByCycle.xml" /> -->
+    <!-- <tool file="picard2/picard_MergeBamAlignment.xml" /> -->
+    <!-- <tool file="picard2/picard_MergeSamFiles.xml" /> -->
+    <!-- <tool file="picard2/picard_NormalizeFasta.xml" /> -->
+    <!-- <tool file="picard2/picard_QualityScoreDistribution.xml" /> -->
+    <!-- <tool file="picard2/picard_ReorderSam.xml" /> -->
+    <!-- <tool file="picard2/picard_ReplaceSamHeader.xml" /> -->
+    <!-- <tool file="picard2/picard_RevertOriginalBaseQualitiesAndAddMateCigar.xml" /> -->
+    <!-- <tool file="picard2/picard_RevertSam.xml" /> -->
+    <!-- <tool file="picard2/picard_SortSam.xml" /> -->
+    <!-- <tool file="picard2/picard_ValidateSamFile.xml" /> -->
+
+    <!-- <label id="mutect" text="MuTect version 1.1.7" /> -->
+    <!-- <tool file="mutect/muTect.xml" /> -->
+    <label id="freebayes" text="Freebayes" />
+    <tool file="freebayes/freebayes.xml" />
+
+    <label id="trimm" text="Trimmomatic" />
+    <tool file="trimmomatic/trimmomatic.xml" />
+    <tool file="cutadapt/cutadapt.xml" />
+    <label id="trimgalore" text="Trim Galore 0.4.3" />
+    <tool file="trim_galore/trim_galore.xml" />
+
+  </section>  
+  <section id="RNA_sequencing" name="RNA sequencing tools">
+    <label id="tophat2" text="Tophat2 version 2.0.14" />
+    <tool file="tophat/tophat2_wrapper.xml" />
+    <label id="cufflinks" text="Cufflinks version 2.2.1" />
+    <tool file="cufflinks/cuffmerge_wrapper.xml" />
+    <tool file="cufflinks/cufflinks_wrapper.xml" />
+    <tool file="cufflinks/cuffdiff_wrapper.xml" />
+    <label id="star" text="STAR 2.5.3a" />
+    <tool file="rgrnastar/rg_rnaStar.xml" />
+    <tool file="rgrnastar/rg_rnaStar_RNA_Access_Fusions_Variants.xml" />
+    <label id="starfusion" text="STAR-Fusion 1.0.0" />
+    <!-- <tool file="star_fusion/star_fusion.xml" /> -->
+    <tool file="star_fusion/star_fusion_v2.xml" />
+    <label id="kallisto" text="Kallisto 0.43.0" />
+    <tool file="kallisto/kallisto_quant.xml" />
+    <tool file="kallisto/kallisto_pseudo.xml" />
+    <label id="Fusion Annotation" text="Fusion Annotation Tools" />
+    <tool file="fusion_annotation/fusion_annotation.xml" />
+    <label id="counts_data" text="Count Data Tools" />
+    <tool file="htseq_count/htseq-count.xml" />
+    <label id="normalization" text="Normalization Tools"/>
+    <tool file="RUVs/RUVs.xml"/>
+    <tool file="RUVs/RUVg.xml"/>
+    <tool file="pam50/pam50.xml"/>
+   </section>
+
+  <!-- <section id="cbioportal_tools" name="cBioPortal Tools"> -->
+  <!--   <tool file="cbioportal/cbioportal_create_files.xml" /> -->
+  <!--   <tool file="cbioportal/cbioportal_importer_tool.xml" /> -->
+  <!--   <tool file="cbioportal/cbioportal_get_database_info.xml" /> -->
+  <!-- </section> -->
+  <!-- <section id="gatk_cocleaning" name="MC3 GATK Co-cleaning Tools"> -->
+  <!--   <tool file="gatk_cocleaning/gatk_bqsr.xml" /> -->
+  <!--   <tool file="gatk_cocleaning/gatk_indel.xml" /> -->
+  <!-- </section> -->
+  <section id="seattleseq" name="SeattleSeq Tools">
+    <tool file="seattleseq/writeGenotype.xml"/>
+    <tool file="seattleseq/getAnnotation.xml"/>
+    <tool file="seattleseq/seattleseq_filter.xml"/>
+    <tool file="seattleseq/variant_filter.xml"/>
+  </section>
+  <!-- <section id="duplex_seq" name="Duplex Sequencing"> -->
+  <!--   <tool file="duplex_seq/tag_to_header.xml"/> -->
+  <!--   <tool file="duplex_seq/ConsensusMaker_fq_output.xml"/> -->
+  <!--   <tool file="duplex_seq/duplex_mutation_output.xml"/> -->
+  <!-- </section> -->
+  <section id="custom_tools" name="Custom tools">
+    <tool file="tsv_to_vcf/tsv_to_vcf.xml"/>
+    <tool file="file_count/file_count.xml"/>
+    <tool file="intervalqc/intervalqc_v2.xml"/>
+    <tool file="sample_metrics/sample_metrics.xml"/>
+    <tool file="sample_metrics/sample_metrics_rna.xml"/>
+    <!-- <tool file="move_file/move_bam.xml"/> -->
+    <!-- <tool file="split_mult_alleles_vcf/split_mult_alleles_vcf.xml"/> -->
+    <tool file="remove_zero_dp/remove_zero_dp.xml"/>
+    <tool file="remove_rare_refs/remove_rare_ref_calls.xml"/>
+    <tool file="scalpel/replace_sample_column.xml"/>
+    <tool file="add_af/add_af.xml"/>
+    <tool file="use_mutect2_calls/use_mutect2_calls_qiaseq_v3_heme2.xml"/>
+    <tool file="vcf_combine/vcf_combine.xml"/>
+    <tool file="use_pon/use_pon_dev.xml"/>
+    <tool file="annotate_vcf_with_bed/annotate_vcf_with_bed.xml"/>
+    <tool file="pon_filt/pon_filt.xml"/>
+    <tool file="filter_strand/filter_strand.xml"/>
+    <tool file="umi_metrics/umi_metrics.xml"/>
+    <tool file="mrd_dedup/mrd_dedup.xml"/>
+    <tool file="replace_filt/replace_filt.xml"/>
+    <tool file="itd_detect/itd_detect.xml"/>
+    <tool file="primer_clip/primer_clip.xml"/>
+    <tool file="sort_vcf/sort_vcf.xml"/>
+    <tool file="cgd_client/cgd_client.xml"/>
+    <tool file="use_mutect2_calls/use_mutect2_calls.xml"/>
+    <tool file="add_clinvar_vcf/add_clinvar_vcf.xml"/>
+    <tool file="oncotator/oncotator.xml"/>
+    <tool file="calc_tmb/calc_tmb.xml"/>
+    <!-- <tool file="split_mult_alleles_vcf/split_mult_alleles_vcf_next.xml"/> -->
+    <!-- <tool file="calc_ab/calc_ab.xml"/> -->
+    <tool file="hop_vcf_filt/hop_vcf_filt.xml"/>
+    <tool file="hgvs_annotate/hgvs_annotate.xml"/>
+    <tool file="parse_star_splicesites/parse_star_splicesites.xml"/>
+    <tool file="calc_norm/calc_norm.xml"/>
+    <!-- <tool file="move_file/move_file.xml"/> -->
+    <tool file="pear/pear.xml"/>
+    <tool file="umi_tools/umi_tools_dedup.xml"/>
+    <tool file="umi_tools/umi_tools_extract.xml"/>
+    <tool file="msisensor/msisensor_msi.xml"/>
+    <!-- Below this point are tools that are not currently being used in our workflows. -->
+    <!-- <tool file="jhl_tools/varscan_mpileup.xml"/> -->
+    <!-- <tool file="jhl_tools/varscan_somatic.xml"/> -->
+    <!-- <tool file="pindel/pindel.xml"/> -->
+    <!-- <tool file="breakdancer/breakdancer.xml"/> -->
+    <!-- <tool file="parse_doc_output/parse_doc_output.xml"/> -->
+    <!-- <tool file="vcfsorter/vcfsorter.xml"/> -->
+    <!-- <tool file="jhl_tools/rem_dup_tandem.xml"/> -->
+    <!-- <tool file="jhl_tools/send_to_cgd.xml"/> -->
+    <!-- <tool file="send_to_cgd/send_to_cgd_dev.xml"/> -->
+    <!-- <tool file="jhl_tools/interval_qc.xml"/> -->
+    <!-- <tool file="seattleseq_split/seattleseq_split.xml"/> -->
+    <!-- <tool file="jhl_tools/write_fake_doc.xml"/> -->
+
+
+    <!-- <tool file="jhl_tools/append_tumor_to_cnv.xml"/> -->
+    <!-- <tool file="jhl_tools/cna-analysis-25Apr14.xml"/> -->
+    <!-- <tool file="jhl_tools/reduce_vcf_alleles/reduce_vcf_alleles.xml"/> -->
+    <!-- <tool file="jhl_tools/break_mutect_vcf_triallelic.xml"/> -->
+    <!-- <tool file="jhl_tools/merge_vcf_ad.xml"/> -->
+    <!-- <tool file="jhl_tools/umi_reformat_bam.xml"/> -->
+    <!-- <tool file="jhl_tools/umi_reformat_fastq.xml"/> -->
+    <!-- <tool file="jhl_tools/gather_vcfs.xml"/> -->
+    <!-- <tool file="exomiser/exomiser.xml"/> -->
+    <!-- <tool file="jhl_tools/convert_ENSids.xml"/> -->
+    <!-- <tool file="jhl_tools/use_pon.xml"/> -->
+    <!-- <tool file="jhl_tools/add_hotspots.xml"/> -->
+    <!-- <tool file="jhl_tools/dedup_seattleseq_header.xml"/> -->
+    <!-- <tool file="jhl_tools/vcf_avg_af.xml"/> -->
+    <!-- <tool file="dbnsfp/dbnsfp.xml"/> -->
+    <!-- <tool file="hgmd_ann/hgmd_ref_pull.xml"/>     -->
+  </section>
+  <!-- <section id="access_control" name="Access Control Tools"> -->
+  <!--   <tool file="nfs4_setfacl/add_nfsv4_permissions.xml"/> -->
+  <!-- </section> -->
+  <section id="cnv_tools" name="CNV tools">
+    <label id="xhmm" text="XHMM" />
+    <tool file="xhmm/xhmm_prepareTargets.xml"/>
+    <tool file="xhmm/xhmm_mergeGATKdepths.xml"/>
+    <tool file="xhmm/xhmm_matrix.xml"/>
+    <tool file="xhmm/xhmm_pca.xml"/>
+    <tool file="xhmm/xhmm_normalize.xml"/>
+    <tool file="xhmm/xhmm_discover.xml"/>
+    <tool file="xhmm/xhmm_genotype.xml"/>
+    <tool file="xhmm/xhmm_annotate.xml"/>
+    <label id="gatk_cnv" text="GATK CNV" />
+    <tool file="CNV_plotter/stpv3_CNV_grapher_NT.xml"/>
+    <tool file="CNV_plotter/stpv3_CNV_grapher.xml"/>
+    <tool file="CNV_plotter/png_to_pdf.xml"/>
+    <tool file="gatk_cnv_annotate/gatk4_cnv_annotate.xml"/>
+  </section>
+
+  <!-- <section name="snpEff tools" id="snpEff_tools"> -->
+  <!--   <tool file="snpEff/snpEff.xml" /> -->
+  <!--   <tool file="snpEff/snpEff_download.xml" /> -->
+  <!--   <tool file="snpEff/snpSift_annotate.xml" /> -->
+  <!--   <tool file="snpEff/snpSift_caseControl.xml" /> -->
+  <!--   <tool file="snpEff/snpSift_filter.xml" /> -->
+  <!--   <tool file="snpEff/snpSift_int.xml" /> -->
+  <!-- </section> -->
+  <section name="Moon Tools" id="moon_tools">
+    <tool file="moon_tools/de_dup.xml" />
+    <tool file="moon_tools/gene_filter.xml" />
+    <tool file="moon_tools/moon_filter.xml" />
+    <tool file="moon_tools/populator.xml" />
+    <tool file="moon_tools/moon_cnv_formater.xml" />
+    <!-- <tool file="moon_tools/gatk4_sortvcf.xml" /> -->
+    <tool file="moon_tools/moon_reposter.xml" />
+    <tool file="moon_tools/exomiser/exomiser.xml" />
+  </section>
+</toolbox>

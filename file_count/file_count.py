@@ -4,7 +4,7 @@ from __future__ import print_function
 import argparse
 import os
 
-VERSION = '0.1.1'
+VERSION = '0.2.0'
 
 
 def supply_args():

@@ -1,0 +1,47 @@
+SMMART Compound	Signature Generated	Target	Agent Class	Breast data and signature notes
+Abiraterone	no	AR> CYP17	Hormone therapy: AR antagonist	limited activity - most resistant
+Afatinib (BIBW2992)	yes	EGFR/HER2/HER4	Kinase pathway: tyrosine kinase inhibitor	signature generated
+Afinitor	no	CDK4/6	Kinase pathway: CDK 4/6 kinase inhibitor	no activity - all resistant - duplicate
+Alpelisib (BYL719)	yes	PI3K	Chemotherapy with PI3K inhibitor	signature generated
+AS_252424	no	PI3K		no activity - all resistant
+Bevacizumab	no	pan-VEGF	Kinase pathway: monoclonal antibody	not tested
+Bortezomib	no	26S proteasome	Proteasome inhibitor	"not currently included, but we have historical data"
+Cabazitaxel	no	Centrosome/mitotic spindle	Chemotherapy	"not tested, but we have signatures and data for other chemos"
+Cabozantinib	no	cMET/pan-VEGFR/RET/FLT3/TIE2/AXL/TRKB/KIT	Kinase pathway: tyrosine kinase inhibitor	no activity - all resistant
+Carboplatin	yes	DNA repair	Chemotherapy	signature generated
+Celecoxib	no	COX-2	NSAID	not tested
+Dactolisib	yes	PI3K/mTOR 	Kinase pathway: PI3K-AKT	variable response at serum concentration
+Dasatinib	no	BCR-ABL/SRC family/KIT/Ephrins/PDGFR_/STAT5B/ BTK	Kinase pathway: tyrosine kinase inhibitor	"not currently included, but we have historical data"
+Enzalutamide	no	AR	Hormone therapy: AR antagonist	no activity - all resistant
+Erlotinib	no	EGFR	Kinase pathway: tyrosine kinase inhibitor	"not currently included, but we have historical data"
+Everolimus	yes	mTOR	Kinase pathway: mTOR inhibitor	signature generated
+Folfox	no	"5FU, oxaliplatin, leucovorin"	Chemotherapy	not tested
+Gemcitabine	yes	Nucleic Acid Inhibitor	Chemotherapy	variable response at serum concentration
+Ibuprofen+Levoxyl+Lapatinib	no	EGFR/ERBB2	Kinase pathway: MAP kinase inhibitor	no activity - all resistant
+Idelalisib	no	PI3Kdelta	Kinase pathway: tyrosine kinase inhibitor	"not tested, but have signatures for other PI3K inhibitors"
+Imatinib	no	BCR-ABL/KIT/pan-PDGFR/RET/NTRK1/ CSF1R/DDR1	Kinase pathway: tyrosine kinase inhibitor	not tested
+Ipilimumab	no	CTLA-4	Immune checkpoint inhibitor: antibody	not tested
+Lapatinib	yes	EGFR/ERBB2	Kinase pathway: tyrosine kinase inhibitor	variable response at serum concentration
+Lenvatinib	no	"VEGFR1/2/3, FGFR, RET"	Kinase pathway: tyrosine kinase inhibitor	no activity - all resistant
+Linsitinib OSI_906	no	IGF1R	Kinase pathway: tyrosine kinase inhibitor	limited activity
+Lenvatinib	no	pan-VEGFR/FLT1/FLT 4/pan-FGFR/RET/ KIT/pan-PDGFR	Kinase pathway: tyrosine kinase inhibitor	not tested
+Nivolumab	no	PD-1	Immune checkpoint inhibitor: antibody	not tested
+Olaparib	no	PARP1/2/3	DNA damage pathway: PARP inhibitor	variable response at serum concentration
+Omipalisib	no	PIK3C/MTOR	Kinase pathway: PI3K-AKT	no activity - all sensitive
+Palbociclib (PD-0332991)	no	CDK4/6	Kinase pathway: CDK 4/6 kinase inhibitor	limited activity - most resistant
+Panobinostat	no	HDAC/HIF-Ia	Epigenetic modulator: HDAC Inhibitor	not tested
+PD184352 (CI1040)	no	MEK1/2		no activity - all resistant
+Pembrolizumab	no	PD-1	Immune checkpoint inhibitor: antibody	not tested
+Pertuzumab+Herceptin	no	HER2/HER3	Kinase pathway: monoclonal antibody	no activity - all resistant
+Ponatinib	yes	BCR-ABL	Kinase pathway: tyrosine kinase inhibitor	no activity - all resistant
+Ruxolitinib	no	JAK1/2	Kinase pathway: tyrosine kinase inhibitor	not tested
+Selumetinib	yes	MEK/ERK1/2	Kinase pathway: MAP kinase inhibitor	variable response at serum concentration
+Sirolimus	yes	mTOR	Kinase pathway: mTOR inhibitor	signature generated
+Sorafenib	no	pan-VEGFR/FLT3/KIT/PDGFRB/BRAF/ FGFR1/RET/ FLT1	Kinase pathway: tyrosine kinase inhibitor	not tested
+Sunitinib	no	pan-PDGFR/pan-VEGFR/KIT/FLT1 and 3/CSF1R/RET	Kinase pathway: tyrosine kinase inhibitor	not tested
+Temsirolimus	yes	mTOR	Kinase pathway: mTOR inhibitor	variable response at serum concentration
+Trametinib	yes	MEK1/2	Kinase pathway: MAP kinase inhibitor	signature generated
+Tretinoin (ATRA)	yes	RAR alpha/RXR	Chemotherapy	no activity - all resistant
+Vemurafenib	no	BRAF/BRK/SRC/CSK/VEGFR2/FAK/ MST1/CSF1R/ PTK5/HCK/ PDGFRA	Kinase pathway: RAF kinase inhibitor	not tested
+Venetoclax	no	BCL2 	Apoptotic pathway: BCL-2 inhibitor	not tested
+Vorinostat	yes	HDAC	Epigenetic modulator: HDAC Inhibitor	variable response at serum concentration

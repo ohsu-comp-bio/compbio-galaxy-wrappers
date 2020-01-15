@@ -60,7 +60,7 @@ def html_report_from_directory( html_out, dir ):
     html_out.write( '</ul>\n</body>\n</html>\n' )
 
 def index_bam_files( bam_filenames, tmp_dir ):
-    print("Indexing bam files: %s" % bam_filenames)
+#    print("Indexing bam files: %s" % bam_filenames)
     for bam_filename in bam_filenames:
         bam_index_filename = "%s.bai" % bam_filename
         if not os.path.exists( bam_index_filename ):
@@ -99,7 +99,8 @@ def __main__():
     else:
         cmd = ''
     if options.pass_through_options_encoded:
-        cmd = '%s %s' % ( cmd, ' '.join( map( unhexlify, options.pass_through_options_encoded ) ) )
+#        cmd = '%s %s' % ( cmd, ' '.join( map( unhexlify, options.pass_through_options_encoded ) ) )
+        cmd = '%s %s' % ( cmd, ' '.join( options.pass_through_options_encoded ) )
     if options.max_jvm_heap is not None:
         cmd = cmd.replace( 'java ', 'java -Xmx%s ' % ( options.max_jvm_heap ), 1 )
     elif options.max_jvm_heap_fraction is not None:

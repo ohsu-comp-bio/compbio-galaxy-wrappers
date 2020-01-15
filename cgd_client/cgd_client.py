@@ -32,7 +32,7 @@ def supply_args():
 
     parser.add_argument('stdout_log', help='')
     parser.add_argument('endpoint', help='')
-#    parser.add_argument('java8_path', help='Java 8 PATH as defined in JAVA8_PATH.')
+    parser.add_argument('--java8_path', default='/home/exacloud/clinical/installedTest/jdk1.8.0_144/bin/java', help='Java 8 PATH as defined in JAVA8_PATH.')
     parser.add_argument('--report_vcf', help='Output VCF if utilizing '
                                              'reportvariants endpoint.')
     parser.add_argument('--report_bed', help='Output BED if utilizing '
@@ -122,7 +122,7 @@ def build_cmd(args, recvd_prof=False):
     """
     Build the command that will send data to the CGD.
     """
-    cmd = ['java', '-jar', args.cgd_client, "-n", args.endpoint, "-c", args.cgd_config]
+    cmd = [args.java8_path, '-jar', args.cgd_client, "-n", args.endpoint, "-c", args.cgd_config]
     newfile = ""
 
     if args.servicebase:
@@ -153,7 +153,7 @@ def build_cmd(args, recvd_prof=False):
     elif args.endpoint == "snpProfile" and recvd_prof:
         cmd.extend(["-j", args.json_out])
     elif args.endpoint == "none":
-        cmd = ["java", "-jar", args.cgd_client, "-f", args.pipeline_out, "-u", args.cgd_url]
+        cmd = [args.java8_path, "-jar", args.cgd_client, "-f", args.pipeline_out, "-u", args.cgd_url]
     else:
         cmd.extend(["-f", args.pipeline_out])
 

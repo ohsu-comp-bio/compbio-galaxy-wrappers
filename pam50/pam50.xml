@@ -1,18 +1,56 @@
-<tool id='pam50' name="PAM50" version='1.0.0'>
+<tool id='pam50' name="PAM50" version='1.0.0.1'>
     <description>applies the PAM50 algorithm</description>
     <requirements>
         <requirement type="package" version="3.5.1">r</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
-    Rscript $__tool_directory__/pam50.R $__tool_directory__/target_id.txt $__tool_directory__/pam50_centroids_update.txt $input "$hugo"
+    Rscript "$script"
 ]]>
     </command>
+    <configfiles>
+        <configfile name="script">
+
+centroids_file = "$__tool_directory__/tool-data/pam50_centroids_update.txt"
+input = "$input"
+method = "$method"
+
+## Load centroid file
+centroids = read.csv(centroids_file, check.names = FALSE, sep="\t", row.names = 1)
+
+## Load gene expression file (columns samples, rows genes)
+exp = read.csv(input, sep="\t", row.names = 1, header=TRUE, check.names = FALSE)
+
+## Log transform matrix
+# log2(x+1) the ruv fixed matrix
+l.exp=log2(exp+1)
+
+## Z-SCALING: Calculate z-score for each gene across all samples: z-score=(value-gene mean)/gene sd
+sctl.exp = t(scale(data.frame(t(l.exp), check.names =F), scale=T, center=TRUE))
+
+# Remove rows were sd=0 in z-score calculation
+sctl.exp = sctl.exp[complete.cases(sctl.exp),]
+
+# Convert to Matrix
+sctl.exp.mat = as.matrix((sctl.exp))
+
+## CORRELATION WITH CENTROIDS
+scor=round(cor(sctl.exp.mat[intersect(rownames(sctl.exp.mat), rownames(centroids)),], centroids[intersect(rownames(sctl.exp.mat), rownames(centroids)),], method=method),2)
+
+#write to output
+write.table(exp, file="gene_exp.tsv", row.names=T,  sep="\t", col.names=NA, quote=F)
+write.table(scor, file="scor.tsv", row.names=T, sep="\t", col.names=NA, quote=F)
+
+        </configfile>
+    </configfiles>
     <inputs>
-        <param type="data" name="input" label="Sample Matrix" format="tsv" help="All samples in matrix should be breast cancers for most accurate prediction of subtype."/>
-        <param type="boolean" name="hugo" label="Are the genes in your matrix already in HUGO format?" checked="false" help="HUGO format includes the recognizable gene names like ARF5, whereas ENSG format for ARF5 is ENSG00000004059.10." truevalue="TRUE" falsevalue="FALSE"/> 
+        <param type="data" name="input" label="Sample Matrix" format="tsv,tabular,txt" help="All samples in matrix should be breast cancers for most accurate prediction of subtype."/>
+        <param type="select" name="method" label="Correlation method" help="Type of correlation to perform">
+            <option value="pearson">Pearson</option>
+            <option value="spearman">Spearman</option>
+        </param>
     </inputs>
     <outputs>
         <data format="tsv" name="output" label="${tool.name} on $on_string: PAM50 CORRELATION" from_work_dir="scor.tsv"/>
-        <data format="tsv" name="output2" label="${tool.name} on $on_string: EXPRESSION WITH HUGO GENES" from_work_dir="smmart_tmp.tsv"/>
+        <data format="tsv" name="output2" label="${tool.name} on $on_string: EXPRESSION" from_work_dir="gene_exp.tsv"/>
     </outputs>
 </tool>

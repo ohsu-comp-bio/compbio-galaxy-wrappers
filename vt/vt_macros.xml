@@ -1,7 +1,7 @@
 <macros>
     <xml name="requirements">
         <requirements>
-            <requirement type="package" version="2015.11.10">vt</requirement>
+            <requirement type="package" version="0.57721">vt</requirement>
             <yield />
         </requirements>
     </xml>

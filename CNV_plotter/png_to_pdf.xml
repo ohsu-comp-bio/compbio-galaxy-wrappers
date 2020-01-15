@@ -1,5 +1,10 @@
-<tool id="png_to_pdf" name="PNG to PDF Converter" version="1.1.0">
+<tool id="png_to_pdf" name="PNG to PDF Converter" version="1.1.1">
   <description>Converts a PNG to a PDF.</description>
+
+  <requirements>
+    <requirement type="package" version="7.0.8_46">imagemagick</requirement>
+  </requirements>
+
   <command detect_errors="exit_code"><![CDATA[
     #for $filenum, $input in enumerate($png_inputs)
       ln -s ${input.file} input${filenum}.png &&

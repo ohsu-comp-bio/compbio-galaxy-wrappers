@@ -1,11 +1,16 @@
-<tool id="primer_clip" name="Primer Clipper" version="0.1.3" >
+<tool id="primer_clip" name="Primer Clipper" version="0.1.4" >
     <description>Clip primer sequences from a BAM file based on locations of these sequences at defined in an extended BED file.</description>
+
+    <requirements>
+      <requirement type="package" version="4.0.5.1">gatk4</requirement>
+      <requirement type="package" version="0.15.3">pysam</requirement>
+    </requirements>
 
     <version_command></version_command>
 
     <command detect_errors="exit_code"><![CDATA[
     ln -f -s "${bamfile}" input.bam &&
-    picard SortSam I=input.bam O=input_sorted.sam SO=queryname &&
+    gatk SortSam -I input.bam -O input_sorted.sam -SO queryname &&
     uniq input_sorted.sam input_sorted_uniq.sam &&
     python $__tool_directory__/primer_clip.py
     --bed "${input_bed}"

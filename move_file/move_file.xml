@@ -159,8 +159,7 @@
   </inputs>
 
   <outputs>
-    <data format="txt" name="output_log" label="${tool.name} on ${on_string}" help="Log containing stdout/stderr of rsync operat
-ion." />
+    <data format="txt" name="output_log" label="${tool.name} on ${on_string}" help="Log containing stdout/stderr of rsync operation." />
   </outputs>
 
   <tests></tests>
@@ -180,3 +179,4 @@ ion." />
   <citations></citations>
 
 </tool>
+

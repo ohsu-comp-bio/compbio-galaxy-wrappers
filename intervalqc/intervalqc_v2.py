@@ -4,7 +4,7 @@ import sys
 from natsort import natsorted
 import argparse
 
-VERSION = '1.0.3'
+VERSION = '1.0.4'
 
 CHROMS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "X", "Y", "MT"]
 
@@ -322,7 +322,7 @@ def positionRefSeq(refseq_coords):
     ### Associate positions to the RefSeq ID's overlapping them.
 
     position_refseq = {}
-    for refseq, coords in refseq_coords.iteritems():
+    for refseq, coords in refseq_coords.items():
         for coord in coords:
             chrom = coord[0]
             if chrom not in position_refseq:
@@ -393,7 +393,7 @@ def findHoles(refseq_coords, refseq_gene, doc_dict_0, hole_handle):
         covered = str("{:.1}".format(hole_stats[1]/hole_stats[0]))
         hole_dict[refseq] = [covered, refseq, refseq_gene[refseq]]
 
-    for value in sorted(hole_dict.itervalues(), key=lambda x: (x[2], x[1])):
+    for value in sorted(hole_dict.values(), key=lambda x: (x[2], x[1])):
         hole_handle.write('\t'.join([value[1], value[2], value[0], '\n']))
 
     hole_handle.close()
@@ -404,7 +404,7 @@ def parsePicardMetrics(filename):
     Read the Picard Alignment Summary Metrics file and
     pull the PF_ALIGNED_BASES value from the PAIR section.
     """
-    with open(filename, 'rU') as metrics:
+    with open(filename, 'r') as metrics:
         for line in metrics:
             line = line.rstrip('\n').split('\t')
             if line[0] == "PAIR" or line[0] == "UNPAIRED":
@@ -416,7 +416,7 @@ def transcript_list_parse(filename):
     If a list of RefSeq transcripts is passed, only print QC metrics for the given list.
     """
     transcripts = []
-    with open(filename, 'rU') as refseq:
+    with open(filename, 'r') as refseq:
         for line in refseq:
             transcripts.append(line.rstrip('\n'))
             
@@ -426,16 +426,16 @@ def transcript_list_parse(filename):
 def main():
 
 ### Full-size data set test inputs
-#    gff_handle = open("/home/exacloud/lustre1/users/letaw/projs/find_probes_in_gff/ref_GRCh37.p13_top_level.gff3", 'rU')
-#    probe_handle = open("agilent.bed", 'rU')
-#    doc_0_handle = open("/home/users/letaw/lustre1/projs/find_probes_in_gff/dataset_19105.dat", 'rU')
-#    doc_30_handle = open("/home/users/letaw/lustre1/projs/find_probes_in_gff/dataset_19114.dat", 'rU')
+#    gff_handle = open("/home/exacloud/lustre1/users/letaw/projs/find_probes_in_gff/ref_GRCh37.p13_top_level.gff3", 'r')
+#    probe_handle = open("agilent.bed", 'r')
+#    doc_0_handle = open("/home/users/letaw/lustre1/projs/find_probes_in_gff/dataset_19105.dat", 'r')
+#    doc_30_handle = open("/home/users/letaw/lustre1/projs/find_probes_in_gff/dataset_19114.dat", 'r')
 
 ### DMD-only data set test inputs
-    # gff_handle = open("dmd.gff3", 'rU')
-    # probe_handle = open("dmd_probes.bed", 'rU')
-    # doc_30_handle = open("dmd_doc_0.tsv", 'rU')
-    # doc_0_handle = open("dmd_doc_30.tsv", 'rU')
+    # gff_handle = open("dmd.gff3", 'r')
+    # probe_handle = open("dmd_probes.bed", 'r')
+    # doc_30_handle = open("dmd_doc_0.tsv", 'r')
+    # doc_0_handle = open("dmd_doc_30.tsv", 'r')
 
 ### Output files
 
@@ -454,10 +454,10 @@ def main():
     parser.add_argument('--hole_out', help='Percent covered CDS sequences based on input probe set.')
     args = parser.parse_args()
 
-    gff_handle = open(args.gff, 'rU')
-    probe_handle = open(args.bed, 'rU')
-    doc_0_handle = open(args.doc_q0, 'rU')
-    doc_30_handle = open(args.doc_q30, 'rU')
+    gff_handle = open(args.gff, 'r')
+    probe_handle = open(args.bed, 'r')
+    doc_0_handle = open(args.doc_q0, 'r')
+    doc_30_handle = open(args.doc_q30, 'r')
     report_out = open(args.gene_out, 'w')
     probe_out = open(args.probe_out, 'w')
 

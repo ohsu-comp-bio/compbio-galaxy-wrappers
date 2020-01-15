@@ -1,15 +1,11 @@
-<tool id="gatk4_auto_determinegermlinecontigploidy" name="GATK4 AUTO DetermineGermlineContigPloidy" version="@WRAPPER_VERSION@0" profile="18.01">
+  <tool id="gatk4_auto_determinegermlinecontigploidy" name="GATK4 AUTO DetermineGermlineContigPloidy" profile="18.05" version="@WRAPPER_VERSION@0">
   <description>- Determines the baseline contig ploidy for germline samples given counts data</description>
   <macros>
     <import>macros.xml</import>
   </macros>
-  <requirements>
-    <requirement type="package" version="4.1.4.1">gatk4-python</requirement>
-  </requirements>
+  <expand macro="requirements"/>
   <expand macro="version_cmd"/>
   <command detect_errors="exit_code"><![CDATA[#include source=$set_sections#
-#include source=$pre_gatk_excl_ints_chth#
-#include source=$pre_gatk_ints_chth#
 @CMD_BEGIN@ DetermineGermlineContigPloidy
 #if $optional.adamax_beta_1
   --adamax-beta-1 $optional.adamax_beta_1
@@ -63,17 +59,12 @@
   $optional.disable_sampler
 #end if
 
-#include source=$gatk_excl_ints_chth#
 #if $common.gatk_config_file
   --gatk-config-file $common.gatk_config_file
 #end if
 
 #if $optional.gcs_max_retries
   --gcs-max-retries $optional.gcs_max_retries
-#end if
-
-#if $optional.gcs_project_for_requester_pays
-  --gcs-project-for-requester-pays $optional.gcs_project_for_requester_pays
 #end if
 
 #if $optional.global_psi_scale
@@ -84,20 +75,7 @@
   --initial-temperature $optional.initial_temperature
 #end if
 
-#if $input_rpt
-#for $arg in $input_rpt
---input "${arg.input}"
-#end for
-#end if
-#if $optional.interval_merging_rule
-  --interval-merging-rule $optional.interval_merging_rule
-#end if
-
-#if $common.interval_set_rule
-  --interval-set-rule $common.interval_set_rule
-#end if
-
-#include source=$gatk_ints_chth#
+--input $input
 #if $optional.learning_rate
   --learning-rate $optional.learning_rate
 #end if
@@ -160,10 +138,6 @@
   --sample-psi-scale $optional.sample_psi_scale
 #end if
 
-#if $common.tmp_dir
-  --tmp-dir $common.tmp_dir
-#end if
-
 #if $common.use_jdk_deflater
   $common.use_jdk_deflater
 #end if
@@ -177,17 +151,12 @@
 #end if
 ]]></command>
   <inputs>
-    <repeat name="input_rpt" title="input">
-      <param name="input" argument="--input" type="data" optional="false" multiple="true" format="h5,tsv" label="Input" help="Input read-count files containing integer read counts in genomic intervals for all samples.  Intervals must be identical and in the same order for all samples.  If only a single sample is specified, an input ploidy-model directory must also be specified.  "/>
-    </repeat>
-    <param name="output" argument="--output" type="text" optional="false" value="" label="Output" help="Output directory.  This will be created if it does not exist."/>
+    <param name="input" argument="--input" type="data" optional="false" multiple="false" format="h5" label="Input" help="Input read-count files containing integer read counts in genomic intervals for all samples.  Intervals must be identical and in the same order for all samples.  If only a single sample is specified, an input ploidy-model directory must also be specified.  "/>
     <param name="output_prefix" argument="--output-prefix" type="text" optional="false" value="" label="Output Prefix" help="Prefix for output filenames."/>
-    <section name="optional" title="Optional Parameters" expanded="False">
-      <expand macro="gatk_ints"/>
-      <expand macro="dgcp_model"/>
+    <section expanded="False" name="optional" title="Optional Parameters">
       <param name="adamax_beta_1" argument="--adamax-beta-1" type="float" optional="true" value="0.9" min="0" max="1" label="Adamax Beta 1" help="Adamax optimizer first moment estimation forgetting factor."/>
       <param name="adamax_beta_2" argument="--adamax-beta-2" type="float" optional="true" value="0.999" min="0" max="1" label="Adamax Beta 2" help="Adamax optimizer second moment estimation forgetting factor."/>
-      <param name="arguments_file" argument="--arguments_file" type="data" optional="true" multiple="true" format="txt" label="Arguments File" help="read one or more arguments files and add them to the command line"/>
+      <param name="arguments_file" argument="--arguments_file" type="data" optional="true" multiple="false" format="txt" label="Arguments_File" help="read one or more arguments files and add them to the command line"/>
       <param name="caller_external_admixing_rate" argument="--caller-external-admixing-rate" type="float" optional="true" value="0.75" min="0" label="Caller External Admixing Rate" help="Admixing ratio of new and old called posteriors (between 0 and 1; larger values implies using more of the new posterior and less of the old posterior) after convergence."/>
       <param name="caller_internal_admixing_rate" argument="--caller-internal-admixing-rate" type="float" optional="true" value="0.75" min="0" label="Caller Internal Admixing Rate" help="Admixing ratio of new and old called posteriors (between 0 and 1; larger values implies using more of the new posterior and less of the old posterior) for internal convergence loops."/>
       <param name="caller_update_convergence_threshold" argument="--caller-update-convergence-threshold" type="float" optional="true" value="0.001" min="0" label="Caller Update Convergence Threshold" help="Maximum tolerated calling update size for convergence."/>
@@ -199,39 +168,29 @@
       <param name="disable_caller" argument="--disable-caller" type="boolean" truevalue="--disable-caller" falsevalue="" optional="true" checked="false" label="Disable Caller" help="(advanced) Disable caller."/>
       <param name="disable_sampler" argument="--disable-sampler" type="boolean" truevalue="--disable-sampler" falsevalue="" optional="true" checked="false" label="Disable Sampler" help="(advanced) Disable sampler."/>
       <param name="gcs_max_retries" argument="--gcs-max-retries" type="integer" optional="true" value="20" label="Gcs Max Retries" help="If the GCS bucket channel errors out, how many times it will attempt to re-initiate the connection"/>
-      <param name="gcs_project_for_requester_pays" argument="--gcs-project-for-requester-pays" type="text" optional="true" value="&quot;&quot;" label="Gcs Project For Requester Pays" help="Project to bill when accessing &amp;quot;requester pays&amp;quot; buckets. If unset, these buckets cannot be accessed."/>
       <param name="global_psi_scale" argument="--global-psi-scale" type="float" optional="true" value="0.001" min="0" label="Global Psi Scale" help="Prior scale of contig coverage unexplained variance.  If a single sample is provided, this input will be ignored."/>
       <param name="initial_temperature" argument="--initial-temperature" type="float" optional="true" value="2.0" min="0" label="Initial Temperature" help="Initial temperature (for DA-ADVI)."/>
-      <param name="interval_merging_rule" argument="--interval-merging-rule" type="select" optional="true" label="Interval Merging Rule" help="Interval merging rule for abutting intervals">
-        <option selected="true" value="ALL">ALL</option>
-        <option selected="false" value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
-      </param>
       <param name="learning_rate" argument="--learning-rate" type="float" optional="true" value="0.05" min="0" label="Learning Rate" help="Adamax optimizer learning rate."/>
       <param name="log_emission_samples_per_round" argument="--log-emission-samples-per-round" type="integer" optional="true" value="2000" min="0" label="Log Emission Samples Per Round" help="Log emission samples drawn per round of sampling."/>
       <param name="log_emission_sampling_median_rel_error" argument="--log-emission-sampling-median-rel-error" type="float" optional="true" value="0.000500" min="0" label="Log Emission Sampling Median Rel Error" help="Maximum tolerated median relative error in log emission sampling."/>
       <param name="log_emission_sampling_rounds" argument="--log-emission-sampling-rounds" type="integer" optional="true" value="100" min="0" label="Log Emission Sampling Rounds" help="Log emission maximum sampling rounds."/>
-      <param name="mapping_error_rate" argument="--mapping-error-rate" type="float" optional="true" value="0.01" min="0" max="1" label="Mapping Error Rate" help="Typical mapping error rate."/>
+      <param name="mapping_error_rate" argument="--mapping-error-rate" type="float" optional="true" value="0.01" min="0" label="Mapping Error Rate" help="Typical mapping error rate."/>
       <param name="max_advi_iter_first_epoch" argument="--max-advi-iter-first-epoch" type="integer" optional="true" value="1000" min="0" label="Max Advi Iter First Epoch" help="Maximum ADVI iterations in the first epoch."/>
       <param name="max_advi_iter_subsequent_epochs" argument="--max-advi-iter-subsequent-epochs" type="integer" optional="true" value="1000" min="0" label="Max Advi Iter Subsequent Epochs" help="Maximum ADVI iterations in subsequent epochs."/>
       <param name="max_calling_iters" argument="--max-calling-iters" type="integer" optional="true" value="1" min="0" label="Max Calling Iters" help="Maximum number of internal self-consistency iterations within each calling step."/>
       <param name="max_training_epochs" argument="--max-training-epochs" type="integer" optional="true" value="100" min="0" label="Max Training Epochs" help="Maximum number of training epochs."/>
       <param name="mean_bias_standard_deviation" argument="--mean-bias-standard-deviation" type="float" optional="true" value="0.01" min="0" label="Mean Bias Standard Deviation" help="Prior standard deviation of the contig-level mean coverage bias.  If a single sample is provided, this input will be ignored."/>
       <param name="min_training_epochs" argument="--min-training-epochs" type="integer" optional="true" value="20" min="0" label="Min Training Epochs" help="Minimum number of training epochs."/>
+      <param name="model" argument="--model" type="text" optional="true" value="" label="Model" help="Input ploidy-model directory.  If only a single sample is specified, this input is required.  If multiple samples are specified, this input should not be provided."/>
       <param name="num_thermal_advi_iters" argument="--num-thermal-advi-iters" type="integer" optional="true" value="5000" min="0" label="Num Thermal Advi Iters" help="Number of thermal ADVI iterations (for DA-ADVI)."/>
       <param name="sample_psi_scale" argument="--sample-psi-scale" type="float" optional="true" value="0.000100" min="0" label="Sample Psi Scale" help="Prior scale of the sample-specific correction to the coverage unexplained variance."/>
     </section>
-    <section name="common" title="Common Parameters" expanded="False">
-      <expand macro="gatk_excl_ints"/>
-      <param name="gatk_config_file" argument="--gatk-config-file" type="text" optional="true" value="" label="Gatk Config File" help="A configuration file to use with the GATK."/>
-      <param name="interval_set_rule" argument="--interval-set-rule" type="select" optional="true" label="Interval Set Rule" help="Set merging approach to use for combining interval inputs">
-        <option selected="true" value="UNION">UNION</option>
-        <option selected="false" value="INTERSECTION">INTERSECTION</option>
-      </param>
+    <section expanded="False" name="common" title="Common Parameters">
+      <param name="gatk_config_file" argument="--gatk-config-file" type="data" optional="true" multiple="" format="txt" label="Gatk Config File" help="A configuration file to use with the GATK."/>
       <param name="QUIET" argument="--QUIET" type="boolean" truevalue="--QUIET" falsevalue="" optional="true" checked="false" label="Quiet" help="Whether to suppress job-summary info on System.err."/>
-      <param name="tmp_dir" argument="--tmp-dir" type="text" optional="true" value="" label="Tmp Dir" help="Temp directory to use."/>
       <param name="use_jdk_deflater" argument="--use-jdk-deflater" type="boolean" truevalue="--use-jdk-deflater" falsevalue="" optional="true" checked="false" label="Use Jdk Deflater" help="Whether to use the JdkDeflater (as opposed to IntelDeflater)"/>
       <param name="use_jdk_inflater" argument="--use-jdk-inflater" type="boolean" truevalue="--use-jdk-inflater" falsevalue="" optional="true" checked="false" label="Use Jdk Inflater" help="Whether to use the JdkInflater (as opposed to IntelInflater)"/>
-      <param name="verbosity" argument="--verbosity" type="select" optional="true" label="Verbosity" help="Control verbosity of logging.">
+      <param name="verbosity" argument="--verbosity" type="select" optional="true" multiple="false" label="Verbosity" help="Control verbosity of logging.">
         <option selected="false" value="ERROR">ERROR</option>
         <option selected="false" value="WARNING">WARNING</option>
         <option selected="true" value="INFO">INFO</option>
@@ -240,7 +199,7 @@
     </section>
   </inputs>
   <outputs>
-    <data format="txt" name="dummy_output" label="${tool.name} on ${on_string}: txt"/>
+    <data format="" name="output" label="${tool.name} on ${on_string}: output " help="Output directory for sample contig-ploidy calls and the contig-ploidy model parameters for future use."/>
   </outputs>
   <tests/>
   <help><![CDATA[Determines the integer ploidy state of all contigs for germline samples
@@ -280,37 +239,20 @@ images, the python environment is already set up. Otherwise, the
 environment must be created and activated as described in the main GATK
 README.md file.
 
-Advanced users may wish to set the ``THEANO_FLAGS`` environment variable
-to override the GATK theano configuration. For example, by running
-``THEANO_FLAGS="base_compiledir=PATH/TO/BASE_COMPILEDIR" gatk DetermineGermlineContigPloidy ...``,
-users can specify the theano compilation directory (which is set to
-``$HOME/.theano`` by default). See theano documentation at
-http://deeplearning.net/software/theano/library/config.html.
-
 Tool run modes
 ~~~~~~~~~~~~~~
 
 This tool has two operation modes as described below:
 
 COHORT mode:
-   If a ploidy model parameter path is not provided via the model
-   argument, the tool will run in the COHORT mode. In this mode, ploidy
-   model parameters (e.g. coverage bias and variance for each contig)
-   are inferred, along with baseline contig ploidy states of each
-   sample. It is possible to run the tool over a subset of all intervals
-   present in the input count files, which can be specified by -L; this
-   can be used to pass a filtered interval list produced by
-   FilterIntervals to mask intervals from modeling. Intervals may also
-   be blacklisted using -XL. The specified intervals that result from
-   resolving -L/-XL inputs must be exactly present in all of the input
-   count files.
-
-   A TSV file specifying prior probabilities for each integer ploidy
-   state and for each contig is required in this mode and must be
-   specified via the contig-ploidy-priors argument. The following shows
-   an example of such a table:
-
-   | 
+   | If a ploidy model parameter path is not provided via the model
+     argument, the tool will run in the COHORT mode. In this mode,
+     ploidy model parameters (e.g. coverage bias and variance for each
+     contig) are inferred, along with baseline contig ploidy states of
+     each sample. A TSV file specifying prior probabilities for each
+     integer ploidy state and for each contig is required in this mode
+     and must be specified via the contig-ploidy-priors argument. The
+     following shows an example of such a table:
 
    +-------------+----------------+----------------+----------------+----------------+
    | CONTIG_NAME | PLOIDY_PRIOR_0 | PLOIDY_PRIOR_1 | PLOIDY_PRIOR_2 | PLOIDY_PRIOR_3 |
@@ -348,12 +290,8 @@ CASE mode:
    provided via the model argument, then the tool will run in the CASE
    mode. In this mode, the parameters of the ploidy model are loaded
    from the provided directory and only sample-specific quantities are
-   inferred. The modeled intervals are then specified by a file
-   contained in the model directory, all interval-related arguments are
-   ignored in this mode, and all model intervals must be present in all
-   of the input count files. The tool output in the CASE mode is only
-   the "-calls" subdirectory and is organized similarly to the COHORT
-   mode.
+   inferred. Subsequently, the output directory will only contain the
+   "-calls" subdirectory.
 
    In the CASE mode, the contig ploidy prior table is taken directly
    from the provided model parameters path and must be not provided
@@ -407,22 +345,6 @@ COHORT mode:
 ::
 
     gatk DetermineGermlineContigPloidy \
-      --input normal_1.counts.hdf5 \
-      --input normal_2.counts.hdf5 \
-      ... \
-      --contig-ploidy-priors a_valid_ploidy_priors_table.tsv
-      --output output_dir \
-      --output-prefix normal_cohort
-    
-
-COHORT mode (with optional interval filtering):
-
-::
-
-    gatk DetermineGermlineContigPloidy \
-      -L intervals.interval_list \
-      -XL blacklist_intervals.interval_list \
-      --interval-merging-rule OVERLAPPING_ONLY \
       --input normal_1.counts.hdf5 \
       --input normal_2.counts.hdf5 \
       ... \

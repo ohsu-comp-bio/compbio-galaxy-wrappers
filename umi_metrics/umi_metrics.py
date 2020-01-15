@@ -7,14 +7,13 @@ from __future__ import print_function
 
 import argparse
 import sys
-sys.path.append('/home/groups/clinical/users/letaw/jhl_tools')
 
 from file_types.gatk_intervals import PerLocusRead
 from file_types.gatk_intervals import ProbeQcRead
 from file_types.vcf import VcfReader
 from file_types.vcf import VcfWriter
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 
 def supply_args():

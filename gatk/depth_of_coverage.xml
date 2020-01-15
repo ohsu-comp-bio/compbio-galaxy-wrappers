@@ -1,4 +1,4 @@
-<tool id="gatk2_depth_of_coverage" name="Depth of Coverage" version="3.2.1">
+<tool id="gatk2_depth_of_coverage" name="Depth of Coverage" version="3.2.2">
   <description>on BAM files</description>
   <expand macro="requirements" />
   <macros>
@@ -11,14 +11,13 @@
    #for $i, $input_bam in enumerate( $reference_source.input_bams ):
        -d "-I" "${input_bam.input_bam}" "${input_bam.input_bam.ext}" "gatk_input_${i}"
       ## This is causing problems.  Permissions in metadata are set to clgalaxyuser:clgalaxy, whereas we need them set as actual user.
-      ##  #if str( $input_bam.input_bam.metadata.bam_index ) != "None":
-      ##      -d "" "${input_bam.input_bam.metadata.bam_index}" "bam_index" "gatk_input_${i}" ##hardcode galaxy ext type as bam_index
-      ##  #end if
+      #if str( $input_bam.input_bam.metadata.bam_index ) != "None":
+          -d "" "${input_bam.input_bam.metadata.bam_index}" "bam_index" "gatk_input_${i}" ##hardcode galaxy ext type as bam_index
+      #end if
    #end for
    -p '
-   @JAR_PATH@
+   _JAVA_OPTIONS="-Xmx13g -Xms2g" @JAR_PATH@
     -T "DepthOfCoverage"
-    \$GATK2_SITE_OPTIONS
 
     #if $reference_source.reference_source_selector != "history":
         -R "${reference_source.ref_file.fields.path}"
@@ -31,7 +30,7 @@
             --partitionType "${pt}"
         #end for
     #end if
-    --out "${output_per_locus_coverage}"
+    --out "output"
     
     #for $ct_group in $summary_coverage_threshold_group:
         --summaryCoverageThreshold "${ct_group.summary_coverage_threshold}"
@@ -68,63 +67,6 @@
     #else:
         #set $partition_types = [ 'sample' ]
     #end if
-    #if 'sample' in $partition_types and ( str( $analysis_param_type.analysis_param_type_selector ) == "basic" or str( $analysis_param_type.print_bin_endpoints_and_exit ) == "" ):
-        #if str( $analysis_param_type.analysis_param_type_selector ) == "basic" or str( $analysis_param_type.omit_per_sample_stats ) == "":
-            &amp;&amp; mv ${output_per_locus_coverage}.sample_summary ${output_summary_sample}
-            &amp;&amp; mv ${output_per_locus_coverage}.sample_statistics ${output_statistics_sample}
-        #end if
-        #if $gatk_param_type.gatk_param_type_selector == "advanced" and len( $gatk_param_type.input_interval_repeat ) and ( str( $analysis_param_type.analysis_param_type_selector ) == "basic" or str( $analysis_param_type.omit_interval_statistics ) == "" ):
-            &amp;&amp; mv ${output_per_locus_coverage}.sample_interval_summary ${output_interval_summary_sample}
-            &amp;&amp; mv ${output_per_locus_coverage}.sample_interval_statistics ${output_interval_statistics_sample}
-        #end if
-        #if str( $input_calculate_coverage_over_genes ) != "None":
-            &amp;&amp; mv ${output_per_locus_coverage}.sample_gene_summary ${output_gene_summary_sample}
-            &amp;&amp; mv ${output_per_locus_coverage}.sample_gene_statistics ${output_gene_statistics_sample}
-        #end if
-        #if str( $analysis_param_type.analysis_param_type_selector ) == "basic" or str( $analysis_param_type.omit_depth_output_at_each_base ) == "":
-            &amp;&amp; mv ${output_per_locus_coverage}.sample_cumulative_coverage_counts ${output_cumulative_coverage_counts_sample}
-            &amp;&amp; mv ${output_per_locus_coverage}.sample_cumulative_coverage_proportions ${output_cumulative_coverage_proportions_sample}
-        #end if
-    #end if
-    
-    #if 'readgroup' in $partition_types and ( str( $analysis_param_type.analysis_param_type_selector ) == "basic" or str( $analysis_param_type.print_bin_endpoints_and_exit ) == "" ):
-        #if str( $analysis_param_type.analysis_param_type_selector ) == "basic" or str( $analysis_param_type.omit_per_sample_stats ) == "":
-            &amp;&amp; mv ${output_per_locus_coverage}.read_group_summary ${output_summary_readgroup}
-            &amp;&amp; mv ${output_per_locus_coverage}.read_group_statistics ${output_statistics_readgroup}
-        #end if
-        #if $gatk_param_type.gatk_param_type_selector == "advanced" and len( $gatk_param_type.input_interval_repeat ) and ( str( $analysis_param_type.analysis_param_type_selector ) == "basic" or str( $analysis_param_type.omit_interval_statistics ) == "" ):
-            &amp;&amp; mv ${output_per_locus_coverage}.read_group_interval_summary ${output_interval_summary_readgroup}
-            &amp;&amp; mv ${output_per_locus_coverage}.read_group_interval_statistics ${output_interval_statistics_readgroup}
-        #end if
-        #if str( $input_calculate_coverage_over_genes ) != "None":
-            &amp;&amp; mv ${output_per_locus_coverage}.read_group_gene_summary ${output_gene_summary_readgroup}
-            &amp;&amp; mv ${output_per_locus_coverage}.read_group_gene_statistics ${output_gene_statistics_readgroup}
-        #end if
-        #if str( $analysis_param_type.analysis_param_type_selector ) == "basic" or str( $analysis_param_type.omit_depth_output_at_each_base ) == "":
-            &amp;&amp; mv ${output_per_locus_coverage}.read_group_cumulative_coverage_counts ${output_cumulative_coverage_counts_readgroup}
-            &amp;&amp; mv ${output_per_locus_coverage}.read_group_cumulative_coverage_proportions ${output_cumulative_coverage_proportions_readgroup}
-        #end if
-    #end if
-    
-    #if 'library' in $partition_types and ( str( $analysis_param_type.analysis_param_type_selector ) == "basic" or str( $analysis_param_type.print_bin_endpoints_and_exit ) == "" ):
-        #if str( $analysis_param_type.analysis_param_type_selector ) == "basic" or str( $analysis_param_type.omit_per_sample_stats ) == "":
-            &amp;&amp; mv ${output_per_locus_coverage}.library_summary ${output_summary_library}
-            &amp;&amp; mv ${output_per_locus_coverage}.library_statistics ${output_statistics_library}
-        #end if
-        #if $gatk_param_type.gatk_param_type_selector == "advanced" and len( $gatk_param_type.input_interval_repeat ) and ( str( $analysis_param_type.analysis_param_type_selector ) == "basic" or str( $analysis_param_type.omit_interval_statistics ) == "" ):
-            &amp;&amp; mv ${output_per_locus_coverage}.library_interval_summary ${output_interval_summary_library}
-            &amp;&amp; mv ${output_per_locus_coverage}.library_interval_statistics ${output_interval_statistics_library}
-        #end if
-        #if str( $input_calculate_coverage_over_genes ) != "None":
-            &amp;&amp; mv ${output_per_locus_coverage}.library_gene_summary ${output_gene_summary_library}
-            &amp;&amp; mv ${output_per_locus_coverage}.library_gene_statistics ${output_gene_statistics_library}
-        #end if
-        #if str( $analysis_param_type.analysis_param_type_selector ) == "basic" or str( $analysis_param_type.omit_depth_output_at_each_base ) == "":
-            &amp;&amp; mv ${output_per_locus_coverage}.library_cumulative_coverage_counts ${output_cumulative_coverage_counts_library}
-            &amp;&amp; mv ${output_per_locus_coverage}.library_cumulative_coverage_proportions ${output_cumulative_coverage_proportions_library}
-        #end if
-    #end if
-    
 
   </command>
   <inputs>
@@ -201,7 +143,7 @@
     </expand>
   </inputs>
   <outputs>
-    <data format="tabular" name="output_per_locus_coverage" label="${tool.name} on ${on_string} (per locus coverage)" >
+    <data format="tabular" name="output_per_locus_coverage" label="${tool.name} on ${on_string} (per locus coverage)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <actions>
             <conditional name="output_format">
@@ -218,7 +160,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_summary_sample" label="${tool.name} on ${on_string} (output summary sample)" >
+    <data format="tabular" name="output_summary_sample" label="${tool.name} on ${on_string} (output summary sample)" from_work_dir="output.sample_summary" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['omit_per_sample_stats'] == False</filter>
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'sample' in partition_type or not partition_type</filter>
@@ -237,7 +179,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_statistics_sample" label="${tool.name} on ${on_string} (output statistics sample)" >
+    <data format="tabular" name="output_statistics_sample" label="${tool.name} on ${on_string} (output statistics sample)" from_work_dir="output.sample_statistics">
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['omit_per_sample_stats'] == False</filter>
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'sample' in partition_type or not partition_type</filter>
@@ -256,7 +198,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_interval_summary_sample" label="${tool.name} on ${on_string} (output interval summary sample)" >
+    <data format="tabular" name="output_interval_summary_sample" label="${tool.name} on ${on_string} (output interval summary sample)" from_work_dir="output.sample_interval_summary" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'sample' in partition_type or not partition_type</filter>
         <filter>gatk_param_type['gatk_param_type_selector'] == "advanced" and len( gatk_param_type['input_interval_repeat'] )</filter>
@@ -276,7 +218,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_interval_statistics_sample" label="${tool.name} on ${on_string} (output interval statistics sample)" >
+    <data format="tabular" name="output_interval_statistics_sample" label="${tool.name} on ${on_string} (output interval statistics sample)" from_work_dir="output.sample_interval_statistics" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'sample' in partition_type or not partition_type</filter>
         <filter>gatk_param_type['gatk_param_type_selector'] == "advanced" and len( gatk_param_type['input_interval_repeat'] )</filter>
@@ -296,7 +238,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_gene_summary_sample" label="${tool.name} on ${on_string} (output gene summary sample)" >
+    <data format="tabular" name="output_gene_summary_sample" label="${tool.name} on ${on_string} (output gene summary sample)" from_work_dir="output.sample_gene_summary" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>input_calculate_coverage_over_genes is not None and 'sample' in partition_type or not partition_type</filter>
         <actions>
@@ -314,7 +256,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_gene_statistics_sample" label="${tool.name} on ${on_string} (output gene statistics sample)" >
+    <data format="tabular" name="output_gene_statistics_sample" label="${tool.name} on ${on_string} (output gene statistics sample)" from_work_dir="output.sample_gene_statistics" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>input_calculate_coverage_over_genes is not None and 'sample' in partition_type or not partition_type</filter>
         <actions>
@@ -332,7 +274,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_cumulative_coverage_counts_sample" label="${tool.name} on ${on_string} (output cumulative coverage counts sample)" >
+    <data format="tabular" name="output_cumulative_coverage_counts_sample" label="${tool.name} on ${on_string} (output cumulative coverage counts sample)" from_work_dir="output.sample_cumulative_coverage_counts" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['omit_depth_output_at_each_base'] == False</filter>
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'sample' in partition_type or not partition_type</filter>
@@ -351,7 +293,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_cumulative_coverage_proportions_sample" label="${tool.name} on ${on_string} (output cumulative coverage proportions sample)" >
+    <data format="tabular" name="output_cumulative_coverage_proportions_sample" label="${tool.name} on ${on_string} (output cumulative coverage proportions sample)" from_work_dir="output.sample_cumulative_coverage_proportions" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['omit_depth_output_at_each_base'] == False</filter>
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'sample' in partition_type or not partition_type</filter>
@@ -371,7 +313,7 @@
         </actions>
     </data>
     
-    <data format="tabular" name="output_summary_readgroup" label="${tool.name} on ${on_string} (output summary readgroup)" >
+    <data format="tabular" name="output_summary_readgroup" label="${tool.name} on ${on_string} (output summary readgroup)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['omit_per_sample_stats'] == False</filter>
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'readgroup' in partition_type</filter>
@@ -390,7 +332,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_statistics_readgroup" label="${tool.name} on ${on_string} (output statistics readgroup)" >
+    <data format="tabular" name="output_statistics_readgroup" label="${tool.name} on ${on_string} (output statistics readgroup)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['omit_per_sample_stats'] == False</filter>
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'readgroup' in partition_type</filter>
@@ -409,7 +351,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_interval_summary_readgroup" label="${tool.name} on ${on_string} (output interval summary readgroup)" >
+    <data format="tabular" name="output_interval_summary_readgroup" label="${tool.name} on ${on_string} (output interval summary readgroup)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'readgroup' in partition_type</filter>
         <filter>gatk_param_type['gatk_param_type_selector'] == "advanced" and len( gatk_param_type['input_interval_repeat'] )</filter>
@@ -429,7 +371,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_interval_statistics_readgroup" label="${tool.name} on ${on_string} (output interval statistics readgroup)" >
+    <data format="tabular" name="output_interval_statistics_readgroup" label="${tool.name} on ${on_string} (output interval statistics readgroup)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'readgroup' in partition_type</filter>
         <filter>gatk_param_type['gatk_param_type_selector'] == "advanced" and len( gatk_param_type['input_interval_repeat'] )</filter>
@@ -449,7 +391,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_gene_summary_readgroup" label="${tool.name} on ${on_string} (output gene summary readgroup)" >
+    <data format="tabular" name="output_gene_summary_readgroup" label="${tool.name} on ${on_string} (output gene summary readgroup)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>input_calculate_coverage_over_genes is not None and 'readgroup' in partition_type or not partition_type</filter>
         <actions>
@@ -467,7 +409,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_gene_statistics_readgroup" label="${tool.name} on ${on_string} (output gene statistics readgroup)" >
+    <data format="tabular" name="output_gene_statistics_readgroup" label="${tool.name} on ${on_string} (output gene statistics readgroup)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>input_calculate_coverage_over_genes is not None and 'readgroup' in partition_type or not partition_type</filter>
         <actions>
@@ -485,7 +427,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_cumulative_coverage_counts_readgroup" label="${tool.name} on ${on_string} (output cumulative coverage counts readgroup)" >
+    <data format="tabular" name="output_cumulative_coverage_counts_readgroup" label="${tool.name} on ${on_string} (output cumulative coverage counts readgroup)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['omit_depth_output_at_each_base'] == False</filter>
         <filter>'readgroup' in partition_type</filter>
@@ -504,7 +446,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_cumulative_coverage_proportions_readgroup" label="${tool.name} on ${on_string} (output cumulative coverage proportions readgroup)" >
+    <data format="tabular" name="output_cumulative_coverage_proportions_readgroup" label="${tool.name} on ${on_string} (output cumulative coverage proportions readgroup)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['omit_depth_output_at_each_base'] == False</filter>
         <filter>'readgroup' in partition_type</filter>
@@ -524,7 +466,7 @@
         </actions>
     </data>
     
-    <data format="tabular" name="output_summary_library" label="${tool.name} on ${on_string} (output summary library)" >
+    <data format="tabular" name="output_summary_library" label="${tool.name} on ${on_string} (output summary library)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['omit_per_sample_stats'] == False</filter>
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'library' in partition_type</filter>
@@ -543,7 +485,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_statistics_library" label="${tool.name} on ${on_string} (output statistics library)" >
+    <data format="tabular" name="output_statistics_library" label="${tool.name} on ${on_string} (output statistics library)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['omit_per_sample_stats'] == False</filter>
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'library' in partition_type</filter>
@@ -562,7 +504,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_interval_summary_library" label="${tool.name} on ${on_string} (output interval summary library)" >
+    <data format="tabular" name="output_interval_summary_library" label="${tool.name} on ${on_string} (output interval summary library)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'library' in partition_type</filter>
         <filter>gatk_param_type['gatk_param_type_selector'] == "advanced" and len( gatk_param_type['input_interval_repeat'] )</filter>
@@ -582,7 +524,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_interval_statistics_library" label="${tool.name} on ${on_string} (output interval statistics library)" >
+    <data format="tabular" name="output_interval_statistics_library" label="${tool.name} on ${on_string} (output interval statistics library)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'library' in partition_type</filter>
         <filter>gatk_param_type['gatk_param_type_selector'] == "advanced" and len( gatk_param_type['input_interval_repeat'] )</filter>
@@ -602,7 +544,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_gene_summary_library" label="${tool.name} on ${on_string} (output gene summary library)" >
+    <data format="tabular" name="output_gene_summary_library" label="${tool.name} on ${on_string} (output gene summary library)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>input_calculate_coverage_over_genes is not None and 'library' in partition_type or not partition_type</filter>
         <actions>
@@ -620,7 +562,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_gene_statistics_library" label="${tool.name} on ${on_string} (output gene statistics library)" >
+    <data format="tabular" name="output_gene_statistics_library" label="${tool.name} on ${on_string} (output gene statistics library)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>input_calculate_coverage_over_genes is not None and 'library' in partition_type or not partition_type</filter>
         <actions>
@@ -638,7 +580,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_cumulative_coverage_counts_library" label="${tool.name} on ${on_string} (output cumulative coverage counts library)" >
+    <data format="tabular" name="output_cumulative_coverage_counts_library" label="${tool.name} on ${on_string} (output cumulative coverage counts library)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['omit_depth_output_at_each_base'] == False</filter>
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'library' in partition_type</filter>
@@ -657,7 +599,7 @@
             </conditional>
         </actions>
     </data>
-    <data format="tabular" name="output_cumulative_coverage_proportions_library" label="${tool.name} on ${on_string} (output cumulative coverage proportions library)" >
+    <data format="tabular" name="output_cumulative_coverage_proportions_library" label="${tool.name} on ${on_string} (output cumulative coverage proportions library)" from_work_dir="output" >
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['omit_depth_output_at_each_base'] == False</filter>
         <filter>analysis_param_type['analysis_param_type_selector'] == "basic" or analysis_param_type['print_bin_endpoints_and_exit'] == False</filter>
         <filter>'library' in partition_type</filter>

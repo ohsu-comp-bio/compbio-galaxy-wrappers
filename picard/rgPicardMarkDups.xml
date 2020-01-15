@@ -12,11 +12,10 @@
    --quiet "${quietOn}" --compression "${compressionLvl}"  
    --maxramrecords "${maxRamRecords}" --createindex "${createIndex}" 
    --createmd5 "${createMd5}" --readregex "${readRegex}"
-   --ProgramRecordID "${ProgramRecordID}"
    -j "\${PICARD_PATH}/MarkDuplicates.jar" -d "${html_file.files_path}" 
    -t "${html_file}" 
   </command>
-  <requirements><requirement type="package" version="1.110.0">picard</requirement></requirements>
+  <requirements></requirements>
   <description>Examines aligned records in the supplied SAM or BAM file to locate duplicates</description>
   <inputs>
     <!-- Option to process multiple input BAM files --> 
@@ -70,9 +69,6 @@
     <param name="sortingRatio" value="0.25" type="float"
      label="Sorting collection size ratio" size="5"
      help="Sorting collection size ratio."/>
-    <param name="ProgramRecordID" value="MarkDuplicates" type="text"
-     label="Program Record ID" size="20"
-     help="Program Record ID."/>
     <param name="verbosityLvl" value="INFO" type="text"
      label="Verbosity level" size="10"
      help="Verbosity level."/>

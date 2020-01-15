@@ -2,14 +2,14 @@
   <command interpreter="python">
     picard_wrapper.py -i "${input_file}" -d "${html_file.files_path}" -t "${html_file}" --txtout "${txt_file}"
     --assumesorted "${sorted}" -b "${bisulphite}" --adaptors "${adaptors}" --maxinsert "${maxinsert}" -n "${out_prefix}" --datatype "${input_file.ext}"
-    -j \$PICARD_PATH/CollectAlignmentSummaryMetrics.jar  --tmpdir "${__new_file_path__}" 
+    -j \$PICARD_PATH/CollectAlignmentSummaryMetrics.jar  --tmpdir "${__new_file_path__}" -y 2g -x 4g
 #if $genomeSource.refGenomeSource == "history":
     --ref-file "${genomeSource.ownFile}"
 #else
     --ref "${genomeSource.index.fields.path}"
 #end if
   </command>
-  <requirements><requirement type="package" version="1.56.0">picard</requirement></requirements>
+  <requirements></requirements>
   <inputs>
     <param format="sam,bam" name="input_file" type="data" label="SAM/BAM dataset to generate statistics for"
       help="If empty, upload or import a SAM/BAM dataset."/>
