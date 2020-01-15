@@ -51,7 +51,7 @@
   --cnv-coherence-length $optional.cnv_coherence_length
 #end if
 
---contig-ploidy-calls $contig_ploidy_calls
+--contig-ploidy-calls "$contig_ploidy_calls/$sample_name-calls"
 #if $optional.convergence_snr_averaging_window
   --convergence-snr-averaging-window $optional.convergence_snr_averaging_window
 #end if
@@ -231,6 +231,7 @@
 #end if
 ]]></command>
   <inputs>
+    <param name="sample_name" type="text" label="Sample Name"/>
     <repeat name="input_rpt" title="input">
       <param name="input" argument="--input" type="data" optional="false" multiple="true" format="h5,tsv" label="Input" help="Input read-count files containing integer read counts in genomic intervals for all samples.  All intervals specified via -L must be contained; if none are specified, then intervals must be identical and in the same order for all samples."/>
     </repeat>
