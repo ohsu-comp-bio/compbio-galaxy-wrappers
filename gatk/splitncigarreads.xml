@@ -1,5 +1,10 @@
-<tool id="splitncigarreads" name="GATK v3.7 SplitNCigarReads" version="3.7.2" >
+<tool id="splitncigarreads" name="GATK v3.7 SplitNCigarReads" version="3.7.3" >
   <description>Splits reads that contain Ns in their CIGAR string</description>
+
+  <requirements>
+    <requirement type="package" version="0.1.19">samtools</requirement>
+    <requirement type="package" version="3.7">gatk</requirement>
+  </requirements>
 
   <version_command></version_command>
 
@@ -9,7 +14,7 @@
   ln -f -s "${input}" input.bam &&
   samtools index input.bam &&
 
-  \${JAVA8_PATH} -jar \${GATK3}
+  gatk
   -T SplitNCigarReads
   -R $index_path
   -I input.bam

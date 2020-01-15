@@ -22,7 +22,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '0.5.2'
+VERSION = '0.5.3'
 
 
 def supply_args():

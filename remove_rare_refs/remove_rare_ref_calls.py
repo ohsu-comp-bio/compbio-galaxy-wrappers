@@ -1,60 +1,80 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
+from collections import OrderedDict
 
-RARE_REFS = [("1","169519049"),("7","6026775"),("13","32929387"),("14","75513883")]
-FAKE_DEPTH = "100(100,0)"
+VERSION = '0.2.0'
 
-def compareCoords(chrom, pos):
-
-    if (chrom, pos) in RARE_REFS:
-        return True
-    else:
-        return False
-
-
-def parseSeattleSeqTSV(handle, handle_out):
-    
+def supply_args():
+    """                                                                                                                        
+    Populate arguments.
     """
-    #chrompositionHg19typereferenceBasealternateBasefilterFlagGATKQUALSAMPLEGtypeSAMPLEDepthSAMPLEQualgeneListrsIDcreateBuildfunction\
-    GVSaminoAcidsproteinPositioncDNAPositiongenomeHGVSgranthamScorescorePhastConsconsScoreGERPscoreCADDpolyPhenSIFTESPEurAlleleCounts\
-    ESPEurMinorPercentESPAfrAlleleCountsESPAfrMinorPercent1000GenomesEur%1000GenomesAfr%1000GenomesAsn%ExACExomesEur%ExACExomesAfr%\
-    ExACExomesAsn%local507clinicalAssnOMIMClinVarphenotypeHGMDreferenceHGMD
-    167504231indelTATPASS774.19TA/T17(1,16)99SLC35D111335108120intronnoneNANANC_000001.10:g.67504232
-    _67504232delANA0.457-100.0-100.0unknownunknownNA-100.0NA-100.0unknownunknownunknownunknownunknownunknownNAunknownnononenonenone
+    parser = argparse.ArgumentParser(description='SeattleSeq Formatter')
+    parser.add_argument(dest='input', help='Input SeattleSeq TSV.')
+    parser.add_argument(dest='output', help='Output SeattleSeq TSV.')
+    parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
+    args = parser.parse_args()
+    return args
 
-    These are tab-separated.
-    """
 
-    with handle as seattle_seq:
-        for line in seattle_seq:
+class SeattleSeqEntry():
+    def __init__(self, line):
+        self.line = line
+        self.chrom = self.line[0]
+        self.pos = self.line[1]
+        self.ref = self.line[3]
+        self.alt = self.line[4]
+        self.depth = self.line[8]
+        self.uniq_key = (self.chrom, self.pos, self.ref, self.alt)
 
-            sline = line.rstrip('\n').split('\t')
-            chrom = sline[0]
-            pos = sline[1]
-            ref = sline[3]
-            alt = sline[4]
-            depth = sline[8]
 
-            if compareCoords(chrom, pos) == False and depth != FAKE_DEPTH and len(alt) < 256 and len(ref) < 256:
-                handle_out.write(line)
-            else:
-                print("Coordinate " + chrom + ":" + pos + " found in input, removing.")
+class SeattleSeqReader():
+    def __init__(self, filename):
+        self.filename = filename
+        self.sseq = self._parse_sseq()
 
-    handle_out.close()
+    def _parse_sseq(self):
+        """
+        Prepare the structure that will contain SeattleSeq WG data.
+        """
+        sseq = OrderedDict()
+        with open(self.filename, 'r') as infile:
+            for line in infile:
+                line = line.rstrip('\n').split('\t')
+                if line[0].startswith('#'):
+                    self.header = line
+                else:
+                    rec = SeattleSeqEntry(line)
+                    if rec.uniq_key not in sseq:
+                        sseq[rec.uniq_key] = rec
+        return sseq
+
+
+class SeattleSeqWriter():
+    def __init__(self, filename):
+        self.outfile = open(filename, 'w')
+
+    def write_line(self, line):
+        self.outfile.write('\t'.join(line))
+        self.outfile.write('\n')
 
 
 def main():
     
-    parser = argparse.ArgumentParser(description='')
-    parser.add_argument(dest='input', help='Input SeattleSeq TSV.')
-    parser.add_argument(dest='output', help='Output SeattleSeq TSV.')
-    args = parser.parse_args()
+    args = supply_args()
+    rare_refs = [("1","169519049"),("7","6026775"),("13","32929387"),("14","75513883")]
+    fake_depth = "100(100,0)"
 
-    handle_in_tsv = open(args.input, 'rU')
-    handle_out_tsv = open(args.output, 'w')
-
-    parseSeattleSeqTSV(handle_in_tsv, handle_out_tsv)
+    my_sseq = SeattleSeqReader(args.input)
+    writer = SeattleSeqWriter(args.output)
+    writer.write_line(my_sseq.header)
+    for entry in my_sseq.sseq.values():
+        if (entry.chrom, entry.pos) not in rare_refs:
+            if entry.depth != fake_depth:
+                if len(entry.alt) < 256:
+                    if len(entry.ref) < 256:
+                        writer.write_line(entry.line)
+    writer.outfile.close()
 
 if __name__ == "__main__":
     main()

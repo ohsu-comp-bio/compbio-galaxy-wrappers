@@ -1,6 +1,8 @@
 <tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.1.4">
   <description>Create annotation files for fusion annotation. Run Oncotator and get sequence context.</description>
-  <requirements></requirements>
+  <requirements>
+    <requirement type="package" version="1.9">samtools</requirement>
+  </requirements>
   <stdio>
     <exit_code range="1:" />
   </stdio>

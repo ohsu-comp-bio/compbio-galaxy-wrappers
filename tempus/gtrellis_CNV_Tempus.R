@@ -60,8 +60,8 @@ gtrellis_layout(n_track = 1,
                 title = SampleName,
                 title_fontsize = 32,
                 track_axis = TRUE,
-                track_ylim = c(-5, (log2(max(cnvPoints$CopyNumber)) + 1)),
-                track_ylab = "Log2 Tempus copies",
+                track_ylim = c(-1, max(cnvPoints$CopyNumber)),
+                track_ylab = "Copy.Number",
                 lab_fontsize = 20,
                 axis_label_fontsize = 18,
                 xaxis = FALSE,
@@ -74,19 +74,26 @@ gtrellis_layout(n_track = 1,
 # color points differently if targets are within or outside STPv3 genes of interest
 # blue == within STPv3 gene of interest; grey == outside STPv3 gene of interest; red == neither
 # add lines across plots to demarcate 5 and 0.5 tumor-corrected copies; log2(5)=2.32; log2(0.5)= -1
-add_points_track(cnvPoints, log2(cnvPoints$CopyNumber),
-                 pch = 16, 
-                 size = unit(2, "mm"),
+add_segments_track(cnvPoints, (cnvPoints$CopyNumber),
+                 #pch = 16, 
+                 #size = unit(2, "mm"),
                  gp = gpar(col = ifelse(is.na(cnvPoints$GENE), "grey", "blue"))
                 ) 
+                
+add_points_track(cnvPoints, (cnvPoints$CopyNumber),track=current_track(),
+                 pch = 16, 
+                 size = unit(1.5, "mm"),
+                 gp = gpar(col = ifelse(is.na(cnvPoints$GENE), "grey", "blue"))
+                 )
 
-add_segments_track(copiesUpperLower, log2(upper),track=current_track(),
+
+add_segments_track(copiesUpperLower, (upper),track=current_track(),
                 gp = gpar(col = "pink",
                 lty = 2,
                 lwd = 1)
                 )
                 
-add_segments_track(copiesUpperLower, log2(lower),track=current_track(),
+add_segments_track(copiesUpperLower, (lower),track=current_track(),
                 gp = gpar(col = "pink",
                 lty = 2,
                 lwd = 1)
@@ -110,12 +117,12 @@ png(filename = "plot2.png",
 # ylim max is set to max segment value for sample, plus add 1 for buffer to prevent points from getting squished at top
 # ylim min is fixed at -5 for all samples; may cut out failed assays, but prevents individual failed assays from making min too low
 gtrellis_layout(n_track = 1, 
-                title = paste0(SampleName, ": Log2 Tempus copies",sep=""),
+                title = paste0(SampleName, ": Copy.Number",sep=""),
                 title_fontsize = 32,
                 ncol = 6,
                 byrow = FALSE,
                 track_axis = TRUE,
-                track_ylim = c(-5, (log2(max(cnvPoints$CopyNumber)) + 1)),
+                track_ylim = c(-1, max(cnvPoints$CopyNumber)),
                 lab_fontsize = 20,
                 axis_label_fontsize = 16,
                 add_name_track = TRUE,
@@ -126,23 +133,32 @@ gtrellis_layout(n_track = 1,
 # color points differently if targets are within or outside STPv3 genes of interest
 # blue == within STPv3 gene of interest; grey == outside STPv3 gene of interest; red == neither
 # add lines across plots to demarcate 5 and 0.5 tumor-corrected copies; log2(5)=2.32; log2(0.5)= -1
-add_points_track(cnvPoints, log2(cnvPoints$CopyNumber),
+
+add_segments_track(cnvPoints, (cnvPoints$CopyNumber),
+                 #pch = 16, 
+                 #size = unit(1.5, "mm"),
+                 gp = gpar(col = ifelse(is.na(cnvPoints$GENE), "grey", "blue"))
+                 )
+                 
+add_points_track(cnvPoints, (cnvPoints$CopyNumber),track=current_track(),
                  pch = 16, 
                  size = unit(1.5, "mm"),
                  gp = gpar(col = ifelse(is.na(cnvPoints$GENE), "grey", "blue"))
-                 )  
-                   
-add_segments_track(copiesUpperLower, log2(upper),track=current_track(),
+                 )   
+                                 
+add_segments_track(copiesUpperLower, (upper),track=current_track(),
                 gp = gpar(col = "pink",
                 lty = 2,
                 lwd = 1)
                 )
                 
-add_segments_track(copiesUpperLower, log2(lower),track=current_track(),
+add_segments_track(copiesUpperLower, (lower),track=current_track(),
                 gp = gpar(col = "pink",
                 lty = 2,
                 lwd = 1)
                 )
+                
+ 
 
 
 # complete png export plot2

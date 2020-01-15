@@ -13,13 +13,15 @@ def supply_args():
   parser.add_argument('-consang', help='Is the patient Consanguinious?', default="false")
   parser.add_argument('-hp', help="HPO Terms", default="")
   parser.add_argument('-family', help="Family Members", default="none")
+  parser.add_argument('-user', help="Email used for Moon")
+  parser.add_argument('-token', help="Moon API token")
   args = parser.parse_args()
   return args
 
 
 
-def get_patient_info(moon_id):
-  parameters = {"user_token": "iSUQvGmVNSjq834g9fP5", "user_email": "campbena@ohsu.edu"}
+def get_patient_info(moon_id, args):
+  parameters = {"user_token": args.token, "user_email": args.user}
 
   patient_url = "https://oregon.moon.diploid.com/samples/" + moon_id + "/patient-info"
   patient_info = requests.get(patient_url, params = parameters)
@@ -32,13 +34,13 @@ def get_patient_info(moon_id):
   info.close()
   return "info.txt"
 
-def post_sample(snp, cnv = "none", age = 999, gender = "unknown", consang = "false", hp = "", family = "none" ):
+def post_sample(snp, args, cnv = "none", age = 999, gender = "unknown", consang = "false", hp = "", family = "none"):
   at_snp = "@/Users/campbena/Documents/galaxy-dev/tools/my_tools/" + snp
   at_cnv = "@/Users/campbena/Documents/galaxy-dev/tools/my_tools/" + cnv
   int_age = int(age)
   
   
-  parameters = {"user_token": (None, "iSUQvGmVNSjq834g9fP5"), "user_email": (None, "campbena@ohsu.edu"), "snp_vcf_file": (snp, open(snp, 'rb')), "sv_vcf_file": (cnv, open(cnv, 'rb')), "age": (None, age), "gender": (None, gender), "is_consanguinous": (None, consang), "hpo_terms": (None, hp), "family_members": (None, family)}
+  parameters = {"user_token": (None, args.token), "user_email": (None, args.user), "snp_vcf_file": (snp, open(snp, 'rb')), "sv_vcf_file": (cnv, open(cnv, 'rb')), "age": (None, age), "gender": (None, gender), "is_consanguinous": (None, consang), "hpo_terms": (None, hp), "family_members": (None, family)}
   
   
   if family == "none":
@@ -63,8 +65,8 @@ def post_sample(snp, cnv = "none", age = 999, gender = "unknown", consang = "fal
   
   return post_to_moon.text
 
-def analyse_sample(moon_id):
-  parameters = {"user_token": "iSUQvGmVNSjq834g9fP5", "user_email": "campbena@ohsu.edu"}
+def analyse_sample(moon_id, args):
+  parameters = {"user_token": args.token, "user_email": args.user}
   
   patient_url = "https://oregon.moon.diploid.com/samples/" + moon_id + "/analysis.json"
   
@@ -75,12 +77,12 @@ def analyse_sample(moon_id):
 def main():
   args = supply_args()
   if args.mode == "info":
-    return get_patient_info(args.id)
+    return get_patient_info(args.id, args)
   if args.mode == "post":
-    return post_sample(args.snp, args.cnv, args.age, args.gender, args.consang, args.hp, args.family)
+    return post_sample(args.snp, args, args.cnv, args.age, args.gender, args.consang, args.hp, args.family)
     
   if args.mode == "analyse":
-    return analyse_sample(args.id)
+    return analyse_sample(args.id, args)
 
 if __name__ == "__main__":
     main()

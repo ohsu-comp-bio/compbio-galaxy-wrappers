@@ -19,7 +19,7 @@ from itertools import imap
 from operator import itemgetter
 from string import Template
 
-VERSION = '0.4.0'
+VERSION = '0.4.1'
 
 def supply_args():
     """

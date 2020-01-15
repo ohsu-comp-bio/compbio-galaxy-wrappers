@@ -1,0 +1,10 @@
+owner: "creason"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/pam50"
+categories:
+  - "CompBio Galaxy Wrappers"
+description: "PAM50 Subtype Analysis"
+repositories:
+  pam50:
+    include: 
+      - pam50.xml
+      - tool-data/*

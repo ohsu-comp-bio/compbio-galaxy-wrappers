@@ -1,4 +1,4 @@
-<tool id="add_af" name="Add AF and DP to VCF" version="0.4.3" >
+<tool id="add_af" name="Add AF and DP to VCF" version="0.4.4" >
   <description>Pindel files do not contain the AF or DP fields in the SAMPLE columns.  This script will add them.
   This script will also include a descriptor in the header for these fields.</description>
   <version_command>add_af.py --version</version_command>

@@ -1,5 +1,9 @@
-<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.4.2" >
+<tool id="calc_tmb" name="Tumor Mutation Burden" version="0.4.4" >
     <description>Calculate TMB from VCF annotations.</description>
+
+    <requirements>
+      <requirement type="package" version="0.6.8">pyvcf</requirement>
+    </requirements>
 
     <command detect_errors="exit_code"><![CDATA[
         python $__tool_directory__/calc_tmb.py

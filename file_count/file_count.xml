@@ -1,15 +1,17 @@
-<tool id="file_count" name="Create GATK List" version="0.1.1" >
+<tool id="file_count" name="Create GATK List" version="0.2.0" >
   <description>For a particular directory, count the number of files, and compare to an input value.</description>
 
   <command><![CDATA[
+  #set $cnt_dir = '/'.join([str($base_dir), str($runid)])
   python $__tool_directory__/file_count.py
-  "${input_cnt}" "${base_dir}" "${file_list}"
-   ]]></command>
+  "${input_cnt}" "${cnt_dir}" "${file_list}"
+  ]]></command>
 
   <inputs>
     <param name="dummy_input" type="data" label="Dummy Input File" />
     <param name="input_cnt" type="text" label="Expected Count" help="Expected number of files in the directory.  If this number of files exist, the workflow will continue." />
     <param name="base_dir" type="text" label="Directory" help="Count the number of files in this directory." />
+    <param name="runid" type="text" label="Run ID" help="Run identifier used to create target directory." />
   </inputs>
 
   <outputs>

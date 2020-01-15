@@ -13,7 +13,6 @@
     -p '
     @JAR_PATH@
     -T "VariantFiltration"
-    \$GATK2_SITE_OPTIONS
 
     -o "${output_vcf}"
 
@@ -23,7 +22,8 @@
     '
     #for $variant_filter in $variant_filters:
         #set $variant_filter = "--%sExpression '%s' --%sName '%s'" % ( str( $variant_filter.is_genotype_filter ), str( $variant_filter.filter_expression ), str( $variant_filter.is_genotype_filter ), str( $variant_filter.filter_name )  )
-        -o '${ hexlify( $variant_filter ) }'
+##        -o '${ hexlify( $variant_filter ) }'
+        -o "${variant_filter}"
     #end for
     
     #if str( $mask_rod_bind_type.mask_rod_bind_type_selector ) == 'set_mask':
@@ -38,7 +38,7 @@
     
     ##start analysis specific options
     #if $cluster_snp_type.cluster_snp_type_selector == "cluster_snp":
-        -p '
+    -p '
         --clusterSize "${cluster_snp_type.cluster_size}"
         --clusterWindowSize "${cluster_snp_type.cluster_window_size}"
         '
