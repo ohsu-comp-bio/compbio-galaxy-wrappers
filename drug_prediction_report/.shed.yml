@@ -4,6 +4,6 @@ categories:
   - "CompBio Galaxy Wrappers"
 description: "Drug Prediction Report"
 repositories:
-  ruvseq:
+  drug_prediction_report:
     include: 
       - drugprediction_report.xml
