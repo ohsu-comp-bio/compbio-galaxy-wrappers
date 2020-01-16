@@ -1,17 +1,17 @@
 <tool id='ruvs' name="RUVs" version='1.0.2'>
-    <description>removes unwated variation based on replicate samples.</description>
+    <description>part 2: removes unwated variation based on replicate samples.</description>
     <requirements>
         <requirement type="package" version="1.18.0">bioconductor-ruvseq</requirement>
         <requirement type="package" version="3.6.1">r-base</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
     Rscript $__tool_directory__/RUVs.R '$input' '$norm' '$minNumReads' '$minNumSamples' '$idxSamples' '$factors' '$repID'
-    #if $genes.all == "regex":
-        "$genes.cIdx"
-    #else if:
-        "$genes.genes"
-    #else:
+    #if $genes.all == "all":
         all
+    #else if $genes.all == "regex":
+        "$genes.cIdx"
+    #else:
+        "$genes.genes"
     #end if
     ]]>
     </command>
@@ -38,9 +38,8 @@ If BCCL inluded: UHR,SkBr3,T47D$,HCC1954" value="UHR">
                 <option value="regex">Search by string</option>
                 <option value="enter">Enter gene list</option>
             </param>
-            <when value="all"/>
             <when value="regex">
-                <param type="text" name="cIdx" label="Control Identification" help="String that occurs in all the control genee." value="^ENS"/>
+                <param type="text" name="cIdx" label="Control Identification" help="String that occurs in all the control genes." value="^ENS"/>
             </when>
             <when value="enter">
                 <param type="text" name="genes" label="Genes" help="A comma seperated list of all control genes."/>
