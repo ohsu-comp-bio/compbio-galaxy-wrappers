@@ -3,6 +3,8 @@
 <macros>
     <xml name="requirements">
         <requirements>
+            <requirement type="package" version="@VERSION@">freak</requirement>
+            <requirement type="package" version="0.23.4">pandas</requirement>
         </requirements>
     </xml>
 
@@ -10,6 +12,6 @@
         <version_command>echo @VERSION@</version_command>
     </xml>
 
-    <token name="@VERSION@">0.1.0</token>
+    <token name="@VERSION@">0.1.1</token>
 
 </macros>
