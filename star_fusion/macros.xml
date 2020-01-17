@@ -6,7 +6,7 @@
             <requirement type="package" version="@VERSION@">star-fusion</requirement>
             <requirement type="package" version="0.1.19">samtools</requirement>
             <requirement type="package" version="3.2">hmmer</requirement>
-	    <requirement type="package" version="2.6.1">star</requirement>
+	        <requirement type="package" version="2.7.2b">star</requirement>
         </requirements>
     </xml>
 
@@ -19,6 +19,6 @@
         </citations>
     </xml>
 
-    <token name="@VERSION@">1.4.0</token>
+    <token name="@VERSION@">1.8.1</token>
 
 </macros>
