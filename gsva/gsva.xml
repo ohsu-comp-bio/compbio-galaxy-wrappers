@@ -16,6 +16,8 @@
         <requirement type="package" version="1.46.0">bioconductor-gseabase</requirement>
         <requirement type="package" version="1.32.0">bioconductor-gsva</requirement>
         <requirement type="package" version="1.4.3">r-reshape2</requirement>
+        <requirement type="package" version="1.0.8">r-pheatmap</requirement>
+        <requirement type="package" version="2.2.1">r-ggplot2</requirement>
         <requirement type="package" version="0.8.3">r-dplyr</requirement>
     </requirements>
 
@@ -59,15 +61,9 @@
 
             ## Peform the data visualizations
             source("${__tool_directory__}/table_visualization.R")
-            options(repr.plot.width=15, repr.plot.height=10) 
-            #if $viz.box_plots.do == "do"
-                box = make.box(gsva_melt, "$viz.box_plots.sample", feature.name="Pathway", value.name="EnrichmentScore")
-                ggsave("gsva_box_plot.png", box)
-            #end if
-            #if $viz.heatmap.do == "do"
-            hm = make.heatmap(gsva_results)
-                ggsave("gsva_heatmap.png", hm)
-            #end if
+            box = make.box(gsva_melt, "$visuals.sample", feature.name="Pathway", value.name="EnrichmentScore")
+            ggsave("$visuals.box_name", box)
+            hm = make.heatmap(gsva_results, path="$visuals.hm_name")
         </configfile>
     </configfiles>
 
@@ -124,38 +120,18 @@
             </when>
         </conditional>
         
-        <section name="viz" title="Data Visualizations" expanded="false">
-            <conditional name="box_plots">
-                <param name="do" type="select" label="Produce Box and Whisker Plots">
-                    <option value="do">Do</option>
-                    <option value="dont">Don't</option>
-                </param>
-                <when value="do">
-                    <param name="box_name" type="text" label="Plot Name" value="gsva_box_plot.png" />
-                    <param name="sample" type="text" label="Sample ID" help="Sample identifier, as specified by the study cohort" />
-                </when>
-                <when value="dont">
-                </when>
-            </conditional>
-            <conditional name="heatmap">
-                <param name="do" type="select" label="Produce Clustered Heatmap">
-                    <option value="do">Do</option>
-                    <option value="dont">Don't</option>
-                </param>
-                <when value="do">
-                    <param name="hm_name" type="text" label="Plot name" value="gsva_heatmap.png" />
-                </when>
-                <when value="dont">
-                </when>
-            </conditional>
+        <section name="visuals" title="Data Visualizations" expanded="false">
+            <param name="box_name" type="text" label="Plot Name" value="gsva_box_plot.png" />
+            <param name="sample" type="text" label="Sample ID" help="Sample identifier, as specified by the study cohort" />
+            <param name="hm_name" type="text" label="Plot name" value="gsva_heatmap.png" />
         </section>
     </inputs>
 
     <outputs>
         <!-- Remove any original input file extension. -->
-        <data format="tsv" name="gsva_out" type="data" label="${os.path.splitext(os.path.basename($gene_expression_file.name))[0]}_GSVA_out"/>
-        <data format="png" name="box_out" type="data" from_work_dir="gsva_box_plot.png" label="gsva_box_plot.png" />
-        <data format="png" name="heapmap_out" type="data" from_work_dir="gsva_heatmap.png" label="gsva_heatmap.png" />
+        <data format="tsv" name="gsva_out" label="${os.path.splitext(os.path.basename($gene_expression_file.name))[0]}_GSVA_out"/>
+        <data format="png" name="box_out" from_work_dir="gsva_box_plot.png" label="${tool.name} on ${on_string}: Box Plots" />
+        <data format="png" name="heapmap_out" from_work_dir="gsva_heatmap.png" label="${tool.name} on ${on_string}: Heatmap" />
     </outputs>
 
     <tests>

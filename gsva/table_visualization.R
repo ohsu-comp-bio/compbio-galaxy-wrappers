@@ -1,4 +1,3 @@
-library(reshape2)
 library(ggplot2)
 library(pheatmap)
 
@@ -41,18 +40,6 @@ rename.melted <- function(input, feature=NA, sample=NA, value=NA, in.place=FALSE
     return(data)
 }
 
-# Perform all necessary proprocessing steps before visualization
-melt <- function(input, col.as.sample=TRUE) {
-    melted <- melt(input)
-    colnames(melted) <- c('Feature','Sample','Value')
-    if (!col.as.samples) {
-        actuallySample <- melted$Feature
-        melted$Feature <- melted$Sample
-        melted$Sample <- actuallySample
-    }
-    return(melted)
-}
-
 # Produce a box and whisker plot for the cohort
 make.box <- function(data, sample, feature.name=NA, sample.name=NA, value.name=NA) {
     df = data.frame(data)
@@ -62,18 +49,21 @@ make.box <- function(data, sample, feature.name=NA, sample.name=NA, value.name=N
         if(!('Feature' %in% colnames(data))){
             stop(paste0('Error in table_visualization::make.box - no Feature column in data with columns ',colnames(data)))
         }
+        feature.name <- "Feature"
     }
     # Establish value column name
     if (is.na(value.name)) {
         if(!('Value' %in% colnames(data))){
             stop(paste0('Error in table_visualization::make.box - no Value column in data with columns ',colnames(data)))
         }
+        value.name <- "Value"
     }
     # Establish sample column name
     if (is.na(sample.name)) {
         if(!('Sample' %in% colnames(data))){
             stop(paste0('Error in table_visualization::make.box - no Sample column in data with columns ',colnames(data)))
         }
+        sample.name <- "Sample"
     }
     colnames(df)[cols==sample.name] <- "Sample"
     colnames(df)[cols==value.name] <- "Value"
@@ -89,11 +79,10 @@ make.box <- function(data, sample, feature.name=NA, sample.name=NA, value.name=N
     sample.df$Feature <- factor(sample.df$Feature, fn$Feature)
 
     # Make the plot
-    options(repr.plot.width=5, repr.plot.height=7)
     cols = c("#F8766D")
     g <- ggplot(df) +
       geom_boxplot(ggplot2::aes(y=Value, x=Feature)) +
-      stat_boxplot(data=sample.df,ggplot2::aes(y=Value, x=Feature, col=Sample)) +
+      stat_boxplot(data=sample.df,aes(y=Value, x=Feature, col=Sample)) +
       coord_flip() +
       theme_minimal() + 
       scale_colour_manual(name="Sample", values=cols) +
@@ -104,7 +93,15 @@ make.box <- function(data, sample, feature.name=NA, sample.name=NA, value.name=N
 }
 
 # Produce a clustered heatmap for the data
-make.heatmap <- function(data, colors=colorRampPalette(c("#2166ac", "#FFFFFF", "#b2182b")), breaks=seq(-1,1,by=0.02)) {
-    size = 4
-    hm <- pheatmap(data, color=colors(length(breaks)),border_color=NA, cluster_cols=TRUE, breaks=breaks, cellwidth=size, cellheight=size, fontsize=size)
+make.heatmap <- function(data, path, colors=colorRampPalette(c("#2166ac", "#FFFFFF", "#b2182b")), breaks=seq(-1,1,by=0.02), size=4) {
+    hm <- pheatmap(data, 
+                   filename=path,
+                   color=colors(length(breaks)),
+                   breaks=breaks, 
+                   cellwidth=size, 
+                   cellheight=size, 
+                   fontsize=size,
+                   cluster_cols=TRUE, 
+                   border_color=NA)
+    return(hm)
 }
