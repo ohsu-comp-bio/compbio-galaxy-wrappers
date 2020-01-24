@@ -148,9 +148,10 @@
             --alignWindowsPerReadNmax "$params.align.alignWindowsPerReadNmax"
             --alignTranscriptsPerWindowNmax "$params.align.alignTranscriptsPerWindowNmax"
             --alignTranscriptsPerReadNmax "$params.align.alignTranscriptsPerReadNmax"
-            --alignEndsType $params.align.alignEndsType
-            --alignSoftClipAtReferenceEnds $params.align.alignSoftClipAtReferenceEnds
-            --alignInsertionFlush $params.align.alignInsertionFlush
+            --alignEndsType "$params.align.alignEndsType"
+            --alignSoftClipAtReferenceEnds "$params.align.alignSoftClipAtReferenceEnds"
+            --alignInsertionFlush "$params.align.alignInsertionFlush"
+            --alignSJstitchMismatchNmax $params.align.alignSJstitchMismatchNmax
 
             ## Paired-end reads options
             --peOverlapNbasesMin "$params.paired.peOverlapNbasesMin"
@@ -347,7 +348,7 @@
                         <option value="Extend5pOfRead1" selected="false" help="fully extend only the 5p of the read1, all other ends: local alignment">Extend5pOfRead1</option>
                         <option value="Extend5pOfReads12" selected="false" help="fully extend only the 5p of the both read1 and read2, all other ends: local alignment">Extend5pOfReads12</option>
                     </param>
-<!--                    &#45;&#45;alignEndsProtrude-->
+                    <param argument="--alignSJstitchMismatchNmax" type="text" value="0 -1 0 0" label="Maximum splice juntion mismatches" help="maximum number of mismatches for stitching of the splice junctions (-1: no limit). (1) non-canonical motifs, (2) GT/AG and CT/AC motif, (3) GC/AG and CT/GC motif, (4) AT/AC and GT/AT motif."/>
                     <param argument="--alignSoftClipAtReferenceEnds" type="boolean" truevalue="Yes" falsevalue="No" checked="true" label="Allow the soft-clipping of the alignments past the end of the chromosomes?"/>
                     <param argument="--alignInsertionFlush" type="boolean" truevalue="Right" falsevalue="None" checked="false" label="Flush ambiguous insertion positions to the right? "/>
                 </section>
@@ -601,11 +602,7 @@ The All option includes the Standard attributes, plus the following four::
 **STAR-Fusion**
 
 STAR-Fusion_ is used to identify candidate fusion transcripts. The recommended_ parameters for running
-STAR prior to STAR-Fusion can be pre-selected, with the following exceptions::
-
-  --twopassMode Basic                   # not an option in STAR 2.4.0
-  --chimSegmentReadGapMax 3             # not an option in STAR 2.4.0
-  --alignSJstitchMismatchNmax 5 -1 5 5  # not an option in STAR 2.4.0
+STAR prior to STAR-Fusion can be pre-selected::
 
 **Attributions**
 
