@@ -1,0 +1,10 @@
+owner: "creason"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/centroid_cor"
+categories:
+  - "CompBio Galaxy Wrappers"
+description: "Centroid Correlation Tool for PAM50, Claudin-Low, and TNBC Subtypes"
+repositories:
+  correlation:
+    include: 
+      - correlation.xml
+      - tool-data/*
