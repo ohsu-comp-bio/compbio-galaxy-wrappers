@@ -8,7 +8,7 @@ import argparse
 import numpy
 import vcf
 
-VERSION = '0.2.1'
+VERSION = '0.3.0'
 
 def supply_args():
     """
@@ -18,6 +18,7 @@ def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--infile', help='Input VCF')
     parser.add_argument('--infile_genes', help='Input HGNC Gene List')
+    parser.add_argument('--blacklist', help='Additional variant blacklist to apply.')
     parser.add_argument('--outfile', help='Output VCF')
     parser.add_argument('--outfile_bad', help='Filtered Sites Output')
     parser.add_argument('--chrom', help='Output filtering details for coordinate.')
@@ -32,6 +33,9 @@ class VcfRec(object):
         self.rec = rec
         self.chrom = str(rec.CHROM)
         self.coord = str(rec.POS)
+        self.ref = str(rec.REF)
+        self.alt = str(rec.ALT)
+        self.uniq_key = (self.chrom, self.coord, self.ref, self.alt)
 
         try:
             self.clnsig = rec.INFO['clinvar.CLNSIG'][0]
@@ -54,6 +58,11 @@ class VcfRec(object):
             self.hgmd = None
 
         self.snpeff_filt = ["3_prime_UTR_variant", "5_prime_UTR_variant", "downstream_gene_variant", "intron_variant", "intergenic_region", "synonymous_variant", "upstream_gene_variant", "non_coding_transcript_exon_variant"]
+
+        try:
+            self.snpeff_terms = set([x.split('|')[1] for x in rec.INFO['ANN']])
+        except:
+            self.snpeff_terms = None
 
         self.snpeff = False
         try:
@@ -79,6 +88,10 @@ class VcfRec(object):
                        (self.clnsig == 'Likely_pathogenic') or \
                        ('athogenic' in self.clnsigconf) or \
                        (self.hgmd == 'DM')
+
+        self.is_path_clinvar = (self.clnsig == 'Pathogenic') or \
+                               (self.clnsig == 'Likely_pathogenic') or \
+                               ('athogenic' in self.clnsigconf)
 
         self.no_info = not self.clnsig and not self.gnomad and not self.hgmd
 
@@ -141,6 +154,21 @@ class VcfRec(object):
             for entry in self.rec.INFO['ANN']:
                 print(entry)
 
+class BlacklistVariants():
+    """
+    TSV containing list of variant we would like to filter out of the call set.
+    """
+    def __init__(self, filename):
+        self.blacklist = open(filename, 'rU')
+        self.bl_vrnts = self._create_blacklist()
+
+    def _create_blacklist(self):
+        bl_vrnts = []
+        for line in self.blacklist:
+            line = tuple(line.rstrip('\n').split('\t'))
+            bl_vrnts.append(line)
+        return bl_vrnts
+
 
 def process_genes(filename):
     """
@@ -159,14 +187,25 @@ def main():
     vcf_writer = vcf.Writer(open(args.outfile, 'w'), vcf_reader)
     vcf_writer_bad = vcf.Writer(open(args.outfile_bad, 'w'), vcf_reader)
     ingenes = process_genes(args.infile_genes)
+    if args.blacklist:
+        blacklist = BlacklistVariants(args.blacklist).bl_vrnts
+    else:
+        blacklist = []
 
     for record in vcf_reader:
         entry = VcfRec(record)
         if args.chrom and args.coord:
             entry.var_req(args.chrom, args.coord)
-        if (entry.snpeff_gene) not in ingenes:
+        if entry.uniq_key in blacklist:
+            vcf_writer_bad.write_record(record)
+        elif (entry.snpeff_gene) not in ingenes:
             vcf_writer_bad.write_record(record)
         elif entry.bad_ab:
+            vcf_writer_bad.write_record(record)
+        # Lab changed mind again.
+        elif 'missense_variant' in entry.snpeff_terms and len(entry.snpeff_terms) == 1 and not entry.is_path_clinvar:
+            vcf_writer_bad.write_record(record)
+        elif 'synonymous_variant' in entry.snpeff_terms and len(entry.snpeff_terms) == 1 and not entry.is_path_clinvar:
             vcf_writer_bad.write_record(record)
         elif entry.is_path:
             vcf_writer.write_record(record)

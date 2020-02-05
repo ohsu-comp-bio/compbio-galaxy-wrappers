@@ -1,4 +1,4 @@
-<tool id="hop_vcf_filt" name="HOP Filter" version="0.2.1" >
+<tool id="hop_vcf_filt" name="HOP Filter" version="0.3.0" >
   <description>Filter a HOP multi-sample VCF.</description>
 
   <requirements>
@@ -10,6 +10,9 @@
   python $__tool_directory__/hop_vcf_filt.py
     --infile "${input}"
     --infile_genes "${input_genes}"
+    #if $blacklist:
+      --blacklist "${blacklist}"
+    #end if
     --outfile output.vcf
     --outfile_bad "${output_bad}"
     #if $chrom:
@@ -25,6 +28,7 @@
   <inputs>
     <param name="input" format="vcf" type="data" label="Input VCF" />
     <param name="input_genes" format="txt" type="data" label="Input HGNC Gene List" />
+    <param name="blacklist" format="tabular" type="data" optional="true" label="Input blacklist or variants to be filtered." />
     <param name="chrom" type="text" optional="true" label="Optional Chromosome (both chrom and coord must be specified)" />
     <param name="coord" type="text" optional="true" label="Optional Coordinate (both chrom and coord must be specified)" />
   </inputs>
