@@ -6,7 +6,7 @@
 # CODED BY: John Letaw
 
 from __future__ import print_function
-from snp_profile import SnpProfile, CompareProfiles
+#from snp_profile import SnpProfile, CompareProfiles
 
 import argparse
 import json
