@@ -26,15 +26,33 @@ def identity(freak, ref):
     return freak, ref
 
     
-def remove_false_calls(freak, ref):
+def mark_false_calls(freak, ref):
     '''
     Removes rows from the Freak output file which have bases that do not match 
     the reference file, returns the modified Freak file and the reference as 
     a tuple
     '''
-    result = freak.merge(ref, how='inner', on=['Chromosome','Position Start','Variant Base'])
-    result = result.loc[:,freak.columns]
+    import sys
+    # Isolate the correct calls, according to the reference
+    merged = freak.merge(ref, how='inner', on=['Chromosome','Position Start','Variant Base'])
+    merged = merged.loc[:,freak.columns]
+
+    # Mark rows in the final table is either ignorable or not
+    result = freak.copy()
+    # Default rows to ignoreable
+    result['ignore'] = True
+    # Mark non-false calls as not ignoreable
+    for i, resultRow in result.loc[:,freak.columns].iterrows():
+        for j, mergeRow in merged.iterrows():
+            print(resultRow, file=sys.stderr)
+            print(mergeRow, file=sys.stderr)
+            if all(resultRow == mergeRow):
+                result.loc[i,'ignore'] = False
+    # Mark 'no variant' rows as not ignorable
+    result.loc[result['variant type']=='no variant','ignore'] = False
+    print(result['ignore'], file=sys.stderr)
     return result, ref
+    
 
 # Read in Freak's output and the reference 
 freak_out = pd.read_csv("$freak_data", sep='\t', header=0).astype(str)
@@ -49,8 +67,8 @@ freak_out.rename(columns={'rname':'Chromosome',
 variant_subset.loc[:,'Chromosome'] = variant_subset['Chromosome'].map(lambda x: x[3:])
 
 # Apply all of the appropriate filters 
-#if $filters.remove_false
-freak_out, variant_subset = remove_false_calls(freak_out, variant_subset)
+#if $filters.mark_false
+freak_out, variant_subset = mark_false_calls(freak_out, variant_subset)
 #end if
 
 # Return the labels of the freak data to their old values
@@ -69,7 +87,7 @@ freak_out.to_csv(path_or_buf='$output', sep='\t',index=False)
         <param type="data" name="genetrails_reference" format="txt,tsv,tabular" label="GeneTrails Variant File" help=""/>
         <param type="text" name="sample_id" label="Sample ID" help=""/>
         <section name="filters" label="Filters">
-            <param type="boolean" name="remove_false" default="true" label="Remove False Variants Base Calls" help="Removes rows from the Freak output which have variant bases not found in the reference" />
+            <param type="boolean" name="mark_false" default="true" label="Mark False Variants Base Calls" help="Adds an 'ignore' column which is True if the row is determined to be a false call" />
         </section>
     </inputs>
 
