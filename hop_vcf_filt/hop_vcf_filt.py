@@ -6,9 +6,10 @@
 
 import argparse
 import numpy
+import re
 import vcf
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
 def supply_args():
     """
@@ -64,6 +65,8 @@ class VcfRec(object):
         except:
             self.snpeff_terms = None
 
+        self.is_splice = self._is_splice()
+
         self.snpeff = False
         try:
             for entry in rec.INFO['ANN']:
@@ -106,6 +109,35 @@ class VcfRec(object):
         else:
             self.bad_ab = False
 
+        # Find splice change from coding HGVS and decide whether this is a "canonical splice".
+        # In this case, we are defining this as no more than +/- 2bp.
+        c_dot_splice_regex = re.compile('^c.[0-9]+[+-]([0-9])[ATCGN>insdel]+')
+        self.all_splice = []
+        try:
+            for entry in rec.INFO['ANN']:
+                c_dot = entry.split('|')[9]
+                self.splice = int(c_dot_splice_regex.match(c_dot).group(1))
+                self.all_splice.append(self.splice)
+            if len(set(self.all_splice)) == 1:
+                if list(set(self.all_splice))[0] > 2:
+                    self.canon_splice = False
+        except:
+            self.canon_splice = True
+
+
+    def _is_splice(self):
+        """
+        If the phrase 'splice_region_variant' is in the snpeff term, then return a True.
+        False for anything else.
+        :return:
+        """
+        if self.snpeff_terms:
+            for entry in self.snpeff_terms:
+                if 'splice_region_variant' in entry:
+                    return True
+        return False
+
+
     def _calc_ab(self):
         """
         Get the average allele balance for a specific genotype.
@@ -143,6 +175,7 @@ class VcfRec(object):
             print("GNOMAD: {0}".format(self.gnomad))
             print("HGMD: {0}".format(self.hgmd))
             print("SNPEFF STATUS: {0}".format(self.snpeff))
+            print("SNPEFF TERMS: {0}".format(self.snpeff_terms))
             print("SNPEFF GENE: {0}".format(self.snpeff_gene))
             print("LOCAL AF: {0}".format(self.af))
             print("QUAL: {0}".format(self.qual))
@@ -151,6 +184,8 @@ class VcfRec(object):
             print("AVG AB: {0}".format(self.ab_avg))
             print("STDEV AB: {0}".format(self.ab_std))
             print("BAD AB?: {0}".format(self.bad_ab))
+            print("SPLICE VARIANT?: {0}".format(self.is_splice))
+            print("CANONICAL SPLICE VARIANT?: {0}".format(self.canon_splice))
             for entry in self.rec.INFO['ANN']:
                 print(entry)
 
@@ -194,6 +229,7 @@ def main():
 
     for record in vcf_reader:
         entry = VcfRec(record)
+        # If you are just sending a chrom and a coordinate, print out the info.
         if args.chrom and args.coord:
             entry.var_req(args.chrom, args.coord)
         if entry.uniq_key in blacklist:
@@ -202,8 +238,9 @@ def main():
             vcf_writer_bad.write_record(record)
         elif entry.bad_ab:
             vcf_writer_bad.write_record(record)
-        # Lab changed mind again.
-        elif 'missense_variant' in entry.snpeff_terms and len(entry.snpeff_terms) == 1 and not entry.is_path_clinvar:
+        elif 'missense_variant' in entry.snpeff_terms and len(entry.snpeff_terms) == 1 and not entry.is_path_clinvar and not entry.hgmd:
+            vcf_writer_bad.write_record(record)
+        elif entry.is_splice and not entry.canon_splice and not entry.is_path_clinvar and not entry.hgmd:
             vcf_writer_bad.write_record(record)
         elif 'synonymous_variant' in entry.snpeff_terms and len(entry.snpeff_terms) == 1 and not entry.is_path_clinvar:
             vcf_writer_bad.write_record(record)
