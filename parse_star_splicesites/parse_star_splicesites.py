@@ -10,7 +10,7 @@ import argparse
 from file_types.gff3 import GffReader
 
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 
 def supply_args():
     """
@@ -53,6 +53,8 @@ def compare_norm(star_file, norm_ints):
     """
     not_ref_coords = []
     for entry in star_file:
+        if entry[0].startswith('chr'):
+            entry[0] = entry[0][3:]
         coord = (entry[0], int(entry[1]), int(entry[2]))
         if coord not in norm_ints:
             not_ref_coords.append(entry)
@@ -67,7 +69,6 @@ def add_exon_gene(not_ref, gff):
     chrom, start, stop = not_ref[0], int(not_ref[1]), int(not_ref[2])
     if chrom in gff.exon_parent:
         for parent in gff.exon_parent[chrom]:
-            #print(gff.coords_parent[chrom][parent])
             if (start-1 >= int(gff.coords_parent[chrom][parent][0][0])) and \
                 (stop+1 <= int(gff.coords_parent[chrom][parent][0][1])):
 
@@ -77,8 +78,6 @@ def add_exon_gene(not_ref, gff):
                 temp.extend(['NA', 'NA'])
                 for coord in sorted(gff.exon_parent[chrom][parent]):
                     if int(coord[1]) == (start - 1):
-#                        not_ref.append(gff.hgnc_parent[chrom][parent])
-#                        not_ref.append(gff.refseq_parent[chrom][parent])
                         temp[2] = (str(gff.exon_parent[chrom][parent].index(
                         coord)+1))
                     elif int(coord[0]) == (stop + 1):
