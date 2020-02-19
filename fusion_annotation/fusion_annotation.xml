@@ -1,30 +1,36 @@
-<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.1.4">
+<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.2.0">
   <description>Create annotation files for fusion annotation. Run Oncotator and get sequence context.</description>
   <requirements>
-    <requirement type="package" version="1.9">samtools</requirement>
+    <requirement type="package" version="0.15.3">pysam</requirement>
   </requirements>
   <stdio>
     <exit_code range="1:" />
   </stdio>
   <version_command>fusion_annotation.py --version</version_command>
-  <command>
-<![CDATA[
+        parser.add_argument('--starfusion', help='STAR-Fusion output star-fusion.fusion_candidates.final.abridged.FFPM')
+    parser.add_argument('--json_sample_metrics', help="Sample level metrics file")
+    parser.add_argument('--path_to_fasta', help='Full path to fasta.fa file, with index file')
+    parser.add_argument('--filt', action='store_true', help='filter out specific ribosomal and mitochondrial fusions')
+    parser.add_argument('--output', default='starfusion_output.bedpe', help='Full path to fasta.fa file, with index file')
+
+  <command><![CDATA[
     python $__tool_directory__/fusion_annotation.py
-    $filter
-    $starfusion
-    $json_sample_metrics
-      #if $refGenomeSource.genomeSource == "history":
-        $refGenomeSource.ownFile
-      #else:
-        "${refGenomeSource.index.fields.path}"
-      #end if
- ]]>
+    --starfusion '${starfusion}'
+    '${filter}'
+    --json_sample_metrics '${json_sample_metrics}'
+    #if $refGenomeSource.genomeSource == "history":
+        --path_to_fasta ${refGenomeSource.ownFile}
+    #else:
+        --path_to_fasta '${refGenomeSource.index.fields.path}'
+    #end if
+    --output '${output}'
+]]>
    </command>
   <inputs>
      <param name="starfusion" type="data" format="tabular" label="STAR-Fusion result: star-fusion.fusion_candidates.final.abridged.FFPM" />
      <param name="json_sample_metrics" type="data" format="txt" label="Sample metrics output in JSON format." />
      <param name="filter" type="select" label="Filter non-coding RNAs" help="Check to remove specific non coding RNAs and tRNA mitochondrial genes. Keeps all others such as protein-coding mitochondrial genes. Based on this regular expression: MT-T|MT-RNR|RNA18S5|RNA28S5|RNA5-85S">
-       <option value="-f">Yes</option>
+       <option value="--filt">Yes</option>
        <option value=''>No</option>
      </param>
      <conditional name="refGenomeSource">
@@ -34,7 +40,7 @@
           </param>
           <when value="indexed">
               <param name="index" type="select" label="Select a reference genome" help="If your genome of interest is not listed, contact the Galaxy team">
-              <options from_data_table="bwa_indexes">
+              <options from_data_table="starfusion_indexes">
                   <filter type="sort_by" column="2"/>
                   <validator type="no_options" message="No indexes are available for the selected input dataset"/>
               </options>
@@ -46,7 +52,7 @@
       </conditional>  <!-- refGenomeSource -->
   </inputs>
   <outputs>
-       <data format="tabular" name="starfusion_output.bedpe" label="${tool.name} on ${on_string}: starfusion_output.bedpe" from_work_dir= "starfusion_output.bedpe" />
+       <data format="tabular" name="output" label="${tool.name} on ${on_string}: starfusion_output.bedpe" />
   </outputs>
 
   <help>
