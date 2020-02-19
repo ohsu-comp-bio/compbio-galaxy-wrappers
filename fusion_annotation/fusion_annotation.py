@@ -262,15 +262,14 @@ def main():
         seq_right = get_nucleotides_with_samtools(mafline_right, args.path_to_fasta, "right")
 
         if on_target:
-            if 'J_FFPM' in linebedpe and 'S_FFPM' in linebedpe:
-                linebedpe['NormalizedFrags'] = calc_on_target(on_target, linebedpe['J_FFPM'], linebedpe['S_FFPM'])
-            elif 'FFPM' in linebedpe:
+            if 'FFPM' in linebedpe:
                 linebedpe['NormalizedFrags'] = calc_on_target(on_target, linebedpe['FFPM'])
+            elif 'J_FFPM' in linebedpe and 'S_FFPM' in linebedpe:
+                linebedpe['NormalizedFrags'] = calc_on_target(on_target, linebedpe['J_FFPM'], linebedpe['S_FFPM'])
             else:
                 linebedpe['NormalizedFrags'] = '-1'
         else:
             linebedpe['NormalizedFrags'] = '-1'
-
 
         linebedpe['leftgene'] = seq_left[0]
         linebedpe['leftseq'] = seq_left[1]
