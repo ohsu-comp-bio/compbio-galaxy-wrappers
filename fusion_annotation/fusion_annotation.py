@@ -97,9 +97,24 @@ class StarFusionOutputLine:
 
 
 class FusionAnnot:
+    """
+
+    """
     def __init__(self, line):
         self.line = line.fusion
         self.output_line = self._convert_starfusion_to_bedpe()
+
+    def _kinase_from_pfam(self, pfam):
+        """
+        Determine whether the Pkinase annotation exists within PFAM strings.
+        :return:
+        """
+        pfam = pfam.rstrip('\n').split('^')
+        print(pfam)
+        for entry in pfam:
+            if entry.startswith('Pkinase'):
+                return 'YES'
+        return 'NO'
 
     def _convert_starfusion_to_bedpe(self):
         """
@@ -141,6 +156,13 @@ class FusionAnnot:
         annot['RightBreakDinuc'] = self.line['RightBreakDinuc']
         annot['RightBreakEntropy'] = self.line['RightBreakEntropy']
         annot['PROT_FUSION_TYPE'] = self.line['PROT_FUSION_TYPE']
+        annot['FUSION_CDS'] = self.line['FUSION_CDS']
+        annot['FAR_left'] = self.line['FAR_left']
+        annot['FAR_right'] = self.line['FAR_right']
+        annot['PFAM_LEFT'] = self.line['PFAM_LEFT']
+        annot['PFAM_RIGHT'] = self.line['PFAM_RIGHT']
+        annot['KINASE_IN_PFAM_LEFT'] = self._kinase_from_pfam(annot['PFAM_LEFT'])
+        annot['KINASE_IN_PFAM_RIGHT'] = self._kinase_from_pfam(annot['PFAM_RIGHT'])
 
         # This means J_FFPM and S_FFPM are not listed.  Currently, for compatibility with CGD, placeholders
         # for these values need to be sent.
