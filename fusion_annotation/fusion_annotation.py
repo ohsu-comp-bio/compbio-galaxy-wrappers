@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # USAGE: python fusion_annotation.py [-f] <starfusion> <sample_level_metrics.txt> <genome_refpath>
 
-from collections import OrderedDict
 import argparse
 import json
+import re
+from collections import OrderedDict
+
 import pysam
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 
 
 def supply_args():
@@ -33,6 +35,7 @@ class StarFusionOutput:
 
     def out_create(self):
         fusions = []
+        header = []
         with open(self.filename, 'r') as my_sf:
             for fusion in my_sf:
                 if fusion.startswith('#'):
@@ -110,7 +113,6 @@ class FusionAnnot:
         :return:
         """
         pfam = pfam.rstrip('\n').split('^')
-        print(pfam)
         for entry in pfam:
             if entry.startswith('Pkinase'):
                 return 'YES'
@@ -266,12 +268,26 @@ def main():
                        "ND2", "ND3", "ND4", "ND4L", "ND5", "ND6", "RNR1", "RNR2",
                        "TRNA", "TRNC", "TRND", "TRNE", "TRNF", "TRNG", "TRNH",
                        "TRNI", "TRNK", "TRNL1", "TRNL2", "TRNM", "TRNN", "TRNP",
-                       "TRNQ", "TRNR", "TRNS1", "TRNS2", "TRNT", "TRNV", "TRNW", "TRNY"]
+                       "TRNQ", "TRNR", "TRNS1", "TRNS2", "TRNT", "TRNV", "TRNW", "TRNY",
+                       "IGH-@-ext"]
+        regex_filt = [r'A[LC][0-9]{6}\.[0-9]{1}', r'RP11-[0-9]{3}[A-Z]{1}[0-9]+\.[0-9]{1}']
+
     else:
         hard_filter = None
+        regex_filt = None
 
     my_sf = StarFusionOutput(args.starfusion).fusions
     cols = False
+    # If there are no results, we need at least a header to send to the CGD...
+    hard_header = ["chrom1", "start1", "end1", "chrom2", "start2", "end2", "name", "score", "strand1", "strand2",
+                   "JunctionReadCount", "SpanningFragCount", "SpliceType", "HGVSGene1", "EnsGene1", "HGVSGene2",
+                   "EnsGene2", "LargeAnchorSupport", "LeftBreakDinuc", "LeftBreakEntropy", "RightBreakDinuc",
+                   "RightBreakEntropy", "PROT_FUSION_TYPE", "FUSION_CDS", "FAR_left", "FAR_right", "PFAM_LEFT",
+                   "PFAM_RIGHT", "KINASE_IN_PFAM_LEFT", "KINASE_IN_PFAM_RIGHT", "J_FFPM", "S_FFPM", "FFPM",
+                   "NormalizedFrags", "leftgene", "leftseq", "rightgene", "rightseq", "combinedseq"]
+    if len(my_sf) == 0:
+        sf_out.write('\t'.join(hard_header))
+        sf_out.write('\n')
     for line in my_sf:
         fusion = FusionAnnot(line)
         linebedpe = fusion.output_line
@@ -310,16 +326,26 @@ def main():
         linebedpe['combinedseq'] = combinedseq
 
         # Writing section.
+        filter_me = False
         if not cols:
             sfoutcolumns = [str(x) for x in linebedpe]
+            if len(sfoutcolumns) == 0:
+                sfoutcolumns = hard_header
             sf_out.write('\t'.join(sfoutcolumns))
             sf_out.write('\n')
             cols = True
         if args.filt:
-            if (linebedpe['HGVSGene1'] not in hard_filter) and (linebedpe['HGVSGene2'] not in hard_filter):
-                to_write = [str(x) for x in linebedpe.values()]
-                sf_out.write('\t'.join(to_write))
-                sf_out.write('\n')
+            gene1 = linebedpe['HGVSGene1']
+            gene2 = linebedpe['HGVSGene2']
+            if (gene1 in hard_filter) or (gene2 in hard_filter):
+                filter_me = True
+            for filt in regex_filt:
+                if re.match(filt, gene1) or re.match(filt, gene2):
+                    filter_me = True
+        if not filter_me:
+            to_write = [str(x) for x in linebedpe.values()]
+            sf_out.write('\t'.join(to_write))
+            sf_out.write('\n')
 
 
 if __name__ == "__main__":
