@@ -10,7 +10,7 @@ import argparse
 from file_types.gff3 import GffReader
 
 
-VERSION = '0.1.3'
+VERSION = '0.1.4'
 
 def supply_args():
     """
@@ -111,7 +111,7 @@ def write_filtered_splice(args, not_ref_coords, handle):
 
     for entry in sorted(not_ref_coords, key=lambda e: int(e[6]), reverse=True):
         # filtering MT here as well
-        if int(entry[6]) > args.min_count and not entry[0].startswith('GL') and not entry[0].startswith('MT'):
+        if int(entry[6]) > args.min_count and not entry[0].startswith('GL') and not entry[0].startswith('MT') and not entry[0] == 'M':
             entry[4] = motif_map(entry[4])
             handle.write('\t'.join(entry))
             handle.write('\n')
