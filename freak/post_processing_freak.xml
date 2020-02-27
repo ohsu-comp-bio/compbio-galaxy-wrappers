@@ -11,7 +11,7 @@
     <expand macro="requirements"/>
 
     <command detect_errors="exit_code"><![CDATA[
-    python3 $run
+    python $run
     ]]></command>
 
     <configfiles>
@@ -87,7 +87,7 @@ freak_out.to_csv(path_or_buf='$output', sep='\t',index=False)
         <param type="data" name="genetrails_reference" format="txt,tsv,tabular" label="GeneTrails Variant File" help=""/>
         <param type="text" name="sample_id" label="Sample ID" help=""/>
         <section name="filters" label="Filters">
-            <param type="boolean" name="mark_false" default="true" label="Mark False Variants Base Calls" help="Adds an 'ignore' column which is True if the row is determined to be a false call" />
+            <param type="boolean" name="mark_false" checked="true" label="Mark False Variants Base Calls" help="Adds an 'ignore' column which is True if the row is determined to be a false call" />
         </section>
     </inputs>
 
