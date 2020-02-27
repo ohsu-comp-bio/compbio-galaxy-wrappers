@@ -19,102 +19,99 @@
     <configfiles>
         <configfile name="run">
 source(paste0("${__tool_directory__}","/CIBERSORT.R"))
-library(dplyr)
 library(reshape2)
 library(ggplot2)
 library(RColorBrewer)
 
 # Define the function used to produce the plots
-graph = function(data, level, colors) {
-  if (level == "CellType") {
-    writeName = "Raw"
-  } else {
-    writeName = level
-  }
-
-  ggplot(data, aes_string(x=level, y="EstimatedPercent", fill="Sample")) +
-    geom_bar(stat="identity", position='dodge') +
+graph = function(data, level, writeName, colors) {
+    # Plot the sequential bar plot(s)
+    ggplot(data, aes_string(x=level, y="EstimatedPercent", fill="Sample")) +
+    geom_bar(stat="identity", position="dodge") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    scale_fill_brewer(palette="Set2") 
-  filename = paste(c("CIBERSORT",writeName,"barplot.png"),collapse="_")
-  ggsave(filename)
-  
-  ggplot(data,aes_string(x="Sample", y="EstimatedPercent", fill=level)) +
+    scale_fill_brewer(palette="Set2")
+    filename = paste(c("CIBERSORT",writeName,"sequential.png"),collapse="_")
+    ggsave(filename)
+
+    # Plot the stacked bar plot(s)
+    ggplot(data,aes_string(x="Sample", y="EstimatedPercent", fill=level)) +
     geom_bar(stat = "identity", position = "stack") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 90)) +
     scale_fill_manual(values = colors) +
     guides(fill=guide_legend(ncol=1))
-  filename = paste(c("CIBERSORT",writeName,"stacked.png"),collapse="_")
-  ggsave(filename)
+    filename = paste(c("CIBERSORT",writeName,"stacked.png"),collapse="_")
+    ggsave(filename)
 }
 
 # Define the function used to determine color scheme
 getColors = function(cellTypes, map=NA, level=NA) {
-  levelColor = paste0(level,"Color")
-  if ("$mapping.provided"=="FALSE" || toupper("$mapping.map_colors")==F 
-      || is.na(map) || is.na(level) || !(levelColor %in% colnames(map))
-      || is.na(map[,levelColor])) {
-    colorCount = length(cellTypes)
-    getPalette = colorRampPalette(brewer.pal(9, "Set1"))
-    colors = rev(getPalette(colorCount))
-  } else {
-    colors = setNames(as.character(map[,levelColor]), map[,level])
-  }
-  return(colors)
-}
-
-# Define the function that extracts an array of valid column titles for the bulk
-# file
-convertBulkColNames = function(samples) {
-    asEntered = unlist(strsplit(samples, ","))
-    subDots = lapply(asEntered,FUN=function(x){return(gsub('-','\\.',x))})
-    addX = lapply(subDots,FUN=function(x){return(paste0('X',x))})
-    return(unlist(addX))
+    levelColor = paste0(level,"Color")
+    if ("$mapping.cell_types"=="default" || "$mapping.map_colors"=="false"
+        || is.na(map) || is.na(level) || !(levelColor %in% colnames(map))
+        || is.na(map[,levelColor])) {
+        colorCount = length(cellTypes)
+        getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+        colors = rev(getPalette(colorCount))
+    } else {
+        colors = setNames(as.character(map[,levelColor]), map[,level])
+    }
+    return(colors)
 }
 
 # Set up required data
 signature = read.csv("$signature_file", header=TRUE, row.names=1, sep="\t")
-bulk = as.matrix(read.csv("$expression_file", header=TRUE, row.names=1, sep="\t"))
-samples = convertBulkColNames("$sample_ids")
-##bulk = as.matrix(select(bulk, unlist(samples)))
-bulk = as.matrix(bulk)
+bulk = as.matrix(read.csv("$expression_file", check.names=FALSE,
+                          header=TRUE, row.names=1, sep="\t"))
+if ("$Plots.sample_ids" != "") {
+    samples = unlist(strsplit("$Plots.sample_ids",","))
+} else {
+    samples = colnames(bulk)
+}
 
+# Run CIBERSORT and write the results to TSV
 res = CIBERSORT(signature, bulk,QN=TRUE, absolute=FALSE, abs_method="sig.score")
 write.table(res, "$output_tsv", quote=FALSE, sep="\t")
 
+# Prepare the result for cell type mapping and visualization
 cols = ncol(signature)
 cells = res[,1:cols] *100
 cells = cells[samples,,drop=FALSE]
 data = melt(cells)
 colnames(data) = c("Sample", "CellType", "EstimatedPercent")
 
-#if $mapping.provided == "FALSE"
-colors = getColors(cellTypes=unique(data$CellType))
-graph(data, "CellType", colors=colors)
-#else
-groups = read.csv("$mapping.map_file", header=TRUE, sep="\t", row.names=NULL,stringsAsFactors=TRUE)
-merged = merge(data, groups, by="CellType")  
-levels = unlist(strsplit("$mapping.resolutions",","))#('CellType', 'Full', 'Condensed')
-for (level in levels) {
-  # Aggregate cell types to appropriate granularity
-  cellTypes = unique(groups[,level])
-  formula = as.formula(paste0(c("EstimatedPercent ~ Sample + ",level)))
-  summedData = aggregate(formula, merged, FUN=sum) 
-  
-  # Sort the cell types for the purpose of
-  #colnames(summedData) = c("CellType", "Sample", "EstimatedPercent")
-  summedData[,level] = as.character(summedData[,level])
-  summedData[,level] = factor(summedData[,level], levels=cellTypes)
-  summedData[order(summedData[,level]),] 
+if ("$mapping.cell_types" == "default") {
+    # If using the default cell types/colors, set up values for defaults
+    level = "CellType"
+    writeName = "Raw"
+    cellTypes = unique(data\$CellType)
+    map = NA
+} else {
+    # If using custom cell types, integrate the map file
+    level = "$mapping.resolution"
+    writeName = level
 
-  # Determine colors and graph
-  ##summedData = summedData[summedData[,"Sample"]=="$sample_id"]
-  colors = getColors(cellTypes, map=groups, level=level)
-  graph(summedData, level, colors)
+    # Read the mapping file and merge the dataframes
+    groups = read.csv("$mapping.map_file", header=TRUE, sep="\t", row.names=NULL,stringsAsFactors=TRUE)
+    merged = merge(data, groups, by="CellType")  
+    
+    # Aggregate cell types to appropriate granularity
+    cellTypes = unique(groups[,level])
+    formula = as.formula(paste0(c("EstimatedPercent ~ Sample + ",level)))
+    summedData = aggregate(formula, merged, FUN=sum) 
+  
+    # Sort the cell types for consistent visualization
+    #colnames(summedData) = c("CellType", "Sample", "EstimatedPercent")
+    summedData[,level] = as.character(summedData[,level])
+    summedData[,level] = factor(summedData[,level], levels=cellTypes)
+    summedData[order(summedData[,level]),] 
+    data = summedData
 }
-#end if
+
+# Determine colors and then graph
+colors = getColors(cellTypes, map=groups, level=level)
+graph(data, level, writeName, colors=colors)
         </configfile> 
     </configfiles>
 
@@ -122,17 +119,34 @@ for (level in levels) {
         <param name="signature_file" type="data" format="tsv" label="Gene Signature File" />
         <param name="expression_file" type="data" format="tsv" label="Cohort Gene Expression"
                help="Hugo-named gene expression file" />
-        <param name="sample_ids" type="text" optional="false" label="Sample ID" />
+
+        <section name="Plots">
+            <param name="sample_ids" type="text" optional="true" label="Sample ID(s)"
+                   help="Comma separated list, or all samples if not provided" />
+            <conditional name="sequential_handling">
+                <param name="separate" type="select" label="Separate Sequential Bar Plots">
+                    <option value="TRUE">Generate Separate Plots</option>
+                    <option value="FALSE">Generate One Plot</option>
+                </param>
+                <when value="FALSE">
+                    <param name="x_axis" type="select" label="Group X-Axis By">
+                        <option value="Sample">Sample Label</option>
+                        <option value="CellType">Cell Type</option>
+                    </param>
+                </when>
+            </conditional>
+        </section>
+
         <conditional name="mapping">
-            <param name="provided" type="select" label="Provide Mapping File">
-                <option value="TRUE">Provide File</option>
-                <option value="FALSE">Omit File</option>
+            <param name="cell_types" type="select" label="Cell Type Definition">
+                <option value="custom">Use Custom Cell Types</option>
+                <option value="default">Use Default CIBERSORT Cell Types</option>
             </param>
-            <when value="TRUE">
-                <param name="map_file" type="data" format="tsv" label="Mapping File (TSV)"/>
-                <param name="map_colors" type="boolean" default="true" label="Use Colors From Map File"/>
-                <param name="resolutions" type="select" multiple="true" display="checkboxes" optional="false"
-                       label="Cell Type Resolution" help="Select one or both of the cell type definition levels">
+            <when value="custom">
+                <param name="map_file" type="data" format="tsv" label="TSV containing cell type map and optional color specification"/>
+                <param name="map_colors" type="boolean" checked="true" label="Use Colors From Map File"/>
+                <param name="resolution" type="select" multiple="false" optional="false" 
+                       label="Cell Type Resolution" help="Select one of the custom cell mappings">
                     <option value="Full">Full</option>
                     <option value="Condensed">Condensed</option>
                 </param>
@@ -141,28 +155,48 @@ for (level in levels) {
     </inputs>
 
     <outputs>
-        <data name="condensed_stacked" type="png" from_work_dir="CIBERSORT_Condensed_stacked.png" label="${tool.name} on ${on_string}: Condensed Stacked" >
-            <filter>'Condensed' in mapping['resolutions']</filter>
+        <data name="condensed_stacked" format="png" from_work_dir="CIBERSORT_Condensed_stacked.png" label="${tool.name} on ${on_string}: Condensed Stacked" >
+            <filter>mapping['cell_types']=='custom' and mapping['resolution']=='Condensed'</filter>
         </data>
-        <data name="condensed_bar" type="png" from_work_dir="CIBERSORT_Condensed_barplot.png" label="${tool.name} on ${on_string}: Condensed Barplots" >
-            <filter>'Condensed' in mapping['resolutions']</filter>
+        <data name="condensed_bar" format="png" from_work_dir="CIBERSORT_Condensed_sequential.png" label="${tool.name} on ${on_string}: Condensed Barplots" >
+            <filter>mapping['cell_types']=='custom' and mapping['resolution']=='Condensed'</filter>
         </data>
-        <data name="full_stacked" type="png" from_work_dir="CIBERSORT_Full_stacked.png" label="${tool.name} on ${on_string}: Full Stacked" >
-            <filter>'Full' in mapping['resolutions']</filter>
+        <data name="full_stacked" format="png" from_work_dir="CIBERSORT_Full_stacked.png" label="${tool.name} on ${on_string}: Full Stacked" >
+            <filter>mapping['cell_types']=='custom' and mapping['resolution']=='Full'</filter>
         </data>
-        <data name="full_bar" type="png" from_work_dir="CIBERSORT_Full_barplot.png" label="${tool.name} on ${on_string}: Full Barplots" >
-            <filter>'Full' in mapping['resolutions']</filter>
+        <data name="full_bar" format="png" from_work_dir="CIBERSORT_Full_sequential.png" label="${tool.name} on ${on_string}: Full Barplots" >
+            <filter>mapping['cell_types']=='custom' and mapping['resolution']=='Full'</filter>
         </data>
-        <data name="raw_stacked" type="png" from_work_dir="CIBERSORT_Raw_stacked.png" label="${tool.name} on ${on_string}: Raw Stacked" >
-            <filter>mapping['provided']=='FALSE'</filter>
+        <data name="raw_stacked" format="png" from_work_dir="CIBERSORT_Raw_stacked.png" label="${tool.name} on ${on_string}: Raw Stacked" >
+            <filter>mapping['cell_types']=='default'</filter>
         </data>
-        <data name="raw_bar" type="png" from_work_dir="CIBERSORT_Raw_barplot.png" label="${tool.name} on ${on_string}: Raw Barplots" >
-            <filter>mapping['provided']=='FALSE'</filter>
+        <data name="raw_bar" format="png" from_work_dir="CIBERSORT_Raw_sequential.png" label="${tool.name} on ${on_string}: Raw Barplots" >
+            <filter>mapping['cell_types']=='default'</filter>
         </data>
-        <data name="output_tsv" type="tsv" label="${tool.name} on ${on_string}: TSV" />
+        <data name="output_tsv" format="tsv" label="${tool.name} on ${on_string}: TSV" />
     </outputs>
 
     <help><![CDATA[
+    # Plot the sequential bar plot(s)
+    if ($Plots.separate_stacked == "FALSE") {
+        ggplot(data, aes_string(x=level, y="EstimatedPercent", fill="Sample")) 
+        + geom_bar(stat="identity", position='dodge') 
+        + theme_minimal() 
+        + theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+        + scale_fill_brewer(palette="Set2") 
+        filename = paste(c("CIBERSORT",writeName,"sequential.png"),collapse="_")
+        ggsave(filename)
+    } else {
+        for (sample in unique(data\$Sample)) {
+            ggplot(data, aes_string(x=level, y="EstimatedPercent", fill="Sample")) 
+            + geom_bar(stat="identity", position='dodge') 
+            + theme_minimal() 
+            + theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+            + scale_fill_brewer(palette="Set2") 
+            filename = paste(c("CIBERSORT",writeName,"sequential",sample,".png"),collapse="_")
+            ggsave(filename)           
+        }
+    }
     ]]></help>
 
     <expand macro="citations" />

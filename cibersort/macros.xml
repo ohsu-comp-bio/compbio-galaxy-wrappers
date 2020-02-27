@@ -6,11 +6,10 @@
             <requirement type="package" version="3.6.2">R</requirement>
             <requirement type="package">reshape2</requirement>
             <requirement type="package">ggplot2</requirement>
-            <requirement type="package">dplyr</requirement>
+            <requirement type="package">RColorBrewer</requirement>
             <requirement type="package">e1071</requirement>
             <requirement type="package">parallel</requirement>
-            <requirement type="package">preprocess</requirement>
-            <requirement type="package" version="1.04">CIBERSORT</requirement>
+            <requirement type="package">preprocessCore</requirement>
         </requirements>
     </xml>
 
@@ -23,6 +22,5 @@
     </xml>
 
     <token name="@VERSION@">1.04</token>
-    <token name="@CMD_BEGIN@">Rscript ${__tool_directory__}/run_cibersort.R</token>
 
 </macros>

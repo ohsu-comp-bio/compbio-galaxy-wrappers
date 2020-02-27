@@ -2,6 +2,11 @@ categories:
   - "CompBio Galaxy Wrappers"
 description: "Estimate cell type abundance from a mixed population given gene expression data."
 homepage_url: "https://github.com/ohsu-comp-bio/cibersort"
-name: cibersort
+repositories:
+  cibersort:
+    include:
+      - cibersort.xml
+      - macros.xml
+      - tool-data/*
 owner: creason
 remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cibersort"
