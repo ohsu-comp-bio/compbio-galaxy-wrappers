@@ -2,7 +2,7 @@
     <description>removes unwated variation based on replicate samples.</description>
     <requirements>
         <requirement type="package" version="1.18.0">bioconductor-ruvseq</requirement>
-        <requirement type="package" version="3.6.1">r</requirement>
+        <requirement type="package" version="3.6.1">r-base</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
     Rscript $__tool_directory__/RUVs.R '$input' '$norm' '$minNumReads' '$minNumSamples' '$idxSamples' '$factors' '$repID'

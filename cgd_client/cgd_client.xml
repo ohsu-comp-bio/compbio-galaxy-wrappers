@@ -1,154 +1,198 @@
-<tool id="cgd_client" name="CGD Import Client" version="1.2.8.2" >
+<tool id="cgd_client" name="CGD Import Client" version="1.2.8.3" profile="16.01">
 
-    <description>Send a pipeline output file to the CGD via cgd_client.jar.  Files that can be sent are the interval and
-        gene metrics files, VCF, SeattleSeq output, and FastQC output.
-    </description>
+    <description>Send a pipeline output file to the CGD via cgd_client.jar.</description>
 
     <requirements>
-      <requirement type="package" version="1.3.0">scipy</requirement>
-      <requirement type="package" version="0.6.8">pyvcf</requirement>
+        <requirement type="package" version="1.3.0">scipy</requirement>
+        <requirement type="package" version="0.6.8">pyvcf</requirement>
     </requirements>
 
-    <command interpreter="python" detect_errors="exit_code">
-        cgd_client.py $output $endpoint_choice.endpoint
-        --cgd_config "\${CGD_CLIENT_CONFIG}"
+    <version_command>python '$__tool_directory__/cgd_client.py' --version</version_command>
 
-        --cgd_client $cgd_client
-        --tissue $tissue
+    <command detect_errors="exit_code"><![CDATA[
+        python '$__tool_directory__/cgd_client.py'
+        --endpoint '$endpoint_choice.endpoint'
+        --cgd_client '$cgd_client'
+        --cgd_config '$cgd_config'
+        --tissue '$tissue'
 
         #if $servicebase:
-        --servicebase $servicebase
+            --servicebase $servicebase
         #end if
 
         #if $endpoint_choice.endpoint=="annotationcomplete"
-        --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="completeRun"
-        --runid $endpoint_choice.runid
+            --runid $endpoint_choice.runid
         #end if
 
         #if $endpoint_choice.endpoint=="completeSampleRun"
-        --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="samplesheet"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
         #end if
 
         #if $endpoint_choice.endpoint=="seattleseq"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid --qcversion $endpoint_choice.qcversion
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
+            --qcversion $endpoint_choice.qcversion
         #end if
 
         #if $endpoint_choice.endpoint=="none"
-        --pipeline_out $endpoint_choice.pipeline_output --cgd_url $endpoint_choice.cgd_url
+            --pipeline_out $endpoint_choice.pipeline_output
+            --cgd_url $endpoint_choice.cgd_url
         #end if
 
         #if $endpoint_choice.endpoint=="geneqc"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="intervalqc"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="probeqc"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="uploadqcsheet"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="uploadqcsheetrtwo"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="illuminavcf"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="sequenceVariant"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="vcf"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
         #end if
 
         #if $endpoint_choice.endpoint=="splicevariant"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="genefusion"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="cnvpdf"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="cnvcalls"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="tumornormal"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="illuminadenovo"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="annotate"
-        --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="annotateRun"
-        --runid $endpoint_choice.runid
+            --runid $endpoint_choice.runid
         #end if
 
         #if $endpoint_choice.endpoint=="annotateSampleRun"
-        --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="updatesamplerun"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="metrics"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
         #if $endpoint_choice.endpoint=="reportedvariants"
-        --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid --report_vcf $report_vcf --report_bed $report_bed
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
+            --report_vcf $report_vcf
+            --report_bed $report_bed
         #end if
 
         #if $endpoint_choice.endpoint=="snpProfile"
-        --pipeline_out $endpoint_choice.pipeline_output --runid $endpoint_choice.runid --barcodeid $endpoint_choice.barcodeid
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
         #end if
 
-    </command>
+    ]]></command>
 
     <inputs>
 
-        <param name="cgd_client" type="text" required="true" label="Location of cgd_client.jar" help="Ask John if you can't find it." />
-        <param name="servicebase" type="text" required="false" label="Service base" help="The service host name and port + service base. e.g. kdlwebprod02:8080/cgd" />
-        <param name="tissue" type="select" required="true" label="Sample tissue" help="Tissue type, most applicable to tumor/normal workflows." >
-            <option value="BLOOD">BLOOD</option>
+        <param name="cgd_client" type="text" label="Location of cgd_client.jar" help="Ask John if you can't find it." />
+        <param name="cgd_config" type="text" label="Location of cgd_client config properties." help="Most likely in same place as cgd_client." />
+        <param name="servicebase" type="text" label="Service base" help="The service host name and port + service base. e.g. kdlwebprod02:8080/cgd" />
+        <param name="tissue" type="select" label="Sample tissue" help="Tissue type, most applicable to tumor/normal workflows.  Deprecated." >
+            <option value="BLOOD" selected="true">BLOOD</option>
             <option value="TUMOR">TUMOR</option>
             <option value="NORMAL">NORMAL</option>
         </param>
 
         <conditional name="daisy_chain">
-
             <param name="accept_input" type="select" label="Accept Input?" >
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
             </param>
-
             <when value="yes">
-                <param name="dummy_input" type="data" label="Dummy Input File" />
+                <param name="dummy_input" type="data" format="data" label="Dummy Input File" />
             </when>
         </conditional>
 
@@ -212,90 +256,90 @@
             </when>
 
             <when value="geneqc">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="seattleseq">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
                 <param name="qcversion" type="text" label="SeattleSeq version: " />
             </when>
 
             <when value="intervalqc">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="probeqc">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="uploadqcsheet">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="uploadqcsheetrtwo">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="samplesheet">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
             </when>
 
             <when value="illuminavcf">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="sequenceVariant">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="vcf">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
             </when>
 
             <when value="splicevariant">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="genefusion">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="updatesamplerun">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="metrics">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="snpProfile">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
@@ -306,31 +350,31 @@
             </when>
 
             <when value="cnvpdf">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="cnvcalls">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="tumornormal">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="illuminadenovo">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
             <when value="none">
-                <param name="pipeline_output" type="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="cgd_url" type="text" label="CGD URL: " />
             </when>
 
@@ -339,7 +383,7 @@
     </inputs>
 
     <outputs>
-        <data format="txt" name="output" label="Status of transfer to CGD endpoint." />
+        <data format="txt" name="output" label="Status of transfer to CGD endpoint." from_work_dir="stdout_log"/>
         <data format="vcf" name="report_vcf" label="reportedvariants endpoint VCF" >
             <filter>endpoint_choice['endpoint'] == 'reportedvariants'</filter>
         </data>
@@ -348,11 +392,42 @@
         </data>
     </outputs>
 
-    <tests></tests>
+    <help><![CDATA[
+usage: cgd_client.py [-h] [--endpoint ENDPOINT] [--java8_path JAVA8_PATH] [--report_vcf REPORT_VCF] [--report_bed REPORT_BED] [--json_out JSON_OUT]
+                     [--pipeline_out PIPELINE_OUT] [--cgd_url CGD_URL] [--runid RUNID] [--barcodeid BARCODEID] [--qcversion QCVERSION] [--cnvcalls CNVCALLS]
+                     [--cnvpdf CNVPDF] [--cgd_client CGD_CLIENT] [--cgd_config CGD_CONFIG] [--tissue TISSUE] [--servicebase SERVICEBASE] [--version]
 
-    <help>
-        Send a file to CGD via cgd_client.jar.
-    </help>
+Galaxy wrapper for cgd_client.jar.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --endpoint ENDPOINT   CGD endpoint to send data, required.
+  --java8_path JAVA8_PATH
+                        Specify java 8 path, in the case you have multiple java installations.
+  --report_vcf REPORT_VCF
+                        Output VCF if utilizing reportvariants endpoint.
+  --report_bed REPORT_BED
+                        Output BED if utilizing reportvariants endpoint.
+  --json_out JSON_OUT   JSON will be written to this file.
+  --pipeline_out PIPELINE_OUT
+                        Output to send to CGD.
+  --cgd_url CGD_URL     CGD URL to send data to.
+  --runid RUNID         Run ID associated with import.
+  --barcodeid BARCODEID
+                        Barcode ID associated with import
+  --qcversion QCVERSION
+                        Attached QC version, only useful for SeattleSeq.
+  --cnvcalls CNVCALLS   CNV calls to be sent.
+  --cnvpdf CNVPDF       CNV PDF to be sent.
+  --cgd_client CGD_CLIENT
+                        Location of the cgd_client.
+  --cgd_config CGD_CONFIG
+                        Location of the cgd_client config file.
+  --tissue TISSUE       Which tissue is the client receiving data for. Deprecated.
+  --servicebase SERVICEBASE
+                        The service host name and port + service base. e.g. kdlwebprod02:8080/cgd
+  --version             show program's version number and exit
+    ]]></help>
 
 </tool>
 

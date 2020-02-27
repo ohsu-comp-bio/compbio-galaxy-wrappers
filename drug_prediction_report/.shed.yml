@@ -1,0 +1,9 @@
+owner: "patterja"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/drug_prediction_report"
+categories:
+  - "CompBio Galaxy Wrappers"
+description: "Drug Prediction Report"
+repositories:
+  drug_prediction_report:
+    include: 
+      - drugprediction_report.xml

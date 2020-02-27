@@ -1,4 +1,4 @@
-<tool id="calc_ab" name="Calculate Allele Balance" version="0.1.0" >
+<tool id="calc_ab" name="Calculate Allele Balance" version="0.1.1" >
     <description>Calculate allele balance from variant calls.</description>
 
     <command detect_errors="exit_code"><![CDATA[
@@ -18,13 +18,13 @@
     <tests></tests>
 
     <help><![CDATA[
-usage: calc_ab.py [-h] [--infile INFILE] [--outfile OUTFILE] [--version]
+    usage: calc_ab.py [-h] [--infile INFILE] [--outfile OUTFILE] [--version]
 
-optional arguments:
-  -h, --help         show this help message and exit
-  --infile INFILE    Input VCF
-  --outfile OUTFILE  Output JSON
-  --version          show program's version number and exit
+    optional arguments:
+      -h, --help         show this help message and exit
+      --infile INFILE    Input VCF
+      --outfile OUTFILE  Output JSON
+      --version          show program's version number and exit
   ]]></help>
 
 </tool>

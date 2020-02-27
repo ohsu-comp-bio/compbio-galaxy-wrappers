@@ -5,16 +5,15 @@
 # USAGE: send_to_cgd.py -h
 # CODED BY: John Letaw
 
-from __future__ import print_function
-from snp_profile import SnpProfile, CompareProfiles
-
+# Not providing this code until we have finalized SNP profile reqs for lab.
+# from snp_profile import SnpProfile, CompareProfiles
 import argparse
 import json
+import logging
 import os
 import sys
 import shutil
 
-# Including this because is it quite useful...
 # https://docs.python.org/2/library/subprocess.html
 # https://github.com/google/python-subprocess32
 if os.name == 'posix' and sys.version_info[0] < 3:
@@ -22,33 +21,31 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.8.2'
+VERSION = '1.2.8.3'
 
 
 def supply_args():
-    """                                                                                                                            Populate args,
-    https://docs.python.org/2.7/library/argparse.html                                                                              """
+
     parser = argparse.ArgumentParser(description='Galaxy wrapper for cgd_client.jar.')
 
-    parser.add_argument('stdout_log', help='')
-    parser.add_argument('endpoint', help='')
-    parser.add_argument('--java8_path', default='/home/exacloud/clinical/installedTest/jdk1.8.0_144/bin/java', help='Java 8 PATH as defined in JAVA8_PATH.')
+    # parser.add_argument('stdout_log', help='Output file, mainly so that you can see if process succeeded in Galaxy.')
+    parser.add_argument('--endpoint', help='CGD endpoint to send data, required.')
+    parser.add_argument('--java8_path', help='Specify java 8 path, in the case you have multiple java installations.')
     parser.add_argument('--report_vcf', help='Output VCF if utilizing '
                                              'reportvariants endpoint.')
     parser.add_argument('--report_bed', help='Output BED if utilizing '
                                              'reportvariants endpoint.')
     parser.add_argument('--json_out', help='JSON will be written to this file.', default='cgd_profile_to_send.json')
-    parser.add_argument("--pipeline_out", help='')
-    parser.add_argument("--cgd_url", help='')
-    parser.add_argument("--runid", help='')
-    parser.add_argument("--barcodeid", help='')
-    parser.add_argument("--qcversion", help='')
-    parser.add_argument("--cnvcalls", help='')
-    parser.add_argument("--cnvpdf", help='')
+    parser.add_argument("--pipeline_out", help='Output to send to CGD.')
+    parser.add_argument("--cgd_url", help='CGD URL to send data to.')
+    parser.add_argument("--runid", help='Run ID associated with import.')
+    parser.add_argument("--barcodeid", help='Barcode ID associated with import')
+    parser.add_argument("--qcversion", help='Attached QC version, only useful for SeattleSeq.')
+    parser.add_argument("--cnvcalls", help='CNV calls to be sent.')
+    parser.add_argument("--cnvpdf", help='CNV PDF to be sent.')
     parser.add_argument("--cgd_client", help="Location of the cgd_client.")
     parser.add_argument("--cgd_config", help="Location of the cgd_client config file.")
-    parser.add_argument("--tissue",
-                        help="Which tissue is the client receiving data for.  This is most applicable to tumor/normal workflows.")
+    parser.add_argument("--tissue", help="Which tissue is the client receiving data for. Deprecated.")
     parser.add_argument("--servicebase",
                         help="The service host name and port + service base. e.g. kdlwebprod02:8080/cgd")
 
@@ -79,7 +76,6 @@ def rename_fastqc_output(runid, barcodeid, endpoint, ext):
     elif endpoint == "cnvpdf":
         newfile = "/tmp/" + '_'.join([runid, barcodeid]) + ext
     else:
-        print("Not sending FastQC.")
         return None
 
     return newfile
@@ -98,9 +94,6 @@ def run_cmd(cmd):
     """
     Run the command via subprocess.
     """
-    print("Running the following command: ")
-    print('\t'.join(cmd))
-
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
     if stderr:
@@ -122,7 +115,10 @@ def build_cmd(args, recvd_prof=False):
     """
     Build the command that will send data to the CGD.
     """
-    cmd = [args.java8_path, '-jar', args.cgd_client, "-n", args.endpoint, "-c", args.cgd_config]
+    if args.java8_path:
+        cmd = [args.java8_path, '-jar', args.cgd_client, "-n", args.endpoint, "-c", args.cgd_config]
+    else:
+        cmd = ['java', '-jar', args.cgd_client, "-n", args.endpoint, "-c", args.cgd_config]
     newfile = ""
 
     if args.servicebase:
@@ -130,12 +126,12 @@ def build_cmd(args, recvd_prof=False):
     if args.endpoint == "uploadqcsheet" or args.endpoint == "uploadqcsheetrtwo":
         # For FastQC files, we will create a new file name.
         newfile = rename_fastqc_output(args.runid, args.barcodeid, args.endpoint, 'html')
-        print("Copying to " + newfile)
+        logging.info("Copying FastQC to " + newfile)
         shutil.copyfile(args.pipeline_out, newfile)
         cmd.extend(["-f", newfile])
     elif args.endpoint == "cnvpdf":
         newfile = rename_fastqc_output(args.runid, args.barcodeid, args.endpoint, 'pdf')
-        print("Copying to " + newfile)
+        logging.info("Copying CNV PDF to " + newfile)
         shutil.copyfile(args.pipeline_out, newfile)
         cmd.extend(["-f", newfile])
     elif args.endpoint == "annotationcomplete" \
@@ -169,7 +165,7 @@ def build_cmd(args, recvd_prof=False):
 
     # cmd.append("-d")
 
-    print("The client is receiving data for a " + args.tissue + " sample.")
+    logging.info("The client is receiving data for a " + args.tissue + " sample.")
 
     return cmd, newfile
 
@@ -214,14 +210,24 @@ def prepare_reported(outfile, regions, stdout):
 
 def main():
     args = supply_args()
-
+    # outfile = open(args.stdout_log, 'w')
+    # Set up logger.
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    outfile = logging.FileHandler('stdout_log')
+    outfile.setLevel(logging.DEBUG)
+    logger.addHandler(outfile)
+    # logging.basicConfig(filename=args.stdout_log, level=logging.DEBUG)
     # Build the command.
     cmd, newfile = build_cmd(args, False)
-    # Run the command.
+    # Run the command and write command to log.
+    logger.info("Running the following command:")
+    logger.info('\t'.join(cmd))
     stdout = run_cmd(cmd)
 
-    # Write and output log.  This is necessary so that Galaxy knows the process is over.
-    outfile = open(args.stdout_log, 'w')
+    # Write CGD return json to log.
+    logger.info("From CGD:")
+    logger.info(json.loads(stdout))
 
     if args.endpoint == 'reportedvariants':
         vcf = open(args.report_vcf, 'w')
@@ -233,7 +239,8 @@ def main():
         # We run one command here, then another down below.
 
     if args.endpoint == 'snpProfile' and stdout:
-        # Command has been run to retrieve the profile.  Now, we need to figure out if the overlap of the two profiles match.
+        # Command has been run to retrieve the profile.  Now, we need to figure out if the overlap of the
+        # two profiles match.
         # If the match, no need to run anything else.
         # If they don't match, error.
         # If they match, but there are loci that aren't contained within the CGD profile, send the updated loci to CGD.
@@ -255,7 +262,8 @@ def main():
         #     json.dump(compare_snps.for_cgd, to_cgd)
         # cmd, newfile = build_cmd(args, True)
         # stdout = run_cmd(cmd)
-        # out_metric = {'snp_profile_pvalue': compare_snps.pvalue, 'snp_profile_total': compare_snps.total, 'snp_profile_mismatch': compare_snps.mismatch}
+        # out_metric = {'snp_profile_pvalue': compare_snps.pvalue,
+        # 'snp_profile_total': compare_snps.total, 'snp_profile_mismatch': compare_snps.mismatch}
         # json.dump(out_metric, outfile)
 
     outfile.close()
@@ -267,4 +275,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
