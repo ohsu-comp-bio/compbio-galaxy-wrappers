@@ -26,7 +26,11 @@ library(RColorBrewer)
 # Define the function used to produce the plots
 graph = function(data, level, writeName, colors) {
     # Plot the sequential bar plot(s)
+    #if $Plots.sequential_axis == "CellType"
     ggplot(data, aes_string(x=level, y="EstimatedPercent", fill="Sample")) +
+    #else
+    ggplot(data, aes_string(x="Sample", y="EstimatedPercent", fill=level)) +
+    #end if
     geom_bar(stat="identity", position="dodge") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -123,18 +127,10 @@ graph(data, level, writeName, colors=colors)
         <section name="Plots">
             <param name="sample_ids" type="text" optional="true" label="Sample ID(s)"
                    help="Comma separated list, or all samples if not provided" />
-            <conditional name="sequential_handling">
-                <param name="separate" type="select" label="Separate Sequential Bar Plots">
-                    <option value="TRUE">Generate Separate Plots</option>
-                    <option value="FALSE">Generate One Plot</option>
-                </param>
-                <when value="FALSE">
-                    <param name="x_axis" type="select" label="Group X-Axis By">
-                        <option value="Sample">Sample Label</option>
-                        <option value="CellType">Cell Type</option>
-                    </param>
-                </when>
-            </conditional>
+            <param name="sequential_axis" type="select" optional="false" label="Select x-axis for sequential plots">
+                <option value="Sample">Group By Sample</option>
+                <option value="CellType">Gourp By Cell Type</option>
+            </param>
         </section>
 
         <conditional name="mapping">
