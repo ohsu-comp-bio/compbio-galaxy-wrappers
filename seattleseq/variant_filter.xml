@@ -1,6 +1,9 @@
-<tool id="variant_filter" name="Variant Filter" version="1.0.0" >
+<tool id="variant_filter" name="Incidental Variant Filter" version="1.0.1" >
     <description>Filter Whole Exome or CSER variants</description>
-    <command interpreter="Rscript"> 
+    <requirements>
+		<requirement type="package" version="0.6.1">r-xlsx</requirement>
+	</requirements>
+	<command interpreter="Rscript">
 	#if $mode.select == "exome"
 		variant_filter.R ${mode.select} ${file} ${clinvar} ${cser_database} ${mode.freq} ${gene_list} ${output}
 	#else if $mode.select == "cser"
