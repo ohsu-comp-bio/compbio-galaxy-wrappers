@@ -1,0 +1,22 @@
+<tool id="y_check_gatk" name="Gender Check- Y ploidy" version="1.0.0">
+	<description>Checks the gender of a sample based on the ploidy of the y chromosome from DetermineGermlineContigPloidy</description>
+	<command detect_errors="exit_code"><![CDATA[
+        grep "^Y" $input > $output &&
+        GENDER_NUM=\$(grep "^Y\t1" $input | wc -l) &&
+        echo \$GENDER_NUM &&
+        echo $gender &&
+        if [ \$GENDER_NUM -eq $gender ]; then exit 0; else exit 1; fi
+]]>	</command>
+	<inputs>
+		<param name="gender" type="select" label="Reported Gender">
+            <option value="0">Female</option>
+            <option value="1">Male</option>
+        </param>
+        <param name="input" type="data" format="tsv" label="DetermineGermlineContigPloidy"/>
+	</inputs>
+	<outputs>
+		<data format="vcf" name="output" label="${tool.name} on ${on_string}"/>
+	</outputs>
+	
+	
+</tool>
