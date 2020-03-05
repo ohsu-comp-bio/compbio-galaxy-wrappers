@@ -1,9 +1,11 @@
-<tool id="star_fusion" name="STAR-Fusion" version="1.8.1.1">
+<tool id="star_fusion" name="STAR-Fusion" version="1.8.1.4">
     <description>detect fusion genes in RNA-Seq data</description>
     <requirements>
         <requirement type="package" version="1.8.1">star-fusion</requirement>
         <requirement type="package" version="3.2">hmmer</requirement>
         <requirement type="package" version="2.7.2b">star</requirement>
+        <requirement type="package" version="1.9">samtools</requirement>
+        <requirement type="package" version="1.9">htslib</requirement>
     </requirements>
 
     <stdio>
@@ -60,6 +62,7 @@
             --min_alt_pct_junction $params.min_alt_pct_junction
             --aggregate_novel_junction_dist $params.aggregate_novel_junction_dist
             --min_FFPM $params.min_FFPM
+            '${params.no_single_fusion_per_breakpoint}'
             #if $params.FusionInspector != 'no_finspector'
                 --FusionInspector '${params.FusionInspector}'
             #end if
@@ -76,8 +79,8 @@
             </param>
             <when value="use_chimeric">
                 <param name="chimeric_junction" type="data" format="interval" argument="--chimeric_junction" label="Chimeric junction file from STAR (with STAR-Fusion settings)"/>
-                <param name="left_fq" type="data" format="fastq,fastqsanger,fastqsanger.gz" optional="true" argument="--left_fq" label="left.fq file" help="include the left and right fastqs with the Chimeric.out.junction in order to compute the FFPM (normalized fusion fragments per million total rna-seq fragments) values in your summary report. Otherwise, you'll just get evidence fragment counts without the normalized values (empty fusion_candidates.final.abridged.FFPM file)"/>
-                <param name="right_fq" type="data" optional="true" format="fastq,fastqsanger,fastqsanger.gz" argument="--right_fq" label="right.fq file"/>
+                <param name="left_fq" type="data" format="fastq,fastqsanger" optional="true" argument="--left_fq" label="left.fq file" help="include the left and right fastqs with the Chimeric.out.junction in order to compute the FFPM (normalized fusion fragments per million total rna-seq fragments) values in your summary report. Otherwise, you'll just get evidence fragment counts without the normalized values (empty fusion_candidates.final.abridged.FFPM file)"/>
+                <param name="right_fq" type="data" optional="true" format="fastq,fastqsanger" argument="--right_fq" label="right.fq file"/>
             </when>
             <when value="use_fastq">
                 <param name="left_fq" type="data" format="fastq,fastqsanger,fastqsanger.gz" argument="--left_fq" label="left.fq file"/>
@@ -144,6 +147,7 @@
                     <option value="inspect" help="considers only StarFusion-identified fusion reads in context of identified fusions (fast)">inspect</option>
                     <option value="validate" help="examines all reads, recovers evidence, computes fusion allele fractions (slow)a">validate</option>
                 </param>
+                <param name="no_single_fusion_per_breakpoint" type="boolean" truevalue="--no_single_fusion_per_breakpoint" falsevalue="" checked="false" label="Multiple Fusion per Breakpoint?" help="Exclude filtering of potentially superfluous fusions involving different gene annotations overlapping the same fusion breakpoint."/>
                 <param name="no_remove_dups" type="boolean" truevalue="--no_remove_dups" falsevalue="" checked="false" label="Don't Remove Duplicates?" help="Do not remove duplicate reads."/>
                 <param name="examine_coding_effect" type="boolean" truevalue="--examine_coding_effect" falsevalue="" checked="false" label="Include coding effects in output?" help="Explore impact of fusions on coding sequences."/>
                 <param name="denovo_reconstruct" type="boolean" truevalue="--denovo_reconstruct" falsevalue="" checked="false" label="Denovo reconstruction?" help="Attempt to reconstruct fusion transcripts using Trinity de novo assembly (requires --FusionInspector)."/>
