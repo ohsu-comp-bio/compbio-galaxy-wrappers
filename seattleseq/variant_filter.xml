@@ -20,21 +20,21 @@
 		<when value="exome">
 			<param name="file" format="data" type="data" label="SeattleSeq tsv file"/>
 			<param name="clinvar" format="txt" type="data" label="ClinVar database file"/>
-			<param name="cser_database" format="xls" type="data" label="CSER database file"/>
+			<param name="cser_database" format="xlsx" type="data" label="CSER database file"/>
 	       		<param name="freq" type="text" label="Allele frequency cutoff" value="1"/> 
 			<param name="gene_list" format="data" type="data" label="Gene list"/>
 		</when>
 		<when value="cser">
 			<param name="file" format="data" type="data" label="SeattleSeq carrierAll text file"/>
 			<param name="clinvar" format="txt" type="data" label="ClinVar database file"/>
-			<param name="cser_database" format="xls" type="data" label="CSER database file"/>
+			<param name="cser_database" format="xlsx" type="data" label="CSER database file"/>
 			<param name="ethnicity" type="text" label="Ethnicity of sample using 1000 Genomes abbreviation" value="EUR"/>	       		
 		</when>	
 	</conditional>
     </inputs>
     
     <outputs>
-        <data format="xls" name="output" type="data" label="Filtered variants - Excel worksheet"/>
+        <data format="xlsx" name="output" type="data" label="Filtered variants - Excel worksheet"/>
     </outputs>
 
     <tests>
