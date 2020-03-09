@@ -1,0 +1,93 @@
+<tool id="hpo_gene_list" name="HPO and CNVs" version="1.0">
+  <description>Gets HPO gene lists and filters CNVs by gene list.</description>
+  <command detect_errors="exit_code"><![CDATA[
+    #if $hpo_source.source == "moon":
+        echo "Moon" &&
+        $__tool_directory__/hpo_from_moon.sh $hpo_source.moon_id $hpo_source.moon_email $hpo_source.moon_token &&
+    #end if
+
+    #if $hpo_source.source == "txt_file":
+        ln -s $hpo_source.hpo_file hpo.txt &&
+    #end if
+
+    #if $gene_source.source == "cnv_tsv":
+        ln -s $gene_source.cnv_tsv cnv_gene_list.txt &&
+    #end if
+
+    #if $gene_source.source == "gene_list":
+        ln -s $gene_source.gene_list cnv_gene_list.txt &&
+    #end if
+
+    #if $hpo_source.source != "none":
+        $__tool_directory__/getHPO.sh hpo.txt temp_dir &&
+        Rscript $__tool_directory__/hpo_stuff.R temp_dir
+        #if $gene_source.source == "none"
+            none
+        #end if
+        #if $gene_source.source != "none":
+            cnv_gene_list.txt
+        #end if
+    #end if
+    #if $gene_source.source == "cnv_tsv":
+        #if $hpo_source.source != "none":
+            && python $__tool_directory__/gene_filter.py $gene_source.cnv_tsv temp_dir/FullGeneList.tsv
+        #end if
+        #if $hpo_source.source == "none":
+            python $__tool_directory__/gene_filter.py $gene_source.cnv_tsv $hpo_source.hpo_gene_list
+        #end if
+    #end if
+  ]]></command>
+
+  <inputs>
+    <conditional name="hpo_source">
+      <param name="source" type="select" label="Source of HPO terms">
+        <option value="moon">Moon</option>
+        <option value="txt_file">File</option>
+        <option value="none">None</option>
+      </param>
+      <when value="moon">
+        <param name="moon_id" type="integer" value="0" label="Current Moon ID" help="To find the Moon ID go to the Moon page for the sample in question and look in the url. example: https://oregon.moon.diploid.com/samples/7079/analysis the Moon ID is 7079."/>
+        <param name="moon_email" type="text" label="Moon Email">
+            <sanitizer sanitize='False'/>
+        </param>
+        <param name="moon_token" type="text" label="Moon Token"/>
+      </when>
+      <when value="txt_file">
+        <param name="hpo_file" type="data" label="HPO File" format="txt,tsv" help="List of HPO numbers. One per line. Formatted like so: HP:0012345"/>
+      </when>
+      <when value="none">
+        <param name="hpo_gene_list" type="data" format="txt,tsv" label="HPO Gene List"/>    
+      </when>
+    </conditional>
+    <conditional name="gene_source">
+        <param name="source" type="select" label="Source of Genes with CNVs">
+            <option value="cnv_tsv">CNV File</option>
+            <option value="gene_list">Gene List</option>
+            <option value="none">None</option>
+        </param>
+        <when value="cnv_tsv">
+            <param name="cnv_tsv" type="data" format="tsv,txt,tabular" label="CNV File"/>
+        </when>
+        <when value="gene_list">
+            <param name="gene_list" type="data" format="txt,tsv,tabular" label="List of Genes with CNVs"/>
+        </when>
+    </conditional>
+  </inputs>
+  <outputs>
+    <data name="hpo_list_from_moon" format="txt" label="${tool.name} on ${on_string}: HPO List" from_work_dir="hpo.txt">
+        <filter>hpo_source['source'] == "moon"</filter>
+    </data>
+    <data name="hpo_gene_lists_R" format="tsv" label="${tool.name} on ${on_string}: HPO Gene Lists" from_work_dir="temp_dir/HPOGeneLists.tsv">
+        <filter>hpo_source['source'] != "none"</filter>  
+    </data>
+    <data name="full_gene_list_R" format="tsv" label="${tool.name} on ${on_string}: Full Gene List" from_work_dir="temp_dir/FullGeneList.tsv">
+        <filter>hpo_source['source'] != "none"</filter>  
+    </data>
+    <data name="Overlapping_gene_R" format="xlsx" label="${tool.name} on ${on_string}: Overlapping Genes with HPO" from_work_dir="temp_dir/OverlappingGenesWithHPO.xlsx">
+        <filter>hpo_source['source'] != "none"</filter>  
+    </data>
+    <data name="filtered_genes" format="tsv" label="${tool.name} on ${on_string}: Filtered CNV" from_work_dir="filtered.tsv">
+        <filter>gene_source['source'] == "cnv_tsv"</filter>  
+    </data>
+  </outputs>
+</tool>
