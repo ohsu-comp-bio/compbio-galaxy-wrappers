@@ -21,7 +21,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.8.3'
+VERSION = '1.2.8.4'
 
 
 def supply_args():
@@ -45,6 +45,7 @@ def supply_args():
     parser.add_argument("--cnvpdf", help='CNV PDF to be sent.')
     parser.add_argument("--cgd_client", help="Location of the cgd_client.")
     parser.add_argument("--cgd_config", help="Location of the cgd_client config file.")
+    parser.add_argument("--include_chr", action="store_true", help="Include the chr prefix in reported variant output.")
     parser.add_argument("--tissue", help="Which tissue is the client receiving data for. Deprecated.")
     parser.add_argument("--servicebase",
                         help="The service host name and port + service base. e.g. kdlwebprod02:8080/cgd")
@@ -180,7 +181,7 @@ def write_vcf_header(outfile):
     outfile.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n")
 
 
-def prepare_reported(outfile, regions, stdout):
+def prepare_reported(outfile, regions, stdout, inc_chr=False):
     """
 
     :return:
@@ -188,7 +189,10 @@ def prepare_reported(outfile, regions, stdout):
     empty = '.'
     for entry in json.loads(stdout):
         if json.loads(stdout):
-            chrom = entry['chromosome'][3:]
+            if inc_chr:
+                chrom = entry['chromosome']
+            else:
+                chrom = entry['chromosome'][3:]
             pos = entry['positionStart']
             ref = entry['referenceBase']
             alt = entry['variantBase']
@@ -199,10 +203,16 @@ def prepare_reported(outfile, regions, stdout):
             regions.write('\n')
 
     if not json.loads(stdout):
-        outfile.write('\t'.join(['1', '3', empty, 'T', 'C', empty, empty, empty]))
-        outfile.write('\n')
-        regions.write('\t'.join(['1', '1', '2']))
-        regions.write('\n')
+        if inc_chr:
+            outfile.write('\t'.join(['chr1', '3', empty, 'T', 'C', empty, empty, empty]))
+            outfile.write('\n')
+            regions.write('\t'.join(['chr1', '1', '2']))
+            regions.write('\n')
+        else:
+            outfile.write('\t'.join(['1', '3', empty, 'T', 'C', empty, empty, empty]))
+            outfile.write('\n')
+            regions.write('\t'.join(['1', '1', '2']))
+            regions.write('\n')
 
     outfile.close()
     regions.close()

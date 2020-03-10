@@ -1,4 +1,4 @@
-<tool id="cgd_client" name="CGD Import Client" version="1.2.8.3" profile="16.01">
+<tool id="cgd_client" name="CGD Import Client" version="1.2.8.4" profile="16.01">
 
     <description>Send a pipeline output file to the CGD via cgd_client.jar.</description>
 
@@ -14,6 +14,7 @@
         --endpoint '$endpoint_choice.endpoint'
         --cgd_client '$cgd_client'
         --cgd_config '$cgd_config'
+        '$include_chr'
         --tissue '$tissue'
 
         #if $servicebase:
@@ -185,7 +186,7 @@
             <option value="TUMOR">TUMOR</option>
             <option value="NORMAL">NORMAL</option>
         </param>
-
+        <param name="include_chr" argument="--include_chr" type="boolean" truevalue="--include_chr" falsevalue="" optional="true" checked="false" label="Include chr prefix?" help="Include chr prefix in reported variant output files." />
         <conditional name="daisy_chain">
             <param name="accept_input" type="select" label="Accept Input?" >
                 <option value="yes">Yes</option>
