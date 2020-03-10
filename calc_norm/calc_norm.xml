@@ -6,7 +6,7 @@
       <requirement type="package" version="3.2.7">subprocess32</requirement>
     </requirements>
 
-    <command interpreter="python">
+    <command detect_errors="exit_code"><![CDATA[
         calc_norm.py
         $input_htseq
         $input_gtf
@@ -14,7 +14,7 @@
         $output_fpkm_uq
         $output_tpm
         '$use_star_counts'
-    </command>
+    ]]></command>
 
     <inputs>
         <param name="input_htseq" type="data" format="txt" label="Counts Table" help="Input STAR or HTSeq-Count tab separated file." />
@@ -23,12 +23,10 @@
     </inputs>
 
     <outputs>
-      <data format="txt" name="output_fpkm" label="${tool.name} on ${on_string}: FPKM" help="Outputs HTSeq-Count formatted file (FPKM)." />
-      <data format="txt" name="output_fpkm_uq" label="${tool.name} on ${on_string}: FPKM-UQ" help="Outputs HTSeq-Count formatted file (FPKM-UQ)." />
-      <data format="txt" name="output_tpm" label="${tool.name} on ${on_string}: TPM" help="Outputs HTSeq-Count formatted file (TPM)." />
+      <data format="txt" name="output_fpkm" label="${tool.name} on ${on_string}: FPKM" />
+      <data format="txt" name="output_fpkm_uq" label="${tool.name} on ${on_string}: FPKM-UQ" />
+      <data format="txt" name="output_tpm" label="${tool.name} on ${on_string}: TPM" />
     </outputs>
-
-    <tests></tests>
 
     <help><![CDATA[
 usage: calc_norm.py [-h] [--use_star_counts] [--version]
@@ -50,8 +48,6 @@ optional arguments:
   --use_star_counts  Use gene counts from STAR.
   --version          show program's version number and exit
     ]]></help>
-
-    <citations></citations>
 
 </tool>
 

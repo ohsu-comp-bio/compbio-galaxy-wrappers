@@ -67,8 +67,10 @@ class GTFReader(object):
         #!genome-date 2009-02
         #!genome-build-accession NCBI:GCA_000001405.14
         #!genebuild-last-updated 2013-09
-        1	pseudogene	gene	11869	14412	.	+	.	gene_id "ENSG00000223972"; gene_name "DDX11L1"; gene_source "ensembl_havana"; gene_biotype "pseudogene";
-    For this particular GTF, we want gene and Selenocysteine gene_id entries.  These are always the first entry of the last column
+        1	pseudogene	gene	11869	14412	.	+	.	gene_id "ENSG00000223972"; gene_name "DDX11L1"; gene_source
+         "ensembl_havana"; gene_biotype "pseudogene";
+    For this particular GTF, we want gene and Selenocysteine gene_id entries.
+    These are always the first entry of the last column
     """
 
     def __init__(self, filename):
@@ -86,13 +88,15 @@ class GTFReader(object):
                 if not line.startswith('#'):
                     line = line.rstrip('\n').split('\t')
                     gene_type = line[2]
-                    if gene_type == "exon" or gene_type == "start_codon" or gene_type == "stop_codon" or gene_type == "UTR":
-                        #dictionary of the column 9 because they can be in different order
-                        dattr={}
+                    if (gene_type == "exon" or
+                            gene_type == "start_codon" or
+                            gene_type == "stop_codon" or
+                            gene_type == "UTR"):
+                        # dictionary of the column 9 because they can be in different order
+                        dattr = {}
                         for item in [x for x in line[8].split(';') if x]:
-                            #attrn = item.
                             attr = item.strip().split(' ')
-                            dattr[attr[0]]=attr[1].strip('\"')
+                            dattr[attr[0]] = attr[1].strip('\"')
                         gene_id = str(dattr['gene_id'])
                         if gene_id not in gene_coords:
                             gene_coords[gene_id] = []
@@ -102,7 +106,6 @@ class GTFReader(object):
                             gene_coords[gene_id].append(i)
 
         return gene_coords
-
 
     def find_gene_id(self):
         """
@@ -129,7 +132,10 @@ class GTFReader(object):
                 if not line.startswith('#'):
                     line = line.rstrip('\n').split('\t')
                     gene_type = line[2]
-                    if gene_type == "exon" or gene_type == "start_codon" or gene_type == "stop_codon" or gene_type == "UTR":
+                    if (gene_type == "exon" or
+                            gene_type == "start_codon" or
+                            gene_type == "stop_codon" or
+                            gene_type == "UTR"):
                         tx_id = line[8].split(';')[1].split(' ')[2][1:-1]
                         if tx_id not in tx_coords:
                             tx_coords[tx_id] = []
@@ -159,11 +165,16 @@ class HtseqReader(object):
         except:
             sys.exit("All counts are zero")
 
-    def coords(self, id):
-        if id.startswith(("ENST", "rna")):
-            coords = self.gtf.tx_coords[id]
+    def coords(self, ident):
+        """
+
+        :param ident:
+        :return:
+        """
+        if ident.startswith(("ENST", "rna")):
+            coords = self.gtf.tx_coords[ident]
         else:
-            coords = self.gtf.gene_coords[id]
+            coords = self.gtf.gene_coords[ident]
         return coords
 
     def count_total(self):
@@ -177,8 +188,8 @@ class HtseqReader(object):
             for line in my_htseq:
                 if '_' not in line:
                     line = line.rstrip('\n').split('\t')
-                    id = line[0]
-                    gene_len = len(set(self.coords(id))) / 1000.0
+                    ident = line[0]
+                    gene_len = len(set(self.coords(ident))) / 1000.0
                     count = int(line[1])
                     total += count
                     rpk_total += float(count / gene_len)
@@ -192,46 +203,48 @@ class HtseqReader(object):
             for line in my_htseq:
                 if '_' not in line:
                     line = line.rstrip('\n').split('\t')
-                    id = line[0]
+                    ident = line[0]
                     count = float(line[1])
 
                     if count_type == 'fpkm':
-                        count = self.calc_fpkm(id, count)
+                        count = self.calc_fpkm(ident, count)
                     elif count_type == 'fpkm_uq':
-                        count = self.calc_fpkm_uq(id, count)
+                        count = self.calc_fpkm_uq(ident, count)
                     elif count_type == 'tpm':
-                        count = self.calc_tpm(id, count)
+                        count = self.calc_tpm(ident, count)
 
                     counts_dict[id] = count
 
         return counts_dict
 
-    def calc_fpkm(self, id, count):
+    def calc_fpkm(self, ident, count):
         """
         """
-        gene_len = len(set(self.coords(id)))
+        gene_len = len(set(self.coords(ident)))
         return float((count * 1000000000.0) / (self.total * gene_len))
 
-    def calc_fpkm_uq(self, id, count):
+    def calc_fpkm_uq(self, ident, count):
         """
         """
         np_arr = numpy.array(self.counts.values())
-        #upper quartile without zeroes
-        total_uq = numpy.percentile(np_arr[np_arr>0], 75)
-        gene_len = len(set(self.coords(id)))
+        # upper quartile without zeroes
+        total_uq = numpy.percentile(np_arr[np_arr > 0], 75)
+        gene_len = len(set(self.coords(ident)))
         return float((count * 1000000000.0) / (total_uq * gene_len))
 
-    def calc_tpm(self, id, count):
+    def calc_tpm(self, ident, count):
         """
         Calculate Transcripts per Million normalized counts.
         :return:
         """
-        gene_len = len(set(self.coords(id))) / 1000.0
+        gene_len = len(set(self.coords(ident))) / 1000.0
         return float((count / gene_len) / (self.rpk_total / 1000000.0))
 
 
 class StarGeneCountReader(object):
     """
+    TODO: This is mostly the same as HTSeq Reader.  Create superclass Counter, then these can go underneath.
+    count_total and make_counts are different.
     """
 
     def __init__(self, filename, gtf):
@@ -247,11 +260,11 @@ class StarGeneCountReader(object):
         except:
             sys.exit("All counts are zero")
 
-    def coords(self, id):
+    def coords(self, ident):
         if id.startswith(("ENST", "rna")):
-            coords = self.gtf.tx_coords[id]
+            coords = self.gtf.tx_coords[ident]
         else:
-            coords = self.gtf.gene_coords[id]
+            coords = self.gtf.gene_coords[ident]
         return coords
 
     def count_total(self):
@@ -306,8 +319,8 @@ class StarGeneCountReader(object):
         """
         """
         np_arr = numpy.array(self.counts.values())
-        #upper quartile without zeroes
-        total_uq = numpy.percentile(np_arr[np_arr>0], 75)
+        # upper quartile without zeroes
+        total_uq = numpy.percentile(np_arr[np_arr > 0], 75)
         gene_len = len(set(self.coords(id)))
         return float((count * 1000000000.0) / (total_uq * gene_len))
 
