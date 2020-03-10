@@ -243,7 +243,7 @@ def main():
         vcf = open(args.report_vcf, 'w')
         regions = open(args.report_bed, 'w')
         write_vcf_header(vcf)
-        prepare_reported(vcf, regions, stdout)
+        prepare_reported(vcf, regions, stdout, args.include_chr)
 
         # Get the current profile ready.
         # We run one command here, then another down below.
