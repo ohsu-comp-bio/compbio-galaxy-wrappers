@@ -14,7 +14,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '0.5.0'
+VERSION = '0.6.0'
 
 
 def supply_args():
@@ -31,8 +31,8 @@ def supply_args():
     parser.add_argument('output_fpkm', help='Output FPKM normalized counts file.')
     parser.add_argument('output_fpkm_uq', help='Output FPKM-UQ normalized counts file.')
     parser.add_argument('output_tpm', help='Output TPM normalized counts file.')
-    parser.add_argument('--version', action='version', version='%(prog)s ' +
-                                                               VERSION)
+    parser.add_argument('--use_star_counts', action='store_true', help='Use gene counts from STAR.')
+    parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
 
@@ -46,8 +46,8 @@ def run_cmd(cmd):
 
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
-    print("From Output: " + stdout)
-    eprint("From Error: " + stderr)
+    print("From Output: " + str(stdout))
+    eprint("From Error: " + str(stderr))
 
     return p.wait()
 
@@ -150,7 +150,7 @@ class HtseqReader(object):
         self.filename = filename
         self.gtf = gtf
         self.total, self.rpk_total = self.count_total()
-        self.counts = self.make_counts(None)
+        self.counts = self.make_counts(count_type=None)
 
         try:
             self.counts_fpkm = self.make_counts('fpkm')
@@ -230,6 +230,96 @@ class HtseqReader(object):
         return float((count / gene_len) / (self.rpk_total / 1000000.0))
 
 
+class StarGeneCountReader(object):
+    """
+    """
+
+    def __init__(self, filename, gtf):
+        self.filename = filename
+        self.gtf = gtf
+        self.total, self.rpk_total = self.count_total()
+        self.counts = self.make_counts(count_type=None)
+
+        try:
+            self.counts_fpkm = self.make_counts('fpkm')
+            self.counts_fpkm_uq = self.make_counts('fpkm_uq')
+            self.counts_tpm = self.make_counts('tpm')
+        except:
+            sys.exit("All counts are zero")
+
+    def coords(self, id):
+        if id.startswith(("ENST", "rna")):
+            coords = self.gtf.tx_coords[id]
+        else:
+            coords = self.gtf.gene_coords[id]
+        return coords
+
+    def count_total(self):
+        """
+        Total number of counts in the HTSeq table of counts.
+        Also count the RPK total, for TPM calculation.
+        """
+        total = 0
+        rpk_total = 0.0
+        with open(self.filename, 'rU') as my_htseq:
+            for line in my_htseq:
+                if not line.startswith('N_'):
+                    line = line.rstrip('\n').split('\t')
+                    id = line[0]
+                    gene_len = len(set(self.coords(id))) / 1000.0
+                    count = int(line[3])
+                    total += count
+                    rpk_total += float(count / gene_len)
+        return total, rpk_total
+
+    def make_counts(self, count_type):
+        """
+        line[3] corresponds to the "reverse" method of counting, as htseq-count describes it.
+        Shoould probably generalize this and add a parameter that lets you pick a counts column.
+        """
+        counts_dict = {}
+        with open(self.filename, 'rU') as my_htseq:
+            for line in my_htseq:
+                if not line.startswith('N_'):
+                    line = line.rstrip('\n').split('\t')
+                    id = line[0]
+                    count = float(line[3])
+
+                    if count_type == 'fpkm':
+                        count = self.calc_fpkm(id, count)
+                    elif count_type == 'fpkm_uq':
+                        count = self.calc_fpkm_uq(id, count)
+                    elif count_type == 'tpm':
+                        count = self.calc_tpm(id, count)
+
+                    counts_dict[id] = count
+
+        return counts_dict
+
+    def calc_fpkm(self, id, count):
+        """
+        """
+        gene_len = len(set(self.coords(id)))
+        return float((count * 1000000000.0) / (self.total * gene_len))
+
+    def calc_fpkm_uq(self, id, count):
+        """
+        """
+        np_arr = numpy.array(self.counts.values())
+        #upper quartile without zeroes
+        total_uq = numpy.percentile(np_arr[np_arr>0], 75)
+        gene_len = len(set(self.coords(id)))
+        return float((count * 1000000000.0) / (total_uq * gene_len))
+
+    def calc_tpm(self, id, count):
+        """
+        Calculate Transcripts per Million normalized counts.
+        :return:
+        """
+        gene_len = len(set(self.coords(id))) / 1000.0
+        return float((count / gene_len) / (self.rpk_total / 1000000.0))
+
+
 class HtseqWriter(object):
     """
     """
@@ -255,7 +345,10 @@ def main():
     args = supply_args()
     my_gtf = GTFReader(args.gtf)
 
-    my_htseq = HtseqReader(args.input, my_gtf)
+    if args.use_star_counts:
+        my_htseq = StarGeneCountReader(args.input, my_gtf)
+    else:
+        my_htseq = HtseqReader(args.input, my_gtf)
 
     HtseqWriter(my_htseq.counts_fpkm, args.output_fpkm)
     HtseqWriter(my_htseq.counts_fpkm_uq, args.output_fpkm_uq)

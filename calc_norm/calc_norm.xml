@@ -1,5 +1,5 @@
-<tool id="calc_norm" name="Normalize from HTSeq" version="0.5.0" >
-    <description>Calculate TPM, FPKM, and FPKM-UQ values from an existing HTSeq-Count counts table. </description>
+<tool id="calc_norm" name="Normalize from HTSeq" version="0.6.0" >
+    <description>Calculate TPM, FPKM, and FPKM-UQ values from an existing HTSeq-Count or STAR counts table. </description>
 
     <requirements>
       <requirement type="package" version="1.11.0">numpy</requirement>
@@ -7,12 +7,19 @@
     </requirements>
 
     <command interpreter="python">
-        calc_norm.py $input_htseq $input_gtf $output_fpkm $output_fpkm_uq $output_tpm
+        calc_norm.py
+        $input_htseq
+        $input_gtf
+        $output_fpkm
+        $output_fpkm_uq
+        $output_tpm
+        '$use_star_counts'
     </command>
 
     <inputs>
-        <param name="input_htseq" type="data" format="txt" label="HTSeq Counts Table" help="Input HTSeq-Count tab separated file." />
+        <param name="input_htseq" type="data" format="txt" label="Counts Table" help="Input STAR or HTSeq-Count tab separated file." />
         <param name="input_gtf" type="data" format="gtf" label="GTF File" help="Should be the same GTF file used to generate counts tables. Works with Homo_sapiens.GRCh37.75.gtf." />
+        <param name="use_star_counts" argument="--use_star_counts" type="boolean" truevalue="--use_star_counts" falsevalue="" optional="true" checked="false" label="Use STAR gene counts?" help="Input counts is from STAR."/>
     </inputs>
 
     <outputs>
@@ -24,8 +31,25 @@
     <tests></tests>
 
     <help><![CDATA[
-    python calc_norm.py -h    
-  ]]></help>
+usage: calc_norm.py [-h] [--use_star_counts] [--version]
+                    input gtf output_fpkm output_fpkm_uq output_tpm
+
+Takes an input file from htseq with ENST or ENSG IDs and outputs 3 files:
+FPKM, FPKM with upper quartile normalization,and a pseudo-TPM file (using the
+gene/transcript length)
+
+positional arguments:
+  input              Input counts file from htseq-count.
+  gtf                Input GTF file.
+  output_fpkm        Output FPKM normalized counts file.
+  output_fpkm_uq     Output FPKM-UQ normalized counts file.
+  output_tpm         Output TPM normalized counts file.
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --use_star_counts  Use gene counts from STAR.
+  --version          show program's version number and exit
+    ]]></help>
 
     <citations></citations>
 
