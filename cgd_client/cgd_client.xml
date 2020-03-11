@@ -1,4 +1,4 @@
-<tool id="cgd_client" name="CGD Import Client" version="1.2.8.4" profile="16.01">
+<tool id="cgd_client" name="CGD Import Client" version="1.2.8.5" profile="16.01">
 
     <description>Send a pipeline output file to the CGD via cgd_client.jar.</description>
 
@@ -14,7 +14,7 @@
         --endpoint '$endpoint_choice.endpoint'
         --cgd_client '$cgd_client'
         --cgd_config '$cgd_config'
-        '$include_chr'
+        $include_chr
         --tissue '$tissue'
 
         #if $servicebase:
