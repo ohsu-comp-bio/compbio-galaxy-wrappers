@@ -4,6 +4,7 @@
     <xml name="requirements">
         <requirements>
             <requirement type="package" version="@VERSION@">freak</requirement>
+            <requirement type="package" version="0.23.4">pandas</requirement>
         </requirements>
     </xml>
 
