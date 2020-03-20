@@ -1,4 +1,5 @@
-<tool id='methylation' name="Methylation" version='1.0.0'>
+<?xml version="1.0" encoding="utf-8"?>
+<tool id='methylation' name="Methylation" version='1.1.0'>
     <description>Generates a methylation report from idat files based on the MNP R-script</description>
     <requirements>
         <requirement type="package" version="3.6.2">r-base</requirement>
@@ -18,22 +19,36 @@
         <requirement type="package" version="2.32.0">bioconductor-methylumi</requirement>
         <requirement type="package" version="1.20.0">bioconductor-conumee</requirement>
         <requirement type="package" version="1.32.0">bioconductor-minfi</requirement>
-        <requirement type="package" version="0.4.0">bioconductor-illuminahumanmethylation450manifest</requirement>
+        <requirement type="package" version="0.4.0">bioconductor-illuminahumanmethylation450kmanifest</requirement>
         <requirement type="package" version="0.3.0">bioconductor-illuminahumanmethylationepicmanifest</requirement>
         <requirement type="package" version="0.6.0">bioconductor-illuminahumanmethylationepicanno.ilm10b4.hg19</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
+        export HOME='./' &&
+        ln -s $__tool_directory__/mnp.RData ./ &&
+	ln -s $__tool_directory__/mnp.v11b4_0.1.124.tar.gz ./ &&
+	ln -s $__tool_directory__/mnpqc_0.1.0.tar.gz ./ &&
         mkdir temp &&
-        ln -s $green temp/sample_Grn.idat &&
-        ln -s $red temp/sample_Red.idat &&
-        Rscript $__tool_directory__/report_2.R temp sample
+        ln -s $green temp/${sample_name}_Grn.idat &&
+        ln -s $red temp/${sample_name}_Red.idat &&
+	#if $install:
+           Rscript $__tool_directory__/report_2.R temp $sample_name &&
+	#else:
+	   Rscript $__tool_directory__/report.R temp $sample_name &&
+	#end if
+	cp ${sample_name}.html $output
 ]]>
     </command>
     <inputs>
+        <param type="text" name="sample_name" label="Sample Name"/>
         <param type="data" name="green" label="Green Idat File" format="idat"/>
         <param type="data" name="red" label="Red Idat File" format="idat"/>
+	<param type="boolean" name="install" label="Setup Install?" checked="false"/>
     </inputs>
     <outputs>
-        <data format="html" name="output" label="${tool.name} on ${on_string}" from_work_dir="sample.html"/>
+        <data format="html" name="output" label="${tool.name} on ${on_string}"/>
     </outputs>
+    <citations>
+      <citation type="doi">10.1038/nature26000</citation>
+    </citations>
 </tool>
