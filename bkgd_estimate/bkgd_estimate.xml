@@ -1,4 +1,4 @@
-<tool id="bkgd_estimate" name="VAF Background Checker" version="0.0.1" >
+<tool id="bkgd_estimate" name="VAF Background Checker" version="0.0.2" >
 
     <description>Check whether a VAF can be distinguished from background noise.</description>
 
