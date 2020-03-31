@@ -161,6 +161,15 @@ class SampleMetrics:
         self.on_primer_frag_count_pct = self._add_on_target(self.raw_mets.picard_summary,
                                                             self.on_primer_frag_count,
                                                             'PF_HQ_ALIGNED_READS')
+        self.gatk_cr_on_target = self._gatk_cr_on_target()
+
+    def _gatk_cr_on_target(self):
+        """
+        Use GATK4 CountReads or CountReadsSpark to estimate on-target pct.
+        :return:
+        """
+        if self.raw_mets.gatk_cr_total and self.raw_mets.gatk_cr_ints:
+            return float(self.raw_mets.gatk_cr_ints) / (float(self.raw_mets.gatk_cr_total) + 0.0)
 
     def _pumi(self):
         """
@@ -278,6 +287,9 @@ class MetricPrep(SampleMetrics):
                 'depthTwoThousand': self._get_avg_probeqc('D2000'),
 
                 'allele_balance': "{:.2f}".format(self.raw_mets.json_mets['allele_balance']),
+                'gatk_cr_on_target': "{:.2f}".format(self.gatk_cr_on_target*100),
+                'gatk_cr_total': self.raw_mets.gatk_cr_total,
+                'gatk_cr_ints': self.raw_mets.gatk_cr_ints,
                 'percentOnTarget': "{:.2f}".format(float(self.on_target)),
                 'percentUmi': self.pumi,
                 'tmb': self.raw_mets.json_mets['tmb'],
