@@ -1,14 +1,14 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.5.3" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.6.0" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
   
   <requirements>
     <requirement type="package" version="1.9">samtools</requirement>
   </requirements>
 
-  <version_command>python $__tool_directory__/sample_metrics.py --version</version_command>
+  <version_command>$__tool_directory__/sample_metrics.py --version</version_command>
 
   <command><![CDATA[
-    python $__tool_directory__/sample_metrics.py
+    $__tool_directory__/sample_metrics.py
     --probeqc_after '${probeqc}'
     #if $umi.umi_sel == 'umi_yes':
       --probeqc_before '${probeqc_before_umi}'
@@ -26,6 +26,12 @@
     #if $msi:
         --msi '${msi}'
     #end if
+    #if $gatk_count_reads_total:
+        --gatk_count_reads_total '${gatk_count_reads_total}'
+    #end if
+    #if $gatk_count_reads_ints:
+        --gatk_count_reads_ints '${gatk_count_reads_ints}'
+    #end if
     #for $input in $json_in:
         #if $input:
             --json_in "${input}"
@@ -42,6 +48,8 @@
       <param name="picard_metrics" type="data" format="txt" label="Picard Alignment Summary Metrics" help="Alignment summary metrics produced by the Picard CollectAlignmentSummaryMetrics tool." />
       <param name="primers_bed" type="data" format="bed" optional="true" label="Primers BED" help="BED file containing primer coordinates only." />
       <param name="primers_bam" type="data" format="bam" optional="true" label="Primers BAM" help="BAM file to calculate primer reads on target." />
+      <param name="gatk_count_reads_total" type="data" format="txt" optional="true" label="GATK4 CountReads Total" help="Total counts resulting from CountReads on a BAM file." />
+      <param name="gatk_count_reads_ints" type="data" format="txt" optional="true" label="GATK4 CountReads Intervals" help="Target interval counts resulting from CountReads on a BAM file." />
       <param name="msi" type="data" format="tabular" optional="true" label="MSIsensor TSV" help="TSV file with MSI results." />
       <param name="json_in" type="data" format="txt" optional="true" multiple="true" label="JSON Formatted Metrics File" help="Some arbitrary number of input files containing json formatted metrics." />
       <conditional name="umi">

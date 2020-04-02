@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # DESCRIPTION: Create sample level metrics to be passed to the CGD.  Metrics
 #  are passed as a json dump.
@@ -60,6 +60,10 @@ def supply_args():
     if args.primers_bed and not args.primers_bam:
         parser.error("Argument primers_bed requires primers_bam.")
 
+    # Ensure at least one output option has been selected.
+    if not args.outfile and not args.outfile_txt and not args.outfile_new:
+        parser.error("You must specify one of outfile, outfile_new, or outfile_txt.")
+
     return args
 
 
@@ -71,13 +75,28 @@ class RawMetricCollector:
     msi = from MSIsensor, TSV output file
     """
     def __init__(self, args):
-        self.gatk_cr_total = args.gatk_count_reads_total.count
-        self.gatk_cr_ints = args.gatk_count_reads_ints.count
-        self.msi = args.msi.msi
+        if args.gatk_count_reads_total:
+            self.gatk_cr_total = args.gatk_count_reads_total.count
+            self.gatk_cr_ints = args.gatk_count_reads_ints.count
+        else:
+            self.gatk_cr_total = None
+            self.gatk_cr_ints = None
+
+        if args.msi:
+            self.msi = args.msi.msi
+        else:
+            self.msi = None
+
         self.picard_summary = args.picard_summary.metrics
-        self.probeqc_before = args.probeqc_before.probeqc
+
+        if args.probeqc_before:
+            self.probeqc_before = args.probeqc_before.probeqc
+            self.probeqc_header_before = args.probeqc_before.headers
+        else:
+            self.probeqc_before = None
+            self.probeqc_header_before = None
+
         self.probeqc_after = args.probeqc_after.probeqc
-        self.probeqc_header_before = args.probeqc_before.headers
         self.probeqc_header_after = args.probeqc_after.headers
         self.wf = args.workflow
 
@@ -92,7 +111,7 @@ class RawMetricCollector:
         else:
             self.json_mets = None
 
-        self._params_stdout()
+        # self._params_stdout()
 
     def _json_in(self):
         """
@@ -251,7 +270,10 @@ class SampleMetrics:
         else:
             pf_bases_aligned = None
 
-        on_target = str("{:.4}".format((total_cov * 100.0) / pf_bases_aligned))
+        if pf_bases_aligned and total_cov:
+            on_target = str("{:.4}".format((total_cov * 100.0) / pf_bases_aligned))
+        else:
+            on_target = None
 
         return on_target
 
@@ -263,18 +285,16 @@ class MetricPrep(SampleMetrics):
     def __init__(self, raw_mets):
         super().__init__(raw_mets)
         self.mets = self._gather_metrics()
-        print(self.mets)
         self.req_old = self._req_old()
         self.req_new = self._req_new()
 
     def _gather_metrics(self):
         """
-        Old style metrics.
+        Old style metrics.  Will need to handle special json metrics separately.
         :return:
         """
         mets = {'qthirty': self._get_avg_probeqc('Q30'),
                 'averageDepth': self._get_avg_probeqc('AVGD'),
-
                 'depthTen': self._get_avg_probeqc('D10'),
                 'depthTwenty': self._get_avg_probeqc('D20'),
                 'depthFifty': self._get_avg_probeqc('D50'),
@@ -285,22 +305,52 @@ class MetricPrep(SampleMetrics):
                 'depthOneThousand': self._get_avg_probeqc('D1000'),
                 'depthTwelveHundredFifty': self._get_avg_probeqc('D1250'),
                 'depthTwoThousand': self._get_avg_probeqc('D2000'),
-
-                'allele_balance': "{:.2f}".format(self.raw_mets.json_mets['allele_balance']),
-                'gatk_cr_on_target': "{:.2f}".format(self.gatk_cr_on_target*100),
+                'allele_balance': self._reduce_sig(self._add_json_mets(lookin=self.raw_mets.json_mets, metric='allele_balance')),
+                'allele_balance_het_count': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='allele_balance_het_count'),
+                'gatk_cr_on_target': self._reduce_sig_pct(self.gatk_cr_on_target),
                 'gatk_cr_total': self.raw_mets.gatk_cr_total,
                 'gatk_cr_ints': self.raw_mets.gatk_cr_ints,
-                'percentOnTarget': "{:.2f}".format(float(self.on_target)),
+                'percentOnTarget': self._reduce_sig(self.on_target),
                 'percentUmi': self.pumi,
-                'tmb': self.raw_mets.json_mets['tmb'],
-                'msi_pct': self.raw_mets.msi['somatic_pct'],
-                'msi_sites': self.raw_mets.msi['total_sites'],
-                'msi_somatic_sites': self.raw_mets.msi['somatic_sites'],
+                'tmb': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb'),
+                'msi_pct': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_pct'),
+                'msi_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='total_sites'),
+                'msi_somatic_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_sites'),
                 'total_on_target_transcripts': self.on_primer_frag_count,
                 'total_on_target_transcripts_pct': self.on_primer_frag_count_pct
                 }
 
         return mets
+
+    def _add_json_mets(self, lookin, metric):
+        """
+        Currently the following metrics are sent in standalone.  Need to think about ways to do this better.
+        allele_balance
+        tmb
+        :return:
+        """
+        if lookin:
+            if metric in lookin:
+                return lookin[metric]
+        return None
+
+    @staticmethod
+    def _reduce_sig(metric):
+        """
+        Get rid of digits that are not significant.
+        :return:
+        """
+        if metric:
+            return "{:.2f}".format(float(metric))
+
+    @staticmethod
+    def _reduce_sig_pct(metric):
+        """
+        Get rid of digits that are not significant, and provide in percent format.
+        :return:
+        """
+        if metric:
+            return "{:.2f}".format(float(metric)*100)
 
     def _get_avg_probeqc(self, label):
         """
@@ -349,9 +399,10 @@ class MetricPrep(SampleMetrics):
                 'AgilentCRE_V1': [],
                 'QIAseq_V3_HEME2': [],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct'],
-                'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
-                'QIAseq_V3_HOP': ['allele_balance'],
-                'QIAseq_V3_HOP2': ['allele_balance']
+                'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'total_on_target_transcripts_pct', 'gatk_cr_on_target',
+                                          'gatk_cr_total', 'gatk_cr_ints'],
+                'QIAseq_V3_HOP': ['allele_balance', 'allele_balance_het_count'],
+                'QIAseq_V3_HOP2': ['allele_balance', 'allele_balance_het_count']
                 }
 
 
@@ -433,9 +484,12 @@ def main():
     raw_mets = RawMetricCollector(args)
     samp_mets = MetricPrep(raw_mets)
     writer = Writer(samp_mets)
-    writer.write_to_text('blah')
-    writer.write_cgd_old('blah_cgd_old')
-    writer.write_cgd_new('blah_cgd_new')
+    if args.outfile_txt:
+        writer.write_to_text(args.outfile_txt)
+    if args.outfile:
+        writer.write_cgd_old(args.outfile)
+    if args.outfile_new:
+        writer.write_cgd_new(args.outfile_new)
 
 
 if __name__ == "__main__":
