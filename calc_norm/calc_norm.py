@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-
-# USAGE:
-# CODED BY: Janice Patterson
+#!/usr/bin/env python3
 
 from __future__ import print_function
 import argparse
@@ -46,8 +43,8 @@ def run_cmd(cmd):
 
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
-    print("From Output: " + stdout)
-    eprint("From Error: " + stderr)
+    print("From Output: " + str(stdout))
+    eprint("From Error: " + str(stderr))
 
     return p.wait()
 
@@ -242,7 +239,7 @@ class HtseqWriter(object):
     def write_file(self):
         """
         """
-        for key, value in sorted(self.htseq.iteritems()):
+        for key, value in sorted(self.htseq.items()):
             value = '{:.3f}'.format(value)
             to_write = '\t'.join([key, value])
             self.filename.write(to_write)
@@ -251,11 +248,73 @@ class HtseqWriter(object):
         self.filename.close()
 
 
+class StarReader(HtseqReader):
+    """
+    first 4 rows:
+    N_unmapped      17266161        17266161        17266161
+    N_multimapping  16713652        16713652        16713652
+    N_noFeature     1093465 114459752       3227050
+    N_ambiguous     8750904 263962  4478729
+
+    column headings:
+    column 1: gene ID
+    column 2: counts for unstranded RNA-seq
+    column 3: counts for the 1st read strand aligned with RNA (htseq-count option -s yes)
+    column 4: counts for the 2nd read strand aligned with RNA (htseq-count option -s reverse)
+    """
+    def __init__(self, filename, gtf):
+        super(StarReader, self).__init__(filename, gtf)
+        self.total, self.rpk_total = self.count_total()
+        self.counts = self.make_counts(None)
+
+        print(self.total)
+
+    def count_total(self):
+        """
+        Total number of counts in the HTSeq table of counts.
+        Also count the RPK total, for TPM calculation.
+        """
+        total = 0
+        rpk_total = 0.0
+        with open(self.filename, 'r') as my_htseq:
+            for line in my_htseq:
+                if '_' not in line and not line.startswith('N_'):
+                    line = line.rstrip('\n').split('\t')
+                    id = line[0]
+                    gene_len = len(set(self.coords(id))) / 1000.0
+                    count = int(line[3])
+                    total += count
+                    rpk_total += float(count / gene_len)
+        return total, rpk_total
+
+    def make_counts(self, count_type):
+        """
+        """
+        counts_dict = {}
+        with open(self.filename, 'r') as my_htseq:
+            for line in my_htseq:
+                if '_' not in line and not line.startswith('N_'):
+                    line = line.rstrip('\n').split('\t')
+                    id = line[0]
+                    count = float(line[3])
+
+                    if count_type == 'fpkm':
+                        count = self.calc_fpkm(id, count)
+                    elif count_type == 'fpkm_uq':
+                        count = self.calc_fpkm_uq(id, count)
+                    elif count_type == 'tpm':
+                        count = self.calc_tpm(id, count)
+
+                    counts_dict[id] = count
+
+        return counts_dict
+
+
 def main():
     args = supply_args()
     my_gtf = GTFReader(args.gtf)
 
-    my_htseq = HtseqReader(args.input, my_gtf)
+    my_htseq = StarReader(args.input, my_gtf)
 
     HtseqWriter(my_htseq.counts_fpkm, args.output_fpkm)
     HtseqWriter(my_htseq.counts_fpkm_uq, args.output_fpkm_uq)
