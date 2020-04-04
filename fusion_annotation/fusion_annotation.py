@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 import pysam
 
-VERSION = '0.2.1'
+VERSION = '0.2.2'
 
 
 def supply_args():
@@ -157,14 +157,15 @@ class FusionAnnot:
         annot['LeftBreakEntropy'] = self.line['LeftBreakEntropy']
         annot['RightBreakDinuc'] = self.line['RightBreakDinuc']
         annot['RightBreakEntropy'] = self.line['RightBreakEntropy']
-        annot['PROT_FUSION_TYPE'] = self.line['PROT_FUSION_TYPE']
-        annot['FUSION_CDS'] = self.line['FUSION_CDS']
-        annot['FAR_left'] = self.line['FAR_left']
-        annot['FAR_right'] = self.line['FAR_right']
-        annot['PFAM_LEFT'] = self.line['PFAM_LEFT']
-        annot['PFAM_RIGHT'] = self.line['PFAM_RIGHT']
-        annot['KINASE_IN_PFAM_LEFT'] = self._kinase_from_pfam(annot['PFAM_LEFT'])
-        annot['KINASE_IN_PFAM_RIGHT'] = self._kinase_from_pfam(annot['PFAM_RIGHT'])
+        if 'PROT_FUSION_TYPE' in self.line:
+            annot['PROT_FUSION_TYPE'] = self.line['PROT_FUSION_TYPE']
+            annot['FUSION_CDS'] = self.line['FUSION_CDS']
+            annot['FAR_left'] = self.line['FAR_left']
+            annot['FAR_right'] = self.line['FAR_right']
+            annot['PFAM_LEFT'] = self.line['PFAM_LEFT']
+            annot['PFAM_RIGHT'] = self.line['PFAM_RIGHT']
+            annot['KINASE_IN_PFAM_LEFT'] = self._kinase_from_pfam(annot['PFAM_LEFT'])
+            annot['KINASE_IN_PFAM_RIGHT'] = self._kinase_from_pfam(annot['PFAM_RIGHT'])
 
         # This means J_FFPM and S_FFPM are not listed.  Currently, for compatibility with CGD, placeholders
         # for these values need to be sent.
@@ -288,9 +289,28 @@ def main():
     if len(my_sf) == 0:
         sf_out.write('\t'.join(hard_header))
         sf_out.write('\n')
+
+    header_set = False
     for line in my_sf:
         fusion = FusionAnnot(line)
         linebedpe = fusion.output_line
+
+        if not header_set:
+            if 'PROT_FUSION_TYPE' in linebedpe:
+                hard_header = ["chrom1", "start1", "end1", "chrom2", "start2", "end2", "name", "score", "strand1",
+                               "strand2", "JunctionReadCount", "SpanningFragCount", "SpliceType", "HGVSGene1", "EnsGene1",
+                               "HGVSGene2", "EnsGene2", "LargeAnchorSupport", "LeftBreakDinuc", "LeftBreakEntropy",
+                               "RightBreakDinuc", "RightBreakEntropy", "PROT_FUSION_TYPE", "FUSION_CDS", "FAR_left", "FAR_right",
+                               "PFAM_LEFT", "PFAM_RIGHT", "KINASE_IN_PFAM_LEFT", "KINASE_IN_PFAM_RIGHT", "J_FFPM", "S_FFPM", "FFPM",
+                               "NormalizedFrags", "leftgene", "leftseq", "rightgene", "rightseq", "combinedseq"]
+            else:
+                hard_header = ["chrom1", "start1", "end1", "chrom2", "start2", "end2", "name", "score", "strand1",
+                               "strand2", "JunctionReadCount", "SpanningFragCount", "SpliceType", "HGVSGene1", "EnsGene1",
+                               "HGVSGene2", "EnsGene2", "LargeAnchorSupport", "LeftBreakDinuc", "LeftBreakEntropy",
+                               "RightBreakDinuc", "RightBreakEntropy", "J_FFPM", "S_FFPM", "FFPM",
+                               "NormalizedFrags", "leftgene", "leftseq", "rightgene", "rightseq", "combinedseq"]
+            header_set = True
+
         # get seqs left and right
         mafline_left = [linebedpe['chrom1'], linebedpe['start1'], linebedpe['end1'],
                         linebedpe['LeftBreakDinuc'][0], linebedpe['strand1']]
