@@ -446,8 +446,9 @@ class Writer:
         to_write = {'sampleRunMetrics': [], 'geneMetrics': []}
         for metric, val in self.mets.mets.items():
             if metric in self.mets.req_new[self.wf]:
-                metric_dict = {'metric': str(metric), 'value': str(val)}
-                to_write['sampleRunMetrics'].append(metric_dict)
+                if val:
+                    metric_dict = {'metric': str(metric), 'value': str(val)}
+                    to_write['sampleRunMetrics'].append(metric_dict)
 
         with open(filename, 'w') as jwrite:
             json.dump(to_write, jwrite)
