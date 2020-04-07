@@ -1,4 +1,4 @@
-<tool id="rna_star" name="RNA STAR" version="2.7.2b-0" profile="17.01">
+<tool id="rna_star" name="RNA STAR" version="2.7.2b-1" profile="17.01">
     <description>Gapped-read mapper for RNA-seq data</description>
     <macros>
         <import>macros.xml</import>
@@ -343,10 +343,10 @@
                     <param argument="--alignTranscriptsPerWindowNmax" type="integer" min="1" value="100" label="Maximum number of transcripts per window"/>
                     <param argument="--alignTranscriptsPerReadNmax" type="integer" min="1" value="10000" label="Maximum number of different alignments per read to consider"/>
                     <param argument="alignEndsType" type="select" label="Type of read ends alignment">
-                        <option value="Local" selected="true" help="standard local alignment with soft-clipping allowed">Local</option>
-                        <option value="EndToEnd" selected="false" help="force end-to-end read alignment, do not soft-clip">EndToEnd</option>
-                        <option value="Extend5pOfRead1" selected="false" help="fully extend only the 5p of the read1, all other ends: local alignment">Extend5pOfRead1</option>
-                        <option value="Extend5pOfReads12" selected="false" help="fully extend only the 5p of the both read1 and read2, all other ends: local alignment">Extend5pOfReads12</option>
+                        <option value="Local" selected="true">Local</option>
+                        <option value="EndToEnd" selected="false">EndToEnd</option>
+                        <option value="Extend5pOfRead1" selected="false">Extend5pOfRead1</option>
+                        <option value="Extend5pOfReads12" selected="false">Extend5pOfReads12</option>
                     </param>
                     <param argument="--alignSJstitchMismatchNmax" type="text" value="0 -1 0 0" label="Maximum splice juntion mismatches" help="maximum number of mismatches for stitching of the splice junctions (-1: no limit). (1) non-canonical motifs, (2) GT/AG and CT/AC motif, (3) GC/AG and CT/GC motif, (4) AT/AC and GT/AT motif."/>
                     <param argument="--alignSoftClipAtReferenceEnds" type="boolean" truevalue="Yes" falsevalue="No" checked="true" label="Allow the soft-clipping of the alignments past the end of the chromosomes?"/>
