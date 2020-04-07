@@ -13,7 +13,7 @@ import json
 # User libraries
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader
 
-VERSION = '0.6.0'
+VERSION = '0.6.1'
 
 
 def supply_args():
