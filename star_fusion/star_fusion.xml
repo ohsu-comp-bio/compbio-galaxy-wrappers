@@ -1,4 +1,4 @@
-<tool id="star_fusion" name="STAR-Fusion" version="1.8.1.4">
+<tool id="star_fusion" name="STAR-Fusion" version="1.8.1.5">
     <description>detect fusion genes in RNA-Seq data</description>
     <requirements>
         <requirement type="package" version="1.8.1">star-fusion</requirement>
@@ -144,8 +144,8 @@
                 <param name="min_FFPM" type="float" value="0.1" label="Minimum FFPM" help="Minimum FFPM (fusion fragments per million rna-seq frags)" argument="--min_FFPM"/>
                 <param name="FusionInspector" type="select" label="FusionInspector">
                     <option value="no_finspector" selected="true">No Fusion Inspector</option>
-                    <option value="inspect" help="considers only StarFusion-identified fusion reads in context of identified fusions (fast)">inspect</option>
-                    <option value="validate" help="examines all reads, recovers evidence, computes fusion allele fractions (slow)a">validate</option>
+                    <option value="inspect">inspect</option>
+                    <option value="validate">validate</option>
                 </param>
                 <param name="no_single_fusion_per_breakpoint" type="boolean" truevalue="--no_single_fusion_per_breakpoint" falsevalue="" checked="false" label="Multiple Fusion per Breakpoint?" help="Exclude filtering of potentially superfluous fusions involving different gene annotations overlapping the same fusion breakpoint."/>
                 <param name="no_remove_dups" type="boolean" truevalue="--no_remove_dups" falsevalue="" checked="false" label="Don't Remove Duplicates?" help="Do not remove duplicate reads."/>
