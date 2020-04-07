@@ -1,5 +1,5 @@
-<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.2.3">
-  <description>Create annotation files for fusion annotation. Run Oncotator and get sequence context.</description>
+<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.2.4">
+  <description>Create annotated fusion output, based off of STAR-Fusion output.</description>
   <requirements>
     <requirement type="package" version="0.15.3">pysam</requirement>
   </requirements>
@@ -7,11 +7,6 @@
     <exit_code range="1:" />
   </stdio>
   <version_command>fusion_annotation.py --version</version_command>
-        parser.add_argument('--starfusion', help='STAR-Fusion output star-fusion.fusion_candidates.final.abridged.FFPM')
-    parser.add_argument('--json_sample_metrics', help="Sample level metrics file")
-    parser.add_argument('--path_to_fasta', help='Full path to fasta.fa file, with index file')
-    parser.add_argument('--filt', action='store_true', help='filter out specific ribosomal and mitochondrial fusions')
-    parser.add_argument('--output', default='starfusion_output.bedpe', help='Full path to fasta.fa file, with index file')
 
   <command><![CDATA[
     python $__tool_directory__/fusion_annotation.py
@@ -47,7 +42,7 @@
               </param>
           </when>
           <when value="history">
-              <param name="ownFile" type="data" format="fasta" metadata_name="dbkey" label="Select the reference genome" />
+              <param name="ownFile" type="data" format="fasta" label="Select the reference genome" />
           </when>  <!-- history -->
       </conditional>  <!-- refGenomeSource -->
   </inputs>

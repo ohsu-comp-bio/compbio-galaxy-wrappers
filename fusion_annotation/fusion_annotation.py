@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 import pysam
 
-VERSION = '0.2.3'
+VERSION = '0.2.4'
 
 
 def supply_args():
