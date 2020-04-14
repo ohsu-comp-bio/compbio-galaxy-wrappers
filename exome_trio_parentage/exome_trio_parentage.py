@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+# Ran the following command to prepare the gnomad VCF:
+# gatk SelectVariants -R $HG19 -V ../../resources/gnomad/gnomad.exomes.r2.1.1.sites.vcf.bgz
+# -L agilent_cre.intervals --select-type-to-include SNP --restrict-alleles-to BIALLELIC
+# -O gnomad_agilent_snp_biallelic_10pct.vcf.gz --selectExpressions 'QUAL>1000000'
+# --selectExpressions 'AF>0.05' --selectExpressions 'AF<0.95' --select-random-fraction 0.1
+
 import argparse
 import json
 from scipy.stats import binom_test
@@ -19,6 +25,7 @@ def supply_args():
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION + '\n')
     args = parser.parse_args()
     return args
+
 
 class TrioVcf:
     """
@@ -58,10 +65,28 @@ class TrioVcf:
         :return:
         """
         outfile = open(filename, 'w')
-        out_metric = {'parentage_sites': self.total, 'parentage_disc': self.disc, 'parentage_binom': self._binom_test()}
+        binom = self._binom_test()
+        out_metric = {'parentage_sites': self.total,
+                      'parentage_disc': self.disc,
+                      'parentage_binom': binom,
+                      'parentage_confirmed': self._parentage_confirm(binom)}
         json.dump(out_metric, outfile)
         outfile.close()
 
+    @staticmethod
+    def _parentage_confirm(binom, cutoff=0.0001):
+        """
+        Decide whether the parentage is confirmed or not, and return a string that will be passed
+        to sample metrics via json.
+        :param binom:
+        :return:
+        """
+        if binom <= cutoff:
+            return "NO"
+        elif binom > cutoff:
+            return "YES"
+        else:
+            raise Exception("_parentage_confirm error, please check")
 
 
 class VcfRec:
@@ -93,13 +118,6 @@ class VcfRec:
             self.valid = True
 
         self.geno_disc_valid = self._geno_disc_check()
-
-        ### DO A CHECK ON PL, some of these are identical, and should not be utilized if so.
-        ### Actually, maybe just do a GQ check, throw out everything below 99.
-        ### I think we need to check AD vs GT, there are some pretty significant discrepancies.
-        ### filter based on coding status?
-        ### filter on poor quality in gnomad?  is this in the vcf?
-
 
     def _ad_check(self):
         """
@@ -170,7 +188,8 @@ class VcfRec:
                     return False
         return True
 
-    def _split_gt(self, gt):
+    @staticmethod
+    def _split_gt(gt):
         """
         Split the GT field up by either / or |.
         :return:
@@ -213,7 +232,8 @@ class VcfRec:
                 return False
         return True
 
-    def _calc_ab(self, ad):
+    @staticmethod
+    def _calc_ab(ad):
         """
         Calculate the allele balance for this particular sample.
         :param ad:
@@ -230,8 +250,6 @@ class VcfRec:
     def _allele_balance_check(self):
         """
         Everything should be less within +/- het of 0.5 and hom of 1 or 0.
-        :param het:
-        :param hom:
         :return:
         """
         for samp in self.rec.samples:
@@ -264,6 +282,7 @@ def main():
     args = supply_args()
     myvcf = TrioVcf(args.input_vcf, args.mother, args.father, args.proband, args.output_vcf)
     myvcf.write_json_out(args.output_json)
+
 
 if __name__ == "__main__":
     main()
