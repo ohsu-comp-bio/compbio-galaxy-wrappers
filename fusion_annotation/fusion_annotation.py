@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 import pysam
 
-VERSION = '0.2.4'
+VERSION = '0.2.5'
 
 
 def supply_args():
@@ -110,13 +110,15 @@ class FusionAnnot:
     def _kinase_from_pfam(self, pfam):
         """
         Determine whether the Pkinase annotation exists within PFAM strings.
+        NOTE: Temporarily returning dots, until this functionality has been improved.
         :return:
         """
-        pfam = pfam.rstrip('\n').split('^')
-        for entry in pfam:
-            if entry.startswith('Pkinase'):
-                return 'YES'
-        return 'NO'
+        return '.'
+        # pfam = pfam.rstrip('\n').split('^')
+        # for entry in pfam:
+        #     if entry.startswith('Pkinase'):
+        #         return 'YES'
+        # return 'NO'
 
     def _convert_starfusion_to_bedpe(self):
         """
