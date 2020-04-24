@@ -1,4 +1,4 @@
-<tool id="exome_trio_parentage" name="Exome Trio Parentage" version="0.1.0" >
+<tool id="exome_trio_parentage" name="Exome Trio Parentage" version="0.1.1" >
     <description>Determine parentage for exome trios, give a three-column VCF.</description>
 
     <requirements>

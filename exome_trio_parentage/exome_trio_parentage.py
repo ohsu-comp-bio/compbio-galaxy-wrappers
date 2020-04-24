@@ -11,7 +11,7 @@ import json
 from scipy.stats import binom_test
 import vcf
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 
 def supply_args():
@@ -73,20 +73,24 @@ class TrioVcf:
         json.dump(out_metric, outfile)
         outfile.close()
 
-    @staticmethod
-    def _parentage_confirm(binom, cutoff=0.0001):
+    def _parentage_confirm(self, binom, cutoff=0.0001, total_cutoff=200):
         """
         Decide whether the parentage is confirmed or not, and return a string that will be passed
         to sample metrics via json.
+        0 means fail
+        1 means pass
+        999 means inconclusive due to total_cutoff
         :param binom:
         :return:
         """
         if binom <= cutoff:
-            return "NO"
+            return "0"
         elif binom > cutoff:
-            return "YES"
+            return "1"
+        elif self.total < total_cutoff:
+            return "999"
         else:
-            raise Exception("_parentage_confirm error, please check")
+            raise Exception("parentage_confirm error, please check")
 
 
 class VcfRec:
