@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.6.2" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.6.3" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
   
   <requirements>
@@ -48,8 +48,8 @@
 ]]></command>
 
   <inputs>
-      <param name="probeqc" type="data" format="txt" label="ProbeQC Metrics" help="ProbeQC metrics file, as produced by the intervalqc_v2 script.  If you intend on producing UMI metrics, this would be the coverage QC AFTER UMI deduplication." />
-      <param name="picard_metrics" type="data" format="txt" label="Picard Alignment Summary Metrics" help="Alignment summary metrics produced by the Picard CollectAlignmentSummaryMetrics tool." />
+      <param name="probeqc" type="data" format="txt" optional="true" label="ProbeQC Metrics" help="ProbeQC metrics file, as produced by the intervalqc_v2 script.  If you intend on producing UMI metrics, this would be the coverage QC AFTER UMI deduplication." />
+      <param name="picard_metrics" type="data" format="txt" optional="true" label="Picard Alignment Summary Metrics" help="Alignment summary metrics produced by the Picard CollectAlignmentSummaryMetrics tool." />
       <param name="primers_bed" type="data" format="bed" optional="true" label="Primers BED" help="BED file containing primer coordinates only." />
       <param name="primers_bam" type="data" format="bam" optional="true" label="Primers BAM" help="BAM file to calculate primer reads on target." />
       <param name="gatk_count_reads_total" type="data" format="txt" optional="true" label="GATK4 CountReads Total" help="Total counts resulting from CountReads on a BAM file." />

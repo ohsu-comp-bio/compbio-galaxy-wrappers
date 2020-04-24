@@ -180,7 +180,10 @@ class ProbeQcRead:
             this_key = (chrom, start, stop)
             probeqc[this_key] = entry
 
-        return probeqc
+        if probeqc != {}:
+            return probeqc
+        else:
+            return None
 
 
 class AlignSummaryMetrics:

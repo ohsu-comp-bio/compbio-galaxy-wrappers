@@ -13,7 +13,7 @@ import json
 # User libraries
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader
 
-VERSION = '0.6.2'
+VERSION = '0.6.3'
 
 
 def supply_args():
@@ -185,13 +185,28 @@ class SampleMetrics:
             self.total_bp_after = None
             self.header_mets_before = None
 
-        self.pumi = self._pumi()
-        self.on_target = self._add_on_target(self.raw_mets.picard_summary, self.total_cov_after)
-        self.on_primer_frag_count = self.raw_mets.primers_bam
-        self.on_primer_frag_count_pct = self._add_on_target(self.raw_mets.picard_summary,
-                                                            self.on_primer_frag_count,
-                                                            'PF_HQ_ALIGNED_READS')
-        self.gatk_cr_on_target = self._gatk_cr_on_target()
+        try:
+            self.pumi = self._pumi()
+        except:
+            self.pumi = None
+        try:
+            self.on_target = self._add_on_target(self.raw_mets.picard_summary, self.total_cov_after)
+        except:
+            self.on_target = None
+        try:
+            self.on_primer_frag_count = self.raw_mets.primers_bam
+        except:
+            self.on_primer_frag_count = None
+        try:
+            self.on_primer_frag_count_pct = self._add_on_target(self.raw_mets.picard_summary,
+                                                                self.on_primer_frag_count,
+                                                                'PF_HQ_ALIGNED_READS')
+        except:
+            self.on_primer_frag_count_pct = None
+        try:
+            self.gatk_cr_on_target = self._gatk_cr_on_target()
+        except:
+            self.gatk_cr_on_target = None
 
     def _gatk_cr_on_target(self):
         """
@@ -303,6 +318,7 @@ class MetricPrep(SampleMetrics):
         """
         Old style metrics.  Will need to handle special json metrics separately.
         :return:
+        'parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed'
         """
         mets = {'qthirty': self._get_avg_probeqc('Q30'),
                 'averageDepth': self._get_avg_probeqc('AVGD'),
@@ -321,12 +337,17 @@ class MetricPrep(SampleMetrics):
                 'gatk_cr_on_target': self._reduce_sig_pct(self.gatk_cr_on_target),
                 'gatk_cr_total': self.raw_mets.gatk_cr_total,
                 'gatk_cr_ints': self.raw_mets.gatk_cr_ints,
+                'parentage_binom': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_binom'),
+                'parentage_disc': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_disc'),
+                'parentage_confirmed': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_confirmed'),
+                'parentage_sites': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_sites'),
                 'percentOnTarget': self._reduce_sig(self.on_target),
                 'percentUmi': self.pumi,
                 'tmb': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb'),
                 'msi_pct': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_pct'),
                 'msi_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='total_sites'),
                 'msi_somatic_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_sites'),
+
                 'total_on_target_transcripts': self.on_primer_frag_count,
                 'total_on_target_transcripts_pct': self.on_primer_frag_count_pct
                 }
@@ -342,7 +363,7 @@ class MetricPrep(SampleMetrics):
         """
         if lookin:
             if metric in lookin:
-                return lookin[metric]
+                return str(lookin[metric])
         return None
 
     @staticmethod
@@ -373,7 +394,7 @@ class MetricPrep(SampleMetrics):
         try:
             this_cov = self._calc_cov(self.probeqc_after, label)
             return self._calc_metric(self.total_bp_after, this_cov)
-        except KeyError:
+        except:
             return None
 
     @staticmethod
@@ -407,7 +428,7 @@ class MetricPrep(SampleMetrics):
         """
         return {'QIAseq_V3_RNA': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
                 'TruSightOne': [],
-                'AgilentCRE_V1': [],
+                'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed'],
                 'QIAseq_V3_HEME2': [],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'total_on_target_transcripts_pct', 'gatk_cr_on_target',
