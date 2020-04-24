@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.6.1" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.6.2" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
   
   <requirements>
@@ -9,11 +9,15 @@
 
   <command><![CDATA[
     $__tool_directory__/sample_metrics.py
-    --probeqc_after '${probeqc}'
+    #if $probeqc
+      --probeqc_after '${probeqc}'
+    #end if
     #if $umi.umi_sel == 'umi_yes':
       --probeqc_before '${probeqc_before_umi}'
     #end if
-    --picard_summary '${picard_metrics}'
+    #if $picard_metrics
+      --picard_summary '${picard_metrics}'
+    #end if
     --outfile '${output}'
     --outfile_new '${output_new}'
     --outfile_txt '${output_txt}'

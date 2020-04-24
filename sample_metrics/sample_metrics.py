@@ -13,7 +13,7 @@ import json
 # User libraries
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader
 
-VERSION = '0.6.1'
+VERSION = '0.6.2'
 
 
 def supply_args():
@@ -87,7 +87,10 @@ class RawMetricCollector:
         else:
             self.msi = None
 
-        self.picard_summary = args.picard_summary.metrics
+        if args.picard_summary:
+            self.picard_summary = args.picard_summary.metrics
+        else:
+            self.picard_summary = None
 
         if args.probeqc_before:
             self.probeqc_before = args.probeqc_before.probeqc
@@ -96,9 +99,17 @@ class RawMetricCollector:
             self.probeqc_before = None
             self.probeqc_header_before = None
 
-        self.probeqc_after = args.probeqc_after.probeqc
-        self.probeqc_header_after = args.probeqc_after.headers
-        self.wf = args.workflow
+        if args.probeqc_after:
+            self.probeqc_after = args.probeqc_after.probeqc
+            self.probeqc_header_after = args.probeqc_after.headers
+        else:
+            self.probeqc_after = None
+            self.probeqc_header_after = None
+
+        if args.workflow:
+            self.wf = args.workflow
+        else:
+            self.wf = None
 
         if args.primers_bam:
             self.primers_bam = SamReader(args.primers_bam, args.primers_bed).count
