@@ -21,7 +21,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.8.5'
+VERSION = '1.2.9.0'
 
 
 def supply_args():
@@ -75,6 +75,8 @@ def rename_fastqc_output(runid, barcodeid, endpoint, ext):
     elif endpoint == "uploadqcsheetrtwo":
         newfile = "/tmp/" + '_'.join([runid, barcodeid, "R2"]) + ext
     elif endpoint == "cnvpdf":
+        newfile = "/tmp/" + '_'.join([runid, barcodeid]) + ext
+    elif endpoint == "geneFusionReport":
         newfile = "/tmp/" + '_'.join([runid, barcodeid]) + ext
     else:
         return None
@@ -133,6 +135,11 @@ def build_cmd(args, recvd_prof=False):
     elif args.endpoint == "cnvpdf":
         newfile = rename_fastqc_output(args.runid, args.barcodeid, args.endpoint, 'pdf')
         logging.info("Copying CNV PDF to " + newfile)
+        shutil.copyfile(args.pipeline_out, newfile)
+        cmd.extend(["-f", newfile])
+    elif args.endpoint == "geneFusionReport":
+        newfile = rename_fastqc_output(args.runid, args.barcodeid, args.endpoint, 'html')
+        logging.info("Copying gene fusion HTML report to " + newfile)
         shutil.copyfile(args.pipeline_out, newfile)
         cmd.extend(["-f", newfile])
     elif args.endpoint == "annotationcomplete" \
@@ -279,7 +286,8 @@ def main():
     outfile.close()
 
     # Clean up temp file.
-    if args.endpoint == "uploadqcsheet" or args.endpoint == "uploadqcsheetrtwo" or args.endpoint == "cnvpdf":
+    if (args.endpoint == "uploadqcsheet" or args.endpoint == "uploadqcsheetrtwo"
+            or args.endpoint == "cnvpdf" or args.endpoint == "geneFusionReport"):
         os.remove(newfile)
 
 

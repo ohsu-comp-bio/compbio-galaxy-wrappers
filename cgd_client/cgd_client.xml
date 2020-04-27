@@ -1,4 +1,4 @@
-<tool id="cgd_client" name="CGD Import Client" version="1.2.8.5" profile="16.01">
+<tool id="cgd_client" name="CGD Import Client" version="1.2.9.0" profile="16.01">
 
     <description>Send a pipeline output file to the CGD via cgd_client.jar.</description>
 
@@ -111,6 +111,12 @@
             --barcodeid $endpoint_choice.barcodeid
         #end if
 
+        #if $endpoint_choice.endpoint=="geneFusionReport"
+            --pipeline_out $endpoint_choice.pipeline_output
+            --runid $endpoint_choice.runid
+            --barcodeid $endpoint_choice.barcodeid
+        #end if
+
         #if $endpoint_choice.endpoint=="cnvpdf"
             --pipeline_out $endpoint_choice.pipeline_output
             --runid $endpoint_choice.runid
@@ -208,6 +214,7 @@
                 <option value="cnvcalls">CNV Calls</option>
                 <option value="cnvpdf">CNV PDF</option>
                 <option value="genefusion">Gene Fusions</option>
+                <option value="geneFusionReport">Gene Fusion Report</option>
                 <option value="geneqc">Gene QC .tsv</option>
                 <option value="illuminadenovo">de novo VCF (trio)</option>
                 <option value="illuminavcf">Pipeline VCF</option>
@@ -327,6 +334,12 @@
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
 
+            <when value="geneFusionReport">
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
+                <param name="runid" type="text" label="Galaxy Run ID: " />
+                <param name="barcodeid" type="text" label="Barcode ID: " />
+            </when>
+
             <when value="updatesamplerun">
                 <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
@@ -394,40 +407,51 @@
     </outputs>
 
     <help><![CDATA[
-usage: cgd_client.py [-h] [--endpoint ENDPOINT] [--java8_path JAVA8_PATH] [--report_vcf REPORT_VCF] [--report_bed REPORT_BED] [--json_out JSON_OUT]
-                     [--pipeline_out PIPELINE_OUT] [--cgd_url CGD_URL] [--runid RUNID] [--barcodeid BARCODEID] [--qcversion QCVERSION] [--cnvcalls CNVCALLS]
-                     [--cnvpdf CNVPDF] [--cgd_client CGD_CLIENT] [--cgd_config CGD_CONFIG] [--tissue TISSUE] [--servicebase SERVICEBASE] [--version]
+Usage: java -jar cgd_client-1.2.9.jar
+                [(-c|--config) <config>] [(-f|--file) <file>] [(-j|--jsonfile) <jsonfile>] [(-u|--url) <url>] [(-s|--servicebase) <servicebase>] [(-r|--runid) <runid>] [(-n|--name) <name>] [(-b|--barcodeid) <barcodeid>] [(-v|--version) <version>] [-d|--debug] [-p|--programversion]
 
-Galaxy wrapper for cgd_client.jar.
+  [(-c|--config) <config>]
+        The path to the external configuration file. Defaults to
+        ./cgd_client.properties
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --endpoint ENDPOINT   CGD endpoint to send data, required.
-  --java8_path JAVA8_PATH
-                        Specify java 8 path, in the case you have multiple java installations.
-  --report_vcf REPORT_VCF
-                        Output VCF if utilizing reportvariants endpoint.
-  --report_bed REPORT_BED
-                        Output BED if utilizing reportvariants endpoint.
-  --json_out JSON_OUT   JSON will be written to this file.
-  --pipeline_out PIPELINE_OUT
-                        Output to send to CGD.
-  --cgd_url CGD_URL     CGD URL to send data to.
-  --runid RUNID         Run ID associated with import.
-  --barcodeid BARCODEID
-                        Barcode ID associated with import
-  --qcversion QCVERSION
-                        Attached QC version, only useful for SeattleSeq.
-  --cnvcalls CNVCALLS   CNV calls to be sent.
-  --cnvpdf CNVPDF       CNV PDF to be sent.
-  --cgd_client CGD_CLIENT
-                        Location of the cgd_client.
-  --cgd_config CGD_CONFIG
-                        Location of the cgd_client config file.
-  --tissue TISSUE       Which tissue is the client receiving data for. Deprecated.
-  --servicebase SERVICEBASE
-                        The service host name and port + service base. e.g. kdlwebprod02:8080/cgd
-  --version             show program's version number and exit
+  [(-f|--file) <file>]
+        POST a multipart form data request, with this file at this path as an
+        attribute in the body.
+
+  [(-j|--jsonfile) <jsonfile>]
+        POST a JSON request, with the contents of the file at this path as the
+        body.
+
+  [(-u|--url) <url>]
+        The full unc path to the REST endpoint. Bypasses any config settings.
+        Useful for testing or reaching services that have not been defined in
+        the config.
+
+  [(-s|--servicebase) <servicebase>]
+        The service host name and port + service base. e.g.
+        kdlwebprod02:8080/cgd
+
+  [(-r|--runid) <runid>]
+        The Galaxy RunID for this workflow job
+
+  [(-n|--name) <name>]
+        The endpoint or interface name that is mapped to a url in the properties
+        files. See documentation for list of endpoint names or look at the
+        config.
+
+  [(-b|--barcodeid) <barcodeid>]
+        The DNA Barcode ID
+
+  [(-v|--version) <version>]
+        The version of the qc sheet.
+
+  [-d|--debug]
+        Sends verbose logging to output configured by log4j.
+
+  [-p|--programversion]
+        Prints the version of this jar to the console / stdout
+
+Support URL: https://bridge.ohsu.edu/cs/itg/projects/kdl-genomics/Genimics%20Data%20Wiki/CGD%20Client.aspx
     ]]></help>
 
 </tool>
