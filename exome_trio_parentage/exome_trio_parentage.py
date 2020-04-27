@@ -83,12 +83,12 @@ class TrioVcf:
         :param binom:
         :return:
         """
-        if binom <= cutoff:
+        if self.total < total_cutoff:
+            return "999"
+        elif binom <= cutoff:
             return "0"
         elif binom > cutoff:
             return "1"
-        elif self.total < total_cutoff:
-            return "999"
         else:
             raise Exception("parentage_confirm error, please check")
 
@@ -113,8 +113,10 @@ class VcfRec:
         self.base_valid = self._base_check()
         self.gq_valid = self._gq_check()
         self.ad_valid = self._ad_check()
+        self.chrom_valid = self._chrom_check()
         self.checks = [self.trio_valid, self.depth_valid, self.ab_valid, self.geno_valid,
-                       self.biallelic_valid, self.base_valid, self.gq_valid, self.ad_valid]
+                       self.biallelic_valid, self.base_valid, self.gq_valid, self.ad_valid,
+                       self.chrom_valid]
 
         if False in self.checks:
             self.valid = False
@@ -122,6 +124,15 @@ class VcfRec:
             self.valid = True
 
         self.geno_disc_valid = self._geno_disc_check()
+
+    def _chrom_check(self):
+        """
+        Check to make sure there are not X or Y chroms.
+        :return:
+        """
+        if self.rec.CHROM == 'X' or self.rec.CHROM == 'Y':
+            return False
+        return True
 
     def _ad_check(self):
         """
