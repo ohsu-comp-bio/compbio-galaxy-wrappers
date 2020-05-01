@@ -273,7 +273,9 @@ def main():
                        "TRNI", "TRNK", "TRNL1", "TRNL2", "TRNM", "TRNN", "TRNP",
                        "TRNQ", "TRNR", "TRNS1", "TRNS2", "TRNT", "TRNV", "TRNW", "TRNY",
                        "IGH-@-ext"]
-        regex_filt = [r'A[LC][0-9]{6}\.[0-9]{1}', r'RP[0-9]+-[0-9]{3}[A-Z]{1}[0-9]+\.[0-9]{1}']
+        regex_filt = [r'A[LC][0-9]{6}\.[0-9]{1}',
+                      r'RP[0-9]+-[0-9]{3}[A-Z]{1}[0-9]+\.[0-9]{1}',
+                      r'CTD-[0-9]{4}[A-Z]{1}[0-9]+.[0-9]+']
 
     else:
         hard_filter = None
