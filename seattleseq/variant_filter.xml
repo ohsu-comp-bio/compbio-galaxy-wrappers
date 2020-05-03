@@ -1,15 +1,17 @@
-<tool id="variant_filter" name="Incidental Variant Filter" version="1.0.1" >
+<tool id="variant_filter" name="Incidental Variant Filter" version="1.0.2" >
     <description>Filter Whole Exome or CSER variants</description>
     <requirements>
 		<requirement type="package" version="0.6.1">r-xlsx</requirement>
+		<requirement type="package" version="3.5.1">r-base</requirement>
+		<requirement type="package" version="8.0.144">openjdk</requirement>
 	</requirements>
-	<command interpreter="Rscript">
+	<command detect_errors="exit_code"><![CDATA[
 	#if $mode.select == "exome"
-		variant_filter.R ${mode.select} ${file} ${clinvar} ${cser_database} ${mode.freq} ${gene_list} ${output}
+		Rscript $__tool_directory__/variant_filter.R ${mode.select} ${file} ${clinvar} ${cser_database} ${mode.freq} ${gene_list} ${output}
 	#else if $mode.select == "cser"
-		variant_filter.R ${mode.select} ${file} ${clinvar} ${cser_database} ${mode.ethnicity} ${output}
+		Rscript $__tool_directory__/variant_filter.R ${mode.select} ${file} ${clinvar} ${cser_database} ${mode.ethnicity} ${output}
 	#end if
-    </command>
+    ]]></command>
 
     <inputs>
 	<conditional name="mode">
