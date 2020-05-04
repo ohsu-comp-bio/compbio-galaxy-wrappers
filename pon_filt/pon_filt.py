@@ -11,7 +11,7 @@ from string import Template
 import argparse
 import numpy
 
-VERSION = '0.5.2'
+VERSION = '0.5.3'
 
 def supply_args():
     """
@@ -71,9 +71,19 @@ class VcfWriter(object):
                 outvcf.write(entry)
                 outvcf.write('\n')
             for entry in self.vcf:
+                self._entry_len_check(entry)
                 to_write = '\t'.join(entry)
                 outvcf.write(to_write)
                 outvcf.write('\n')
+
+    @staticmethod
+    def _entry_len_check(entry, length=10):
+        """
+        If the length of the list is smaller than what we expect, kill the program.
+        :return:
+        """
+        if len(entry) < length:
+            raise Exception("VCF record length does not have at least " + str(length) + " columns.")
 
 class VcfRecBase(object):
     """
@@ -96,15 +106,16 @@ class VcfRecBase(object):
         self.qual = self.rec[5]
         self.filt = self.rec[6].split(';')
         self.info = self._create_info(self.rec[7])
+
         try:
             self.frmt = self.rec[8].split(':')
             self.samps = self._create_samps(self.rec[9:])
-            # Only going to grab the first item on the vafs list right now.  Not ready to deal with mult sample vafs.
             self.vafs = self._get_samp_vafs()[0]
-        except:
+        except IndexError:
             self.frmt = None
             self.samps = None
             self.vafs = None
+
         self.uniq_key = (self.chrom, self.coord, self.ref, self.alt)
 
     def _get_samp_vafs(self):
@@ -127,9 +138,9 @@ class VcfRecBase(object):
         If there are additional alternate alleles, you would have additional entries in the depth list.
         :return:
         """
-        ref_cnt = depths[0]
-        alt_cnt = depths[1]
-        vaf = alt_cnt / (alt_cnt + ref_cnt + 0.0)
+        ref_cnt = float(depths.split(',')[0])
+        alt_cnt = float(depths.split(',')[1])
+        vaf = alt_cnt / (alt_cnt + ref_cnt)
         return vaf
 
     @staticmethod
@@ -228,8 +239,6 @@ class VcfRecBase(object):
         """
         print("PYVCF REC: {0}".format(self.rec))
         print("PYVCF INFO: {0}".format(self.info))
-        # print("Chromosome: {0}".format(self.chrom))
-        # print("Position: {0}".format(self.coord))
 
 class MyVcf(object):
     """
@@ -298,11 +307,6 @@ class VcfRecPON(VcfRecBase):
         self.is_cosmic = self._assess_bool(self.cosmic)
         self.is_clinvar = self._assess_clinvar(self.clnsig)
 
-
-        # temp = ['120539960','124499002','129148234','140434574','15350813','212285339','43814992','44232823','49434801','70356793']
-        #
-        # if self.coord in temp:
-        #     self.var_req()
 
     def _assess_clinvar(self, val):
         """
@@ -533,7 +537,8 @@ class VcfRecComp(object):
         Perform the background assessment.
         :return:
         """
-        if float(self.vcf_rec.vafs) >= ((3 * float(max(self.pon_rec.stdev_ab, min_stdev))) + float(self.pon_rec.avg_ab)):
+        thresh = 3.0 * (max(float(self.pon_rec.stdev_ab), min_stdev) + float(self.pon_rec.avg_ab))
+        if float(self.vcf_rec.vafs) >= thresh:
             return True
         else:
             return False
