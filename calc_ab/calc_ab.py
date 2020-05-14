@@ -4,7 +4,8 @@ from file_types import vcfreader
 import argparse
 import json
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
+
 
 def supply_args():
     """
@@ -17,17 +18,6 @@ def supply_args():
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
-
-
-def write_json_out(metric, outfile):
-    """
-    Prepare output json file.
-    :return:
-    """
-    outfile = open(outfile, 'w')
-    out_metric = {'allele_balance': metric}
-    json.dump(out_metric, outfile)
-    outfile.close()
 
 
 def calc_af(ad):
@@ -43,6 +33,7 @@ def calc_af(ad):
         return alt / (alt + ref + 0.0)
     except ZeroDivisionError:
         return None
+
 
 def af_list(samps):
     """
@@ -60,14 +51,13 @@ def af_list(samps):
     return afs
 
 
-def create_af_counts(sample_list, my_vcf, min_vaf = 0.35, max_vaf = 0.65):
+def create_af_counts(sample_list, my_vcf, min_vaf=0.35, max_vaf=0.65):
     """
     Create a dictionary {SAMPLE: [BAD VAF, TOTAL]
     :return:
     """
     af_dict = {}
     for vrnt in my_vcf.myvcf.values():
-
         i = 0
         for samp in vrnt.samples:
             if sample_list[i] not in af_dict:
@@ -86,20 +76,24 @@ def create_af_counts(sample_list, my_vcf, min_vaf = 0.35, max_vaf = 0.65):
                                 if af_list(vrnt.samples)[i] < min_vaf or af_list(vrnt.samples)[i] > max_vaf:
                                     af_dict[sample_list[i]]['BAD_VAF'] += 1
                             i += 1
-
     return af_dict
+
 
 def main():
     args = supply_args()
     my_vcf = vcfreader.VcfReader(args.infile)
     sample_list = my_vcf.header.sample_list
     af_dict = create_af_counts(sample_list, my_vcf)
+    outfile = open(args.outfile, 'w')
     if len(sample_list) == 1:
         try:
             bad_vaf = (af_dict[sample_list[0]]['BAD_VAF'] / (af_dict[sample_list[0]]['TOTAL'] + 0.0)) * 100
         except ZeroDivisionError:
             bad_vaf = '-1'
-        write_json_out(bad_vaf, args.outfile)
+
+        out_metric = {'allele_balance': bad_vaf, 'allele_balance_het_count': af_dict[sample_list[0]]['TOTAL']}
+        json.dump(out_metric, outfile)
+
     else:
         print('Multi sample functionality not completely implemented...')
         for entry in af_dict:
@@ -108,6 +102,9 @@ def main():
             except ZeroDivisionError:
                 bad_vaf = '-1'
             print('\t'.join([entry, str(bad_vaf)]))
+
+    outfile.close()
+
 
 if __name__ == "__main__":
     main()

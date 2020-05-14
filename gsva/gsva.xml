@@ -9,14 +9,15 @@
 <!-- TODO (hocumj 7/15/2019): Add preprocessing step to handle missing Ensembl ID versions. E.g., ENSG00000171223.5 compared to ENSG00000171223 -->
 <!-- TODO (hocumj 7/15/2019): Implement some tests for running with non-default parameters. -->
 
-<tool id="gsva" name="GSVA" version="0.1.0">
+<tool id="gsva" name="GSVA" version="1.32.0.1">
     <description>Estimate gene set enrichment statistics from gene expression values.</description>
     <requirements>
         <requirement type="package" version="3.6.1">r-base</requirement>
         <requirement type="package" version="1.46.0">bioconductor-gseabase</requirement>
         <requirement type="package" version="1.32.0">bioconductor-gsva</requirement>
         <requirement type="package" version="1.4.3">r-reshape2</requirement>
-        <requirement type="package" version="0.8.3">r-dplyr</requirement>
+        <requirement type="package" version="1.0.12">r-pheatmap</requirement>
+        <requirement type="package" version="3.2.1">r-ggplot2</requirement>
     </requirements>
 
     <command detect_errors="exit_code"><![CDATA[
@@ -31,7 +32,6 @@
             library(GSVA)
             library(GSEABase)
             library(reshape2)
-            library(dplyr)
 
             args = commandArgs(TRUE)
             num_of_threads = as.numeric(args[1])
@@ -52,10 +52,25 @@
             gsva_results = gsva(as.matrix(gene_expression_values), gene_sets, min.sz = $min_size_set, max.sz = $max_size_set, kcdf = "$kernel", mx.diff = ${enrichment_statistic.max_diff}, abs.ranking = ${enrichment_statistic.absolute_ranking}, method = "${method.score}", tau = ${method.tau}, ssgsea.norm = ${method.ssgsea_norm}, verbose = TRUE, parallel.sz = num_of_threads)
 
             ## Prepare GSVA output.
-            gsva_results = melt(gsva_results)
-            colnames(gsva_results) = c("Pathway", "Sample", "EnrichmentScore")
+            gsva_melt = melt(gsva_results)
+            colnames(gsva_melt) = c("Pathway", "Sample", "EnrichmentScore")
 
-            write.table(gsva_results, file = "$gsva_out", col.names = TRUE, row.names = FALSE, quote = FALSE, sep = "\t")
+            write.table(gsva_melt, file = "$gsva_out", col.names = TRUE, row.names = FALSE, quote = FALSE, sep = "\t")
+
+            ## Peform the data visualizations
+            source("${__tool_directory__}/gsva_figures.R")
+            box = make.box(gsva_melt, "$visuals.sample", feature.name="Pathway", value.name="EnrichmentScore")
+            ggsave("gsva_box_plot.png", box)
+            hm = make.heatmap(gsva_results)
+            scale.factor = 13
+            width.padding = 52
+            height.padding = 36
+            width = scale.factor * (length(unique(gsva_melt\$Sample)) + width.padding)
+            height = scale.factor * (length(unique(gsva_melt\$Pathway)) + height.padding)
+            png("gsva_heatmap.png", width = width, height = height, res = 240)
+            grid::grid.newpage()
+            grid::grid.draw(hm\$gtable)
+            dev.off()
         </configfile>
     </configfiles>
 
@@ -111,11 +126,17 @@
                 <param name="ssgsea_norm" type="boolean" checked="false" truevalue="TRUE" falsevalue="FALSE" hidden="true" label="Normalize the scores by the absolute difference between the minimum and the maximum? (Not applicable to PLAGE method.)" argument="--ssgsea.norm" help="Advanded usage. See `help` section for more information."/>
             </when>
         </conditional>
+        
+        <section name="visuals" title="Data Visualizations" expanded="false">
+            <param name="sample" type="text" label="Sample ID" help="Sample identifier, as specified by the study cohort" />
+        </section>
     </inputs>
 
     <outputs>
         <!-- Remove any original input file extension. -->
-        <data format="tsv" name="gsva_out" type="data" label="${os.path.splitext(os.path.basename($gene_expression_file.name))[0]}_GSVA_out"/>
+        <data format="tsv" name="gsva_out" label="${os.path.splitext(os.path.basename($gene_expression_file.name))[0]}_GSVA_out"/>
+        <data format="png" name="box_out" from_work_dir="gsva_box_plot.png" label="${tool.name} on ${on_string}: Box Plots" />
+        <data format="png" name="heapmap_out" from_work_dir="gsva_heatmap.png" label="${tool.name} on ${on_string}: Heatmap" />
     </outputs>
 
     <tests>

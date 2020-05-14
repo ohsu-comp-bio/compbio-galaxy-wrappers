@@ -1,0 +1,11 @@
+name: "calc_norm"
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/calc_norm"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  calc_norm:
+    description: "Normalize different types of counts tables with various methods."
+    include:
+      - calc_norm.py
+      - calc_norm.xml

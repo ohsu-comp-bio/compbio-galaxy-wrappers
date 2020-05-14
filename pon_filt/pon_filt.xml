@@ -1,4 +1,4 @@
-<tool id="pon_filt" name="PON Filter" version="0.5.2" >
+<tool id="pon_filt" name="PON Filter" version="0.5.3" >
     <description>Filter or remove variants from a sample VCF based on a panel of normals VCF.</description>
     <version_command></version_command>
 

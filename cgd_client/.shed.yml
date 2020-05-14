@@ -1,0 +1,11 @@
+name: "cgd_client"
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_client"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  cgd_client:
+    description: "Client wrapper allowing for data to be sent to CGD endpoints."
+    include:
+      - cgd_client.py
+      - cgd_client.xml

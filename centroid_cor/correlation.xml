@@ -1,0 +1,103 @@
+<tool id='correlation' name="Centroid Correlation" version='1.0.0.1'>
+    <description>correlates centroids and gene expression </description>
+    <requirements>
+        <requirement type="package" version="3.1.1">r-ggplot2</requirement>
+
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+    Rscript "$script"
+]]>
+    </command>
+    <configfiles>
+        <configfile name="script">
+
+input = "$input"
+method = "$method"
+
+#if $centroids == "PAM50":
+centroids_file = "$__tool_directory__/tool-data/pam50_centroids_update.txt"
+#else if $centroids == "TNBC":
+centroids_file = "$__tool_directory__/tool-data/TNBC_Ding_77_gene_signature.txt"
+#else if $centroids == "Claudin-Low":
+centroids_file = "$__tool_directory__/tool-data/claudinlow_centroids.txt"
+#end if
+
+## Load centroid file
+centroids = read.csv(centroids_file, check.names = FALSE, sep="\t", row.names = 1)
+
+## Load gene expression file (columns samples, rows genes)
+exp = read.csv(input, sep="\t", row.names = 1, header=TRUE, check.names = FALSE)
+
+## Log transform matrix
+#if $log:
+exp = log2(exp+1)
+#end if
+
+## Z-SCALING: Calculate z-score for each gene across all samples: z-score=(value-gene mean)/gene sd
+#if $zscore:
+exp = t(scale(data.frame(t(exp), check.names=F), scale=TRUE, center=TRUE))
+exp = exp[complete.cases(exp),]
+#end if
+
+# Convert to Matrix
+exp.mat = as.matrix(exp)
+
+## CORRELATION WITH CENTROIDS
+#if $centroids == "Claudin-Low":
+exp.mat = rbind(exp.mat,"CD44/CD24 ratio"=exp.mat["CD44",]/exp.mat["CD24",], "ITGA6/EpCAM ratio"=exp.mat["ITGA6",]/exp.mat["EPCAM",])
+write.table(exp.mat, file="exp_mat.tsv", row.names=T, sep="\t", col.names=NA, quote=F)
+#end if
+scor=round(cor(exp.mat[intersect(rownames(exp.mat), rownames(centroids)),], centroids[intersect(rownames(exp.mat), rownames(centroids)),], method=tolower(method)),2)
+
+# Write to output
+write.table(scor, file="scor.tsv", row.names=T, sep="\t", col.names=NA, quote=F)
+
+#if $makePlot.plot:
+scor.samp = scor["$makePlot.sample",,drop=FALSE]
+df = data.frame("Sample"=rownames(scor.samp), "Subtype"=colnames(scor.samp), "Correlation" = as.vector(scor.samp))
+
+library(ggplot2)
+g=ggplot(df) +
+geom_col(aes(x=Subtype, y=Correlation), color="black", fill="gray60") +
+theme(panel.background = element_rect(fill = "white"),
+   panel.grid.major=element_line(colour="gray"),
+   plot.title = element_text(hjust = 0.5),
+   axis.text = element_text(colour = "black", size=8),
+   axis.title.x = element_blank(),
+   axis.title=element_text(size=8),
+   legend.position="none",
+   plot.margin = margin(.1, 0.5, .1, .1, "cm")) +
+labs(y="$method Correlation with \n $centroids Subtype Centroids", title="$centroids $makePlot.sample")
+
+ggsave(filename = "correlation_plot.png", plot=g, width = 6, height = 4)
+#end if
+
+        </configfile>
+    </configfiles>
+    <inputs>
+        <param type="data" name="input" label="Sample Matrix" format="tsv,tabular,txt" help="All samples in matrix should be breast cancers for most accurate prediction of subtype."/>
+        <param type="select" name="centroids" label="Centroids" >
+            <option value="PAM50">PAM50 Centroids</option>
+            <option value="TNBC">TNBC Centroids</option>
+            <option value="Claudin-Low">Claudin-Low Centroids</option>
+        </param>
+        <param type="select" name="method" label="Correlation method" help="Type of correlation to perform">
+            <option value="Pearson">Pearson</option>
+            <option value="Spearman">Spearman</option>
+        </param>
+        <param type="boolean" name="log" label="Log2"  checked="true" help="Log transform expression prior to correlation"/>
+        <param type="boolean" name="zscore" label="Z-Score" checked="true" help="Z-score scale  prior to correlation."/>
+        <conditional name="makePlot">
+            <param type="boolean" name="plot" label="Plot" checked="true" help="Create barplot of results"/>
+            <when value="true">
+                <param name="sample" type="text" label="Sample" help="Sample Name to plotted."/>
+            </when>
+        </conditional>
+    </inputs>
+    <outputs>
+        <data format="tsv" name="output" label="${tool.name} on $on_string: $centroids CORRELATION Scores" from_work_dir="scor.tsv"/>
+        <data format="png" name="output2" label="${tool.name} on $on_string: $centroids PLOT" from_work_dir="correlation_plot.png">
+            <filter>makePlot['plot'] == True</filter>
+        </data>
+    </outputs>
+</tool>

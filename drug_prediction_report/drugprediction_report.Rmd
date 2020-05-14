@@ -1,15 +1,9 @@
 ---
 title: "SMMART Drug Prediction Report"
 output:
-  html_document:
-    keep_tex: true
-    latex_engine: xelatex
   pdf_document:
     fig_caption: true
-header-includes:
-- \usepackage{lscape}
-- \newcommand{\blandscape}{\begin{landscape}}
-- \newcommand{\elandscape}{\end{landscape}}
+always_allow_html: yes
 mainfont: Calibri
 fontsize: 11pt
 params: 
@@ -35,7 +29,7 @@ drop = c("Gemcitabine_small", "Carboplatin_small", "Trametinib_small","BIBW2992_
 
 
 ```{r, echo=FALSE, warning=FALSE}
-options(knitr.table.format = "html")
+#options(knitr.table.format = "html")
 
 #table prediction
 load(params$response)
@@ -117,7 +111,7 @@ dT = data.frame(dT, "Drug_Label"= paste0(drug_order, " (",drug_table$Target[unli
 
 
 
-```{r, drugprediction, echo=FALSE, warning=FALSE, fig.height = 5, fig.width = 7}
+```{r, drugprediction, echo=FALSE, warning=FALSE, fig.height = 5, fig.width = 7, results='asis'}
 
 #melt
 data_fig = melt(as.matrix(dT[,c("Sample","Threshold")]))
@@ -146,8 +140,7 @@ p0
 dir.create(path = paste0("./figures"), showWarnings = F)
 ggsave(filename = paste0("./figures/drugsignature.png"), plot=p0,width = 6, height = 5)
 kable(setNames(dT[order(dT$diff), c("Sample", "Threshold", "Drug_Label")] ,
-               c("Sample", "Proportions in Breast Cancer Cell Line", "Drug Label")),align="c") %>%
-  kable_styling(bootstrap_options = "striped", full_width = F)
+               c("Sample", "Proportion in Training\n (Breast Cell Lines)", "Drug Label")), "latex", align="c")
 
 
 ```
@@ -167,8 +160,8 @@ The compounds predicted are compounds that exhibited a dynamic range of drug sen
 ```{r, echo=FALSE}
 
 
-kable(drug_table) %>%
-  kable_styling(bootstrap_options = "striped", font_size = 9, full_width = T)
+kable(drug_table, "latex")
+#  kable_styling(bootstrap_options = "striped", font_size = 2, full_width = T)
 ```
 
 \normalsize
