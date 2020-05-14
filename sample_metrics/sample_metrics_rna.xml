@@ -1,4 +1,4 @@
-<tool id="sample_metrics_rna" name="Sample Level Metrics RNA" version="0.2.1" >
+<tool id="sample_metrics_rna" name="Sample Level Metrics RNA" version="0.2.2" >
   <description>Metrics calculated at the sample RNA metrics, for use in CGD and for additional QC.</description>
   <version_command>python $__tool_directory__/sample_metrics_rna.py --version</version_command>
 
@@ -19,7 +19,7 @@
 ]]></command>
 
   <inputs>
-      <param name="counts" type="data" format="tabular" required="true" label="Counts from STAR" help="This is the tabular count output from RNA STAR reads_per_gene.tab" />
+      <param name="counts" type="data" format="tabular" optional="false" label="Counts from STAR" help="This is the tabular count output from RNA STAR reads_per_gene.tab" />
       <param name="tpm" type="data" format="txt" label="TPM from Counts using a filtered GTF" help="TPM converted from htseq-count with the gtf, which is Homo_sapiens.GRCh37.75_filt_truseq-rna-exome-targets.gtf. ref_GRCh37.p13.truseq-rna-exome-targets.gtf. This gtf is the ref_GRCh37.p13_top_level.gff3, filtered by common chromosomes converted to a gtf, and bedtools intersected with truseq-rna-exome-targeted-regions-manifest-v1-2. Can also be a common gtf." />
       <param name="gtf" type="data" format="gtf" label="GTF" help="Homo_sapiens.GRCh37.75.gtf" />
       <param name="hk_file" type="data" format="txt" label="Housekeeping Gene List" help="List of house keeping genes to include" />
@@ -27,8 +27,8 @@
   </inputs>
 
   <outputs>
-    <data format="txt" name="output_json" label="${tool.name} on ${on_string}: json" help="JSON version of sample level metrics RNA output." />
-    <data format="txt" name="output_txt" label="${tool.name} on ${on_string}: txt" help="TXT version of sample level metrics RNA output." />
+    <data format="txt" name="output_json" label="${tool.name} on ${on_string}: json" />
+    <data format="txt" name="output_txt" label="${tool.name} on ${on_string}: txt" />
   </outputs>
 
   <tests></tests>

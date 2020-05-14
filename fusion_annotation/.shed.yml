@@ -1,0 +1,13 @@
+name: "fusion_annotation"
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/fusion_annotation"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  fusion_annotation:
+    description: "Create annotated fusion output, based off of STAR-Fusion output."
+    include:
+      - fusion_annotation.xml
+      - fusion_annotation.py
+      - tool_data_table_conf.xml.sample
+      - tool-data/*

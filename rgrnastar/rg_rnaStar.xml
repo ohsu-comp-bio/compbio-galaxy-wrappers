@@ -1,4 +1,4 @@
-<tool id="rna_star" name="RNA STAR" version="2.5.2b-2" profile="17.01">
+<tool id="rna_star" name="RNA STAR" version="2.7.2b-1" profile="17.01">
     <description>Gapped-read mapper for RNA-seq data</description>
     <macros>
         <import>macros.xml</import>
@@ -34,13 +34,12 @@
                 --sjdbGTFfile '$refGenomeSource.sjdbGTFfile'
                 --sjdbOverhang '$refGenomeSource.sjdbOverhang'
             #end if
-            --runThreadN 8
+            --runThreadN \${GALAXY_SLOTS:-1}
         &&
     #end if
 
     STAR
-        --runRNGseed 42
-        --runThreadN 1
+        --runThreadN \${GALAXY_SLOTS:-1}
         --genomeLoad NoSharedMemory
         --genomeDir
         #if str($refGenomeSource.geneSource) == 'history':
@@ -110,21 +109,24 @@
         ## Other parameters
         #if str( $params.settingsType ) == "star_fusion":
             ## Preset parameters for STAR-Fusion
-            --outReadsUnmapped None
+            ## https://github.com/STAR-Fusion/STAR-Fusion/wiki
             --chimSegmentMin 12
             --chimJunctionOverhangMin 12
+            --chimOutJunctionFormat 1
             --alignSJDBoverhangMin 10
-            --alignMatesGapMax 200000
-            --alignIntronMax 200000
-            --chimScoreDropMax 10000
-
-            ## --twopass1readsN 100000000  
-            --chimSegmentReadGapMax 3              ## not an option in STAR 2.4.0
-            --alignSJstitchMismatchNmax 5 -1 5 5   ## not an option in STAR 2.4.0
+            --alignMatesGapMax 100000
+            --alignIntronMax 100000
+            --alignSJstitchMismatchNmax 5 -1 5 5
+            --outSAMattrRGline ID:GRPundef
+            --chimMultimapScoreRange 3
+            --chimScoreJunctionNonGTAG -4
+            --chimMultimapNmax 20
+            --chimNonchimScoreDropMin 10
+            --peOverlapNbasesMin 12
+            --peOverlapMMp 0.1
 
         #elif str( $params.settingsType ) == "full":
             ## Extended parameter options
-
             ## Seed parameter options
             --seedSearchStartLmax "$params.seed.seedSearchStartLmax"
             --seedSearchStartLmaxOverLread "$params.seed.seedSearchStartLmaxOverLread"
@@ -133,7 +135,8 @@
             --seedPerReadNmax "$params.seed.seedPerReadNmax"
             --seedPerWindowNmax "$params.seed.seedPerWindowNmax"
             --seedNoneLociPerWindow "$params.seed.seedNoneLociPerWindow"
-        
+            --seedSplitMin "$params.seed.seedSplitMin"
+
             ## Alignment parameter options
             --alignIntronMin "$params.align.alignIntronMin"
             --alignIntronMax "$params.align.alignIntronMax"
@@ -145,7 +148,14 @@
             --alignWindowsPerReadNmax "$params.align.alignWindowsPerReadNmax"
             --alignTranscriptsPerWindowNmax "$params.align.alignTranscriptsPerWindowNmax"
             --alignTranscriptsPerReadNmax "$params.align.alignTranscriptsPerReadNmax"
-            --alignEndsType $params.align.alignEndsType
+            --alignEndsType "$params.align.alignEndsType"
+            --alignSoftClipAtReferenceEnds "$params.align.alignSoftClipAtReferenceEnds"
+            --alignInsertionFlush "$params.align.alignInsertionFlush"
+            --alignSJstitchMismatchNmax $params.align.alignSJstitchMismatchNmax
+
+            ## Paired-end reads options
+            --peOverlapNbasesMin "$params.paired.peOverlapNbasesMin"
+            --peOverlapMMp "$params.paired.peOverlapMMp"
 
             ## Chimeric alignment parameter options
             #if str( $params.chim.chim_select ) == "yes":
@@ -155,6 +165,14 @@
                 --chimScoreSeparation "$params.chim.chimScoreSeparation"
                 --chimScoreJunctionNonGTAG "$params.chim.chimScoreJunctionNonGTAG"
                 --chimJunctionOverhangMin "$params.chim.chimJunctionOverhangMin"
+                --chimSegmentReadGapMax "$params.chim.chimSegmentReadGapMax"
+                --chimFilter "$params.chim.chimFilter"
+                --chimMainSegmentMultNmax "$params.chim.chimMainSegmentMultNmax"
+                --chimMultimapNmax "$params.chim.chimMultimapNmax"
+                --chimMultimapScoreRange "$params.chim.chimMultimapScoreRange"
+                --chimNonchimScoreDropMin "$params.chim.chimNonchimScoreDropMin"
+                --chimOutJunctionFormat "$params.chim.chimOutJunctionFormat"
+
             #end if
         #end if
 
@@ -235,15 +253,15 @@
         </conditional>
 
         <!-- read_groups -->
-	<conditional name="read_groups">
-            <param name="rg_select" type="select" label="Would you like to set read groups?">
-                <option value="no" selected="true">No</option>
-                <option value="yes">Yes</option>
-            </param>
-            <when value="yes">
-	      <param argument="--outSAMattrRGline" type="text" label="Read group string" help="string(s): SAM/BAM read group line. The first word contains the read group identifier and must start with &quot;ID:&quot;, e.g. –outSAMattrRGline ID:xxx CN:yy &quot;DS:z z z&quot;. xxx will be added as RG tag to each output alignment. Any spaces in the tag values have to be double quoted. Comma separated RG lines correspons to different (comma separated) input files in –readFilesIn. Commas have to be surrounded by spaces, e.g. –outSAMattrRGline ID:xxx , ID:zzz &quot;DS:z z&quot; , ID:yyy DS:yyyy" />
-	    </when>
-	</conditional>
+        <conditional name="read_groups">
+                <param name="rg_select" type="select" label="Would you like to set read groups?">
+                    <option value="no" selected="true">No</option>
+                    <option value="yes">Yes</option>
+                </param>
+                <when value="yes">
+              <param argument="--outSAMattrRGline" type="text" label="Read group string" help="string(s): SAM/BAM read group line. The first word contains the read group identifier and must start with &quot;ID:&quot;, e.g. –outSAMattrRGline ID:xxx CN:yy &quot;DS:z z z&quot;. xxx will be added as RG tag to each output alignment. Any spaces in the tag values have to be double quoted. Comma separated RG lines correspons to different (comma separated) input files in –readFilesIn. Commas have to be surrounded by spaces, e.g. –outSAMattrRGline ID:xxx , ID:zzz &quot;DS:z z&quot; , ID:yyy DS:yyyy" />
+            </when>
+        </conditional>
 
         <!-- Output parameter settings. -->
         <conditional name="output_params">
@@ -252,7 +270,7 @@
                 <option value="yes">Yes</option>
             </param>
             <when value="yes">
-              <param argument="--outSAMattributes" type="select" label="Extra SAM attributes to include" help="See &quot;Extra SAM attributes&quot; below">
+                <param argument="--outSAMattributes" type="select" label="Extra SAM attributes to include" help="See &quot;Extra SAM attributes&quot; below">
                     <option value="Standard" selected="true">Standard</option>
                     <option value="All">All</option>
                     <option value="None">None</option>
@@ -268,30 +286,29 @@
                 </param>
   
               <!-- Additional output parameter settings. -->
-              <conditional name="output_params2">
-                  <param name="output_select2" type="select" label="Would you like to set additional output parameters (formatting and filtering)?">
-                      <option value="no" selected="true">No</option>
-                      <option value="yes">Yes</option>
-                  </param>
-                  <when value="yes">
-                      <param argument="--outSAMunmapped" type="boolean" truevalue="Within" falsevalue="None" checked="false" label="Would you like unmapped reads included in the SAM?"/>
-                      <param argument="--outSAMprimaryFlag" type="boolean" truevalue="AllBestScore" falsevalue="OneBestScore" checked="false" label="Would you like all alignments with the best score labeled primary?"/>
-                      <param argument="--outSAMmapqUnique" type="integer" value="255" min="0" max="255" label="MAPQ value for unique mappers"/>
-                      <param argument="--outFilterType" type="boolean" truevalue="BySJout" falsevalue="Normal" checked="false" label="Would you like to keep only reads that contain junctions that passed filtering?"/>
-                      <param argument="--outFilterMultimapScoreRange" type="integer" value="1" min="0" label="Score range below the maximum score for multimapping alignments"/>
-                      <param argument="--outFilterMultimapNmax" type="integer" value="10" min="1" label="Maximum number of alignments to output a read's alignment results, plus 1" help="Reads with at least this number of alignments will have no alignments output"/>
-                      <param argument="--outFilterMismatchNmax" type="integer" value="10" min="0" label="Maximum number of mismatches to output an alignment, plus 1" help="Alignments with at least this number of mismatches will not be output"/>
-                      <param argument="--outFilterMismatchNoverLmax" type="float" value="0.3" min="0" max="1" label="Maximum ratio of mismatches to mapped length" help="Alignments with a mismatch ratio of at least this value will not be output"/>
-                      <param argument="--outFilterMismatchNoverReadLmax" type="float" value="1" min="0" max="1" label="Maximum ratio of mismatches to read length" help="Alignments with a mismatch ratio of at least this value will not be output"/>
-                      <param argument="--outFilterScoreMin" type="integer" value="0" min="0" label="Minimum alignment score" help="Alignments must have scores higher than this value to be output"/>
-                      <param argument="--outFilterScoreMinOverLread" type="float" value="0.66" min="0" max="1" label="Minimum alignment score, normalized to read length" help="Alignments must have (normalized) scores higher than this value to be output"/>
-                      <param argument="--outFilterMatchNmin" type="integer" value="0" min="0" label="Minimum number of matched bases" help="Alignments must have the number of matched bases higher than this value to be output"/>
-                      <param argument="--outFilterMatchNminOverLread" type="float" value="0.66" min="0" max="1" label="Minimum number of matched bases, normalized to read length" help="Alignments must have the (normalized) number of matched bases higher than this value to be output"/>
-                  
-                 </when>
-              </conditional>
-             </when>
-          </conditional>
+                <conditional name="output_params2">
+                    <param name="output_select2" type="select" label="Would you like to set additional output parameters (formatting and filtering)?">
+                        <option value="no" selected="true">No</option>
+                        <option value="yes">Yes</option>
+                    </param>
+                    <when value="yes">
+                        <param argument="--outSAMunmapped" type="boolean" truevalue="Within" falsevalue="None" checked="false" label="Would you like unmapped reads included in the SAM?"/>
+                        <param argument="--outSAMprimaryFlag" type="boolean" truevalue="AllBestScore" falsevalue="OneBestScore" checked="false" label="Would you like all alignments with the best score labeled primary?"/>
+                        <param argument="--outSAMmapqUnique" type="integer" value="255" min="0" max="255" label="MAPQ value for unique mappers"/>
+                        <param argument="--outFilterType" type="boolean" truevalue="BySJout" falsevalue="Normal" checked="false" label="Would you like to keep only reads that contain junctions that passed filtering?"/>
+                        <param argument="--outFilterMultimapScoreRange" type="integer" value="1" min="0" label="Score range below the maximum score for multimapping alignments"/>
+                        <param argument="--outFilterMultimapNmax" type="integer" value="10" min="1" label="Maximum number of alignments to output a read's alignment results, plus 1" help="Reads with at least this number of alignments will have no alignments output"/>
+                        <param argument="--outFilterMismatchNmax" type="integer" value="10" min="0" label="Maximum number of mismatches to output an alignment, plus 1" help="Alignments with at least this number of mismatches will not be output"/>
+                        <param argument="--outFilterMismatchNoverLmax" type="float" value="0.3" min="0" max="1" label="Maximum ratio of mismatches to mapped length" help="Alignments with a mismatch ratio of at least this value will not be output"/>
+                        <param argument="--outFilterMismatchNoverReadLmax" type="float" value="1" min="0" max="1" label="Maximum ratio of mismatches to read length" help="Alignments with a mismatch ratio of at least this value will not be output"/>
+                        <param argument="--outFilterScoreMin" type="integer" value="0" min="0" label="Minimum alignment score" help="Alignments must have scores higher than this value to be output"/>
+                        <param argument="--outFilterScoreMinOverLread" type="float" value="0.66" min="0" max="1" label="Minimum alignment score, normalized to read length" help="Alignments must have (normalized) scores higher than this value to be output"/>
+                        <param argument="--outFilterMatchNmin" type="integer" value="0" min="0" label="Minimum number of matched bases" help="Alignments must have the number of matched bases higher than this value to be output"/>
+                        <param argument="--outFilterMatchNminOverLread" type="float" value="0.66" min="0" max="1" label="Minimum number of matched bases, normalized to read length" help="Alignments must have the (normalized) number of matched bases higher than this value to be output"/>
+                    </when>
+                </conditional>
+            </when>
+        </conditional>
 
         <!-- Other parameter settings. -->
         <conditional name="params">
@@ -302,7 +319,6 @@
             </param>
             <when value="default"/>
             <when value="star_fusion"/><!-- Set STAR-fusion parameters automatically -->
-  
             <when value="full">
                 <section name="seed" title="Seed parameters" expanded="False">
                     <param argument="--seedSearchStartLmax" type="integer" min="1" value="50" label="Search start point through the read"/>
@@ -312,6 +328,7 @@
                     <param argument="--seedPerReadNmax" type="integer" min="1" value="1000" label="Maximum number of seeds per read"/>
                     <param argument="--seedPerWindowNmax" type="integer" min="1" value="50" label="Maximum number of seeds per window"/>
                     <param argument="--seedNoneLociPerWindow" type="integer" min="1" value="10" label="Maximum number of one seed loci per window"/>
+                    <param argument="--seedSplitMin" type="integer" min="1" value="12" label="Minimum length of the seed sequences split by Ns or mate gap"/>
                 </section>
     
                 <section name="align" title="Alignment parameters" expanded="False">
@@ -325,9 +342,22 @@
                     <param argument="--alignWindowsPerReadNmax" type="integer" min="1" value="10000" label="Maximum number of windows per read"/>
                     <param argument="--alignTranscriptsPerWindowNmax" type="integer" min="1" value="100" label="Maximum number of transcripts per window"/>
                     <param argument="--alignTranscriptsPerReadNmax" type="integer" min="1" value="10000" label="Maximum number of different alignments per read to consider"/>
-                    <param argument="--alignEndsType" type="boolean" truevalue="EndToEnd" falsevalue="Local" checked="false" label="Use end-to-end read alignments, with no soft-clipping?"/>
+                    <param argument="alignEndsType" type="select" label="Type of read ends alignment">
+                        <option value="Local" selected="true">Local</option>
+                        <option value="EndToEnd" selected="false">EndToEnd</option>
+                        <option value="Extend5pOfRead1" selected="false">Extend5pOfRead1</option>
+                        <option value="Extend5pOfReads12" selected="false">Extend5pOfReads12</option>
+                    </param>
+                    <param argument="--alignSJstitchMismatchNmax" type="text" value="0 -1 0 0" label="Maximum splice juntion mismatches" help="maximum number of mismatches for stitching of the splice junctions (-1: no limit). (1) non-canonical motifs, (2) GT/AG and CT/AC motif, (3) GC/AG and CT/GC motif, (4) AT/AC and GT/AT motif."/>
+                    <param argument="--alignSoftClipAtReferenceEnds" type="boolean" truevalue="Yes" falsevalue="No" checked="true" label="Allow the soft-clipping of the alignments past the end of the chromosomes?"/>
+                    <param argument="--alignInsertionFlush" type="boolean" truevalue="Right" falsevalue="None" checked="false" label="Flush ambiguous insertion positions to the right? "/>
                 </section>
-    
+
+                <section name="paired" title="Paired-end parameters" expanded="False">
+                    <param argument="--peOverlapNbasesMin" type="integer" min="0" value="0" label="Minimum number of overlap bases to trigger mates merging and realignment"/>
+                    <param argument="--peOverlapMMp" type="float" min="0" value="0.01" label="Maximum proportion of mismatched bases in the overlap area"/>
+                </section>
+
                 <conditional name="chim">
                     <param name="chim_select" type="select" label="Would you like to set chimeric alignment parameters?">
                         <option value="no" selected="true">No</option>
@@ -342,6 +372,13 @@
                         <param argument="--chimScoreSeparation" type="integer" min="0" value="10" label="Minimum difference between the best chimeric score and the next one"/>
                         <param argument="--chimScoreJunctionNonGTAG" type="integer" value="-1" label="Penalty for a non-GT/AG chimeric junction"/>
                         <param argument="--chimJunctionOverhangMin" type="integer" min="0" value="20" label="Minimum overhang for a chimeric junction"/>
+                        <param argument="--chimSegmentReadGapMax" type="integer" min="0" value="0" label="Maximum gap in the read sequence between chimeric segments"/>
+                        <param argument="--chimFilter" type="boolean" truevalue="banGenomicN" falsevalue="None" checked="true" label="Ns are not allowed in the genome sequence around the chimeric junction?"/>
+                        <param argument="--chimMainSegmentMultNmax" type="integer" min="1" value="10" label="int>=1: Maximum number of multi-alignments for the main chimeric segment. =1: will prohibit multimapping main segments."/>
+                        <param argument="--chimMultimapNmax" type="integer" min="0" value="0" label="Maximum number of chimeric multi-alignments. Value of zero only considers unique alignments."/>
+                        <param argument="--chimMultimapScoreRange" type="integer" min="0" value="1" label="The score range for multi-mapping chimeras below the best chimeric score. Only works with chimMultimapNmax > 1"/>
+                        <param argument="--chimNonchimScoreDropMin" type="integer" min="0" value="20" label="To trigger chimeric detection, the drop in the best non-chimeric alignment score with respect to the read length has to be smaller than this value"/>
+                        <param argument="--chimOutJunctionFormat" type="boolean" truevalue="1" falsevalue="0" checked="false" label="Add command line and Nreads: total, unique, multi, to end of file?"/>
                     </when>
                     <when value="no"/>
                 </conditional>
@@ -565,11 +602,7 @@ The All option includes the Standard attributes, plus the following four::
 **STAR-Fusion**
 
 STAR-Fusion_ is used to identify candidate fusion transcripts. The recommended_ parameters for running
-STAR prior to STAR-Fusion can be pre-selected, with the following exceptions::
-
-  --twopassMode Basic                   # not an option in STAR 2.4.0
-  --chimSegmentReadGapMax 3             # not an option in STAR 2.4.0
-  --alignSJstitchMismatchNmax 5 -1 5 5  # not an option in STAR 2.4.0
+STAR prior to STAR-Fusion can be pre-selected::
 
 **Attributions**
 

@@ -9,7 +9,7 @@ from argparse import ArgumentParser
 from scipy import stats
 import vcf
 
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 
 def supply_args():
     parser = ArgumentParser(description='')
@@ -53,8 +53,14 @@ def main():
     myvcf.filters['IN_BKGD'] = vcf.parser._Filter('IN_BKGD', desc_str)
     vcf_writer = vcf.Writer(open(args.outfile, 'w'), myvcf)
     for entry in myvcf:
-        depth = entry.samples[0]['AD'][0] + entry.samples[0]['AD'][1]
-        alt = entry.samples[0]['AD'][1]
+        try:
+            depth = entry.samples[0]['AD'][0] + entry.samples[0]['AD'][1]
+        except:
+            depth = 0
+        try:
+            alt = entry.samples[0]['AD'][1]
+        except:
+            alt = 0
         pval = bkgd_tester.find_binom_pval(alt, depth)
         if not entry.FILTER:
             if bkgd_tester.check_val(pval) or depth < 10:
