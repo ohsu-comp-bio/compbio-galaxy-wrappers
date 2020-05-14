@@ -430,7 +430,7 @@ class MetricPrep(SampleMetrics):
                 'TruSightOne': [],
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed'],
                 'QIAseq_V3_HEME2': [],
-                'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct'],
+                'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'total_on_target_transcripts_pct', 'gatk_cr_on_target',
                                           'gatk_cr_total', 'gatk_cr_ints'],
                 'QIAseq_V3_HOP': ['allele_balance', 'allele_balance_het_count'],
