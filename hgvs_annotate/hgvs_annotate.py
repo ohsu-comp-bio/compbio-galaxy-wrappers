@@ -7,12 +7,12 @@
 # CODED BY: John Letaw
 
 import argparse
-import vcf
+import vcfpy
 import hgvs.assemblymapper
 import hgvs.dataproviders.uta
 import hgvs.parser
 
-VERSION = '0.3.1'
+VERSION = '0.4.0'
 
 CHROM_MAP = {'1': 'NC_000001.10', '2': 'NC_000002.11', '3': 'NC_000003.11', '4': 'NC_000004.11', '5': 'NC_000005.9',
              '6': 'NC_000006.11', '7': 'NC_000007.14', '8': 'NC_000008.10', '9': 'NC_000009.11', '10': 'NC_000010.10',
@@ -23,6 +23,7 @@ CHROM_MAP = {'1': 'NC_000001.10', '2': 'NC_000002.11', '3': 'NC_000003.11', '4':
 AA_MAP = {'Ala': 'A', 'Arg': 'R', 'Asn': 'N', 'Asp': 'D', 'Asx': 'B', 'Cys': 'C', 'Glu': 'E', 'Gln': 'Q', 'Glx': 'Z',
           'Gly': 'G', 'His': 'H', 'Ile': 'I', 'Leu': 'L', 'Lys': 'K', 'Met': 'M', 'Phe': 'F', 'Pro': 'P', 'Ser': 'S',
           'Thr': 'T', 'Trp': 'W', 'Tyr': 'Y', 'Val': 'V'}
+
 
 def supply_args():
     parser = argparse.ArgumentParser(description='')
@@ -108,7 +109,8 @@ def main():
         var_g = hp.parse_hgvs_variant(new_hgvs)
         # This is how you find out which transcripts are available.  Might as well provide HGVS for all of them.
 
-        tx_list = hdp.get_tx_for_region(str(var_g.ac), 'splign', str(var_g.posedit.pos.start), str(var_g.posedit.pos.end))
+        tx_list = hdp.get_tx_for_region(str(var_g.ac), 'splign',
+                                        str(var_g.posedit.pos.start), str(var_g.posedit.pos.end))
         for entry in tx_list:
             print(entry[0])
             print(var_g)
@@ -121,10 +123,20 @@ def main():
                 print("NON-CODING LIKELY.")
 
     if args.input_vcf:
-        infile = open(args.input_vcf, 'r')
-        handle_out = open(args.output_vcf, 'wb')
-        vcf_reader = vcf.Reader(infile)
-        vcf_writer = vcf.Writer(handle_out, vcf_reader)
+        vcf_reader = vcfpy.Reader.from_path(args.input_vcf)
+        vcf_reader.header.add_info_line(vcfpy.OrderedDict([('ID', 'HGVS_G'),
+                                                           ('Number', '.'),
+                                                           ('Type', 'String'),
+                                                           ('Description', 'HGVS genomic reference, as produced by pyhgvs.')]))
+        vcf_reader.header.add_info_line(vcfpy.OrderedDict([('ID', 'HGVS_C'),
+                                                           ('Number', '.'),
+                                                           ('Type', 'String'),
+                                                           ('Description', 'HGVS coding reference, as produced by pyhgvs.')]))
+        vcf_reader.header.add_info_line(vcfpy.OrderedDict([('ID', 'HGVS_P'),
+                                                           ('Number', '.'),
+                                                           ('Type', 'String'),
+                                                           ('Description', 'HGVS protein reference, as produced by pyhgvs.')]))
+        vcf_writer = vcfpy.Writer.from_path(args.output_vcf, vcf_reader.header)
 
         i = 0
 
@@ -135,30 +147,33 @@ def main():
                 continue
             pos = record.POS
             ref = record.REF
-            for entry in record.ALT:
+            alt = [x.value for x in record.ALT]
+            for entry in alt:
                 pos_part = correct_indel_coords(pos, ref, str(entry))
                 new_hgvs = chrom + ':g.' + pos_part
                 var_g = hp.parse_hgvs_variant(new_hgvs)
                 # This is how you find out which transcripts are available.  Might as well provide HGVS for all of them.
-                if 'HGVS_G' not in record.INFO:
-                    record.INFO['HGVS_G'] = str(var_g)
-                else:
-                    record.INFO['HGVS_G'] += ',' + str(var_g)
 
-                tx_list = hdp.get_tx_for_region(str(var_g.ac), 'splign', str(var_g.posedit.pos.start), str(var_g.posedit.pos.end))
-                for entry in tx_list:
+                if 'HGVS_G' not in record.INFO:
+                    record.INFO['HGVS_G'] = [str(var_g)]
+                else:
+                    record.INFO['HGVS_G'].append(str(var_g))
+
+                tx_list = hdp.get_tx_for_region(str(var_g.ac), 'splign',
+                                                str(var_g.posedit.pos.start), str(var_g.posedit.pos.end))
+                for tx in tx_list:
                     try:
-                        var_c = vm.g_to_c(var_g, str(entry[0]))
+                        var_c = vm.g_to_c(var_g, str(tx[0]))
                         if 'HGVS_C' not in record.INFO:
-                            record.INFO['HGVS_C'] = str(var_c)
+                            record.INFO['HGVS_C'] = [str(var_c)]
                         else:
-                            record.INFO['HGVS_C'] += ',' + str(var_c)
+                            record.INFO['HGVS_C'].append(str(var_c))
 
                         var_p = vm.c_to_p(var_c)
                         if 'HGVS_P' not in record.INFO:
-                            record.INFO['HGVS_P'] = str(var_p)
+                            record.INFO['HGVS_P'] = [str(var_p)]
                         else:
-                            record.INFO['HGVS_P'] += ',' + str(var_p)
+                            record.INFO['HGVS_P'].append(str(var_p))
 
                     except:
                         print("Transcript probably non-coding, ignore.")
@@ -168,8 +183,6 @@ def main():
                 print(i)
             i += 1
 
-        infile.close()
-        handle_out.close()
 
 if __name__ == "__main__":
     main()
