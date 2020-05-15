@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 import pysam
 
-VERSION = '0.2.5'
+VERSION = '0.2.6'
 
 
 def supply_args():
@@ -274,8 +274,9 @@ def main():
                        "TRNQ", "TRNR", "TRNS1", "TRNS2", "TRNT", "TRNV", "TRNW", "TRNY",
                        "IGH-@-ext"]
         regex_filt = [r'A[LC][0-9]{6}\.[0-9]{1}',
-                      r'RP[0-9]+-[0-9]{3}[A-Z]{1}[0-9]+\.[0-9]{1}',
-                      r'CTD-[0-9]{4}[A-Z]{1}[0-9]+.[0-9]+']
+                      r'RP[0-9]{1,2}-[0-9]{1,4}[A-Z]{1}[0-9]{1,2}\.[0-9]{1,2}',
+                      r'CTD-[0-9]{4}[A-Z]{1}[0-9]+.[0-9]+',
+                      r'XX[ybacos]{0,3}-[0-9A-Z_]+\.[0-9]{1,2}']
 
     else:
         hard_filter = None
