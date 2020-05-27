@@ -7,11 +7,13 @@
 # CODED BY: John Letaw
 
 import argparse
-import multiprocessing as mp
+import dill
 import vcfpy
 import hgvs.assemblymapper
 import hgvs.dataproviders.uta
+import hgvs.easy
 import hgvs.parser
+from pathos.multiprocessing import ProcessingPool
 
 VERSION = '0.4.0'
 
@@ -47,38 +49,83 @@ def supply_args():
     return args
 
 
-
-
 class VcfRec:
     """
     Information corresponding to a single VCF entry.
     """
-    def __init__(self, rec, hp):
-        self.hp = hp
+    def __init__(self, rec):
+        # self.hp = hp
+        # self.hdp = hdp
+        # self.vm = vm
+        self.hp = hgvs.parser.Parser()
+        self.hdp = hgvs.dataproviders.uta.connect()
+        self.vm = hgvs.assemblymapper.AssemblyMapper(self.hdp, assembly_name="GRCh37", alt_aln_method='splign')
         self.chrom = CHROM_MAP[rec.CHROM]
         self.pos = rec.POS
         self.ref = rec.REF
         self.alt = [x.value for x in rec.ALT]
         self.hgvs_g = self._prep_hgvs()
         self.var_g = self._create_var_g()
+        self.uniq_key = (self.chrom, self.pos, self.ref, self.alt[0])
+        self.tx_list = self._get_txs()
+        self.var_c = self._create_var_c()
+        self.var_p = self._create_var_p()
+        self.hdp.close()
+
+    def _get_txs(self):
+        """
+
+        :return:
+        """
+        return hgvs.easy.am37.relevant_transcripts(self.var_g)
 
     def _create_var_g(self):
-        var_g = []
-        for entry in self.hgvs_g:
-            var_g.append(self.hp.parse_hgvs_variant(entry))
-        return var_g
+        """
+
+        :return:
+        """
+        return self.hp.parse_hgvs_variant(self.hgvs_g)
+
+    def _create_var_c(self):
+        """
+
+        :return:
+        """
+        var_c = []
+        # hdp = hgvs.dataproviders.uta.connect()
+        # vm = hgvs.assemblymapper.AssemblyMapper(hdp, assembly_name="GRCh37", alt_aln_method='splign')
+        for tx in self.tx_list:
+            try:
+                var_c.append(self.vm.g_to_c(self.var_g, tx))
+            except:
+                var_c.append(None)
+        # hdp.close()
+        return var_c
+
+    def _create_var_p(self):
+        """
+
+        :return:
+        """
+        var_p = []
+        # hdp = hgvs.dataproviders.uta.connect()
+        # vm = hgvs.assemblymapper.AssemblyMapper(hdp, assembly_name="GRCh37", alt_aln_method='splign')
+        for coding in self.var_c:
+            if coding:
+                var_p.append(self.vm.c_to_p(coding))
+            else:
+                var_p.append(None)
+        # hdp.close()
+        return var_p
 
     def _prep_hgvs(self):
         """
 
         :return:
         """
-        hgvs_g = []
-        for entry in self.alt:
-            pos_part = self.correct_indel_coords(self.pos, self.ref, str(entry))
-            new_hgvs = self.chrom + ':g.' + pos_part
-            hgvs_g.append(new_hgvs)
-        return hgvs_g
+        pos_part = self.correct_indel_coords(self.pos, self.ref, self.alt[0])
+        new_hgvs = self.chrom + ':g.' + pos_part
+        return new_hgvs
 
     @staticmethod
     def correct_indel_coords(pos, ref, alt):
@@ -129,8 +176,7 @@ class VcfReader:
     """
 
     """
-    def __init__(self, filename, hp):
-        self.hp = hp
+    def __init__(self, filename):
         self.vcf_reader = vcfpy.Reader.from_path(filename)
         self.vcf_reader.header.add_info_line(vcfpy.OrderedDict([('ID', 'HGVS_G'),
                                                            ('Number', '.'),
@@ -145,16 +191,112 @@ class VcfReader:
                                                            ('Type', 'String'),
                                                            ('Description', 'HGVS protein reference, as produced by pyhgvs.')]))
         self.my_vrnts = self._create_rec()
-
+        self.vcf_reader.close()
 
     def _create_rec(self):
         """
         """
-        my_vrnts = []
-        for vrnt in self.vcf_reader:
-            my_vrnts.append(VcfRec(vrnt, self.hp))
-        return my_vrnts
+        vrnts = {}
+        for rec in self.vcf_reader:
+            chrom = CHROM_MAP[rec.CHROM]
+            pos = rec.POS
+            ref = rec.REF
+            alt = [x.value for x in rec.ALT][0]
+            uniq_key = (rec.CHROM, pos, ref, alt)
+            pos_part = correct_indel_coords(pos, ref, alt)
+            new_hgvs = chrom + ':g.' + pos_part
+            if uniq_key not in vrnts:
+                vrnts[uniq_key] = new_hgvs
+            else:
+                raise Exception("WHY!!!")
+        return vrnts
 
+
+def correct_indel_coords(pos, ref, alt):
+    """
+    Using a VCF position, create coords that are compatible with HGVS nomenclature.
+    Since we are already determining at this stage whether the event is an ins or del, also
+    include the ins or del strings in the result.
+    substitution event -> ac:g.[pos][ref]>[alt]
+    :return:
+    """
+    lref = len(ref)
+    lalt = len(alt)
+    if lref == 1 and lalt == 1:
+        # Substitution case
+        change = '>'.join([ref, alt])
+        new_pos = str(pos) + change
+        return new_pos
+    elif lref == lalt:
+        # Multi-nucleotide substitution case
+        # NG_012232.1: g.12_13delinsTG
+        new_start = str(pos)
+        new_end = str(int(pos) + lref - 1)
+        new_pos = '_'.join([new_start, new_end]) + 'delins' + alt
+        return new_pos
+    elif lref > lalt:
+        # Deletion case
+        shift = lref - lalt
+        if shift == 1:
+            new_pos = str(int(pos) + 1) + 'del'
+            return new_pos
+        else:
+            new_start = str(int(pos) + 1)
+            new_end = str(int(pos) + shift)
+            new_pos = '_'.join([new_start, new_end]) + 'del'
+            return new_pos
+    elif lalt > lref:
+        # Insertion case
+        new_start = str(pos)
+        new_end = str(int(pos) + 1)
+        new_pos = '_'.join([new_start, new_end]) + 'ins' + alt[1:]
+        return new_pos
+    else:
+        # OTHER case
+        print("Change type not supported: " + pos + ':' + ref + '>' + alt + '\n')
+
+        # i = 0
+        # results = []
+        # for vrnt in self.vcf_reader:
+        #     if i % 100 == 0:
+        #         print(i)
+        #     this_vcf = VcfRec(vrnt, self.hp, self.hdp, self.vm)
+        #     results.append(this_vcf)
+        #     i += 1
+        # return results
+    #     return VcfRec(vrnt)
+    #
+    #
+    # def get_txs(self):
+    #     """
+    #
+    #     :return:
+    #     """
+    #     pool = ProcessingPool(nodes=24)
+    #     results = pool.map(self._create_rec, [x for x in self.vcf_reader])
+    #     return results
+#
+#
+# def access_region_tx(uniq_key, vrnt):
+#     """
+#
+#     :return:
+#     """
+#     result = {}
+#     hdp = hgvs.dataproviders.uta.connect()
+#     for entry in vrnt:
+#         this_tx = hdp.get_tx_for_region(str(entry.ac), 'splign', str(entry.posedit.pos.start),
+#                                         str(entry.posedit.pos.end))
+#         if entry not in result:
+#             result[entry] = this_tx
+#         else:
+#             result[entry].append(this_tx)
+#         # if uniq_key not in result:
+#         #     result[uniq_key] = this_tx
+#         # else:
+#         #     result[uniq_key].append(this_tx)
+#     hdp.close()
+#     return result
 
         # for entry in alt:
         #     var_g = hp.parse_hgvs_variant(new_hgvs)
@@ -186,29 +328,131 @@ class VcfReader:
         #
         # return record
 
-def get_txs(my_vcf, hdp):
+
+def hgvs_build(vrnt):
     """
-    
-    :return: 
+
+    :return:
     """
-    for rec in my_vcf:
-        for var_g in rec.var_g:
-            print(hdp.get_tx_for_region(str(var_g.ac), 'splign', str(var_g.posedit.pos.start), str(var_g.posedit.pos.end)))
+    hdp = hgvs.dataproviders.uta.connect()
+    vm = hgvs.assemblymapper.AssemblyMapper(hdp, assembly_name="GRCh37", alt_aln_method='splign')
+    hp = hgvs.parser.Parser()
+    var_g = hp.parse_hgvs_variant(vrnt)
+    tx_list = hgvs.easy.am37.relevant_transcripts(var_g)
+
+    var_c = []
+    for tx in tx_list:
+        try:
+            var_c.append(vm.g_to_c(var_g, tx))
+        except:
+            pass
+
+    var_p = []
+    for coding in var_c:
+        if coding:
+            var_p.append(vm.c_to_p(coding))
+        else:
+            pass
+
+    hdp.close()
+    return str(var_g), ','.join([str(x) for x in var_c]), ','.join([str(x) for x in var_p])
+
+
+class VcfWriter:
+    """
+
+    """
+    def __init__(self, filename, vcf_reader):
+        self.vcf_writer = vcfpy.Writer.from_path(filename, vcf_reader.header)
+
 
 def main():
 
     args = supply_args()
 
     # Initialize the HGVS package objects.
-    hdp = hgvs.dataproviders.uta.connect()
-    vm = hgvs.assemblymapper.AssemblyMapper(hdp, assembly_name="GRCh37", alt_aln_method='splign')
+    # hdp = hgvs.dataproviders.uta.connect()
+    # vm = hgvs.assemblymapper.AssemblyMapper(hdp, assembly_name="GRCh37", alt_aln_method='splign')
     hp = hgvs.parser.Parser()
-    pool = mp.Pool(16)
+
+    # {('NC_000001.10', 11169379, 'T', 'C'): [['NM_004958.4', 'NC_000001.10', -1, 'splign', 11166591, 11322608], ['NM_004958.3', 'NC_000001.10', -1, 'splign', 11166587, 11322608]]},
+
+    hgvs_blob = {}
 
     if args.input_vcf:
         # vcf_writer = vcfpy.Writer.from_path(args.output_vcf, vcf_reader.header)
-        my_vcf = VcfReader(args.input_vcf, hp).my_vrnts
-        results = pool.starmap(get_txs, [(x for x in my_vcf), hdp])
+        my_vcf = VcfReader(args.input_vcf).my_vrnts
+
+    pool = ProcessingPool(nodes=24)
+    results = pool.map(hgvs_build, my_vcf.values())
+
+    # print(results)
+
+    # for k, v in my_vcf.items():
+    #
+    #     if i % 100 == 0:
+    #         print(i)
+    #
+    # hgvs_blob[k] = {'HGVS_G':str(var_g),
+    #                 'HGVS_C': ','.join([str(x) for x in var_c]),
+    #                 'HGVS_P': ','.join([str(x) for x in var_p])}
+    #
+    # hdp = hgvs.dataproviders.uta.connect()
+    # vm = hgvs.assemblymapper.AssemblyMapper(hdp, assembly_name="GRCh37", alt_aln_method='splign')
+    # hp = hgvs.parser.Parser()
+    #
+    # i = 0
+    # for k, v in my_vcf.items():
+    #
+    #     if i % 100 == 0:
+    #         print(i)
+    #     var_g = hp.parse_hgvs_variant(v)
+    #     tx_list = hgvs.easy.am37.relevant_transcripts(var_g)
+    #     var_c = []
+    #     for tx in tx_list:
+    #         try:
+    #             var_c.append(vm.g_to_c(var_g, tx))
+    #         except:
+    #             var_c.append(None)
+    #     var_p = []
+    #     for coding in var_c:
+    #         if coding:
+    #             var_p.append(vm.c_to_p(coding))
+    #         else:
+    #             var_p.append(None)
+    #
+    #     hgvs_blob[k] = {'HGVS_G': str(var_g),
+    #                     'HGVS_C': ','.join([str(x) for x in var_c]),
+    #                     'HGVS_P': ','.join([str(x) for x in var_p])}
+    #     i += 1
+    #
+    # print(hgvs_blob)
+    #
+    # hdp.close()
+
+
+
+
+    # print(hgvs_blob)
+
+        # tx_blobs = get_txs(my_vcf.my_varg)
+
+    # for blob in tx_blobs:
+    #     for tx_list in blob.values():
+    #         for tx in tx_list:
+    #             hdp = hgvs.dataproviders.uta.connect()
+    #             vm = hgvs.assemblymapper.AssemblyMapper(hdp, assembly_name="GRCh37", alt_aln_method='splign')
+    #             var_c = vm.g_to_c(tx, str(tx[0]))
+    #             print(var_c)
+
+
+    #
+    # for entry in my_vcf:
+    #     print(str(my_vcf.var_g))
+
+        # new_var_g = []
+        # for i in range(5000):
+        #     new_var_g.append(my_vcf.var_g[0])
 
         # for entry in results:
         #     print(entry)
