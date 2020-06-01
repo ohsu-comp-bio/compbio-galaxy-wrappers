@@ -97,7 +97,7 @@ class VcfRec:
     """
 
     """
-    def __init__(self, rec, mother, father, proband, het=0.1, hom=0.02):
+    def __init__(self, rec, mother, father, proband, het=0.05, hom=0.02):
         self.rec = rec
         self.het = het
         self.hom = hom
