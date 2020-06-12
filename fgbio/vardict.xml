@@ -1,15 +1,15 @@
-<tool id="vardict" name="VarDict" version="1">
+<tool id="vardict" name="VarDict" version="2.0.0">
 <description>Variant caller</description>
 <requirements>
-  <requirement type="package" version="2018.10.18">vardict</requirement>
+  <requirement type="package" version="1.7.0">vardict-java</requirement>
+  <requirement type="package" version="1.9">samtools</requirement>
 </requirements>
 <command detect_errors="exit_code"><![CDATA[
-    export PATH="/home/exacloud/lustre1/galaxydev/galaxy/tools/gatk4_auto/38_pipeline/commands/samtools-1.9:\${PATH}" &&
     #for $num, $file in enumerate($input2):
       ln -s $file input${num}.bam &&
       samtools index input${num}.bam &&
     #end for
-    vardict 
+    vardict-java
     -G "$reference_source.reference_sequence.fields.path" 
     $header
     $splice
@@ -245,5 +245,7 @@ Original coded by Zhongwu Lai 2014.
 VarDictJava can run in single sample (see Single sample mode section), paired sample (see Paired variant calling section), or amplicon bias aware modes. As input, VarDictJava takes reference genomes in FASTA format, aligned reads in BAM format, and target regions in BED format.
 
 ]]></help>
-  <citations/>
+  <citations>
+    <citation type="doi">10.1093/nar/gkw227</citation>
+  </citations>
 </tool>
