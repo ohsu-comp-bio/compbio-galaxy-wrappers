@@ -272,10 +272,10 @@ def main():
                        "TRNA", "TRNC", "TRND", "TRNE", "TRNF", "TRNG", "TRNH",
                        "TRNI", "TRNK", "TRNL1", "TRNL2", "TRNM", "TRNN", "TRNP",
                        "TRNQ", "TRNR", "TRNS1", "TRNS2", "TRNT", "TRNV", "TRNW", "TRNY",
-                       "IGH-@-ext", "IGH@"]
+                       "IGH-@-ext", "IGH@", "IGL-@"]
         regex_filt = [r'A[LC][0-9]{6}\.[0-9]{1}',
                       r'RP[0-9]{1,2}-[0-9]{1,4}[A-Z]{1}[0-9]{1,2}\.[0-9]{1,2}',
-                      r'CT[CD]{1}-[0-9]{3,4}[A-Z]{1}[0-9]+.[0-9]+',
+                      r'CT[CDAB]{1}-[0-9]{3,4}[A-Z]{1}[0-9]+.[0-9]+',
                       r'XX[ybacos]{0,3}-[0-9A-Z_]+\.[0-9]{1,2}',
                       r'GS1-[0-9]{2,3}[A-Z]{1}[0-9]{1,2}\.[0-9]{1,2}']
 
