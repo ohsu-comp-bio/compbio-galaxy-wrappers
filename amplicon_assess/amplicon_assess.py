@@ -59,9 +59,11 @@ class QiagenPrimers:
         if strand == 0:
             pstart = int(stop) - 250 + 1
             return pstart
-        else:
+        elif strand == 1:
             pstop = int(start) + 250 - 1
             return pstop
+        else:
+            raise ValueError("Invalid strand specification in get_pcoords.")
 
     def _primer_regions(self):
         """
