@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Process FASTQ files to obtain potential ITD calls from given genomic regions.
 # Should be used on your assay-specific data.  Generally, you will pre-process your FASTQ files in any way
@@ -15,7 +15,6 @@ import pysam
 from collections import defaultdict
 from copy import deepcopy
 from itertools import groupby
-from itertools import imap
 from operator import itemgetter
 from string import Template
 
@@ -31,7 +30,8 @@ def supply_args():
     parser.add_argument('--outfile', required=True, help='Output File')
     parser.add_argument('--ref', required=True, help='Input Reference Sequence')
     parser.add_argument('--ref_build', choices=['hg19'], default='hg19', help='Which reference build to utilize')
-    parser.add_argument('--target', choices=['flt3', 'flt3_e13', 'flt3_e14', 'flt3_e15'], default='flt3_e14', help='Region to target')
+    parser.add_argument('--target', choices=['flt3', 'flt3_e13', 'flt3_e14', 'flt3_e15'],
+                        default='flt3_e14', help='Region to target')
     parser.add_argument('--coords', help='Coordinate range, in the format [chrom:start-stop], 1-based.')
     parser.add_argument('--paired', action='store_true', help='Data is paired-end data.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
@@ -71,7 +71,7 @@ class SuffixArray(object):
                assert text[sa[i-1]:sa[i-1]+lcp[i]] == text[sa[i]:sa[i]+lcp[i]]
                if sa[i-1] + lcp[i] < len(text):
                    assert text[sa[i-1] + lcp[i]] < text[sa[i] + lcp[i]]
-    >>> suffix_array(text='banana')
+    suffix_array(text='banana')
     ([5, 3, 1, 0, 4, 2], [3, 2, 5, 1, 4, 0], [0, 1, 3, 0, 0, 2])
 
     Explanation: 'a' < 'ana' < 'anana' < 'banana' < 'na' < 'nana'
@@ -79,7 +79,7 @@ class SuffixArray(object):
     It is between  tx[sa[1]:] == 'ana' < 'anana' == tx[sa[2]:]
     """
 
-    def __init__(self, text, _step=16):
+    def __init__(self, text, _step=20):
         self.tx = text
         self.step = min(max(_step, 1), len(self.tx))
         self.size = len(self.tx)
@@ -88,7 +88,7 @@ class SuffixArray(object):
 
     def _create_sa(self):
         sa = list(range(len(self.tx)))
-        sa.sort(key=lambda i: self.tx[i:i + self.step])
+        sa.sort(key=lambda x: self.tx[x:x + self.step])
         # a boolean map for iteration speedup.
         grpstart = self.size * [False] + [True]
         # It helps to skip yet resolved values. The last value True is a sentinel.
@@ -197,7 +197,7 @@ class GetSeq(object):
         Provide an extra genomic coordinate buffer to the regions of interest.
         :return:
         """
-        return (self.coords[0], self.coords[1]-buffer, self.coords[2]+buffer)
+        return self.coords[0], self.coords[1]-buffer, self.coords[2]+buffer
 
     def _known_targets(self, target):
         """
@@ -206,14 +206,14 @@ class GetSeq(object):
         :return:
         """
         known_targ = {'flt3': ('13', 28577411, 28682904),
-                    'flt3_e13': ('13', 28608438, 28608544),
-                    'flt3_e14': ('13', 28608219, 28608351),
-                    'flt3_e15': ('13', 28608024, 28608128)}
+                      'flt3_e13': ('13', 28608438, 28608544),
+                      'flt3_e14': ('13', 28608219, 28608351),
+                      'flt3_e15': ('13', 28608024, 28608128)}
         return known_targ[target]
 
     def _get_ref_dups(self):
         flt3_dups = {}
-        if max(imap(len, self.curr_long)) > 0:
+        if max(map(len, self.curr_long)) > 0:
             for k, v in self.curr_long.items():
                 diff = v[1] - v[0]
                 if k not in flt3_dups:
@@ -390,7 +390,6 @@ class SequenceCollection(object):
         TODO: This function is a disaster.
         :return:
         """
-
         for k, v in self.itd_list.items():
             in_ref_cnt = 0.0
             total_cnt = len(v)
@@ -407,7 +406,7 @@ class SequenceCollection(object):
                 itd_start = flt3_pos - itd_len_diff + self.refseq.coords[1]
                 itd_stop = itd_start + k
 
-            maxseq = self.max_pos[k].keys()[0]
+            maxseq = list(self.max_pos[k])[0]
             entry = self.max_pos[k][maxseq]
             diff = entry.curr_long[maxseq][1] - entry.curr_long[maxseq][0]
             if len(entry.gnmic_seq) - entry.curr_long[maxseq][1] >= len(maxseq):
@@ -438,13 +437,13 @@ class SequenceCollection(object):
         Create the structure containing number of times distances between duplicate sequences occur.
         :return:
         """
-        if max(imap(len, seq.curr_long)) > 8:
+        if max(map(len, seq.curr_long)) > 8:
             for k, v in seq.curr_long.items():
                 diff = v[1] - v[0]
                 # TODO: parameter
                 if len(k) > 8:
-#                    v = [v[0] + seq.pos - seq.soft_clip, v[1] + seq.pos - seq.soft_clip]
-#                    v = [v[0] + seq.pos, v[1] + seq.pos]
+                    # v = [v[0] + seq.pos - seq.soft_clip, v[1] + seq.pos - seq.soft_clip]
+                    # v = [v[0] + seq.pos, v[1] + seq.pos]
                     if diff not in self.itd_list:
                         self.itd_list[diff] = [k]
                     else:
@@ -453,7 +452,7 @@ class SequenceCollection(object):
                     if diff not in self.max_pos:
                         self.max_pos[diff] = {k: seq}
                     else:
-                        if len(k) > len(self.max_pos[diff].keys()[0]):
+                        if len(k) > len(list(self.max_pos[diff])[0]):
                             self.max_pos[diff] = {k: seq}
 
 
@@ -466,6 +465,8 @@ class HgvsVars(object):
     """
     def __init__(self, chrom, start, stop, genome='GRCh37'):
         self.hdp = hgvs.dataproviders.uta.connect()
+        # pooling = False,
+        # db_url = 'postgresql://anonymous:anonymous@uta.biocommons.org/uta/uta_20190921'
         self.vm = hgvs.assemblymapper.AssemblyMapper(self.hdp, assembly_name=genome)
         self.hp = hgvs.parser.Parser()
         self.chrom = self._chrom_map(chrom)
@@ -552,6 +553,7 @@ def main():
         SequenceCollection(args.sam, args.outfile, my_seq, True)
     else:
         SequenceCollection(args.sam, args.outfile, my_seq, False)
+
 
 if __name__ == "__main__":
     main()
