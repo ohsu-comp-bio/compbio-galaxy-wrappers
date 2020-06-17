@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-from _collections import OrderedDict
+from collections import OrderedDict
+from scipy import stats
 import argparse
+import numpy
 import pysam
 import vcfpy
 
@@ -89,9 +91,75 @@ class VrntMetrics:
         self.primers = primers
         self.chrom = vrnt[0]
         self.pos = vrnt[1]
+        self.ref = vrnt[2]
+        self.alt = [alt.value for alt in vrnt[3]][0]
         self.raw_metrics, self.end_coords = self._collect_basecalls_region()
         self.assigned, self.unassigned = self._assign_primers()
         self.unassigned = self._assign_primers_rev()
+        self.total_cnt = self._get_total_cnt()
+        self.total_depth = self._get_total_depth()
+        self.total_vaf = self._get_total_vaf()
+        self.vaf = self._get_vafs()
+
+    def _get_total_depth(self):
+        """
+        Get the total depth for this variant.
+        :return:
+        """
+        return sum(self.total_cnt.values())
+
+    def _get_total_vaf(self):
+        """
+        Get the total VAF for this variant.
+        :return:
+        """
+        if self.alt in self.total_cnt:
+            return self.total_cnt[self.alt]/self.total_depth
+        else:
+            return None
+
+    def _get_total_cnt(self):
+        """
+        Find the total number of ref and alt counts for this variant.
+        total = {BASE: count, ...}
+        :return:
+        """
+        total = {}
+        for primer, bases in self.assigned.items():
+            for base in bases:
+                if base not in total:
+                    total[base] = self.assigned[primer][base][0] + self.assigned[primer][base][1]
+                else:
+                    total[base] += (self.assigned[primer][base][0] + self.assigned[primer][base][1])
+        return total
+
+    def _vaf_calc(self, counts, depth=50):
+        """
+        From this: {'T': [0, 3], 'C': [0, 17]}, calculate a VAF.
+        :return:
+        """
+        total = 0
+        for base in counts:
+            total += (counts[base][0] + counts[base][1])
+        if total < depth:
+            return None
+        if self.alt in counts:
+            vaf = (counts[self.alt][0] + counts[self.alt][1])/total
+        else:
+            vaf = 0
+        return vaf
+
+
+    def _get_vafs(self, depth=50):
+        """
+        For each primer group, estimate the VAF.  There will need to be a depth cutoff for this.
+        :return:
+        """
+        vafs = {}
+        for primer, bases in self.assigned.items():
+            vafs[primer] = self._vaf_calc(bases)
+        return vafs
+
 
     def _assign_primers_rev(self):
         """
@@ -181,7 +249,7 @@ class VrntMetrics:
     @staticmethod
     def _add_bases(old, new):
         """
-        This will handle combining dicts of {base: count} pairs.
+        This will handle combining dicts of {base: [fwdcount, revcount]} pairs.
         :return:
         """
         new_val = old
@@ -189,8 +257,32 @@ class VrntMetrics:
             if base not in new_val:
                 new_val[base] = new[base]
             else:
-                new_val[base] += new[base]
+                new_val[base][0] += new[base][0]
+                new_val[base][1] += new[base][1]
         return new_val
+
+    def _assign_direc(self, flag):
+        """
+        Based on FLAG field, assign the directionality of the read.
+        :return:
+        """
+        if flag & 0x10 == 0:
+            return 0
+        else:
+            return 1
+
+    def _del_from_cigar(self, cigar):
+        """
+        Get the value of the deletion operation, if it exists.
+        [(0, 54), (2, 1), (0, 24)]
+        :return:
+        """
+        total_del = 0
+        if 2 in [x[0] for x in cigar]:
+            for entry in cigar:
+                if entry[0] == 2:
+                    total_del += entry[1]
+        return total_del
 
     def _collect_basecalls_region(self):
         """
@@ -201,9 +293,12 @@ class VrntMetrics:
         basecalls = {}
         end_coords = {}
         for line in mysam:
-            srch_idx = self.pos - line.pos
+            # This ain't gonna work without a correction for deletions.
+            del_correct = self._del_from_cigar(line.cigartuples)
+            srch_idx = self.pos - line.pos - del_correct
             basecall = line.query_sequence[srch_idx]
             uniq_key = (line.rname, line.pos)
+            direc = self._assign_direc(line.flag)
 
             if uniq_key not in end_coords:
                 end_coords[uniq_key] = [line.reference_end-1]
@@ -213,13 +308,28 @@ class VrntMetrics:
             if uniq_key not in basecalls:
                 basecalls[uniq_key] = {}
             if basecall not in basecalls[uniq_key]:
-                basecalls[uniq_key][basecall] = 1
+                if direc == 0:
+                    basecalls[uniq_key][basecall] = [1, 0]
+                else:
+                    basecalls[uniq_key][basecall] = [0, 1]
             else:
-                basecalls[uniq_key][basecall] += 1
+                if direc == 0:
+                    basecalls[uniq_key][basecall][0] += 1
+                if direc == 1:
+                    basecalls[uniq_key][basecall][1] += 1
+
         return basecalls, end_coords
 
 
 def main():
+    """
+    AMPBIAS metrics options:
+    1. Use a z-score or something along those lines.  This may not work very well since we typically
+    will not have more than 3 or 4 overlapping measurements of VAF.
+    2. Note when one of the amplicons doesn't have any variant counts, this is certainly not good.
+    Thresholding should include some minimum depth.
+    :return:
+    """
     args = supply_args()
 
     samfile = pysam.AlignmentFile(args.bam, "rb")
@@ -227,18 +337,26 @@ def main():
     reader = vcfpy.Reader.from_path(args.vcf)
     all_mets = []
     for entry in reader:
-        vrnt = (entry.CHROM, entry.POS-1)
+        vrnt = (entry.CHROM, entry.POS-1, entry.REF, entry.ALT)
         # If this is too slow, we can prepare primers list ahead to be localized to region, or even chrom.
         all_mets.append(VrntMetrics(samfile, vrnt, primers))
 
-    reader.close()
     samfile.close()
+    reader.close()
 
     for entry in all_mets:
-        print(entry.chrom)
-        print(entry.pos)
-        print(entry.assigned)
-        print(entry.unassigned)
+        temp = []
+        for line in entry.vaf.values():
+            if line:
+                temp.append(line)
+            if len(temp) > 2:
+                a = numpy.array(temp)
+                print(stats.zscore(a))
+                print(entry.total_vaf)
+                print(entry.vaf)
+                print(entry.total_cnt)
+                print(entry.assigned)
+
 
 
 if __name__ == "__main__":
