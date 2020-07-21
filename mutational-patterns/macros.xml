@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<macros>
+
+    <xml name="requirements">
+        <requirements>
+            <requirement type="package">bioconductor-bsgenome.hsapiens.ucsc.hg19</requirement>
+            <requirement type="package">bioconductor-bsgenome.hsapiens.ucsc.hg38</requirement>
+            <requirement type="package">bioconductor-mutationalpatterns</requirement>
+            <requirement type="package">r-reshape2</requirement>
+            <requirement type="package">r-ggplot2</requirement>
+        </requirements>
+    </xml>
+
+</macros>
