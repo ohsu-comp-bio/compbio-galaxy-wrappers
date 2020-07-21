@@ -1,0 +1,12 @@
+owner: "creason"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/mutational-patterns"
+homepage_url: "https://bioconductor.org/packages/release/bioc/html/MutationalPatterns.html"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  mutational_patterns:
+    description: "Cosmic Mutation Signatures analysis using Mutational Patterns"
+    include:
+        - mutational_patterns.xml
+        - macros.xml
+        - tool-data/*
