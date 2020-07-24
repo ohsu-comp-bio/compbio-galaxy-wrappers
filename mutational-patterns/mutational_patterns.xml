@@ -1,0 +1,111 @@
+<tool id="mutational_patterns" name="Mutational Patterns - Single Sample" version="0.1.0">
+    <description> Cosmic Mutation Signatures analysis using Mutational Patterns</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    <expand macro="requirements"/>
+    
+    <command detect_errors="exit_code"><![CDATA[
+        Rscript $script
+    ]]></command>
+
+    <configfiles>
+        <configfile name="script">
+
+
+suppressPackageStartupMessages(library(BSgenome))
+suppressPackageStartupMessages(library(MutationalPatterns))
+suppressPackageStartupMessages(library(reshape2))
+suppressPackageStartupMessages(library(ggplot2))
+
+## Load ref
+#if $ref == "hg19"
+ref_genome = "BSgenome.Hsapiens.UCSC.hg19"
+#else if $ref == "hg38"
+ref_genome = "BSgenome.Hsapiens.UCSC.hg38"
+#end if
+library(ref_genome, character.only = TRUE)
+
+## Collect sample name
+#if $sample
+sample_names=c("$sample")
+#else
+    sample_names=c($input.name)
+#end if
+
+## Load samples
+vcfs = read_vcfs_as_granges(c("$input"), sample_names, ref_genome)
+
+## Get Cosmic Signatures
+#if $signature.signature_select == "history"
+signatures=${signature.signatures}
+#else
+signatures="${__tool_directory__}/tool-data/signatures_probabilities.txt"
+#end if
+
+## Plot Mutation Spectrum
+type_occurrences = mut_type_occurrences(vcfs, ref_genome)
+pdf("cosmic_signatures_type_occurences.pdf", width=7,height=7)
+plot_spectrum(type_occurrences, CT = TRUE)
+dev.off()
+
+## Cosmic Signatures
+mut_mat = mut_matrix(vcf_list = vcfs, ref_genome = ref_genome)
+cancer_signatures = read.table(signatures, sep = "\t", header = TRUE)
+new_order = match(rownames(mut_mat), cancer_signatures[['Somatic.Mutation.Type']])
+cancer_signatures = cancer_signatures[as.vector(new_order),]
+rownames(cancer_signatures) = cancer_signatures[['Somatic.Mutation.Type']]
+cancer_signatures = as.matrix(cancer_signatures[,4:33])
+pdf("cosmic_signatures_profiles_by_signature.pdf", width=7,height=7)
+plot_96_profile(cancer_signatures[,1:3], condensed = TRUE, ymax = 0.3)
+dev.off()
+
+## Fit to cosmic signatures
+fit_res = fit_to_signatures(mut_mat, cancer_signatures)
+write.table(fit_res[['contribution']],file="cosmic_sig_fit_contributions.tsv", sep="\t", quote=FALSE, col.names=NA)
+
+
+data = melt(as.matrix(fit_res[['contribution']][,sample_names, drop=FALSE]))
+colnames(data) = c("Signature", "Sample", "Contribution")
+g = ggplot(data, aes(x=Signature, y=Contribution)) +
+    geom_bar(stat="identity", position='dodge', fill="#2b8cbe") +
+    theme_minimal() +
+    ggtitle(paste("Cosmic Mutation Signatures - ",sample_names, sep="")) + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1), plot.title = element_text(hjust = 0.5))
+
+ggsave("cosmic_signatures_barplot.png",g,width=7,height=7)
+
+        </configfile>
+    </configfiles>
+
+    <inputs>
+        <param type="data" name="input" format="vcf" label="Input VCF File" help=""/>
+        <param type="text" name="sample" optional="true" label="Sample Name" help="Sample name to label plots (optional)"/>
+        <param type="select" name="ref" label="Reference Genome" help="">
+            <option value="hg19" selected="true">Homo sapiens hg19</option>
+            <option value="hg38">Homo sapiens hg38</option>
+        </param>
+        <conditional name="signature">
+            <param type="select" name="signature_select" label="">
+                <option value="built" selected="true">Built-in</option>
+                <option value="history">From History</option>
+            </param>
+            <when value="history">
+                <param type="data" name="signatures" format="txt,tsv,tabular" label="Signature Probabilities"/>
+            </when>
+        </conditional>
+    </inputs>
+
+    <outputs>
+        <data name="occurences" label="${tool.name}: Type Occurences" format="pdf" from_work_dir="cosmic_signatures_type_occurences.pdf"/>
+        <data name="profiles" label="${tool.name}: Signature Profiles" format="pdf" from_work_dir="cosmic_signatures_profiles_by_signature.pdf"/>
+        <data name="contributions" label="${tool.name}: Contribution Table" format="tabular" from_work_dir="cosmic_sig_fit_contributions.tsv"/>
+        <data name="barplot" label="${tool.name}: Signature Barplot" format="png" from_work_dir="cosmic_signatures_barplot.png"/>
+    </outputs>
+
+    <help><![CDATA[
+        TODO: Fill in help.
+    ]]></help>
+</tool>
