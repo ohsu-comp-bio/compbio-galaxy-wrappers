@@ -1,8 +1,9 @@
-<tool id="fg_CallMolecularConsensusReads" name="Call Molecular Consensus Reads" version="0.7.0">
+<tool id="fg_CallMolecularConsensusReads" name="Call Molecular Consensus Reads" version="@WRAPPER_VERSION@0">
   <description>Calls consensus sequences from reads with the same unique molecular tag.</description>
   <macros>
     <import>macros.xml</import>
   </macros>
+  <expand macro="requirements"/>
   <command detect_errors="exit_code"><![CDATA[
     @CMD_BEGIN@ CallMolecularConsensusReads
     #include source=$input_bam_output_cmd#
