@@ -8,12 +8,12 @@
 # USAGE: split_mult_alleles.py -h
 
 from copy import deepcopy
-from file_types import vcfreader
-from file_types import vcfwriter
+# from file_types import vcfreader
+# from file_types import vcfwriter
 import argparse
-import sys
+import vcfpy
 
-VERSION = '0.5.1'
+VERSION = '0.6.0'
 
 
 def supply_args():
@@ -63,7 +63,6 @@ class VcfRecDecomp(object):
         :return:
         """
         vrnt_updt = []
-        print(self.vrnt_info)
         for allele, vals in self.vrnt_info.items():
             new_vrnt = deepcopy(vrnt)
             new_vrnt.ALT = [allele]
@@ -177,6 +176,142 @@ class VcfRecDecomp(object):
         """
         return int(((ref*(ref+1)/2)+alt))
 
+class VcfRec:
+    """
+    {'AC': [48, 25],
+    'AF': [0.276, 0.144],
+    'AN': 174,
+    'BaseQRankSum': -0.74,
+    'ClippingRankSum': 0.0,
+    'DP': 25174,
+    'ExcessHet': 160.0,
+    'FS': 5.155,
+    'InbreedingCoeff': -0.7756,
+    'MLEAC': [50, 26],
+    'MLEAF': [0.287, 0.149],
+    'MQ': 58.95, 'MQRankSum': 0.0,
+    'QD': 5.34,
+    'ReadPosRankSum': 2.34,
+    'SOR': 1.091}
+    """
+    def __init__(self, vcfpy_rec, idx, info_types, frmt_types):
+        self.vcfpy_rec = vcfpy_rec
+        self.idx = idx
+        self.info_types = info_types
+        self.frmt_types = frmt_types
+        self.genos = self._genos_metrics()
+
+    def create_new_rec(self):
+        new_rec = deepcopy(self.vcfpy_rec)
+        new_rec.ALT = self._alt()
+        new_rec.INFO = self._info(self.vcfpy_rec.INFO)
+        new_rec.calls = self._sample_upd(self.vcfpy_rec.calls)
+        return new_rec
+
+    def _sample_upd(self, calls):
+        """
+
+        :param calls:
+        :return:
+        """
+        new_calls = []
+        for call in deepcopy(calls):
+            new_call = deepcopy(call)
+            for field, metric in new_call.data.items():
+                ntype = self.frmt_types[field]
+                if field != 'GT':
+                    new_call.data[field] = self._info_upd(ntype, metric)
+            # print(new_call)
+            # print(new_call.data['GT'])
+            # print(new_call.data['PL'])
+            new_call.data['GT'] = self._assign_gt(new_call.data['PL'])
+            # print(new_call.data['GT'])
+            new_calls.append(new_call)
+        #     print(new_call)
+        # exit(1)
+        for entry in new_calls:
+            print(entry)
+        print(new_calls)
+        exit(0)
+        return deepcopy(new_calls)
+
+    def _assign_gt(self, pl):
+        """
+        Reassign genotypes, where appropriate.  If there are too many
+        :param pl:
+        :return:
+        """
+        if pl.count(min(pl)) == 1:
+            if pl.index(min(pl)) == 1:
+                return '0/1'
+            elif pl.index(min(pl)) == 2:
+                return '1/1'
+            else:
+                return '0/0'
+        return '0/0'
+
+    def _info(self, info):
+        """
+        Copy and create a new INFO OrderedDict.
+        :param info:
+        :return:
+        """
+        new_info = deepcopy(info)
+        for field in new_info:
+            ntype = self.info_types[field]
+            new_info[field] = self._info_upd(ntype, new_info[field])
+        return new_info
+
+    def _info_upd(self, ntype, metrics):
+        """
+        Based on the Number type defined in the header, return metrics for single variant.
+        :param ntype:
+        :param metrics:
+        :return:
+        """
+        if ntype == 'A':
+            return [metrics[self.idx]]
+        elif ntype == 'R':
+            return [metrics[0], metrics[self.idx+1]]
+        elif ntype == 'G':
+            return [metrics[x] for x in self.genos]
+        else:
+            return metrics
+
+    def _genos_metrics(self):
+        """
+        Collect the actual indices for number=G metrics.
+        :return:
+        """
+        geno_mets = []
+        for entry in self._genos_allowed():
+            geno_mets.append(self._calc_gl_pos(entry[0], entry[1]))
+        return geno_mets
+
+    def _genos_allowed(self):
+        """
+        Find tuples for all possible genotypes connected to this particular allele.
+        :return:
+        """
+        geno_idx = self.idx+1
+        return [(0, 0), (0, geno_idx), (geno_idx, geno_idx)]
+
+    @staticmethod
+    def _calc_gl_pos(ref, alt):
+        """
+        F(j/k) = (k*(k+1)/2)+j
+        j = allele 1
+        k = allele 2
+        :return:
+        """
+        return int(((ref*(ref+1)/2)+alt))
+
+    def _alt(self):
+        """
+        Replace the field in ALT with one of the alleles from a multiallelic entry.
+        :return:
+        """
+        return [self.vcfpy_rec.ALT[self.idx]]
 
 def main():
     """
@@ -215,22 +350,52 @@ def main():
 
     :return:
     """
-
     args = supply_args()
-    myvcf = vcfreader.VcfReader(args.input)
-    info_number = myvcf.info_number
-    samples_number = myvcf.samples_number
-    out_vcf_recs = []
+    vcfreader = vcfpy.Reader.from_path(args.input)
 
-    for vrnt in myvcf.myvcf.values():
-        if len(vrnt.ALT) > 1:
-            split_vrnt = VcfRecDecomp(vrnt, info_number, samples_number).decomp_vrnts
-            for svrnt in split_vrnt:
-                out_vcf_recs.append(svrnt.print_rec())
-        else:
-            out_vcf_recs.append(vrnt.print_rec())
+    info_types = {}
+    for info in vcfreader.header.info_ids():
+        info_types[info] = vcfreader.header.get_info_field_info(info).number
 
-    vcfout = vcfwriter.VcfWriter(args.output, out_vcf_recs, myvcf.raw_header).write_me()
+    frmt_types = {}
+    for frmt in vcfreader.header.format_ids():
+        frmt_types[frmt] = vcfreader.header.get_format_field_info(frmt).number
+
+    vcfwriter = vcfpy.Writer.from_path('/dev/stdout', vcfreader.header)
+    for entry in vcfreader:
+        # if entry.POS == 48032740:
+        # print(entry.ALT)
+        # print(len(entry.ALT))
+        if len(entry.ALT) > 1:
+            for alle in range(len(entry.ALT)):
+                alt = entry.ALT[alle].value
+                # We can ignore the asterisks, since they refer to upstream events, which we will be dealing with.
+                if alt != '*':
+                    new_entry = VcfRec(entry, alle, info_types, frmt_types).create_new_rec()
+                    print(new_entry)
+                    vcfwriter.write_record(new_entry)
+                    # print(new_entry)
+                # new_entry = deepcopy(entry)
+                # new_entry.ALT = [alle]
+                # print(new_entry)
+        # else:
+        #     vcfwriter.write_record(entry)
+
+    vcfwriter.close()
+
+    # info_number = myvcf.info_number
+    # samples_number = myvcf.samples_number
+    # out_vcf_recs = []
+    #
+    # for vrnt in myvcf.myvcf.values():
+    #     if len(vrnt.ALT) > 1:
+    #         split_vrnt = VcfRecDecomp(vrnt, info_number, samples_number).decomp_vrnts
+    #         for svrnt in split_vrnt:
+    #             out_vcf_recs.append(svrnt.print_rec())
+    #     else:
+    #         out_vcf_recs.append(vrnt.print_rec())
+    #
+    # vcfout = vcfwriter.VcfWriter(args.output, out_vcf_recs, myvcf.raw_header).write_me()
 
 
 if __name__ == "__main__":
