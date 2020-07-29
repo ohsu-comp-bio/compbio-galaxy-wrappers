@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-HPOS=$(curl -X GET -d "user_token=j4yKzsZivJuCXzoxdUM6" -d "user_email=potteram@ohsu.edu" https://oregon.moon.diploid.com/samples/$1/patient-info | grep 'showterm?id=HP:' | sed "s/[<][^>]*[>]//g")
+HPOS=$(curl -X GET -d "user_token=$2" -d "user_email=$1" https://oregon.moon.diploid.com/samples/$1/patient-info | grep 'showterm?id=HP:' | sed "s/[<][^>]*[>]//g")
 
 COUNT=1
 
