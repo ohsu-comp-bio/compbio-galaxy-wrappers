@@ -1,0 +1,26 @@
+<tool id="amplicon_assess" name="Assess Variants Amplicons" version="0.1.0" >
+  <description>Determine variant counts based on amplicon regions, as defined by primer definiton BED.</description>
+
+  <command><![CDATA[
+  python $__tool_directory__/amplicon_assess.py
+  "${input_bam}"
+  "${input_bed}"
+  "${input_vcf}"
+  --outfile "${outfile}"
+  ]]></command>
+
+  <inputs>
+    <param name="input_bam" type="data" format="bam" label="Input BAM" help="BAM file used to determine primer-specific variant counts." />
+    <param name="input_bed" type="data" format="bed" label="Input BED" help="BED file containing a list of regions you would annotate aganist." />
+    <param name="input_vcf" type="data" format="vcf" label="Input VCF" help="VCF file to get relevant variant list from." />
+  </inputs>
+
+  <outputs>
+    <data format="txt" name="outfile" label="${tool.name} on ${on_string}: JSON" />
+  </outputs>
+
+  <help>
+      Determine variant counts based on amplicon regions, as defined by primer definiton BED.
+  </help>
+
+</tool>
