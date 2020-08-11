@@ -351,61 +351,19 @@ def main():
 
     vcfwriter = vcfpy.Writer.from_path(args.output, vcfreader.header)
     for entry in vcfreader:
-        # if entry.POS == 48032740:
-        # print(entry.ALT)
-        # print(len(entry.ALT))
         if len(entry.ALT) > 1:
-            # print(entry)
-            # GL actually '.'
-            # CA,GWAS_PUBMED,EXOME_CHIP,EA_AGE,AA_AGE,GRCh38_POSITION is unknown, check
-            # per_all = ['EA_AC', 'AA_AC', 'TAC'] #looks good
-            # # MAF is always 3
-            # three = ['MAF']
-            # dots = ['GL', 'FG', 'HGVS_CDNA_VAR', 'HGVS_PROTEIN_VAR', 'CDS_SIZES', 'GS', 'PH', 'GTS', 'EA_GTC', 'AA_GTC', 'GTC']
-            # per_alt = []
-            # per_geno = []
-            # all = len(entry.ALT) + 1
-            # a = len(entry.ALT)
-            # c = ((a*(a+1)/2)+a)+1
-            # for line in per_geno:
-            #     b = len(entry.INFO[line])
-            #     if int(c) != b:
-            #         print(entry)
-            #         print(line)
-            #         print(entry.ALT)
-            #         print(entry.INFO[line])
-            #         print(c)
-            #         print(b)
-            #         exit(1)
             for alle in range(len(entry.ALT)):
                 alt = entry.ALT[alle].value
                 # We can ignore the asterisks, since they refer to upstream events, which we will be dealing with.
                 if alt != '*':
                     new_entry = VcfRec(entry, alle, info_types, frmt_types).create_new_rec()
-                    # print(new_entry)
                     vcfwriter.write_record(new_entry)
-                    # print(new_entry)
-                # new_entry = deepcopy(entry)
-                # new_entry.ALT = [alle]
-                # print(new_entry)
-        # else:
-        #     vcfwriter.write_record(entry)
+                else:
+                    raise Exception("ASTERISK!!!!!!!")
+        else:
+            vcfwriter.write_record(entry)
 
     vcfwriter.close()
-
-    # info_number = myvcf.info_number
-    # samples_number = myvcf.samples_number
-    # out_vcf_recs = []
-    #
-    # for vrnt in myvcf.myvcf.values():
-    #     if len(vrnt.ALT) > 1:
-    #         split_vrnt = VcfRecDecomp(vrnt, info_number, samples_number).decomp_vrnts
-    #         for svrnt in split_vrnt:
-    #             out_vcf_recs.append(svrnt.print_rec())
-    #     else:
-    #         out_vcf_recs.append(vrnt.print_rec())
-    #
-    # vcfout = vcfwriter.VcfWriter(args.output, out_vcf_recs, myvcf.raw_header).write_me()
 
 
 if __name__ == "__main__":
