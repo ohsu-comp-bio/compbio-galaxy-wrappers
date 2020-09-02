@@ -1,0 +1,55 @@
+<tool id='process_batch_qc' name='Batch Level QC Metrics' version='1.0.0'>
+    <description>Batch level qc metrics to determine whether batch passed or
+failed based on cohort of validation batches</description>    
+
+    <requirements>
+      <requirement type="package" version="2.0.1">r-argparse</requirement>
+      <requirement type="package" version="1.4.4">r-reshape2</requirement>
+      <requirement type="package" version="3.3.2">r-ggplot2</requirement>
+      <requirement type="package" version="2.3">r-gridextra</requirement>
+      <requirement type="package" version="4.1.5">r-openxlsx</requirement>
+      <requirement type="package" version="1.7.0">r-jsonlite</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+       Rscript $__tool_directory__/process_batch_qc.R
+          -i "${raw_data}"
+          --pos_file "${known_positives}"
+          --validation_file "${raw_validation_data}"
+          --md_file "${md_file}"
+    ]]></command>
+
+    <inputs>
+        <param name="raw_data" type="data" format="tsv,tabular" label="rawdata.txt" help=""/>
+        <param name="known_positives" type="data" format="tsv,tabular" label="knownpositives.txt" help=""/>
+        <param name="raw_validation_data" type="data" format="tsv,tabular" label="validation_samples_rawdata.txt" help=""/>
+        <param name="md_file" type="data" format="xlsx" label="nanostring_metadata.xlsx" help="nanostring_metadata.xlsx"/>
+    </inputs>
+
+    <outputs>
+        <data name="qc_controls.tsv" format="tsv" from_work_dir="qc_controls.tsv" label="qc_controls.tsv on $on_string"/>
+        <data name="qc_controls_positive.tsv" format="tsv" from_work_dir="qc_controls_positive.tsv" label="qc_controls_positive.tsv on $on_string"/>
+        <data name="QC_antibody_meandiff_plot.pdf" format="pdf" from_work_dir="QC_antibody_meandiff_plot.pdf" label="QC_antibody_meandiff_plot.pdf on $on_string"/>
+        <data name="QC_antibody_linear_plot.pdf" format="pdf" from_work_dir="QC_antibody_linear_plot.pdf" label="QC_antibody_linear_plot.pdf on $on_string"/>
+    </outputs>
+    <tests>
+      <test>
+      </test>
+    </tests>
+    
+    <help><![CDATA[
+This tool compares nanostring results to a validation cohort and a metastatic breast cancer cohort. 
+ 
+Input:
+ * validation_samples_rawdata_<version>.txt: metastic breast cancer cohort matrix
+ * known_positives_<version>.txt
+ * nanostring_metadata.xlsx
+
+
+Output:
+ * 
+   
+]]></help>
+
+    <citations>
+    </citations>
+</tool>
