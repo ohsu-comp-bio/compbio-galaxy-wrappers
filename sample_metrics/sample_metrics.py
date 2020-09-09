@@ -13,7 +13,7 @@ import json
 # User libraries
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader
 
-VERSION = '0.6.3'
+VERSION = '0.6.4'
 
 
 def supply_args():
@@ -406,6 +406,8 @@ class MetricPrep(SampleMetrics):
         return {'QIAseq_V3_RNA': ['qthirty', 'averageDepth', 'percentUmi'],
                 'TruSightOne': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
                                 'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
+                'TruSightOneV2_5': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
+                                'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
                 'AgilentCRE_V1': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
                 'QIAseq_V3_HEME2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
@@ -428,6 +430,7 @@ class MetricPrep(SampleMetrics):
         """
         return {'QIAseq_V3_RNA': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
                 'TruSightOne': [],
+                'TruSightOneV2_5': [],
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed'],
                 'QIAseq_V3_HEME2': [],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
