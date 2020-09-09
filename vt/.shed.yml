@@ -1,11 +1,16 @@
+name: "vt"
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/vt"
 categories:
-- Sequence Analysis
-- Variant Analysis
-description: A tool set for short variant discovery in genetic sequence data.
-long_description: |
-    A tool set for short variant discovery in genetic sequence data.
-    Visit http://genome.sph.umich.edu/wiki/vt for more informations
-name: vt
-owner: bgruening
-remote_repository_url: https://github.com/atks/vt
-type: unrestricted
+    - "CompBio Galaxy Wrappers"
+repositories:
+  vt:
+    description: A tool set for short variant discovery in genetic sequence data.
+    include:
+      - readme.rst
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - fasta_indexes.loc.sample
+      - vt_decompose.xml
+      - vt_macros.xml
+      - vt_normalize.xml
