@@ -1,4 +1,4 @@
-<tool id="vt_@BINARY@" name="VT @BINARY@" version="@VERSION@.0">
+<tool id="vt_@BINARY@" name="VT @BINARY@" version="@VERSION@.1">
     <description>normalizes variants in a VCF file</description>
     <macros>
         <import>vt_macros.xml</import>
@@ -57,7 +57,6 @@
             <when value="cached">
                 <param name="reference_genome" type="select" label="Using reference genome">
                     <options from_data_table="fasta_indexes">
-                        <filter type="data_meta" ref="infile" key="dbkey" column="1" />
                         <validator type="no_options" message="No reference genome is available for the build associated with the selected input dataset" />
                     </options>
                 </param>
