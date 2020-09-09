@@ -1,0 +1,15 @@
+name: "gatk2_depth_of_coverage"
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/gatk"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  gatk2_depth_of_coverage:
+    description: "Generate coverage summary information for reads data."
+    include:
+      - depth_of_coverage.xml
+      - gatk2_macros.xml
+      - gatk2_wrapper.py
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
