@@ -18,7 +18,7 @@
   </inputs>
 
   <outputs>
-    <data format="vcf" name="outvcf" label="${tool.name} on ${on_string}: vcf" help="VCF output containing the PUMI tag in the sample column." />
+    <data format="vcf" name="outvcf" label="${tool.name} on ${on_string}: vcf" />
   </outputs>
 
   <tests></tests>
