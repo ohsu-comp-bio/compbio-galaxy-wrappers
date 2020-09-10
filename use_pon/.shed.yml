@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/use_pon"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  use_pon:
+    description: "Used to annotate based on panel_of_normals tool."
+    include:
+      - use_pon.xml
+      - use_pon.py
