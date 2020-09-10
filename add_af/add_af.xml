@@ -13,9 +13,9 @@
   </command>
 
   <inputs>   
-    <param name="input_vcf" type="data" format="vcf" required="true" label="Input VCF" help="Pindel VCF without the AF field." />
+    <param name="input_vcf" type="data" format="vcf" label="Input VCF" help="Pindel VCF without the AF field." />
     <param name="vaf" type="float" label="VAF Cutoff" value="0.0" help="Restrict output to variants with at least this variant allele frequency." />
-    <param name="format_label" type="select" required="true" label="FORMAT Field Label" help="This tool will look for the field you select here and compute allele frequencies based off of it.">
+    <param name="format_label" type="select" label="FORMAT Field Label" help="This tool will look for the field you select here and compute allele frequencies based off of it.">
       <option value="AD" selected="true">AD</option>
       <option value="DPR">DPR</option>
     </param>
@@ -26,15 +26,15 @@
 	<option value="no" selected="true">No</option>      
       </param>
       <when value="yes">
-	<param name="margin" type="float" value="0.2" required="true" label="Allele Frequency Spread" help="Allele frequencies with spread lower than this value will be considered the same if they are also not below the threshold defined below." />
-	<param name="thresh" type="float" value="0.1" required="true" label="Allele Frequency Lower Limit" help="If allele frequencies are below this value, this record will be included regardless." />
+	<param name="margin" type="float" value="0.2" label="Allele Frequency Spread" help="Allele frequencies with spread lower than this value will be considered the same if they are also not below the threshold defined below." />
+	<param name="thresh" type="float" value="0.1" label="Allele Frequency Lower Limit" help="If allele frequencies are below this value, this record will be included regardless." />
       </when>
     </conditional>
 
   </inputs>
 
   <outputs>
-    <data format="vcf" name="output_vcf" label="VCF With AF and DP Fields Included" help="Pindel VCF containing the AF and DP fields in the SAMPLE column." />
+    <data format="vcf" name="output_vcf" label="VCF With AF and DP Fields Included" />
   </outputs>
 
   <tests>
@@ -48,8 +48,6 @@
   <help>
     Add AF and DP fields to VCF when missing.  Also, perform filtering of records where tumor and normal are the same, defined by above parameters.
   </help>
-
-  <citations></citations>
 
 </tool>
 
