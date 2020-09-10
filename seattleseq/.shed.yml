@@ -1,0 +1,27 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/seattleseq"
+homepage_url: "https://snp.gs.washington.edu/SeattleSeqAnnotation153/"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  getannotation:
+    description: "SeattleSeq getAnnotation tool."
+    include:
+      - getAnnotation.py
+      - getAnnotation.xml
+  seattleseq_filter:
+    description: "Filter SeattleSeq results according to allele frequency."
+    include:
+      - seattleseq_filter.R
+      - seattleseq_filter.xml
+  variant_filter:
+    description: "Incidental variant filter based on SeattleSeq results."
+    include:
+      - variant_filter.R
+      - variant_filter.xml
+  writegenotype:
+    description: "SeattleSeq writeGenotype tool."
+    include:
+      - writeGenotype.py
+      - writeGenotype.xml
