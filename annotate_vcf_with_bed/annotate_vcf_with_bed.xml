@@ -14,13 +14,9 @@
   </inputs>
 
   <outputs>
-    <data format="vcf" name="output" label="${tool.name} on ${on_string}: Annotated VCF" help="" />
+    <data format="vcf" name="output" label="${tool.name} on ${on_string}: Annotated VCF" />
   </outputs>
 
-  <tests></tests>
-
-  <help></help>
-
-  <citations></citations>
+  <help>Use regions defined in a BED file to annotate a VCF FILTER column.</help>
 
 </tool>
