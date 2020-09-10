@@ -1,0 +1,15 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/umi_tools"
+homepage_url: "http://https://github.com/CGATOxford/UMI-tools"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  umi_tools_extract:
+    description: "Flexible removal of UMI sequences from fastq reads."
+    include:
+      - umi_tools_extract.xml
+  umi_tools_dedup:
+    description: "Groups PCR duplicates and deduplicates reads to yield one read per group."
+    include:
+      - umi_tools_dedup.xml
