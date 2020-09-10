@@ -5,7 +5,7 @@
 # CODED BY: John Letaw
 
 from __future__ import print_function
-from file_types.bed import BedReader
+from bed import BedReader
 import argparse
 
 VERSION = '0.1.0'
