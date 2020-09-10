@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/replace_filt"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  replace_filt:
+    description: "Replace the FILTER field in a VCF, for all entries, or add something to it."
+    include:
+      - replace_filt.xml
+      - replace_filt.py
