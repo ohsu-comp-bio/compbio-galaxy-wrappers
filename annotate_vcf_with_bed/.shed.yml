@@ -1,0 +1,13 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/annotate_vcf_with_bed"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  annotate_vcf_with_bed:
+    description: "Use regions defined in a BED file to annotate a VCF FILTER column."
+    include:
+      - annotate_vcf_with_bed.xml
+      - annotate_vcf_with_bed.py
+      - bed.py 
+      - __init__.py
