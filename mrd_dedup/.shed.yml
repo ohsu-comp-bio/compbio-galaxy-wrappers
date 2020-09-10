@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/mrd_dedup"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  mrd_dedup:
+    description: "Deduplicate entries within a forced MRD VCF, and make sure duplicate variants haven't been called elsewhere in the workflow."
+    include:
+      - mrd_dedup.xml
+      - mrd_dedup.py
