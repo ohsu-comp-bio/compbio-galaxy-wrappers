@@ -144,21 +144,21 @@
 
 
     <outputs>
-        <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: INDEL VCF" help="Output VCF with indel calls." from_work_dir="./outdir/variants.indel.vcf">
+        <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: INDEL VCF" from_work_dir="./outdir/variants.indel.vcf">
             <filter>analysis['analysis_mode'] == 'single'</filter>
         </data>
-        <data format="vcf" name="output_vcf_filt" label="${tool.name} on ${on_string}: FILTERED INDEL VCF" help="Output VCF with filtered indel calls." >
+        <data format="vcf" name="output_vcf_filt" label="${tool.name} on ${on_string}: FILTERED INDEL VCF" >
             <filter>analysis['analysis_mode'] == 'single'</filter>
             <filter>analysis['scalpel_export_single']['filt_single'] == 'filt_yes'</filter>
         </data>
-        <data format="vcf" name="tumor_vcf" label="${tool.name} on ${on_string}: SOMATIC INDEL VCF" help="Somatic VCF with indel calls." from_work_dir="./outdir/main/somatic.indel.vcf">
+        <data format="vcf" name="tumor_vcf" label="${tool.name} on ${on_string}: SOMATIC INDEL VCF" from_work_dir="./outdir/main/somatic.indel.vcf">
             <filter>analysis['analysis_mode'] == 'somatic'</filter>
         </data>
-        <data format="vcf" name="tumor_vcf_filt" label="${tool.name} on ${on_string}: FILTERED SOMATIC INDEL VCF" help="Somatic VCF with filtered indel calls.">
+        <data format="vcf" name="tumor_vcf_filt" label="${tool.name} on ${on_string}: FILTERED SOMATIC INDEL VCF" >
             <filter>analysis['analysis_mode'] == 'somatic'</filter>
             <filter>analysis['scalpel_export_somatic']['filt_somatic'] == 'filt_yes'</filter>
         </data>
-        <data format="vcf" name="normal_vcf" label="${tool.name} on ${on_string}: COMMON INDEL VCF" help="Common VCF with indel calls." from_work_dir="./outdir/main/common.indel.vcf">
+        <data format="vcf" name="normal_vcf" label="${tool.name} on ${on_string}: COMMON INDEL VCF" from_work_dir="./outdir/main/common.indel.vcf">
             <filter>analysis['analysis_mode'] == 'somatic'</filter>
         </data>
     </outputs>
