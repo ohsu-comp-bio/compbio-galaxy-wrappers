@@ -1,4 +1,3 @@
-name: "gatk2_depth_of_coverage"
 owner: "letaw"
 remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/gatk"
 categories:
@@ -8,6 +7,15 @@ repositories:
     description: "Generate coverage summary information for reads data."
     include:
       - depth_of_coverage.xml
+      - gatk2_macros.xml
+      - gatk2_wrapper.py
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
+  gatk2_variant_filtration:
+    description: "Filters variant calls using a number of user-selectable, parameterizable criteria."
+    include:
+      - variant_filtration.xml
       - gatk2_macros.xml
       - gatk2_wrapper.py
       - test-data/*
