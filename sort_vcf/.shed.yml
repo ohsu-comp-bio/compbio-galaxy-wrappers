@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/sort_vcf"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  sort_vcf:
+    description: "Sort a VCF by contig as defined in hg19 Broad reference variant."
+    include:
+      - sort_vcf.xml
+      - sort_vcf.py
