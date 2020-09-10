@@ -1,0 +1,14 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/scalpel"
+homepage_url: "http://scalpel.sourceforge.net/"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  scalpel:
+    description: "Scalpel is a software package for detecting INDELs mutations in a reference genome which has been sequenced with next-generation sequencing technology."
+    include:
+      - scalpel.xml
+      - macros.xml
+      - tool_data_table_conf.xml.sample
+      - tool-data/*
