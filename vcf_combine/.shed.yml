@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/vcf_combine"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  vcf_combine:
+    description: "Remove entries from one VCF in a second VCF."
+    include:
+      - vcf_combine.xml
+      - vcf_combine.py
