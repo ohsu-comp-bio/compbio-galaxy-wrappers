@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/gatk_cnv_annotate"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  gatk4_cnv_annotate:
+    description: "Create a summary file based on GATK4 somatic CNV calling tool output."
+    include:
+      - gatk4_cnv_annotate.xml
+      - gatk4_cnv_annotate.py
