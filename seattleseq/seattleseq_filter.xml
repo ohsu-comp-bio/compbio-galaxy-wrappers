@@ -1,4 +1,4 @@
-<tool id="seattleseq_filter" name="SeattleSeq Filter">
+<tool id="seattleseq_filter" name="SeattleSeq Filter" version="1.0.0">
     <description>Filter SeattleSeq variants</description>
     <command interpreter="Rscript">
         seattleseq_filter.R $input_file $output_file $cutoff_percent
@@ -10,12 +10,7 @@
     </inputs>
 
     <outputs>
-        <data format="xls" name="output_file" type="data" label="Filtered variants: Excel worksheet"/>  
+        <data format="xls" name="output_file" label="Filtered variants: Excel worksheet"/>  
     </outputs>
 
-    <tests>
-    </tests>
-
-    <help>
-    </help>
 </tool>
