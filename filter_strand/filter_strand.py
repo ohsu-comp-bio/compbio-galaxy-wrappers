@@ -6,7 +6,7 @@
 # CODED BY: John Letaw
 
 from __future__ import print_function
-from file_types.file_handle_ops import handle_return
+from file_handle_ops import handle_return
 import argparse
 
 VERSION = '0.4.2'
