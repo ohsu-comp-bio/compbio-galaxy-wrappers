@@ -1,0 +1,14 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/umi_metrics"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  umi_metrics:
+    description: "Create metrics associated specifically with UMI assays."
+    include:
+      - umi_metrics.xml
+      - gatk_intervals.py
+      - __init__.py
+      - umi_metrics.py
+      - vcf.py
