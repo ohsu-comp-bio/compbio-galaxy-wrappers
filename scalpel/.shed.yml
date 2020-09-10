@@ -12,3 +12,8 @@ repositories:
       - macros.xml
       - tool_data_table_conf.xml.sample
       - tool-data/*
+  replace_sample_column:
+    description: "Replace the sample column header in a Scalpel output file."
+    include:
+      - replace_sample_column.xml
+      - replace_sample_column.py
