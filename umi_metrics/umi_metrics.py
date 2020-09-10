@@ -4,14 +4,13 @@
 # CODED BY: John Letaw
 
 from __future__ import print_function
+from gatk_intervals import PerLocusRead
+from gatk_intervals import ProbeQcRead
+from vcf import VcfReader
+from vcf import VcfWriter
 
 import argparse
 import sys
-
-from file_types.gatk_intervals import PerLocusRead
-from file_types.gatk_intervals import ProbeQcRead
-from file_types.vcf import VcfReader
-from file_types.vcf import VcfWriter
 
 VERSION = '0.1.1'
 
