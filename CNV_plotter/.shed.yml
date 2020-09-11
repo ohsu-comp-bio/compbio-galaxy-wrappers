@@ -1,0 +1,23 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/CNV_plotter"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  stpv3_cnv_plotter_nt:
+    description: "Creates two plots of CNVs using gtrellis (Does not use tidyverse)."
+    include:
+      - stpv3_CNV_grapher_NT.xml
+      - gtrellis_CNV_NT.R
+      - tool_data_table_conf.xml.sample
+      - tool-data/*
+  png_to_pdf:
+    description: "Converts a PNG to a PDF."
+    include:
+      - png_to_pdf.xml
+  stpv3_cnv_plotter:
+    description: "Creates two plots of CNVs using gtrellis."
+    include:
+      - stpv3_CNV_grapher.xml
+      - gtrellis_CNV_NEC.R
+      - CHR_bed_hg19.txt
