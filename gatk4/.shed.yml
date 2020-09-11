@@ -1,0 +1,14 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/gatk4"
+homepage_url: "https://github.com/broadinstitute/gatk"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  gatk4_mutect2:
+    description: "Call somatic SNVs and indels via local assembly of haplotypes."
+    include:
+      - gatk4_mutect2.xml
+      - gatk4_macros.xml
+      - tool_data_table_conf.xml.sample
+      - tool-data/*
