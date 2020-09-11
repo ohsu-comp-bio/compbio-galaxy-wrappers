@@ -41,13 +41,14 @@
     </inputs>
 
     <outputs>
-      <data format="txt" name="outfile" label="${tool.name} on ${on_string}: JSON" help="JSON output for Sample Metrics" />
-      <data format="vcf" name="variants" label="${tool.name} on ${on_string}: VCF" help="VCF containing variants used in the calculation" />
+      <data format="txt" name="outfile" label="${tool.name} on ${on_string}: JSON" />
+      <data format="vcf" name="variants" label="${tool.name} on ${on_string}: VCF" />
     </outputs>
 
     <tests></tests>
 
     <help><![CDATA[
+
 usage: calc_tmb.py [-h] [--infile INFILE [INFILE ...]] [--outfile OUTFILE]
                    [--variants VARIANTS] [--gnomad_af GNOMAD_AF]
                    [--m2_tlod M2_TLOD] [--min_ab MIN_AB]
@@ -82,7 +83,7 @@ optional arguments:
   --seq_space SEQ_SPACE
                         Total genomic size of sequence targets, in Mb.
   --version             show program's version number and exit
+
   ]]></help>
 
 </tool>
-
