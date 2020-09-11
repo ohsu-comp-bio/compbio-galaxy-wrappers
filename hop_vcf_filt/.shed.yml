@@ -1,0 +1,12 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/hop_vcf_filt"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  hop_vcf_filt:
+    description: "Filter a HOP multi-sample VCF."
+    include:
+      - hop_vcf_filt.xml
+      - hop_vcf_filt.py
+      - vcf_reformat.py 
