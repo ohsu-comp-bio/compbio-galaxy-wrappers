@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/hgvs_annotate"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  hgvs_annotate:
+    description: "Annotate a VCF with HGVS g, c, and p dot."
+    include:
+      - hgvs_annotate.xml
+      - hgvs_annotate.py
