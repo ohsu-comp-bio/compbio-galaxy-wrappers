@@ -1,0 +1,165 @@
+<tool id="bwa_mem" name="BWA-MEM" version="0.7.17">
+  <description>Map low-divergent sequences against a large reference genome.</description> 
+  <requirements>
+    <requirement type="package" version="0.7.17">bwa</requirement>
+  </requirements>
+  <command detect_errors="exit_code"><![CDATA[
+    bwa mem
+      $mark
+      #if $read_group.R == "true":
+        -R "@RG\tID:$read_group.ID\tLB:$read_group.LB\tPL:$read_group.PL\tSM:$read_group.SM"
+      #end if
+      -t \${GALAXY_SLOTS:-16}
+      #if $min_seed:
+        -k $min_seed
+      #end if
+      #if $band_width:
+        -w $band_width
+      #end if
+      #if $x_dropoff:
+        -d $x_dropoff
+      #end if
+      #if $re_seed:
+        -r $re_seed
+      #end if
+      #if $discard
+        -c $discard
+      #end if
+      $pair_end_mode
+      #if $matching_score:
+        -A $matching_score
+      #end if
+      #if $mismatch_penalty:
+        -B $mismatch_penalty
+      #end if
+      #if $gap_open_penalty:
+        -O $gap_open_penalty
+      #end if
+      #if $gap_extension_penalty:
+        -E $gap_extension_penalty
+      #end if
+      #if $clipping_penalty:
+        -L $clipping_penalty
+      #end if
+      #if $unpaired_penalty
+        -U $unpaired_penalty
+      #end if
+      $interleaved
+      #if $min_score:
+        -T $min_score
+      #end if
+      $output_all
+      $comment
+      $hard_clipping
+      #if $verbosity
+        -v $verbosity
+      #end if
+      #if $reference_source.reference_source_selector != "no_ref"
+            #if $reference_source.reference_source_selector != "history"
+                ${reference_source.reference_sequence.fields.path}
+            #else
+                ${reference_source.reference_sequence}
+            #end if
+        #end if
+      "${fastq}"
+      "${rfastq}"
+      > "${output}" 2> "${log}"
+  ]]></command>
+
+  <inputs>
+    <conditional name="reference_source">
+            <param name="reference_source_selector" type="select" label="Choose the source for the reference list">
+                <option value="cached">Locally cached</option>
+                <option value="history">History</option>
+                <option value="no_ref" selected="true">Do not pass</option>
+            </param>
+            <when value="cached">
+                <param name="reference_sequence" type="select" label="Reference" help="Reference sequence file." >
+                    <options from_data_table="bwa_indexes" >
+                        <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file" />
+                    </options>
+                </param>
+            </when>
+            <when value="history">
+                <param name="reference_sequence" type="data" format="fasta" label="Reference" help="Reference sequence file." />
+            </when>
+    </conditional>
+    <param name="fastq" type="data" format="fastq,fastqsanger,fastqillumina,fastq.gz" label="Select Forward FASTQ file" help="FASTQ with either Sanger-scaled quality values (fastqsanger) or Illumina-scaled quality values (fastqillumina)" />
+    <param name="rfastq" type="data" format="fastq,fastqsanger,fastqillumina,fastq.gz" label="Select Reverse FASTQ file" help="FASTQ with either Sanger-scaled quality values (fastqsanger) or Illumina-scaled quality values (fastqillumina)" />
+    <conditional name="read_group">
+      <param name="R" type="boolean" checked="true" label="Include Read Group" help="Complete read group header line. ’\t’ can be used in STR and will be converted to a TAB in the output SAM. The read group ID will be attached to every read in the output. An example is ’@RG\tID:foo\tSM:bar’."/>
+      <when value="true">
+        <param name="ID" type="text" label="Read Group Identifier (ID)" help="Read group identifier (ID). Each @RG line must have a unique ID. The value of ID is used in the RG tags of alignment records. Must be unique among all read groups in header section."/>
+        <param name="LB" type="text" label="Library name (LB)" help="LB"/>
+        <param name="PL" type="select" label="Platform/technology used to produce reads (PL)">
+          <option value="ILLUMINA">Illumina</option>
+          <option value="HELICOS">Helicos</option>
+          <option value="CAPILLARY">Capillary</option>
+          <option value="LS454">LS454</option>
+          <option value="SOLID">Solid</option>
+          <option value="IONTORRENT">Ion Torrent</option>
+          <option value="PACBIO">PacBio</option>
+        </param>
+        <param name="SM" type="text" label="Sample (SM)" help="Use pool name where a pool is being sequenced."/>
+      </when>
+    </conditional>
+    <param name="mark" type="boolean" checked="true" truevalue="-M" falsevalue="" label="Mark shorter split hits as secondary." help="for Picard compatability."/>
+    <param name="num_threads" type="integer" optional="true" label="Number of Threads" help="Default = 1"/>
+    <param name="min_seed" type="integer" optional="true" label="Minimum Seed Length." help="Minimum seed length. Matches shorter than integer will be missed. The alignment speed is usually insensitive to this value unless it significantly deviates 20. Default = [19]"/>
+    <param name="band_width" type="integer" optional="true" label="Band Width" help="Band width. Essentially, gaps longer than INT will not be found. Note that the maximum gap length is also affected by the scoring matrix and the hit length, not solely determined by this option. [100]"/>
+    <param name="x_dropoff" type="integer" optional="true" label="Off-diagonal X-dropoff" help="Off-diagonal X-dropoff (Z-dropoff). Stop extension when the difference between the best and the current extension score is above |i-j|*A+INT, where i and j are the current positions of the query and reference, respectively, and A is the matching score. Z-dropoff is similar to BLAST’s X-dropoff except that it doesn’t penalize gaps in one of the sequences in the alignment. Z-dropoff not only avoids unnecessary extension, but also reduces poor alignments inside a long good alignment. [100]"/>
+    <param name="re_seed" type="float" optional="true" label="Trigger Re-seeding" help="Trigger re-seeding for a MEM longer than minSeedLen*FLOAT. This is a key heuristic parameter for tuning the performance. Larger value yields fewer seeds, which leads to faster alignment speed but lower accuracy. [1.5]"/>
+    <param name="discard" type="integer" optional="true" label="Discard a MEM with occurances in genome over:" help="Discard a MEM if it has more than INT occurence in the genome. This is an insensitive parameter. [10000]"/>
+    <param name="pair_end_mode" type="boolean" checked="false" truevalue="-P" falsevalue="" label="Paired-end Mode" help="In the paired-end mode, perform SW to rescue missing hits only but do not try to find hits that fit a proper pair."/>
+    <param name="matching_score" type="integer" optional="true" label="Matching Score" help="Defaults to 1."/>
+    <param name="mismatch_penalty" type="integer" optional="true" label="Mismatch Penalty" help="Mismatch penalty. The sequence error rate is approximately: {.75 * exp[-log(4) * B/A]}. [4]"/>
+    <param name="gap_open_penalty" type="integer" optional="true" label="Gap Open Penalty" help="Defaults to 6."/>
+    <param name="gap_extension_penalty" type="integer" optional="true" label="Gap Extension Penalty" help="Gap extension penalty. A gap of length k costs O + k*E (i.e. -O is for opening a zero-length gap). [1]"/>
+    <param name="clipping_penalty" type="integer" optional="true" label="Clipping Penalty" help="Clipping penalty. When performing SW extension, BWA-MEM keeps track of the best score reaching the end of query. If this score is larger than the best SW score minus the clipping penalty, clipping will not be applied. Note that in this case, the SAM AS tag reports the best SW score; clipping penalty is not deducted. [5]"/>
+    <param name="unpaired_penalty" type="integer" optional="true" label="Penalty for Unpaired Read Pair" help="Penalty for an unpaired read pair. BWA-MEM scores an unpaired read pair as scoreRead1+scoreRead2-INT and scores a paired as scoreRead1+scoreRead2-insertPenalty. It compares these two scores to determine whether we should force pairing. [9]"/>
+    <param name="interleaved" type="boolean" checked="false" label="Interleaved" help="Assume the first input query file is interleaved paired-end FASTA/Q." truevalue="-p" falsevalue=""/>
+    <param name="min_score" type="integer" optional="true" label="Minimum Alingment Score" help="Don’t output alignment with score lower than INT. This option only affects output. [30]"/>
+    <param name="output_all" type="boolean" checked="false" label="Output All Found Alignments" help="Output all found alignments for single-end or unpaired paired-end reads. These alignments will be flagged as secondary alignments." truevalue="-a" falsevalue=""/>
+    <param name="comment" type="boolean" checked="false" label="Append FASTA/Q Comment" help="Append append FASTA/Q comment to SAM output. This option can be used to transfer read meta information (e.g. barcode) to the SAM output. Note that the FASTA/Q comment (the string after a space in the header line) must conform the SAM spec (e.g. BC:Z:CGTAC). Malformated comments lead to incorrect SAM output." truevalue="-C" falsevalue=""/> 
+    <param name="hard_clipping" type="boolean" checked="false" label="Hard Clipping" help="Use hard clipping ’H’ in the SAM output. This option may dramatically reduce the redundancy of output when mapping long contig or BAC sequences." truevalue="-H" falsevalue=""/>
+    <param name="verbosity" type="integer" optional="true" label="Verbosity" help="Control the verbose level of the output. This option has not been fully supported throughout BWA. Ideally, a value 0 for disabling all the output to stderr; 1 for outputting errors only; 2 for warnings and errors; 3 for all normal messages; 4 or higher for debugging. When this option takes value 4, the output is not SAM. [3]"/>
+  </inputs>
+
+  <outputs>
+    <data format="sam" name="output" label="${tool.name} on ${on_string}: mapped reads"/>
+    <data format="txt" name="log" label="${tool.name} on ${on_string}: log"/>
+  </outputs>
+  <help><![CDATA[
+**What it does**
+BWA is a software package for mapping low-divergent sequences against a large reference genome, such as the human genome. It consists of three algorithms: BWA-backtrack, BWA-SW and BWA-MEM. The first algorithm is designed for Illumina sequence reads up to 100bp, while the rest two for longer sequences ranged from 70bp to 1Mbp. BWA-MEM and BWA-SW share similar features such as long-read support and split alignment, but BWA-MEM, which is the latest, is generally recommended for high-quality queries as it is faster and more accurate. BWA-MEM also has better performance than BWA-backtrack for 70-100bp Illumina reads.
+
+For all the algorithms, BWA first needs to construct the FM-index for the reference genome (the index command). Alignment algorithms are invoked with different sub-commands: aln/samse/sampe for BWA-backtrack, bwasw for BWA-SW and mem for the BWA-MEM algorithm.
+------
+
+mem	bwa mem [-aCHMpP] [-t nThreads] [-k minSeedLen] [-w bandWidth] [-d zDropoff] [-r seedSplitRatio] [-c maxOcc] [-A matchScore] [-B mmPenalty] [-O gapOpenPen] [-E gapExtPen] [-L clipPen] [-U unpairPen] [-R RGline] [-v verboseLevel] db.prefix reads.fq [mates.fq]
+Align 70bp-1Mbp query sequences with the BWA-MEM algorithm. Briefly, the algorithm works by seeding alignments with maximal exact matches (MEMs) and then extending seeds with the affine-gap Smith-Waterman algorithm (SW).
+
+If mates.fq file is absent and option -p is not set, this command regards input reads are single-end. If mates.fq is present, this command assumes the i-th read in reads.fq and the i-th read in mates.fq constitute a read pair. If -p is used, the command assumes the 2i-th and the (2i+1)-th read in reads.fq constitute a read pair (such input file is said to be interleaved). In this case, mates.fq is ignored. In the paired-end mode, the mem command will infer the read orientation and the insert size distribution from a batch of reads.
+
+The BWA-MEM algorithm performs local alignment. It may produce multiple primary alignments for different part of a query sequence. This is a crucial feature for long sequences. However, some tools such as Picard’s markDuplicates does not work with split alignments. One may consider to use option -M to flag shorter split hits as secondary.
+
+------
+
+**Input formats**
+
+BWA accepts files in either Sanger FASTQ format (galaxy type *fastqsanger*) or Illumina FASTQ format (galaxy type *fastqillumina*). Use the FASTQ Groomer to prepare your files.
+
+------
+
+**License and citation**
+
+The full BWA package is distributed under GPLv3 as it uses source codes from BWT-SW which is covered by GPL. Sorting, hash table, BWT and IS libraries are distributed under the MIT license.
+If you use the BWA-backtrack algorithm, please cite the following paper:
+Li H. and Durbin R. (2009) Fast and accurate short read alignment with Burrows-Wheeler transform. Bioinformatics, 25, 1754-1760. [PMID: 19451168]
+If you use the BWA-SW algorithm, please cite:
+Li H. and Durbin R. (2010) Fast and accurate long-read alignment with Burrows-Wheeler transform. Bioinformatics, 26, 589-595. [PMID: 20080505]
+If you use the fastmap component of BWA, please cite:
+Li H. (2012) Exploring single-sample SNP and INDEL calling with whole-genome de novo assembly. Bioinformatics, 28, 1838-1844. [PMID: 22569178]
+The BWA-MEM algorithm has not been published yet.
+  ]]></help>
+</tool>
