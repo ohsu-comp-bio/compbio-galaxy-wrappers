@@ -21,3 +21,21 @@ repositories:
       - test-data/*
       - tool_data_table_conf.xml.sample
       - gatk2_picard_index.loc.sample
+  gatk2_indel_realigner:
+    description: "Perform local realignment on a BAM file."
+    include:
+      - indel_realigner.xml
+      - gatk2_macros.xml
+      - gatk2_wrapper.py
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
+  gatk2_variant_select:
+    description: "Select variants from a VCF file."
+    include:
+      - variant_select.xml
+      - gatk2_macros.xml
+      - gatk2_wrapper.py
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
