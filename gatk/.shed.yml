@@ -39,3 +39,9 @@ repositories:
       - test-data/*
       - tool_data_table_conf.xml.sample
       - gatk2_picard_index.loc.sample
+  splitncigarreads:
+    description: "Splits reads that contain Ns in their CIGAR string."
+    include:
+      - splitncigarreads.xml
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
