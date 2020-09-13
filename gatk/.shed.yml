@@ -45,3 +45,22 @@ repositories:
       - splitncigarreads.xml
       - tool_data_table_conf.xml.sample
       - gatk2_picard_index.loc.sample
+  gatk2_haplotype_caller:
+    description: "Call SNPs and indels simultaneously via local de-novo assembly of haplotypes in an active region."
+    include:
+      - haplotype_caller.xml
+      - gatk2_macros.xml
+      - gatk2_wrapper.py
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
+      - gatk2_annotations.txt.sample
+  gatk2_realigner_target_creator:
+    description: "Create targets, for use in local realignment."
+    include:
+      - realigner_target_creator.xml
+      - gatk2_macros.xml
+      - gatk2_wrapper.py
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
