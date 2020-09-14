@@ -1,0 +1,11 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/bkgd_estimate"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/bkgd_estimate"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  bkgd_estimate:
+    description: "Check whether a VAF can be distinguished from background noise."
+    include:
+      - bkgd_estimate.xml
+      - bkgd_estimate.py
