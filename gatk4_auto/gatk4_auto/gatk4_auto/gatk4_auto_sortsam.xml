@@ -1,0 +1,152 @@
+<tool id="gatk4_auto_sortsam" name="GATK4 AUTO SortSam (Picard)" profile="18.05" version="@WRAPPER_VERSION@0">
+  <description>- Sorts a SAM or BAM file</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[#include source=$set_sections#
+@CMD_BEGIN@ SortSam
+#if $optional.arguments_file
+  --arguments_file $optional.arguments_file
+#end if
+
+#if $common.COMPRESSION_LEVEL
+  --COMPRESSION_LEVEL $common.COMPRESSION_LEVEL
+#end if
+
+#if $common.CREATE_INDEX
+  $common.CREATE_INDEX
+#end if
+
+#if $common.CREATE_MD5_FILE
+  $common.CREATE_MD5_FILE
+#end if
+
+#if $common.GA4GH_CLIENT_SECRETS
+  --GA4GH_CLIENT_SECRETS $common.GA4GH_CLIENT_SECRETS
+#end if
+
+--INPUT $INPUT
+#if $common.MAX_RECORDS_IN_RAM
+  --MAX_RECORDS_IN_RAM $common.MAX_RECORDS_IN_RAM
+#end if
+
+#if $OUTPUT
+  --OUTPUT $OUTPUT
+#end if
+
+#if $OUTPUT_qname
+  --OUTPUT $OUTPUT_qname
+#end if
+
+#if $common.QUIET
+  $common.QUIET
+#end if
+
+#include source=$picard_ref_opts#
+--SORT_ORDER $SORT_ORDER
+#if $common.USE_JDK_DEFLATER
+  $common.USE_JDK_DEFLATER
+#end if
+
+#if $common.USE_JDK_INFLATER
+  $common.USE_JDK_INFLATER
+#end if
+
+#if $common.VALIDATION_STRINGENCY
+  --VALIDATION_STRINGENCY $common.VALIDATION_STRINGENCY
+#end if
+
+#if $common.VERBOSITY
+  --VERBOSITY $common.VERBOSITY
+#end if
+
+--TMP_DIR /tmp
+
+]]></command>
+  <inputs>
+    <param name="INPUT" argument="--INPUT" type="data" optional="false" multiple="false" format="sam,bam" label="Input" help="Input BAM or SAM file to sort."/>
+    <param name="SORT_ORDER" argument="--SORT_ORDER" type="select" optional="false" multiple="false" label="Sort_Order" help="Sort order of output file. ">
+      <option selected="false" value="queryname">queryname</option>
+      <option selected="false" value="coordinate">coordinate</option>
+      <option selected="false" value="duplicate">duplicate</option>
+    </param>
+    <section expanded="False" name="optional" title="Optional Parameters">
+      <param name="arguments_file" argument="--arguments_file" type="data" optional="true" multiple="false" format="" label="Arguments_File" help="read one or more arguments files and add them to the command line"/>
+    </section>
+    <section expanded="False" name="common" title="Common Parameters">
+      <expand macro="ref_sel"/>
+      <param name="COMPRESSION_LEVEL" argument="--COMPRESSION_LEVEL" type="integer" optional="true" value="5" label="Compression_Level" help="Compression level for all compressed files created (e.g. BAM and VCF)."/>
+      <param name="CREATE_INDEX" argument="--CREATE_INDEX" type="boolean" truevalue="--CREATE_INDEX" falsevalue="" optional="true" checked="false" label="Create_Index" help="Whether to create a BAM index when writing a coordinate-sorted BAM file."/>
+      <param name="CREATE_MD5_FILE" argument="--CREATE_MD5_FILE" type="boolean" truevalue="--CREATE_MD5_FILE" falsevalue="" optional="true" checked="false" label="Create_Md5_File" help="Whether to create an MD5 digest for any BAM or FASTQ files created.  "/>
+      <param name="GA4GH_CLIENT_SECRETS" argument="--GA4GH_CLIENT_SECRETS" type="text" optional="true" value="client_secrets.json" label="Ga4Gh_Client_Secrets" help="Google Genomics API client_secrets.json file path."/>
+      <param name="MAX_RECORDS_IN_RAM" argument="--MAX_RECORDS_IN_RAM" type="integer" optional="true" value="500000" label="Max_Records_In_Ram" help="When writing files that need to be sorted, this will specify the number of records stored in RAM before spilling to disk. Increasing this number reduces the number of file handles needed to sort the file, and increases the amount of RAM needed."/>
+      <param name="QUIET" argument="--QUIET" type="boolean" truevalue="--QUIET" falsevalue="" optional="true" checked="false" label="Quiet" help="Whether to suppress job-summary info on System.err."/>
+      <param name="USE_JDK_DEFLATER" argument="--USE_JDK_DEFLATER" type="boolean" truevalue="--USE_JDK_DEFLATER" falsevalue="" optional="true" checked="false" label="Use_Jdk_Deflater" help="Use the JDK Deflater instead of the Intel Deflater for writing compressed output"/>
+      <param name="USE_JDK_INFLATER" argument="--USE_JDK_INFLATER" type="boolean" truevalue="--USE_JDK_INFLATER" falsevalue="" optional="true" checked="false" label="Use_Jdk_Inflater" help="Use the JDK Inflater instead of the Intel Inflater for reading compressed input"/>
+      <param name="VALIDATION_STRINGENCY" argument="--VALIDATION_STRINGENCY" type="select" optional="true" multiple="false" label="Validation_Stringency" help="Validation stringency for all SAM files read by this program.  Setting stringency to SILENT can improve performance when processing a BAM file in which variable-length data (read, qualities, tags) do not otherwise need to be decoded.">
+        <option selected="true" value="STRICT">STRICT</option>
+        <option selected="false" value="LENIENT">LENIENT</option>
+        <option selected="false" value="SILENT">SILENT</option>
+      </param>
+      <param name="VERBOSITY" argument="--VERBOSITY" type="select" optional="true" multiple="false" label="Verbosity" help="Control verbosity of logging.">
+        <option selected="false" value="ERROR">ERROR</option>
+        <option selected="false" value="WARNING">WARNING</option>
+        <option selected="true" value="INFO">INFO</option>
+        <option selected="false" value="DEBUG">DEBUG</option>
+      </param>
+    </section>
+  </inputs>
+  <outputs>
+    <data format="bam" name="OUTPUT" label="${tool.name} on ${on_string}: OUTPUT bam" help="Sorted BAM or SAM output file.">
+      <filter>SORT_ORDER == 'coordinate' or SORT_ORDER == 'duplicate'</filter>
+    </data>
+    <data format="qname_sorted.bam" name="OUTPUT_qname" label="${tool.name} on ${on_string}: OUTPUT bam" help="Sorted BAM or SAM output file.">
+      <filter>SORT_ORDER == 'queryname'</filter>
+    </data>
+  </outputs>
+  <tests/>
+  <help><![CDATA[Sorts a SAM or BAM file.
+
+Summary
+~~~~~~~
+
+This tool sorts the input SAM or BAM file by coordinate, queryname
+(QNAME), or some other property of the SAM record. The SortOrder of a
+SAM/BAM file is found in the SAM file header tag labeled SO.
+
+For a coordinate sorted SAM/BAM file, read alignments are sorted first
+by the reference sequence name (RNAME) field using the reference
+sequence dictionary tag labeled SQ. Alignments within these subgroups
+are secondarily sorted using the left-most mapping position of the read
+(POS). Subsequent to this sorting scheme, alignments are listed
+arbitrarily.
+
+For queryname-sorted alignments, all alignments are grouped using the
+queryname field but the alignments are not necessarily sorted within
+these groups. Reads having the same queryname are derived from the same
+template.
+
+Inputs
+~~~~~~
+
+-  Input BAM or SAM file to sort
+-  Sorted BAM or SAM output file
+-  Sort order of output file
+
+Usage example:
+~~~~~~~~~~~~~~
+
+::
+
+        java -jar picard.jar SortSam \
+        INPUT=input.bam \
+        OUTPUT=sorted.bam \
+        SORT_ORDER=coordinate
+    
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>

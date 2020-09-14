@@ -1,0 +1,232 @@
+<tool id="gatk4_auto_markduplicates" name="GATK4 AUTO MarkDuplicates (Picard)" profile="18.05" version="@WRAPPER_VERSION@0">
+  <description>- Identifies duplicate reads.</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[#include source=$set_sections#
+#include source=$bam_index_pre_chth#
+@CMD_BEGIN@ MarkDuplicates
+#if $common.ADD_PG_TAG_TO_READS
+  $common.ADD_PG_TAG_TO_READS
+#end if
+
+#if $optional.arguments_file
+  --arguments_file $optional.arguments_file
+#end if
+
+#if $optional.ASSUME_SORT_ORDER
+  --ASSUME_SORT_ORDER $optional.ASSUME_SORT_ORDER
+#end if
+
+#if $deprecated.ASSUME_SORTED
+  $deprecated.ASSUME_SORTED
+#end if
+
+#if $optional.BARCODE_TAG
+  --BARCODE_TAG $optional.BARCODE_TAG
+#end if
+
+#if $optional.CLEAR_DT
+  $optional.CLEAR_DT
+#end if
+
+#if $optional.COMMENT
+  --COMMENT $optional.COMMENT
+#end if
+
+#if $common.COMPRESSION_LEVEL
+  --COMPRESSION_LEVEL $common.COMPRESSION_LEVEL
+#end if
+
+#if $common.CREATE_INDEX
+  $common.CREATE_INDEX
+#end if
+
+#if $common.CREATE_MD5_FILE
+  $common.CREATE_MD5_FILE
+#end if
+
+#if $optional.DUPLICATE_SCORING_STRATEGY
+  --DUPLICATE_SCORING_STRATEGY $optional.DUPLICATE_SCORING_STRATEGY
+#end if
+
+#if $common.GA4GH_CLIENT_SECRETS
+  --GA4GH_CLIENT_SECRETS $common.GA4GH_CLIENT_SECRETS
+#end if
+
+#include source=$picard_bam_input#
+#if $optional.MAX_FILE_HANDLES_FOR_READ_ENDS_MAP
+  --MAX_FILE_HANDLES_FOR_READ_ENDS_MAP $optional.MAX_FILE_HANDLES_FOR_READ_ENDS_MAP
+#end if
+
+#if $optional.MAX_OPTICAL_DUPLICATE_SET_SIZE
+  --MAX_OPTICAL_DUPLICATE_SET_SIZE $optional.MAX_OPTICAL_DUPLICATE_SET_SIZE
+#end if
+
+#if $common.MAX_RECORDS_IN_RAM
+  --MAX_RECORDS_IN_RAM $common.MAX_RECORDS_IN_RAM
+#end if
+
+#if $optional.MAX_SEQUENCES_FOR_DISK_READ_ENDS_MAP
+  --MAX_SEQUENCES_FOR_DISK_READ_ENDS_MAP $optional.MAX_SEQUENCES_FOR_DISK_READ_ENDS_MAP
+#end if
+
+--METRICS_FILE $METRICS_FILE
+#if $optional.OPTICAL_DUPLICATE_PIXEL_DISTANCE
+  --OPTICAL_DUPLICATE_PIXEL_DISTANCE $optional.OPTICAL_DUPLICATE_PIXEL_DISTANCE
+#end if
+
+--OUTPUT $OUTPUT
+#if $optional.PROGRAM_GROUP_COMMAND_LINE
+  --PROGRAM_GROUP_COMMAND_LINE $optional.PROGRAM_GROUP_COMMAND_LINE
+#end if
+
+#if $optional.PROGRAM_GROUP_NAME
+  --PROGRAM_GROUP_NAME $optional.PROGRAM_GROUP_NAME
+#end if
+
+#if $optional.PROGRAM_GROUP_VERSION
+  --PROGRAM_GROUP_VERSION $optional.PROGRAM_GROUP_VERSION
+#end if
+
+#if $optional.PROGRAM_RECORD_ID
+  --PROGRAM_RECORD_ID $optional.PROGRAM_RECORD_ID
+#end if
+
+#if $common.QUIET
+  $common.QUIET
+#end if
+
+#if $optional.READ_NAME_REGEX
+  --READ_NAME_REGEX $optional.READ_NAME_REGEX
+#end if
+
+#if $optional.READ_ONE_BARCODE_TAG
+  --READ_ONE_BARCODE_TAG $optional.READ_ONE_BARCODE_TAG
+#end if
+
+#if $optional.READ_TWO_BARCODE_TAG
+  --READ_TWO_BARCODE_TAG $optional.READ_TWO_BARCODE_TAG
+#end if
+
+#include source=$picard_ref_opts#
+#if $optional.REMOVE_DUPLICATES
+  $optional.REMOVE_DUPLICATES
+#end if
+
+#if $optional.REMOVE_SEQUENCING_DUPLICATES
+  $optional.REMOVE_SEQUENCING_DUPLICATES
+#end if
+
+#if $optional.SORTING_COLLECTION_SIZE_RATIO
+  --SORTING_COLLECTION_SIZE_RATIO $optional.SORTING_COLLECTION_SIZE_RATIO
+#end if
+
+#if $optional.TAG_DUPLICATE_SET_MEMBERS
+  $optional.TAG_DUPLICATE_SET_MEMBERS
+#end if
+
+#if $optional.TAGGING_POLICY
+  --TAGGING_POLICY $optional.TAGGING_POLICY
+#end if
+
+#if $common.USE_JDK_DEFLATER
+  $common.USE_JDK_DEFLATER
+#end if
+
+#if $common.USE_JDK_INFLATER
+  $common.USE_JDK_INFLATER
+#end if
+
+#if $common.VALIDATION_STRINGENCY
+  --VALIDATION_STRINGENCY $common.VALIDATION_STRINGENCY
+#end if
+
+#if $common.VERBOSITY
+  --VERBOSITY $common.VERBOSITY
+#end if
+
+--TMP_DIR /tmp
+
+]]></command>
+  <inputs>
+    <expand macro="gatk_bam_req_params"/>
+    <section expanded="False" name="optional" title="Optional Parameters">
+      <param name="arguments_file" argument="--arguments_file" type="data" optional="true" format="" label="Arguments_File" help="read one or more arguments files and add them to the command line"/>
+      <param name="ASSUME_SORT_ORDER" argument="--ASSUME_SORT_ORDER" type="select" optional="true" label="Assume_Sort_Order" help="If not null, assume that the input file has this order even if the header says otherwise.">
+        <option selected="false" value="unsorted">unsorted</option>
+        <option selected="false" value="queryname">queryname</option>
+        <option selected="false" value="coordinate">coordinate</option>
+        <option selected="false" value="duplicate">duplicate</option>
+        <option selected="false" value="unknown">unknown</option>
+      </param>
+      <param name="BARCODE_TAG" argument="--BARCODE_TAG" type="text" optional="true" value="" label="Barcode_Tag" help="Barcode SAM tag (ex. BC for 10X Genomics)"/>
+      <param name="CLEAR_DT" argument="--CLEAR_DT" type="boolean" truevalue="--CLEAR_DT" falsevalue="" optional="true" checked="true" label="Clear_Dt" help="Clear DT tag from input SAM records. Should be set to false if input SAM doesn&amp;apos;t have this tag.  Default true"/>
+      <param name="COMMENT" argument="--COMMENT" type="text" optional="true" value="" label="Comment" help="Comment(s) to include in the output file&amp;apos;s header."/>
+      <param name="DUPLICATE_SCORING_STRATEGY" argument="--DUPLICATE_SCORING_STRATEGY" type="select" optional="true" label="Duplicate_Scoring_Strategy" help="The scoring strategy for choosing the non-duplicate among candidates.">
+        <option selected="true" value="SUM_OF_BASE_QUALITIES">SUM_OF_BASE_QUALITIES</option>
+        <option selected="false" value="TOTAL_MAPPED_REFERENCE_LENGTH">TOTAL_MAPPED_REFERENCE_LENGTH</option>
+        <option selected="false" value="RANDOM">RANDOM</option>
+      </param>
+      <param name="MAX_FILE_HANDLES_FOR_READ_ENDS_MAP" argument="--MAX_FILE_HANDLES_FOR_READ_ENDS_MAP" type="integer" optional="true" value="8000" label="Max_File_Handles_For_Read_Ends_Map" help="Maximum number of file handles to keep open when spilling read ends to disk. Set this number a little lower than the per-process maximum number of file that may be open. This number can be found by executing the &amp;apos;ulimit -n&amp;apos; command on a Unix system."/>
+      <param name="MAX_OPTICAL_DUPLICATE_SET_SIZE" argument="--MAX_OPTICAL_DUPLICATE_SET_SIZE" type="integer" optional="true" value="300000" label="Max_Optical_Duplicate_Set_Size" help="This number is the maximum size of a set of duplicate reads for which we will attempt to determine which are optical duplicates.  Please be aware that if you raise this value too high and do encounter a very large set of duplicate reads, it will severely affect the runtime of this tool.  To completely disable this check, set the value to -1."/>
+      <param name="MAX_SEQUENCES_FOR_DISK_READ_ENDS_MAP" argument="--MAX_SEQUENCES_FOR_DISK_READ_ENDS_MAP" type="integer" optional="true" value="50000" label="Max_Sequences_For_Disk_Read_Ends_Map" help="This option is obsolete. ReadEnds will always be spilled to disk."/>
+      <param name="OPTICAL_DUPLICATE_PIXEL_DISTANCE" argument="--OPTICAL_DUPLICATE_PIXEL_DISTANCE" type="integer" optional="true" value="100" label="Optical_Duplicate_Pixel_Distance" help="The maximum offset between two duplicate clusters in order to consider them optical duplicates. The default is appropriate for unpatterned versions of the Illumina platform. For the patterned flowcell models, 2500 is moreappropriate. For other platforms and models, users should experiment to find what works best."/>
+      <param name="PROGRAM_GROUP_COMMAND_LINE" argument="--PROGRAM_GROUP_COMMAND_LINE" type="text" optional="true" value="" label="Program_Group_Command_Line" help="Value of CL tag of PG record to be created. If not supplied the command line will be detected automatically."/>
+      <param name="PROGRAM_GROUP_NAME" argument="--PROGRAM_GROUP_NAME" type="text" optional="true" value="MarkDuplicates" label="Program_Group_Name" help="Value of PN tag of PG record to be created."/>
+      <param name="PROGRAM_GROUP_VERSION" argument="--PROGRAM_GROUP_VERSION" type="text" optional="true" value="" label="Program_Group_Version" help="Value of VN tag of PG record to be created. If not specified, the version will be detected automatically."/>
+      <param name="PROGRAM_RECORD_ID" argument="--PROGRAM_RECORD_ID" type="text" optional="true" value="MarkDuplicates" label="Program_Record_Id" help="The program record ID for the @PG record(s) created by this program. Set to null to disable PG record creation.  This string may have a suffix appended to avoid collision with other program record IDs."/>
+      <param name="READ_NAME_REGEX" argument="--READ_NAME_REGEX" type="text" optional="true" value="&amp;lt;optimized capture of last three &amp;apos;:&amp;apos; separated fields as numeric values&amp;gt;" label="Read_Name_Regex" help="Regular expression that can be used to parse read names in the incoming SAM file. Read names are parsed to extract three variables: tile/region, x coordinate and y coordinate. These values are used to estimate the rate of optical duplication in order to give a more accurate estimated library size. Set this option to null to disable optical duplicate detection, e.g. for RNA-seq or other data where duplicate sets are extremely large and estimating library complexity is not an aim. Note that without optical duplicate counts, library size estimation will be inaccurate. The regular expression should contain three capture groups for the three variables, in order. It must match the entire read name. Note that if the default regex is specified, a regex match is not actually done, but instead the read name  is split on colon character. For 5 element names, the 3rd, 4th and 5th elements are assumed to be tile, x and y values. For 7 element names (CASAVA 1.8), the 5th, 6th, and 7th elements are assumed to be tile, x and y values."/>
+      <param name="READ_ONE_BARCODE_TAG" argument="--READ_ONE_BARCODE_TAG" type="text" optional="true" value="" label="Read_One_Barcode_Tag" help="Read one barcode SAM tag (ex. BX for 10X Genomics)"/>
+      <param name="READ_TWO_BARCODE_TAG" argument="--READ_TWO_BARCODE_TAG" type="text" optional="true" value="" label="Read_Two_Barcode_Tag" help="Read two barcode SAM tag (ex. BX for 10X Genomics)"/>
+      <param name="REMOVE_DUPLICATES" argument="--REMOVE_DUPLICATES" type="boolean" truevalue="--REMOVE_DUPLICATES" falsevalue="" optional="true" checked="false" label="Remove_Duplicates" help="If true do not write duplicates to the output file instead of writing them with appropriate flags set."/>
+      <param name="REMOVE_SEQUENCING_DUPLICATES" argument="--REMOVE_SEQUENCING_DUPLICATES" type="boolean" truevalue="--REMOVE_SEQUENCING_DUPLICATES" falsevalue="" optional="true" checked="false" label="Remove_Sequencing_Duplicates" help="If true remove &amp;apos;optical&amp;apos; duplicates and other duplicates that appear to have arisen from the sequencing process instead of the library preparation process, even if REMOVE_DUPLICATES is false. If REMOVE_DUPLICATES is true, all duplicates are removed and this option is ignored."/>
+      <param name="SORTING_COLLECTION_SIZE_RATIO" argument="--SORTING_COLLECTION_SIZE_RATIO" type="float" optional="true" value="0.25" label="Sorting_Collection_Size_Ratio" help="This number, plus the maximum RAM available to the JVM, determine the memory footprint used by some of the sorting collections.  If you are running out of memory, try reducing this number."/>
+      <param name="TAG_DUPLICATE_SET_MEMBERS" argument="--TAG_DUPLICATE_SET_MEMBERS" type="boolean" truevalue="--TAG_DUPLICATE_SET_MEMBERS" falsevalue="" optional="true" checked="false" label="Tag_Duplicate_Set_Members" help="If a read appears in a duplicate set, add two tags. The first tag, DUPLICATE_SET_SIZE_TAG (DS), indicates the size of the duplicate set. The smallest possible DS value is 2 which occurs when two reads map to the same portion of the reference only one of which is marked as duplicate. The second tag, DUPLICATE_SET_INDEX_TAG (DI), represents a unique identifier for the duplicate set to which the record belongs. This identifier is the index-in-file of the representative read that was selected out of the duplicate set."/>
+      <param name="TAGGING_POLICY" argument="--TAGGING_POLICY" type="select" optional="true" label="Tagging_Policy" help="Determines how duplicate types are recorded in the DT optional attribute.">
+        <option selected="true" value="DontTag">DontTag</option>
+        <option selected="false" value="OpticalOnly">OpticalOnly</option>
+        <option selected="false" value="All">All</option>
+      </param>
+    </section>
+    <section expanded="False" name="common" title="Common Parameters">
+      <expand macro="ref_sel"/>
+      <param name="ADD_PG_TAG_TO_READS" argument="--ADD_PG_TAG_TO_READS" type="boolean" truevalue="--ADD_PG_TAG_TO_READS" falsevalue="" optional="true" checked="true" label="Add_Pg_Tag_To_Reads" help="Add PG tag to each read in a SAM or BAM"/>
+      <param name="COMPRESSION_LEVEL" argument="--COMPRESSION_LEVEL" type="integer" optional="true" value="5" label="Compression_Level" help="Compression level for all compressed files created (e.g. BAM and VCF)."/>
+      <param name="CREATE_INDEX" argument="--CREATE_INDEX" type="boolean" truevalue="--CREATE_INDEX" falsevalue="" optional="true" checked="false" label="Create_Index" help="Whether to create a BAM index when writing a coordinate-sorted BAM file."/>
+      <param name="CREATE_MD5_FILE" argument="--CREATE_MD5_FILE" type="boolean" truevalue="--CREATE_MD5_FILE" falsevalue="" optional="true" checked="false" label="Create_Md5_File" help="Whether to create an MD5 digest for any BAM or FASTQ files created.  "/>
+      <param name="GA4GH_CLIENT_SECRETS" argument="--GA4GH_CLIENT_SECRETS" type="text" optional="true" value="client_secrets.json" label="Ga4Gh_Client_Secrets" help="Google Genomics API client_secrets.json file path."/>
+      <param name="MAX_RECORDS_IN_RAM" argument="--MAX_RECORDS_IN_RAM" type="integer" optional="true" value="500000" label="Max_Records_In_Ram" help="When writing files that need to be sorted, this will specify the number of records stored in RAM before spilling to disk. Increasing this number reduces the number of file handles needed to sort the file, and increases the amount of RAM needed."/>
+      <param name="QUIET" argument="--QUIET" type="boolean" truevalue="--QUIET" falsevalue="" optional="true" checked="false" label="Quiet" help="Whether to suppress job-summary info on System.err."/>
+      <param name="USE_JDK_DEFLATER" argument="--USE_JDK_DEFLATER" type="boolean" truevalue="--USE_JDK_DEFLATER" falsevalue="" optional="true" checked="false" label="Use_Jdk_Deflater" help="Use the JDK Deflater instead of the Intel Deflater for writing compressed output"/>
+      <param name="USE_JDK_INFLATER" argument="--USE_JDK_INFLATER" type="boolean" truevalue="--USE_JDK_INFLATER" falsevalue="" optional="true" checked="false" label="Use_Jdk_Inflater" help="Use the JDK Inflater instead of the Intel Inflater for reading compressed input"/>
+      <param name="VALIDATION_STRINGENCY" argument="--VALIDATION_STRINGENCY" type="select" optional="true" label="Validation_Stringency" help="Validation stringency for all SAM files read by this program.  Setting stringency to SILENT can improve performance when processing a BAM file in which variable-length data (read, qualities, tags) do not otherwise need to be decoded.">
+        <option selected="true" value="STRICT">STRICT</option>
+        <option selected="false" value="LENIENT">LENIENT</option>
+        <option selected="false" value="SILENT">SILENT</option>
+      </param>
+      <param name="VERBOSITY" argument="--VERBOSITY" type="select" optional="true" label="Verbosity" help="Control verbosity of logging.">
+        <option selected="false" value="ERROR">ERROR</option>
+        <option selected="false" value="WARNING">WARNING</option>
+        <option selected="true" value="INFO">INFO</option>
+        <option selected="false" value="DEBUG">DEBUG</option>
+      </param>
+    </section>
+    <section expanded="False" name="deprecated" title="Deprecated Parameters">
+      <param name="ASSUME_SORTED" argument="--ASSUME_SORTED" type="boolean" truevalue="--ASSUME_SORTED" falsevalue="" optional="true" checked="false" label="Assume_Sorted" help="If true, assume that the input file is coordinate sorted even if the header says otherwise. Deprecated, used ASSUME_SORT_ORDER=coordinate instead."/>
+    </section>
+  </inputs>
+  <outputs>
+    <data format="txt" name="METRICS_FILE" label="${tool.name} on ${on_string}: METRICS_FILE txt" help="File to write duplication metrics to"/>
+    <data format="bam" name="OUTPUT" label="${tool.name} on ${on_string}: OUTPUT bam" help="The output file to write marked records to"/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[A better duplication marking algorithm that handles all cases including
+clipped and gapped alignments.
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>

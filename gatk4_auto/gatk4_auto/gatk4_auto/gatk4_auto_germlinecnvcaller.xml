@@ -1,0 +1,494 @@
+<tool id="gatk4_auto_germlinecnvcaller" name="GATK4 AUTO GermlineCNVCaller" profile="18.05" version="@WRAPPER_VERSION@0">
+  <description>- Calls copy-number variants in germline samples given their counts and the output of DetermineGermlineContigPloidy</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[#include source=$set_sections#
+#include source=$pre_gatk_excl_ints_chth#
+#include source=$pre_gatk_ints_chth#
+@CMD_BEGIN@ GermlineCNVCaller
+#if $optional.active_class_padding_hybrid_mode
+  --active-class-padding-hybrid-mode $optional.active_class_padding_hybrid_mode
+#end if
+
+#if $optional.adamax_beta_1
+  --adamax-beta-1 $optional.adamax_beta_1
+#end if
+
+#if $optional.adamax_beta_2
+  --adamax-beta-2 $optional.adamax_beta_2
+#end if
+
+#if $optional.annotated_intervals
+  --annotated-intervals $optional.annotated_intervals
+#end if
+
+#if $optional.arguments_file
+  --arguments_file $optional.arguments_file
+#end if
+
+#if $optional.caller_external_admixing_rate
+  --caller-external-admixing-rate $optional.caller_external_admixing_rate
+#end if
+
+#if $optional.caller_internal_admixing_rate
+  --caller-internal-admixing-rate $optional.caller_internal_admixing_rate
+#end if
+
+#if $optional.caller_update_convergence_threshold
+  --caller-update-convergence-threshold $optional.caller_update_convergence_threshold
+#end if
+
+#if $optional.class_coherence_length
+  --class-coherence-length $optional.class_coherence_length
+#end if
+
+#if $optional.cnv_coherence_length
+  --cnv-coherence-length $optional.cnv_coherence_length
+#end if
+
+--contig-ploidy-calls $contig_ploidy_calls
+#if $optional.convergence_snr_averaging_window
+  --convergence-snr-averaging-window $optional.convergence_snr_averaging_window
+#end if
+
+#if $optional.convergence_snr_countdown_window
+  --convergence-snr-countdown-window $optional.convergence_snr_countdown_window
+#end if
+
+#if $optional.convergence_snr_trigger_threshold
+  --convergence-snr-trigger-threshold $optional.convergence_snr_trigger_threshold
+#end if
+
+#if $optional.copy_number_posterior_expectation_mode
+  --copy-number-posterior-expectation-mode $optional.copy_number_posterior_expectation_mode
+#end if
+
+#if $optional.depth_correction_tau
+  --depth-correction-tau $optional.depth_correction_tau
+#end if
+
+#if $optional.disable_annealing
+  $optional.disable_annealing
+#end if
+
+#if $optional.disable_caller
+  $optional.disable_caller
+#end if
+
+#if $optional.disable_sampler
+  $optional.disable_sampler
+#end if
+
+#if $optional.enable_bias_factors
+  $optional.enable_bias_factors
+#end if
+
+#include source=$gatk_excl_ints_chth#
+#if $common.gatk_config_file
+  --gatk-config-file $common.gatk_config_file
+#end if
+
+#if $optional.gc_curve_standard_deviation
+  --gc-curve-standard-deviation $optional.gc_curve_standard_deviation
+#end if
+
+#if $optional.gcs_max_retries
+  --gcs-max-retries $optional.gcs_max_retries
+#end if
+
+#if $optional.init_ard_rel_unexplained_variance
+  --init-ard-rel-unexplained-variance $optional.init_ard_rel_unexplained_variance
+#end if
+
+#if $optional.initial_temperature
+  --initial-temperature $optional.initial_temperature
+#end if
+
+--input $input
+#if $optional.interval_merging_rule
+  --interval-merging-rule $optional.interval_merging_rule
+#end if
+
+#if $optional.interval_psi_scale
+  --interval-psi-scale $optional.interval_psi_scale
+#end if
+
+#if $common.interval_set_rule
+  --interval-set-rule $common.interval_set_rule
+#end if
+
+#include source=$gatk_ints_chth#
+#if $optional.learning_rate
+  --learning-rate $optional.learning_rate
+#end if
+
+#if $optional.log_emission_samples_per_round
+  --log-emission-samples-per-round $optional.log_emission_samples_per_round
+#end if
+
+#if $optional.log_emission_sampling_median_rel_error
+  --log-emission-sampling-median-rel-error $optional.log_emission_sampling_median_rel_error
+#end if
+
+#if $optional.log_emission_sampling_rounds
+  --log-emission-sampling-rounds $optional.log_emission_sampling_rounds
+#end if
+
+#if $optional.log_mean_bias_standard_deviation
+  --log-mean-bias-standard-deviation $optional.log_mean_bias_standard_deviation
+#end if
+
+#if $optional.mapping_error_rate
+  --mapping-error-rate $optional.mapping_error_rate
+#end if
+
+#if $optional.max_advi_iter_first_epoch
+  --max-advi-iter-first-epoch $optional.max_advi_iter_first_epoch
+#end if
+
+#if $optional.max_advi_iter_subsequent_epochs
+  --max-advi-iter-subsequent-epochs $optional.max_advi_iter_subsequent_epochs
+#end if
+
+#if $optional.max_bias_factors
+  --max-bias-factors $optional.max_bias_factors
+#end if
+
+#if $optional.max_calling_iters
+  --max-calling-iters $optional.max_calling_iters
+#end if
+
+#if $optional.max_copy_number
+  --max-copy-number $optional.max_copy_number
+#end if
+
+#if $optional.max_training_epochs
+  --max-training-epochs $optional.max_training_epochs
+#end if
+
+#if $optional.min_training_epochs
+  --min-training-epochs $optional.min_training_epochs
+#end if
+
+#if $optional.model
+  --model $optional.model
+#end if
+
+#if $optional.num_gc_bins
+  --num-gc-bins $optional.num_gc_bins
+#end if
+
+#if $optional.num_thermal_advi_iters
+  --num-thermal-advi-iters $optional.num_thermal_advi_iters
+#end if
+
+--output $output
+--output-prefix $output_prefix
+#if $optional.p_active
+  --p-active $optional.p_active
+#end if
+
+#if $optional.p_alt
+  --p-alt $optional.p_alt
+#end if
+
+#if $common.QUIET
+  $common.QUIET
+#end if
+
+--run-mode $run_mode
+#if $optional.sample_psi_scale
+  --sample-psi-scale $optional.sample_psi_scale
+#end if
+
+#if $common.use_jdk_deflater
+  $common.use_jdk_deflater
+#end if
+
+#if $common.use_jdk_inflater
+  $common.use_jdk_inflater
+#end if
+
+#if $common.verbosity
+  --verbosity $common.verbosity
+#end if
+]]></command>
+  <inputs>
+    <param name="contig_ploidy_calls" argument="--contig-ploidy-calls" type="text" optional="false" value="" label="Contig Ploidy Calls" help="Input contig-ploidy calls directory (output of DetermineGermlineContigPloidy)."/>
+    <param name="input" argument="--input" type="data" optional="false" multiple="false" format="h5" label="Input" help="Input read-count files containing integer read counts in genomic intervals for all samples.  All intervals specified via -L must be contained; if none are specified, then intervals must be identical and in the same order for all samples."/>
+    <param name="output_prefix" argument="--output-prefix" type="text" optional="false" value="" label="Output Prefix" help="Prefix for output filenames."/>
+    <param name="run_mode" argument="--run-mode" type="select" optional="false" multiple="false" label="Run Mode" help="Tool run-mode.">
+      <option selected="false" value="COHORT">COHORT</option>
+      <option selected="false" value="CASE">CASE</option>
+    </param>
+    <section expanded="False" name="optional" title="Optional Parameters">
+      <expand macro="gatk_ints"/>
+      <param name="active_class_padding_hybrid_mode" argument="--active-class-padding-hybrid-mode" type="integer" optional="true" value="50000" label="Active Class Padding Hybrid Mode" help="If copy-number-posterior-expectation-mode is set to HYBRID, CNV-active intervals determined at any time will be padded by this value (in the units of bp) in order to obtain the set of intervals on which copy number posterior expectation is performed exactly."/>
+      <param name="adamax_beta_1" argument="--adamax-beta-1" type="float" optional="true" value="0.9" min="0" max="1" label="Adamax Beta 1" help="Adamax optimizer first moment estimation forgetting factor."/>
+      <param name="adamax_beta_2" argument="--adamax-beta-2" type="float" optional="true" value="0.99" min="0" max="1" label="Adamax Beta 2" help="Adamax optimizer second moment estimation forgetting factor."/>
+      <param name="annotated_intervals" argument="--annotated-intervals" type="data" optional="true" multiple="false" format="gatk_interval,bed,vcf" label="Annotated Intervals" help="Input annotated-interval file containing annotations for GC content in genomic intervals (output of AnnotateIntervals).  All intervals specified via -L must be contained.  This input should not be provided if an input denoising-model directory is given (the latter already contains the annotated-interval file)."/>
+      <param name="arguments_file" argument="--arguments_file" type="data" optional="true" multiple="false" format="txt" label="Arguments_File" help="read one or more arguments files and add them to the command line"/>
+      <param name="caller_external_admixing_rate" argument="--caller-external-admixing-rate" type="float" optional="true" value="1.0" min="0" label="Caller External Admixing Rate" help="Admixing ratio of new and old called posteriors (between 0 and 1; larger values implies using more of the new posterior and less of the old posterior) after convergence."/>
+      <param name="caller_internal_admixing_rate" argument="--caller-internal-admixing-rate" type="float" optional="true" value="0.75" min="0" label="Caller Internal Admixing Rate" help="Admixing ratio of new and old called posteriors (between 0 and 1; larger values implies using more of the new posterior and less of the old posterior) for internal convergence loops."/>
+      <param name="caller_update_convergence_threshold" argument="--caller-update-convergence-threshold" type="float" optional="true" value="0.001" min="0" label="Caller Update Convergence Threshold" help="Maximum tolerated calling update size for convergence."/>
+      <param name="class_coherence_length" argument="--class-coherence-length" type="float" optional="true" value="10000.0" min="0" label="Class Coherence Length" help="Coherence length of CNV-active and CNV-silent domains (in the units of bp)."/>
+      <param name="cnv_coherence_length" argument="--cnv-coherence-length" type="float" optional="true" value="10000.0" min="0" label="Cnv Coherence Length" help="Coherence length of CNV events (in the units of bp)."/>
+      <param name="convergence_snr_averaging_window" argument="--convergence-snr-averaging-window" type="integer" optional="true" value="500" min="0" label="Convergence Snr Averaging Window" help="Averaging window for calculating training signal-to-noise ratio (SNR) for convergence checking."/>
+      <param name="convergence_snr_countdown_window" argument="--convergence-snr-countdown-window" type="integer" optional="true" value="10" min="0" label="Convergence Snr Countdown Window" help="The number of ADVI iterations during which the SNR is required to stay below the set threshold for convergence."/>
+      <param name="convergence_snr_trigger_threshold" argument="--convergence-snr-trigger-threshold" type="float" optional="true" value="0.1" min="0" label="Convergence Snr Trigger Threshold" help="The SNR threshold to be reached before triggering the convergence countdown."/>
+      <param name="copy_number_posterior_expectation_mode" argument="--copy-number-posterior-expectation-mode" type="select" optional="true" multiple="false" label="Copy Number Posterior Expectation Mode" help="The strategy for calculating copy number posterior expectations in the coverage denoising model.">
+        <option selected="false" value="MAP">MAP</option>
+        <option selected="false" value="EXACT">EXACT</option>
+        <option selected="true" value="HYBRID">HYBRID</option>
+      </param>
+      <param name="depth_correction_tau" argument="--depth-correction-tau" type="float" optional="true" value="10000.0" min="0" label="Depth Correction Tau" help="Precision of read depth pinning to its global value."/>
+      <param name="disable_annealing" argument="--disable-annealing" type="boolean" truevalue="--disable-annealing" falsevalue="" optional="true" checked="false" label="Disable Annealing" help="(advanced) Disable annealing."/>
+      <param name="disable_caller" argument="--disable-caller" type="boolean" truevalue="--disable-caller" falsevalue="" optional="true" checked="false" label="Disable Caller" help="(advanced) Disable caller."/>
+      <param name="disable_sampler" argument="--disable-sampler" type="boolean" truevalue="--disable-sampler" falsevalue="" optional="true" checked="false" label="Disable Sampler" help="(advanced) Disable sampler."/>
+      <param name="enable_bias_factors" argument="--enable-bias-factors" type="boolean" truevalue="--enable-bias-factors" falsevalue="" optional="true" checked="true" label="Enable Bias Factors" help="Enable discovery of bias factors."/>
+      <param name="gc_curve_standard_deviation" argument="--gc-curve-standard-deviation" type="float" optional="true" value="1.0" min="0" label="Gc Curve Standard Deviation" help="Prior standard deviation of the GC curve from flat."/>
+      <param name="gcs_max_retries" argument="--gcs-max-retries" type="integer" optional="true" value="20" label="Gcs Max Retries" help="If the GCS bucket channel errors out, how many times it will attempt to re-initiate the connection"/>
+      <param name="init_ard_rel_unexplained_variance" argument="--init-ard-rel-unexplained-variance" type="float" optional="true" value="0.1" min="0" label="Init Ard Rel Unexplained Variance" help="Initial value of ARD prior precisions relative to the scale of interval-specific unexplained variance."/>
+      <param name="initial_temperature" argument="--initial-temperature" type="float" optional="true" value="1.5" min="0" label="Initial Temperature" help="Initial temperature (for DA-ADVI)."/>
+      <param name="interval_merging_rule" argument="--interval-merging-rule" type="select" optional="true" multiple="false" label="Interval Merging Rule" help="Interval merging rule for abutting intervals">
+        <option selected="true" value="ALL">ALL</option>
+        <option selected="false" value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
+      </param>
+      <param name="interval_psi_scale" argument="--interval-psi-scale" type="float" optional="true" value="0.001" min="0" label="Interval Psi Scale" help="Typical scale of interval-specific unexplained variance."/>
+      <param name="learning_rate" argument="--learning-rate" type="float" optional="true" value="0.01" min="0" label="Learning Rate" help="Adamax optimizer learning rate."/>
+      <param name="log_emission_samples_per_round" argument="--log-emission-samples-per-round" type="integer" optional="true" value="50" min="0" label="Log Emission Samples Per Round" help="Log emission samples drawn per round of sampling."/>
+      <param name="log_emission_sampling_median_rel_error" argument="--log-emission-sampling-median-rel-error" type="float" optional="true" value="0.005" min="0" label="Log Emission Sampling Median Rel Error" help="Maximum tolerated median relative error in log emission sampling."/>
+      <param name="log_emission_sampling_rounds" argument="--log-emission-sampling-rounds" type="integer" optional="true" value="10" min="0" label="Log Emission Sampling Rounds" help="Log emission maximum sampling rounds."/>
+      <param name="log_mean_bias_standard_deviation" argument="--log-mean-bias-standard-deviation" type="float" optional="true" value="0.1" min="0" label="Log Mean Bias Standard Deviation" help="Standard deviation of log mean bias."/>
+      <param name="mapping_error_rate" argument="--mapping-error-rate" type="float" optional="true" value="0.01" min="0" label="Mapping Error Rate" help="Typical mapping error rate."/>
+      <param name="max_advi_iter_first_epoch" argument="--max-advi-iter-first-epoch" type="integer" optional="true" value="5000" min="0" label="Max Advi Iter First Epoch" help="Maximum ADVI iterations in the first epoch."/>
+      <param name="max_advi_iter_subsequent_epochs" argument="--max-advi-iter-subsequent-epochs" type="integer" optional="true" value="200" min="0" label="Max Advi Iter Subsequent Epochs" help="Maximum ADVI iterations in subsequent epochs."/>
+      <param name="max_bias_factors" argument="--max-bias-factors" type="integer" optional="true" value="5" min="0" label="Max Bias Factors" help="Maximum number of bias factors."/>
+      <param name="max_calling_iters" argument="--max-calling-iters" type="integer" optional="true" value="10" min="0" label="Max Calling Iters" help="Maximum number of internal self-consistency iterations within each calling step."/>
+      <param name="max_copy_number" argument="--max-copy-number" type="integer" optional="true" value="5" min="0" label="Max Copy Number" help="Highest allowed copy-number state."/>
+      <param name="max_training_epochs" argument="--max-training-epochs" type="integer" optional="true" value="50" min="0" label="Max Training Epochs" help="Maximum number of training epochs."/>
+      <param name="min_training_epochs" argument="--min-training-epochs" type="integer" optional="true" value="10" min="0" label="Min Training Epochs" help="Minimum number of training epochs."/>
+      <param name="model" argument="--model" type="text" optional="true" value="" label="Model" help="Input denoising-model directory. In the COHORT mode, this argument is optional and if provided,a new model will be built using this input model to initialize. In the CASE mode, the denoising model parameters set to this input model and therefore, this argument is required."/>
+      <param name="num_gc_bins" argument="--num-gc-bins" type="integer" optional="true" value="20" min="1" label="Num Gc Bins" help="Number of bins used to represent the GC-bias curves."/>
+      <param name="num_thermal_advi_iters" argument="--num-thermal-advi-iters" type="integer" optional="true" value="2500" min="0" label="Num Thermal Advi Iters" help="Number of thermal ADVI iterations (for DA-ADVI)."/>
+      <param name="p_active" argument="--p-active" type="float" optional="true" value="0.01" min="0" label="P Active" help="Prior probability of treating an interval as CNV-active (in a CNV-active domains, all copy-number states are equally likely to be called)."/>
+      <param name="p_alt" argument="--p-alt" type="float" optional="true" value="0.000001" min="0" label="P Alt" help="Total prior probability of alternative copy-number states (the reference copy-number is set to the contig integer ploidy)"/>
+      <param name="sample_psi_scale" argument="--sample-psi-scale" type="float" optional="true" value="0.000100" min="0" label="Sample Psi Scale" help="Typical scale of sample-specific correction to the unexplained variance."/>
+    </section>
+    <section expanded="False" name="common" title="Common Parameters">
+      <expand macro="gatk_excl_ints"/>
+      <param name="gatk_config_file" argument="--gatk-config-file" type="data" optional="true" multiple="" format="txt" label="Gatk Config File" help="A configuration file to use with the GATK."/>
+      <param name="interval_set_rule" argument="--interval-set-rule" type="select" optional="true" multiple="false" label="Interval Set Rule" help="Set merging approach to use for combining interval inputs">
+        <option selected="true" value="UNION">UNION</option>
+        <option selected="false" value="INTERSECTION">INTERSECTION</option>
+      </param>
+      <param name="QUIET" argument="--QUIET" type="boolean" truevalue="--QUIET" falsevalue="" optional="true" checked="false" label="Quiet" help="Whether to suppress job-summary info on System.err."/>
+      <param name="use_jdk_deflater" argument="--use-jdk-deflater" type="boolean" truevalue="--use-jdk-deflater" falsevalue="" optional="true" checked="false" label="Use Jdk Deflater" help="Whether to use the JdkDeflater (as opposed to IntelDeflater)"/>
+      <param name="use_jdk_inflater" argument="--use-jdk-inflater" type="boolean" truevalue="--use-jdk-inflater" falsevalue="" optional="true" checked="false" label="Use Jdk Inflater" help="Whether to use the JdkInflater (as opposed to IntelInflater)"/>
+      <param name="verbosity" argument="--verbosity" type="select" optional="true" multiple="false" label="Verbosity" help="Control verbosity of logging.">
+        <option selected="false" value="ERROR">ERROR</option>
+        <option selected="false" value="WARNING">WARNING</option>
+        <option selected="true" value="INFO">INFO</option>
+        <option selected="false" value="DEBUG">DEBUG</option>
+      </param>
+    </section>
+  </inputs>
+  <outputs>
+    <data format="" name="output" label="${tool.name} on ${on_string}: output " help="Output directory."/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[Calls copy-number variants in germline samples given their counts and
+the corresponding output of DetermineGermlineContigPloidy. The former
+should be either HDF5 or TSV count files generated by CollectReadCounts.
+
+Introduction
+~~~~~~~~~~~~
+
+Reliable detection of copy-number variation (CNV) from read-depth
+("coverage" or "counts") data such as whole exome sequencing (WES),
+whole genome sequencing (WGS), and custom gene sequencing panels
+requires a comprehensive model to account for technical variation in
+library preparation and sequencing. The Bayesian model and the
+associated inference scheme implemented in GermlineCNVCaller includes
+provisions for inferring and explaining away much of the technical
+variation. Furthermore, CNV calling confidence is automatically adjusted
+for each sample and genomic interval.
+
+The parameters of the probabilistic model for read-depth bias and
+variance estimation (hereafter, "the coverage model") can be
+automatically inferred by GermlineCNVCaller by providing a cohort of
+germline samples sequenced using the same sequencing platform and
+library preparation protocol (in case of WES, the same capture kit). We
+refer to this run mode of the tool as the **COHORT** mode. The number of
+samples required for the COHORT mode depends on several factors such as
+the sequencing depth, tissue type/quality and similarity in the cohort,
+and the stringency of following the library preparation and sequencing
+protocols. For WES and WGS samples, we recommend including at least 30
+samples.
+
+The parametrized coverage model can be used for CNV calling on future
+case samples provided that they are strictly compatible with the cohort
+used to generate the model parameters (in terms of tissue type(s),
+library preparation and sequencing protocols). We refer to this mode as
+the **CASE** run mode. There is no lower limit on the number of samples
+for running GermlineCNVCaller in the case mode.
+
+In both tool run modes, GermlineCNVCaller requires karyotyping and
+global read-depth information for all samples. Such information can be
+automatically generated by running DetermineGermlineContigPloidy on all
+samples, and passed on to GermlineCNVCaller by providing the ploidy
+output calls using the argument contig-ploidy-calls. The ploidy state of
+a contig is used as the *baseline* ("default") copy-number state of all
+intervals contained in that contig for the corresponding sample. All
+other copy-number states are treated as alternative states and get equal
+shares from the total alternative state probability (set using the p-alt
+argument).
+
+Python environment setup
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The computation done by this tool, aside from input data parsing and
+validation, is performed outside of the Java Virtual Machine and using
+the *gCNV computational python module*, namely gcnvkernel. It is crucial
+that the user has properly set up a python conda environment with
+gcnvkernel and its dependencies installed. If the user intends to run
+GermlineCNVCaller using one of the official GATK Docker images, the
+python environment is already set up. Otherwise, the environment must be
+created and activated as described in the main GATK README.md file.
+
+Tool run modes
+~~~~~~~~~~~~~~
+
+COHORT mode:
+   The tool will be run in the COHORT mode using the argument run-mode
+   COHORT. In this mode, coverage model parameters are inferred
+   simultaneously with the CNV states. Depending on available memory, it
+   may be necessary to run the tool over a subset of all intervals,
+   which can be specified by -L. The specified intervals must be present
+   in all of the input count files. The output will contain two
+   subdirectories, one ending with "-model" and the other with "-calls".
+
+   The model subdirectory contains a snapshot of the inferred parameters
+   of the coverage model, which may be used later for CNV calling in one
+   or more similarly-sequenced samples as mentioned earlier. Optionally,
+   the path to a previously obtained coverage model parametrization can
+   be provided via the model argument in the COHORT mode, in which case,
+   the provided parameters will be only used for model initialization
+   and a new parametrization will be generated based on the input count
+   files. Furthermore, the genomic intervals are set to those used in
+   creating the previous parameterization and interval-related arguments
+   will be ignored. Note that the newly obtained parametrization
+   ultimately reflects the input count files from the last run,
+   regardless of whether or not an initialization parameter set is
+   given. If the users wishes to model coverage data from two or more
+   cohorts simultaneously, all of the input counts files must be given
+   to the tool at once.
+
+   The calls subdirectory contains sequentially-ordered subdirectories
+   for each sample, each listing various sample-specific estimated
+   quantities such as the probability of various copy-number states for
+   each interval, a parametrization of the GC curve, sample-specific
+   unexplained variance, read-depth, and loadings of coverage bias
+   factors.
+
+CASE mode:
+   The tool will be run in the CASE mode using the argument run-mode
+   CASE. The path to a previously obtained coverage model parameter
+   bundle must be provided via the model argument in this mode. The
+   modeled intervals are specified by the parameter bundle, all
+   interval-related arguments are ignored in this mode, and all model
+   intervals must be present in all of the input count files. The tool
+   output in the CASE mode is only the "-calls" subdirectory and is
+   organized similarly to the COHORT mode.
+
+   Note that at the moment, this tool does not automatically verify the
+   compatibility of the provided parametrization with the provided count
+   files. Model compatibility may be assessed a posteriori by inspecting
+   the magnitude of sample-specific unexplained variance of each sample,
+   and asserting that they lie within the same range as those obtained
+   from the cohort used to generate the parametrization. This manual
+   step is expected to be made automatic in the future.
+
+Important Remarks
+~~~~~~~~~~~~~~~~~
+
+Choice of hyperparameters:
+   The quality of coverage model parametrization and the
+   sensitivity/precision of germline CNV calling are sensitive to the
+   choice of model hyperparameters, including the prior probability of
+   alternative copy-number states (set using the p-alt argument),
+   prevalence of active (i.e. CNV-rich) intervals (set via the p-active
+   argument), the coherence length of CNV events and active/silent
+   domains across intervals (set using the cnv-coherence-length and
+   class-coherence-length arguments, respectively), and the typical
+   scale of interval- and sample-specific unexplained variance (set
+   using the interval-psi-scale and sample-psi-scale arguments,
+   respectively). It is crucial to note that these hyperparameters are
+   *not* universal and must be tuned for each sequencing protocol and
+   properly set at runtime.
+
+Running GermlineCNVCaller on a subset of intervals:
+   As mentioned earlier, it may be necessary to run the tool over a
+   subset of all intervals depending on available memory. The number of
+   intervals must be large enough to include a genomically diverse set
+   of regions for reliable inference of the GC bias curve, as well as
+   other bias factors. For WES and WGS, we recommend no less than 10000
+   consecutive intervals spanning at least 10 - 50 mb.
+
+Memory requirements for the python subprocess ("gcnvkernel"):
+   The computation done by this tool, for the most part, is performed
+   outside of JVM and via a spawned python subprocess. The Java heap
+   memory is only used for loading sample counts and preparing raw data
+   for the python subprocess. The user must ensure that the machine has
+   enough free physical memory for spawning and executing the python
+   subprocess. Generally speaking, the resource requirements of this
+   tool scale linearly with each of the number of samples, the number of
+   modeled intervals, the highest copy number state, the number of bias
+   factors, and the number of knobs on the GC curve. For example, the
+   python subprocess requires approximately 16GB of physical memory for
+   modeling 10000 intervals for 100 samples, with 16 maximum bias
+   factors, maximum copy-number state of 10, and explicit GC bias
+   modeling.
+
+Usage examples
+~~~~~~~~~~~~~~
+
+COHORT mode:
+
+::
+
+    gatk GermlineCNVCaller \
+      --run-mode COHORT \
+      -L intervals.interval_list \
+      --interval-merging-rule OVERLAPPING_ONLY \
+      --contig-ploidy-calls path_to_contig_ploidy_calls \
+      --input normal_1.counts.hdf5 \
+      --input normal_2.counts.hdf5 \
+      ... \
+      --output output_dir \
+      --output-prefix normal_cohort_run
+    
+
+CASE mode:
+
+::
+
+    gatk GermlineCNVCaller \
+      --run-mode CASE \
+      -L intervals.interval_list \
+      --interval-merging-rule OVERLAPPING_ONLY \
+      --contig-ploidy-calls path_to_contig_ploidy_calls \
+      --model previous_model_path \
+      --input normal_1.counts.hdf5 \
+      ... \
+      --output output_dir \
+      --output-prefix normal_case_run
+    
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>

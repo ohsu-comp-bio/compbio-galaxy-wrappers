@@ -1,0 +1,206 @@
+<tool id="gatk4_auto_addorreplacereadgroups" name="GATK4 AUTO AddOrReplaceReadGroups (Picard)" profile="18.05" version="@WRAPPER_VERSION@0">
+  <description>- Assigns all the reads in a file to a single new read-group.</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[#include source=$set_sections#
+#include source=$bam_index_pre_chth#
+@CMD_BEGIN@ AddOrReplaceReadGroups
+#if $optional.arguments_file
+  --arguments_file $optional.arguments_file
+#end if
+
+#if $common.COMPRESSION_LEVEL
+  --COMPRESSION_LEVEL $common.COMPRESSION_LEVEL
+#end if
+
+#if $common.CREATE_INDEX
+  $common.CREATE_INDEX
+#end if
+
+#if $common.CREATE_MD5_FILE
+  $common.CREATE_MD5_FILE
+#end if
+
+#if $common.GA4GH_CLIENT_SECRETS
+  --GA4GH_CLIENT_SECRETS $common.GA4GH_CLIENT_SECRETS
+#end if
+
+#include source=$picard_bam_input#
+#if $common.MAX_RECORDS_IN_RAM
+  --MAX_RECORDS_IN_RAM $common.MAX_RECORDS_IN_RAM
+#end if
+
+--OUTPUT $OUTPUT
+#if $common.QUIET
+  $common.QUIET
+#end if
+
+#include source=$picard_ref_opts#
+#if $optional.RGCN
+  --RGCN $optional.RGCN
+#end if
+
+#if $optional.RGDS
+  --RGDS "$optional.RGDS"
+#end if
+
+#if $optional.RGDT
+  --RGDT $optional.RGDT
+#end if
+
+#if $optional.RGFO
+  --RGFO $optional.RGFO
+#end if
+
+#if $optional.RGID
+  --RGID $optional.RGID
+#end if
+
+#if $optional.RGKS
+  --RGKS $optional.RGKS
+#end if
+
+--RGLB $RGLB
+#if $optional.RGPG
+  --RGPG $optional.RGPG
+#end if
+
+#if $optional.RGPI
+  --RGPI $optional.RGPI
+#end if
+
+--RGPL $RGPL
+#if $optional.RGPM
+  --RGPM $optional.RGPM
+#end if
+
+--RGPU $RGPU
+--RGSM $RGSM
+#if $optional.SORT_ORDER
+  --SORT_ORDER $optional.SORT_ORDER
+#end if
+
+#if $common.USE_JDK_DEFLATER
+  $common.USE_JDK_DEFLATER
+#end if
+
+#if $common.USE_JDK_INFLATER
+  $common.USE_JDK_INFLATER
+#end if
+
+#if $common.VALIDATION_STRINGENCY
+  --VALIDATION_STRINGENCY $common.VALIDATION_STRINGENCY
+#end if
+
+#if $common.VERBOSITY
+  --VERBOSITY $common.VERBOSITY
+#end if
+]]></command>
+  <inputs>
+    <expand macro="gatk_bam_req_params"/>
+    <param name="RGLB" argument="--RGLB" type="text" optional="false" value="" label="Rglb" help="Read-Group library"/>
+    <param name="RGPL" argument="--RGPL" type="text" optional="false" value="" label="Rgpl" help="Read-Group platform (e.g. illumina, solid)"/>
+    <param name="RGPU" argument="--RGPU" type="text" optional="false" value="" label="Rgpu" help="Read-Group platform unit (eg. run barcode)"/>
+    <param name="RGSM" argument="--RGSM" type="text" optional="false" value="" label="Rgsm" help="Read-Group sample name"/>
+    <section expanded="False" name="optional" title="Optional Parameters">
+      <param name="arguments_file" argument="--arguments_file" type="data" optional="true" multiple="false" format="" label="Arguments_File" help="read one or more arguments files and add them to the command line"/>
+      <param name="RGCN" argument="--RGCN" type="text" optional="true" value="" label="Rgcn" help="Read-Group sequencing center name"/>
+      <param name="RGDS" argument="--RGDS" type="text" optional="true" value="" label="Rgds" help="Read-Group description"/>
+      <param name="RGDT" argument="--RGDT" type="text" optional="true" value="" label="Rgdt" help="Read-Group run date"/>
+      <param name="RGFO" argument="--RGFO" type="text" optional="true" value="" label="Rgfo" help="Read-Group flow order"/>
+      <param name="RGID" argument="--RGID" type="text" optional="true" value="1" label="Rgid" help="Read-Group ID"/>
+      <param name="RGKS" argument="--RGKS" type="text" optional="true" value="" label="Rgks" help="Read-Group key sequence"/>
+      <param name="RGPG" argument="--RGPG" type="text" optional="true" value="" label="Rgpg" help="Read-Group program group"/>
+      <param name="RGPI" argument="--RGPI" type="integer" optional="true" value="" label="Rgpi" help="Read-Group predicted insert size"/>
+      <param name="RGPM" argument="--RGPM" type="text" optional="true" value="" label="Rgpm" help="Read-Group platform model"/>
+      <param name="SORT_ORDER" argument="--SORT_ORDER" type="select" optional="true" multiple="false" label="Sort_Order" help="Optional sort order to output in. If not supplied OUTPUT is in the same order as INPUT.">
+        <option selected="false" value="unsorted">unsorted</option>
+        <option selected="false" value="queryname">queryname</option>
+        <option selected="false" value="coordinate">coordinate</option>
+        <option selected="false" value="duplicate">duplicate</option>
+        <option selected="false" value="unknown">unknown</option>
+      </param>
+    </section>
+    <section expanded="False" name="common" title="Common Parameters">
+      <expand macro="ref_sel"/>
+      <param name="COMPRESSION_LEVEL" argument="--COMPRESSION_LEVEL" type="integer" optional="true" value="5" label="Compression_Level" help="Compression level for all compressed files created (e.g. BAM and VCF)."/>
+      <param name="CREATE_INDEX" argument="--CREATE_INDEX" type="boolean" truevalue="--CREATE_INDEX" falsevalue="" optional="true" checked="false" label="Create_Index" help="Whether to create a BAM index when writing a coordinate-sorted BAM file."/>
+      <param name="CREATE_MD5_FILE" argument="--CREATE_MD5_FILE" type="boolean" truevalue="--CREATE_MD5_FILE" falsevalue="" optional="true" checked="false" label="Create_Md5_File" help="Whether to create an MD5 digest for any BAM or FASTQ files created.  "/>
+      <param name="GA4GH_CLIENT_SECRETS" argument="--GA4GH_CLIENT_SECRETS" type="text" optional="true" value="client_secrets.json" label="Ga4Gh_Client_Secrets" help="Google Genomics API client_secrets.json file path."/>
+      <param name="MAX_RECORDS_IN_RAM" argument="--MAX_RECORDS_IN_RAM" type="integer" optional="true" value="500000" label="Max_Records_In_Ram" help="When writing files that need to be sorted, this will specify the number of records stored in RAM before spilling to disk. Increasing this number reduces the number of file handles needed to sort the file, and increases the amount of RAM needed."/>
+      <param name="QUIET" argument="--QUIET" type="boolean" truevalue="--QUIET" falsevalue="" optional="true" checked="false" label="Quiet" help="Whether to suppress job-summary info on System.err."/>
+      <param name="USE_JDK_DEFLATER" argument="--USE_JDK_DEFLATER" type="boolean" truevalue="--USE_JDK_DEFLATER" falsevalue="" optional="true" checked="false" label="Use_Jdk_Deflater" help="Use the JDK Deflater instead of the Intel Deflater for writing compressed output"/>
+      <param name="USE_JDK_INFLATER" argument="--USE_JDK_INFLATER" type="boolean" truevalue="--USE_JDK_INFLATER" falsevalue="" optional="true" checked="false" label="Use_Jdk_Inflater" help="Use the JDK Inflater instead of the Intel Inflater for reading compressed input"/>
+      <param name="VALIDATION_STRINGENCY" argument="--VALIDATION_STRINGENCY" type="select" optional="true" multiple="false" label="Validation_Stringency" help="Validation stringency for all SAM files read by this program.  Setting stringency to SILENT can improve performance when processing a BAM file in which variable-length data (read, qualities, tags) do not otherwise need to be decoded.">
+        <option selected="true" value="STRICT">STRICT</option>
+        <option selected="false" value="LENIENT">LENIENT</option>
+        <option selected="false" value="SILENT">SILENT</option>
+      </param>
+      <param name="VERBOSITY" argument="--VERBOSITY" type="select" optional="true" multiple="false" label="Verbosity" help="Control verbosity of logging.">
+        <option selected="false" value="ERROR">ERROR</option>
+        <option selected="false" value="WARNING">WARNING</option>
+        <option selected="true" value="INFO">INFO</option>
+        <option selected="false" value="DEBUG">DEBUG</option>
+      </param>
+    </section>
+  </inputs>
+  <outputs>
+    <data format="bam" name="OUTPUT" label="${tool.name} on ${on_string}: OUTPUT bam" help="Output file (BAM or SAM)."/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[Assigns all the reads in a file to a single new read-group.
+
+Summary
+~~~~~~~
+
+| Many tools (Picard and GATK for example) require or assume the
+  presence of at least one ``RG`` tag, defining a "read-group" to which
+  each read can be assigned (as specified in the ``RG`` tag in the SAM
+  record). This tool enables the user to assign all the reads in the
+  #INPUT to a single new read-group. For more information about
+  read-groups, see the `GATK Dictionary
+  entry. <https://www.broadinstitute.org/gatk/guide/article?id=6472>`__
+| This tool accepts as INPUT BAM and SAM files or URLs from the `Global
+  Alliance for Genomics and Health
+  (GA4GH) <http://ga4gh.org/#/documentation>`__.
+
+Usage example:
+~~~~~~~~~~~~~~
+
+::
+
+    java -jar picard.jar AddOrReplaceReadGroups \
+          I=input.bam \
+          O=output.bam \
+          RGID=4 \
+          RGLB=lib1 \
+          RGPL=illumina \
+          RGPU=unit1 \
+          RGSM=20
+    
+
+Caveats
+~~~~~~~
+
+The value of the tags must adhere (according to the
+`SAM-spec <https://samtools.github.io/hts-specs/SAMv1.pdf>`__) with the
+regex
+
+::
+
+   #READGROUP_ID_REGEX
+
+| (one or more characters from the ASCII range 32 through 126). In
+  particular ``<Space>`` is the only non-printing character allowed.
+| The program enables only the wholesale assignment of all the reads in
+  the #INPUT to a single read-group. If your file already has reads
+  assigned to multiple read-groups, the original ``RG`` value will be
+  lost.
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>
