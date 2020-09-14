@@ -1,10 +1,20 @@
-owner: "campbena"
+owner: "letaw"
 remote_repository_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/gender_check"
 homepage_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/gender_check"
 categories:
   - "KDL Tools"
 repositories:
-  y_ploidy_gender_check:
-    description: "check the gender of a sample based on Y ploidy in DeterminGermlineContigPLoidy"
+  y_ploidy_check:
+    description: "Check the gender of a sample based on Y ploidy in DeterminGermlineContigPLoidy."
     include:
       - y_ploidy_check.xml
+  gender_check_hop:
+    description: "Check the gender of a sample against the gender given in the samplesheet using heterozygosity of X."
+    include:
+      - gender_check_HOP.xml
+      - gender_HOP.sh
+  gender_check:
+    description: "Check the gender of a sample against the gender given in the samplesheet."
+    include:
+      - gender_check.xml
+      - gender_check.sh
