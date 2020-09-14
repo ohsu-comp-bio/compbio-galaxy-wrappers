@@ -1,0 +1,20 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/fgbio"
+homepage_url: "http://fulcrumgenomics.github.io/fgbio/"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  gatk4_merge_bam_alignment:
+    description: "Merge alignment data from a SAM or BAM with data in an unmapped BAM file."
+    include:
+      - macros.xml
+      - gatk4_mergebamalignment.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_sam_to_fastq:
+    description: "Converts a SAM or BAM file to FASTQ."
+    include:
+      - macros.xml
+      - gatk4_samtofastq.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
