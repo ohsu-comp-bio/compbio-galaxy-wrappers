@@ -1,0 +1,57 @@
+<tool id="exome_trio_parentage" name="Exome Trio Parentage" version="0.1.1" >
+    <description>Determine parentage for exome trios, give a three-column VCF.</description>
+
+    <requirements>
+      <requirement type="package" version="1.4.1">scipy</requirement>
+      <requirement type="package" version="0.6.8">pyvcf</requirement>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+        python $__tool_directory__/exome_trio_parentage.py
+        --input_vcf '${infile}'
+        --output_vcf '${outfile}'
+        --output_json '${outfile_json}'
+        --mother '${mother}'
+        --father '${father}'
+        --proband '${proband}'
+    ]]></command>
+
+    <inputs>
+        <param name="infile" type="data" format="vcf" label="Input VCF" help="Input three-column VCF to peform analysis on." />
+        <param name="mother" type="text" label="Mother ID" help="VCF ID for mother." />
+        <param name="father" type="text" label="Father ID" help="VCF ID for father." />
+        <param name="proband" type="text" label="Proband ID" help="VCF ID for proband." />
+    </inputs>
+
+    <outputs>
+      <data format="vcf" name="outfile" label="${tool.name} on ${on_string}: VCF" />
+      <data format="txt" name="outfile_json" label="${tool.name} on ${on_string}: JSON" />
+    </outputs>
+
+    <tests></tests>
+
+    <help><![CDATA[
+usage: exome_trio_parentage.py [-h] [--input_vcf INPUT_VCF]
+                               [--output_vcf OUTPUT_VCF]
+                               [--output_json OUTPUT_JSON] [--mother MOTHER]
+                               [--father FATHER] [--proband PROBAND]
+                               [--version]
+
+Determine parentage for exome trios, give a three-column VCF.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --input_vcf INPUT_VCF
+                        Input three-column VCF to peform analysis on.
+  --output_vcf OUTPUT_VCF
+                        Output three-column VCF containing discordant results.
+  --output_json OUTPUT_JSON
+                        Output JSON with relevant parentage metrics.
+  --mother MOTHER       VCF ID for mother.
+  --father FATHER       VCF ID for father.
+  --proband PROBAND     VCF ID for proband.
+  --version             show program's version number and exit
+  ]]></help>
+
+</tool>
+
