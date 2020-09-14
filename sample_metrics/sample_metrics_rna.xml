@@ -5,6 +5,7 @@
   <requirements>
     <requirement type="package" version="1.11.0">numpy</requirement>
     <requirement type="package" version="0.7.10">pybedtools</requirement>
+    <requirement type="package" version="0.15.3">pysam</requirement>
   </requirements>
 
   <command><![CDATA[
