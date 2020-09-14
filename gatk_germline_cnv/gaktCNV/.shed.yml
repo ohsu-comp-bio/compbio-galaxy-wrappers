@@ -1,0 +1,30 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/gatk_germline_cnv"
+homepage_url: "https://gatk.broadinstitute.org/hc/en-us/articles/360037224712--Tool-Documentation-Index"
+categories:
+  - "KDL Tools"
+repositories:
+  gatk4_collectreadcounts:
+    description: "Collects read counts from a BAM for each specified interval."
+    include:
+      - gatk4_auto_collectreadcounts.xml
+      - macros.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_determinegermlinecontigploidy:
+    description: "finds the ploidy for each contig based off the read counts."
+    include:
+      - gatk4_auto_determinegermlinecontigploidy.xml
+      - macros.xml
+  gatk4_germlinecnvcaller:
+    description: "calls germline CNVs based off read counts."
+    include:
+      - gatk4_auto_germlinecnvcaller.xml
+      - macros.xml
+  gatk4_postprocessgermlinecnvcalls:
+    description: "processes the output from GermlineCNVCaller into vcfs."
+    include:
+      - gatk4_auto_postprocessgermlinecnvcalls.xml
+      - macros.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
