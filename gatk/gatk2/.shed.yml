@@ -1,0 +1,13 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/broadinstitute/gatk/tree/4.0.5.1"
+homepage_url: "https://gatk.broadinstitute.org/hc/en-us/sections/360007381571-4-0-5-1"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  gatk2_realigner_target_creator_basic:
+    description: "for use in local realignment"
+    include:
+      - realigner_target_creator_basic.xml
+      - gatk2_macros.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
