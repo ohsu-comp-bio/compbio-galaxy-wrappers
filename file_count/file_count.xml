@@ -1,10 +1,20 @@
-<tool id="file_count" name="Create GATK List" version="0.2.0" >
+<tool id="file_count" name="Create GATK List" version="0.3.0" >
   <description>For a particular directory, count the number of files, and compare to an input value.</description>
 
   <command><![CDATA[
   #set $cnt_dir = '/'.join([str($base_dir), str($runid)])
   python $__tool_directory__/file_count.py
   "${input_cnt}" "${cnt_dir}" "${file_list}"
+  #if $mother
+    --mother "${mother}"
+  #end if
+  #if $father
+    --father "${father}"
+  #end if
+  #if $proband
+    --proband "${proband}"
+  #end if
+
   ]]></command>
 
   <inputs>
@@ -12,6 +22,9 @@
     <param name="input_cnt" type="text" label="Expected Count" help="Expected number of files in the directory.  If this number of files exist, the workflow will continue." />
     <param name="base_dir" type="text" label="Directory" help="Count the number of files in this directory." />
     <param name="runid" type="text" label="Run ID" help="Run identifier used to create target directory." />
+    <param name="mother" type="text" label="Mother Accession" help="KDL accession utilized for specified parent in trio." />
+    <param name="father" type="text" label="Father Accession" help="KDL accession utilized for specified parent in trio." />
+    <param name="proband" type="text" label="Proband Accession" help="KDL accession utilized for specified parent in trio." />
   </inputs>
 
   <outputs>
