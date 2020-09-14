@@ -1,0 +1,10 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/gender_check"
+homepage_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/gender_check"
+categories:
+  - "KDL Tools"
+repositories:
+  y_ploidy_gender_check:
+    description: "check the gender of a sample based on Y ploidy in DeterminGermlineContigPLoidy"
+    include:
+      - y_ploidy_check.xml
