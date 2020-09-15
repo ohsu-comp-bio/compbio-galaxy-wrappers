@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<tool id="gatk4_fixvcfheader" name="GATK4 FixVcfHeader (Picard)" version="@WRAPPER_VERSION@0" profile="17.09">
+
+    <description>- Replaces or fixes a VCF header.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    <expand macro="requirements"/>
+    <expand macro="version_cmd"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        #include source=$vcf_tabix#
+
+        @CMD_BEGIN@ FixVcfHeader
+        --CHECK_FIRST_N_RECORDS ${optional.check_first_n_records}
+        ${optional.enforce_same_samples}
+        --HEADER ${optional.header}
+        #include source=$picard_opts#
+        #include source=$picard_vcf_output_opts#
+        #include source=$vcf_input#
+        #include source=$picard_ref_opts#
+
+    ]]></command>
+
+    <inputs>
+        <expand macro="picard_vcf_params" />
+        <param name="input" argument="--INPUT" type="data" optional="false" format="vcf,vcf_bgzip" label="Input" help="The input VCF/BCF file." />
+        <section name="optional" title="Optional Parameters" expanded="False">
+            <param name="check_first_n_records" argument="--CHECK_FIRST_N_RECORDS" type="integer" optional="true" value="-1" label="Check_First_N_Records" help="Check only the first N records when searching for missing INFO and FORMAT fields." />
+            <param name="enforce_same_samples" argument="--ENFORCE_SAME_SAMPLES" type="boolean" truevalue="--ENFORCE_SAME_SAMPLES" falsevalue="" optional="true" checked="true" label="Enforce_Same_Samples" help="Enforce that the samples are the same (and in the same order) when replacing the VCF header." />
+            <param name="header" argument="--HEADER" type="data" optional="true" format="vcf,vcf_bgzip" label="Header" help="The replacement VCF header." />
+
+            <expand macro="ref_sel" />
+        </section>
+        <expand macro="picard_params" />
+    </inputs>
+
+    <outputs>
+        <expand macro="picard_vcf_output_params" />
+        <expand macro="picard_output_params" />
+
+    </outputs>
+
+    <tests>
+    </tests>
+
+    <help><![CDATA[
+    Tool for replacing or fixing up a VCF header.
+
+    ]]></help>
+
+    <expand macro="citations"/>
+
+</tool>

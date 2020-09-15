@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+<tool id="gatk4_findmendelianviolations" name="GATK4 FindMendelianViolations (Picard)" version="@WRAPPER_VERSION@0" profile="17.09">
+
+    <description>- Finds mendelian violations of all types within a VCF</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    <expand macro="requirements"/>
+    <expand macro="version_cmd"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        #include source=$vcf_tabix#
+
+        @CMD_BEGIN@ FindMendelianViolations
+        --FEMALE_CHROMS ${optional.female_chroms}
+        --MALE_CHROMS ${optional.male_chroms}
+        --MIN_DP ${optional.min_dp}
+        --MIN_GQ ${optional.min_gq}
+        --MIN_HET_FRACTION ${optional.min_het_fraction}
+        --PSEUDO_AUTOSOMAL_REGIONS ${optional.pseudo_autosomal_regions}
+        --SKIP_CHROMS ${optional.skip_chroms}
+        ${optional.tab_mode}
+        --THREAD_COUNT ${optional.thread_count}
+        --TRIOS ${trios}
+        --VCF_DIR ${optional.vcf_dir}
+        #include source=$picard_opts#
+        #include source=$picard_vcf_output_opts#
+        #include source=$vcf_input#
+        #include source=$picard_ref_opts#
+
+    ]]></command>
+
+    <inputs>
+        <expand macro="picard_vcf_params" />
+        <param name="input" argument="--INPUT" type="data" optional="false" format="vcf,vcf_bgzip" label="Input" help="Input VCF or BCF with genotypes." />
+        <param name="trios" argument="--TRIOS" type="data" optional="false" format="vcf,vcf_bgzip" label="Trios" help="File of Trio information in PED format (with no genotype columns)." />
+        <section name="optional" title="Optional Parameters" expanded="False">
+            <param name="female_chroms" argument="--FEMALE_CHROMS" type="text" optional="true" value="[chrX, X]" label="Female_Chroms" help="List of possible names for female sex chromosome(s)" />
+            <param name="male_chroms" argument="--MALE_CHROMS" type="text" optional="true" value="[chrY, Y]" label="Male_Chroms" help="List of possible names for male sex chromosome(s)" />
+            <param name="min_dp" argument="--MIN_DP" type="integer" optional="true" value="0" label="Min_Dp" help="Minimum depth in each sample to consider possible mendelian violations." />
+            <param name="min_gq" argument="--MIN_GQ" type="integer" optional="true" value="30" label="Min_Gq" help="Minimum genotyping quality (or non-ref likelihood) to perform tests." />
+            <param name="min_het_fraction" argument="--MIN_HET_FRACTION" type="float" optional="true" value="0.3" label="Min_Het_Fraction" help="Minimum allele balance at sites that are heterozygous in the offspring." />
+            <param name="pseudo_autosomal_regions" argument="--PSEUDO_AUTOSOMAL_REGIONS" type="text" optional="true" value="[chrX:10000-2781479, X:10001-2649520, chrX:155701382-156030895, X:59034050-59373566]" label="Pseudo_Autosomal_Regions" help="List of chr:start-end for pseudo-autosomal regions on the female sex chromosome. Defaults to HG19/b37 &amp; HG38 coordinates." />
+
+            <expand macro="ref_sel" />            <param name="skip_chroms" argument="--SKIP_CHROMS" type="text" optional="true" value="[MT, chrM]" label="Skip_Chroms" help="List of chromosome names to skip entirely." />
+            <param name="tab_mode" argument="--TAB_MODE" type="boolean" truevalue="--TAB_MODE" falsevalue="" optional="true" checked="false" label="Tab_Mode" help="If true then fields need to be delimited by a single tab. If false the delimiter is one or more whitespace characters. Note that tab mode does not strictly follow the PED spec" />
+            <param name="thread_count" argument="--THREAD_COUNT" type="integer" optional="true" value="1" label="Thread_Count" help="The number of threads that will be used to collect the metrics. " />
+            <param name="vcf_dir" argument="--VCF_DIR" type="data" optional="true" format="vcf,vcf_bgzip" label="Vcf_Dir" help="If provided, output per-family VCFs of mendelian violations into this directory." />
+
+        </section>
+        <expand macro="picard_params" />
+    </inputs>
+
+    <outputs>
+        <expand macro="picard_vcf_output_params" />
+        <expand macro="picard_output_params" />
+
+    </outputs>
+
+    <tests>
+    </tests>
+
+    <help><![CDATA[
+    Summary
+~~~~~~~
+
+Finds mendelian violations (MVs) of all types within a VCF.
+
+Detail
+~~~~~~
+
+| Takes in VCF or BCF and a pedigree file and looks for high confidence
+  calls where the genotype of the offspring is incompatible with the
+  genotypes of the parents.
+| Key features:
+
+#. Checks for regular MVs in diploid regions and invalid transmissions
+   in haploid regions (using the declared gender of the offspring in the
+   pedigree file to determine how to deal with the male and female
+   chromosomes.)
+#. Outputs metrics about the different kinds of MVs found
+#. Can output a per-trio VCF with violations; INFO field will indicate
+   the type of violation in the MV field
+
+Example
+~~~~~~~
+
+::
+
+        java -jar picard.jar FindMendelianViolations\\
+             I=input.vcf \\
+             TRIO=pedigree.fam \\
+             O=report.mendelian_violation_metrics \\
+             MIN_DP=20
+    
+
+Caveates
+~~~~~~~~
+
+Assumptions
+^^^^^^^^^^^
+
+The tool assumes the existence of FORMAT fields AD, DP, GT, GQ, and PL.
+
+Ignored Variants
+^^^^^^^^^^^^^^^^
+
+This tool ignores variants that are:
+
+-  Not SNPs
+-  Filtered
+-  Multiallelic (i.e., trio has more than 2 alleles)
+-  Within the #SKIP_CHROMS contigs
+
+PseudoAutosomal Region
+^^^^^^^^^^^^^^^^^^^^^^
+
+This tool assumes that variants in the PAR will be mapped onto the
+female chromosome, and will treat variants in that region as as
+autosomal. The mapping to female requires that the PAR in the male
+chromosome be masked so that the aligner maps reads to single contig.
+This is normally done for the public releases of the human reference.
+The tool has default values for PAR that are sensible for humans on
+either build b37 or hg38.
+
+    ]]></help>
+
+    <expand macro="citations"/>
+
+</tool>

@@ -1,0 +1,45 @@
+<tool id="gatk4_variantannotator" name="GATK4 VariantAnnotator" profile="17.09" version="@WRAPPER_VERSION@0">
+  <description>- Tool for adding annotations to VCF files</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[
+    #include source=$gatk_tabix#
+    @CMD_BEGIN@ VariantAnnotator
+
+    #for $num, $file in enumerate($res_sel)
+        --resource ${file.resource_lbl}:${file.resource}
+    #end for
+
+    #for $num, $opt in enumerate($exp_sel)
+        --expression ${opt.expression}
+    #end for
+
+    ${resource_allele_concordance}
+
+    #include source=$vcf_output_opts#
+    #include source=$gatk_input#
+    ]]></command>
+  <inputs>
+    <expand macro="gzip_vcf_params"/>
+    <expand macro="gatk_vcf_input_params"/>
+    <repeat name="res_sel" title="Resource Selection">
+        <param name="resource" argument="--resource" type="data" format="vcf,vcf_bgzip" label="External Resource" help="External resource VCF file  This argument may be specified 0 or more times."/>
+        <param name="resource_lbl" type="text" label="External Resource Label" help="Label the resource, it is required on the command line."/>
+    </repeat>
+    <repeat name="exp_sel" title="Expressions">
+      <param name="expression" argument="--expression" type="text" label="Select Expression" help="One or more specific expressions to apply to variant calls  This argument may be specified 0 or more times."/>
+    </repeat>
+    <param name="resource_allele_concordance" argument="--resource-allele-concordance" type="boolean" truevalue="--resource-allele-concordance" falsevalue="" optional="true" checked="false" label="Allele Concordance" help="Check for allele concordances when using an external resource VCF file."/>
+  </inputs>
+  <outputs>
+    <expand macro="gzip_vcf_output_params"/>
+  </outputs>
+  <tests/>
+  <help></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>
