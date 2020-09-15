@@ -17,10 +17,11 @@ zygosityFile <- args[1]
 
 
 
-zygosityData <- read.table(text = gsub("/", "\t", readLines(zygosityFile)), header = FALSE, skip = 1)
+zygosityData <- read.table(text = gsub("/|\\|", "\t", readLines(zygosityFile)), header = FALSE, skip = 1)
 
 
-zygosityData$zygosity = (zygosityData$V3==zygosityData$V4)
+
+zygosityData$zygosity = (as.character(zygosityData$V3)==as.character(zygosityData$V4))
 zygosityData$Homozygous = as.integer(as.logical(zygosityData$zygosity))
 
 
