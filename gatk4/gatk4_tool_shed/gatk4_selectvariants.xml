@@ -1,0 +1,375 @@
+<tool id="gatk4_selectvariants" name="GATK4 SelectVariants" profile="17.09" version="@WRAPPER_VERSION@0">
+  <description>- Select a subset of variants from a VCF file</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[#include source=$gatk_tabix#
+#include source=$pre_gatk_ints_chth#
+#include source=$pre_gatk_excl_ints_chth#
+#if $concordance
+#set datatype = $concordance.datatype
+#if $concordance.is_of_type("vcf_bgzip")
+ln -s $concordance concordance.vcf.gz &&
+tabix concordance.vcf.gz &&
+#else
+ln -s $concordance concordance.vcf &&
+#end if
+#end if
+#if $discordance
+#set datatype = $discordance.datatype
+#if $discordance.is_of_type("vcf_bgzip")
+ln -s $discordance discordance.vcf.gz &&
+tabix discordance.vcf.gz &&
+#else
+ln -s $discordance discordance.vcf &&
+#end if
+#end if
+@CMD_BEGIN@ SelectVariants
+#if $add_output_sam_program_record
+$add_output_sam_program_record
+#end if
+#if $add_output_vcf_command_line
+$add_output_vcf_command_line
+#end if
+#if $cloud_index_prefetch_buffer
+--cloud-index-prefetch-buffer $cloud_index_prefetch_buffer
+#end if
+#if $cloud_prefetch_buffer
+--cloud-prefetch-buffer $cloud_prefetch_buffer
+#end if
+#if $concordance
+#if $concordance.is_of_type("vcf_bgzip")
+--concordance concordance.vcf.gz
+#else
+--concordance concordance.vcf
+#end if
+#end if
+#if $create_output_bam_index
+$create_output_bam_index
+#end if
+#if $create_output_bam_md5
+$create_output_bam_md5
+#end if
+#if $create_output_variant_index
+$create_output_variant_index
+#end if
+#if $create_output_variant_md5
+$create_output_variant_md5
+#end if
+#if $disable_bam_index_caching
+$disable_bam_index_caching
+#end if
+#if $disable_read_filter
+--disable-read-filter $disable_read_filter
+#end if
+#if $disable_sequence_dictionary_validation
+$disable_sequence_dictionary_validation
+#end if
+#if $disable_tool_default_read_filters
+$disable_tool_default_read_filters
+#end if
+#if $discordance
+#if $discordance.is_of_type("vcf_bgzip")
+--discordance discordance.vcf.gz
+#else
+--discordance discordance.vcf
+#end if
+#end if
+#if $exclude_filtered
+$exclude_filtered
+#end if
+#if $exclude_ids
+--exclude-ids $exclude_ids
+#end if
+#if $exclude_non_variants
+$exclude_non_variants
+#end if
+#if $exclude_sample_expressions
+--exclude-sample-expressions $exclude_sample_expressions
+#end if
+#if $exclude_sample_name
+--exclude-sample-name $exclude_sample_name
+#end if
+#if $gatk_config_file
+--gatk-config-file $gatk_config_file
+#end if
+#if $gcs_max_retries
+--gcs-max-retries $gcs_max_retries
+#end if
+#if $interval_merging_rule
+--interval-merging-rule $interval_merging_rule
+#end if
+#if $interval_set_rule
+--interval-set-rule $interval_set_rule
+#end if
+#if $invert_mendelian_violation
+$invert_mendelian_violation
+#end if
+#if $invertSelect
+$invertSelect
+#end if
+#if $keep_ids
+--keep-ids $keep_ids
+#end if
+#if $keep_original_ac
+$keep_original_ac
+#end if
+#if $keep_original_dp
+$keep_original_dp
+#end if
+#if $lenient
+$lenient
+#end if
+#if $max_filtered_genotypes
+--max-filtered-genotypes $max_filtered_genotypes
+#end if
+#if $max_fraction_filtered_genotypes
+--max-fraction-filtered-genotypes $max_fraction_filtered_genotypes
+#end if
+#if $max_indel_size
+--max-indel-size $max_indel_size
+#end if
+#if $max_nocall_fraction
+--max-nocall-fraction $max_nocall_fraction
+#end if
+#if $max_nocall_number
+--max-nocall-number $max_nocall_number
+#end if
+#if $mendelian_violation
+$mendelian_violation
+#end if
+#if $mendelian_violation_qual_threshold
+--mendelian-violation-qual-threshold $mendelian_violation_qual_threshold
+#end if
+#if $min_filtered_genotypes
+--min-filtered-genotypes $min_filtered_genotypes
+#end if
+#if $min_fraction_filtered_genotypes
+--min-fraction-filtered-genotypes $min_fraction_filtered_genotypes
+#end if
+#if $min_indel_size
+--min-indel-size $min_indel_size
+#end if
+#if $pedigree
+--pedigree $pedigree
+#end if
+#if $preserve_alleles
+$preserve_alleles
+#end if
+#if $read_filter
+--read-filter $read_filter
+#end if
+#if $read_validation_stringency
+--read-validation-stringency $read_validation_stringency
+#end if
+#if $remove_fraction_genotypes
+--remove-fraction-genotypes $remove_fraction_genotypes
+#end if
+#if $remove_unused_alternates
+$remove_unused_alternates
+#end if
+#if $restrict_alleles_to
+--restrict-alleles-to $restrict_alleles_to
+#end if
+#if $sample_expressions
+--sample-expressions $sample_expressions
+#end if
+#if $sample_name
+--sample-name $sample_name
+#end if
+#if $seconds_between_progress_updates
+--seconds-between-progress-updates $seconds_between_progress_updates
+#end if
+#if $select_random_fraction
+--select-random-fraction $select_random_fraction
+#end if
+#if $select_type_to_exclude
+--select-type-to-exclude $select_type_to_exclude
+#end if
+#if $select_type_to_include
+--select-type-to-include $select_type_to_include
+#end if
+#if $selectExpressions
+--selectExpressions $selectExpressions
+#end if
+#if $set_filtered_gt_to_nocall
+$set_filtered_gt_to_nocall
+#end if
+#if $sites_only_vcf_output
+$sites_only_vcf_output
+#end if
+#if $use_jdk_deflater
+$use_jdk_deflater
+#end if
+#if $use_jdk_inflater
+$use_jdk_inflater
+#end if
+#if $verbosity
+--verbosity $verbosity
+#end if
+#include source=$ref_opts#
+#include source=$vcf_output_opts#
+#include source=$gatk_input#
+#include source=$gatk_ints_chth#
+#include source=$gatk_excl_ints_chth#]]></command>
+  <inputs>
+    <expand macro="ref_sel"/>
+    <expand macro="gzip_vcf_params"/>
+    <expand macro="gatk_vcf_input_params"/>
+    <expand macro="gatk_ints"/>
+    <expand macro="gatk_excl_ints"/>
+    <param name="add_output_sam_program_record" argument="--add-output-sam-program-record" type="boolean" truevalue="--add-output-sam-program-record" falsevalue="" optional="true" checked="true" label="Add Output Sam Program Record" help="If true, adds a PG tag to created SAM/BAM/CRAM files."/>
+    <param name="add_output_vcf_command_line" argument="--add-output-vcf-command-line" type="boolean" truevalue="--add-output-vcf-command-line" falsevalue="" optional="true" checked="true" label="Add Output Vcf Command Line" help="If true, adds a command line header line to created VCF files."/>
+    <param name="cloud_index_prefetch_buffer" argument="--cloud-index-prefetch-buffer" type="integer" optional="true" value="-1" label="Cloud Index Prefetch Buffer" help="Size of the cloud-only prefetch buffer (in MB; 0 to disable). Defaults to cloudPrefetchBuffer if unset."/>
+    <param name="cloud_prefetch_buffer" argument="--cloud-prefetch-buffer" type="integer" optional="true" value="40" label="Cloud Prefetch Buffer" help="Size of the cloud-only prefetch buffer (in MB; 0 to disable)."/>
+    <param name="concordance" argument="--concordance" type="data" optional="true" format="vcf,vcf_bgzip" label="Concordance" help="Output variants also called in this comparison track"/>
+    <param name="create_output_bam_index" argument="--create-output-bam-index" type="boolean" truevalue="--create-output-bam-index" falsevalue="" optional="true" checked="true" label="Create Output Bam Index" help="If true, create a BAM/CRAM index when writing a coordinate-sorted BAM/CRAM file."/>
+    <param name="create_output_bam_md5" argument="--create-output-bam-md5" type="boolean" truevalue="--create-output-bam-md5" falsevalue="" optional="true" checked="false" label="Create Output Bam Md5" help="If true, create a MD5 digest for any BAM/SAM/CRAM file created"/>
+    <param name="create_output_variant_index" argument="--create-output-variant-index" type="boolean" truevalue="--create-output-variant-index" falsevalue="" optional="true" checked="true" label="Create Output Variant Index" help="If true, create a VCF index when writing a coordinate-sorted VCF file."/>
+    <param name="create_output_variant_md5" argument="--create-output-variant-md5" type="boolean" truevalue="--create-output-variant-md5" falsevalue="" optional="true" checked="false" label="Create Output Variant Md5" help="If true, create a a MD5 digest any VCF file created."/>
+    <param name="disable_bam_index_caching" argument="--disable-bam-index-caching" type="boolean" truevalue="--disable-bam-index-caching" falsevalue="" optional="true" checked="false" label="Disable Bam Index Caching" help="If true, don&amp;apos;t cache bam indexes, this will reduce memory requirements but may harm performance if many intervals are specified.  Caching is automatically disabled if there are no intervals specified."/>
+    <param name="disable_read_filter" argument="--disable-read-filter" type="text" optional="true" value="" label="Disable Read Filter" help="Read filters to be disabled before analysis"/>
+    <param name="disable_sequence_dictionary_validation" argument="--disable-sequence-dictionary-validation" type="boolean" truevalue="--disable-sequence-dictionary-validation" falsevalue="" optional="true" checked="false" label="Disable Sequence Dictionary Validation" help="If specified, do not check the sequence dictionaries from our inputs for compatibility. Use at your own risk!"/>
+    <param name="disable_tool_default_read_filters" argument="--disable-tool-default-read-filters" type="boolean" truevalue="--disable-tool-default-read-filters" falsevalue="" optional="true" checked="false" label="Disable Tool Default Read Filters" help="Disable all tool default read filters (WARNING: many tools will not function correctly without their default read filters on)"/>
+    <param name="discordance" argument="--discordance" type="data" optional="true" format="vcf,vcf_bgzip" label="Discordance" help="Output variants not called in this comparison track"/>
+    <param name="exclude_filtered" argument="--exclude-filtered" type="boolean" truevalue="--exclude-filtered" falsevalue="" optional="true" checked="false" label="Exclude Filtered" help="Don&amp;apos;t include filtered sites"/>
+    <param name="exclude_ids" argument="--exclude-ids" type="text" optional="true" value="" label="Exclude Ids" help="List of variant rsIDs to exclude"/>
+    <param name="exclude_non_variants" argument="--exclude-non-variants" type="boolean" truevalue="--exclude-non-variants" falsevalue="" optional="true" checked="false" label="Exclude Non Variants" help="Don&amp;apos;t include non-variant sites"/>
+    <param name="exclude_sample_expressions" argument="--exclude-sample-expressions" type="text" optional="true" value="" label="Exclude Sample Expressions" help="List of sample expressions to exclude"/>
+    <param name="exclude_sample_name" argument="--exclude-sample-name" type="text" optional="true" value="" label="Exclude Sample Name" help="Exclude genotypes from this sample"/>
+    <param name="gatk_config_file" argument="--gatk-config-file" type="data" optional="true" format="txt" label="Gatk Config File" help="A configuration file to use with the GATK."/>
+    <param name="gcs_max_retries" argument="--gcs-max-retries" type="integer" optional="true" value="20" label="Gcs Max Retries" help="If the GCS bucket channel errors out, how many times it will attempt to re-initiate the connection"/>
+    <param name="interval_merging_rule" argument="--interval-merging-rule" type="select" optional="true" label="Interval Merging Rule" help="Interval merging rule for abutting intervals">
+      <option selected="true" value="ALL">ALL</option>
+      <option selected="false" value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
+    </param>
+    <param name="interval_set_rule" argument="--interval-set-rule" type="select" optional="true" label="Interval Set Rule" help="Set merging approach to use for combining interval inputs">
+      <option selected="true" value="UNION">UNION</option>
+      <option selected="false" value="INTERSECTION">INTERSECTION</option>
+    </param>
+    <param name="invert_mendelian_violation" argument="--invert-mendelian-violation" type="boolean" truevalue="--invert-mendelian-violation" falsevalue="" optional="true" checked="false" label="Invert Mendelian Violation" help="Output non-mendelian violation sites only"/>
+    <param name="invertSelect" argument="--invertSelect" type="boolean" truevalue="--invertSelect" falsevalue="" optional="true" checked="false" label="Invertselect" help="Invert the selection criteria for -select"/>
+    <param name="keep_ids" argument="--keep-ids" type="text" optional="true" value="" label="Keep Ids" help="List of variant rsIDs to select"/>
+    <param name="keep_original_ac" argument="--keep-original-ac" type="boolean" truevalue="--keep-original-ac" falsevalue="" optional="true" checked="false" label="Keep Original Ac" help="Store the original AC, AF, and AN values after subsetting"/>
+    <param name="keep_original_dp" argument="--keep-original-dp" type="boolean" truevalue="--keep-original-dp" falsevalue="" optional="true" checked="false" label="Keep Original Dp" help="Store the original DP value after subsetting"/>
+    <param name="lenient" argument="--lenient" type="boolean" truevalue="--lenient" falsevalue="" optional="true" checked="false" label="Lenient" help="Lenient processing of VCF files"/>
+    <param name="max_filtered_genotypes" argument="--max-filtered-genotypes" type="integer" optional="true" value="2147483647" label="Max Filtered Genotypes" help="Maximum number of samples filtered at the genotype level"/>
+    <param name="max_fraction_filtered_genotypes" argument="--max-fraction-filtered-genotypes" type="float" optional="true" value="1.0" label="Max Fraction Filtered Genotypes" help="Maximum fraction of samples filtered at the genotype level"/>
+    <param name="max_indel_size" argument="--max-indel-size" type="integer" optional="true" value="2147483647" label="Max Indel Size" help="Maximum size of indels to include"/>
+    <param name="max_nocall_fraction" argument="--max-nocall-fraction" type="float" optional="true" value="1.0" label="Max Nocall Fraction" help="Maximum fraction of samples with no-call genotypes"/>
+    <param name="max_nocall_number" argument="--max-nocall-number" type="integer" optional="true" value="2147483647" label="Max Nocall Number" help="Maximum number of samples with no-call genotypes"/>
+    <param name="mendelian_violation" argument="--mendelian-violation" type="boolean" truevalue="--mendelian-violation" falsevalue="" optional="true" checked="false" label="Mendelian Violation" help="Output mendelian violation sites only"/>
+    <param name="mendelian_violation_qual_threshold" argument="--mendelian-violation-qual-threshold" type="float" optional="true" value="0.0" label="Mendelian Violation Qual Threshold" help="Minimum GQ score for each trio member to accept a site as a violation"/>
+    <param name="min_filtered_genotypes" argument="--min-filtered-genotypes" type="integer" optional="true" value="0" label="Min Filtered Genotypes" help="Minimum number of samples filtered at the genotype level"/>
+    <param name="min_fraction_filtered_genotypes" argument="--min-fraction-filtered-genotypes" type="float" optional="true" value="0.0" label="Min Fraction Filtered Genotypes" help="Maximum fraction of samples filtered at the genotype level"/>
+    <param name="min_indel_size" argument="--min-indel-size" type="integer" optional="true" value="0" label="Min Indel Size" help="Minimum size of indels to include"/>
+    <param name="pedigree" argument="--pedigree" type="data" optional="true" format="tabular" label="Pedigree" help="Pedigree file"/>
+    <param name="preserve_alleles" argument="--preserve-alleles" type="boolean" truevalue="--preserve-alleles" falsevalue="" optional="true" checked="false" label="Preserve Alleles" help="Preserve original alleles, do not trim"/>
+    <param name="read_filter" argument="--read-filter" type="text" optional="true" value="" label="Read Filter" help="Read filters to be applied before analysis"/>
+    <param name="read_validation_stringency" argument="--read-validation-stringency" type="select" optional="true" label="Read Validation Stringency" help="Validation stringency for all SAM/BAM/CRAM/SRA files read by this program.  The default stringency value SILENT can improve performance when processing a BAM file in which variable-length data (read, qualities, tags) do not otherwise need to be decoded.">
+      <option selected="false" value="STRICT">STRICT</option>
+      <option selected="false" value="LENIENT">LENIENT</option>
+      <option selected="true" value="SILENT">SILENT</option>
+    </param>
+    <param name="remove_fraction_genotypes" argument="--remove-fraction-genotypes" type="float" optional="true" value="0.0" label="Remove Fraction Genotypes" help="Select a fraction of genotypes at random from the input and sets them to no-call"/>
+    <param name="remove_unused_alternates" argument="--remove-unused-alternates" type="boolean" truevalue="--remove-unused-alternates" falsevalue="" optional="true" checked="false" label="Remove Unused Alternates" help="Remove alternate alleles not present in any genotypes"/>
+    <param name="restrict_alleles_to" argument="--restrict-alleles-to" type="select" optional="true" label="Restrict Alleles To" help="Select only variants of a particular allelicity">
+      <option selected="true" value="ALL">ALL</option>
+      <option selected="false" value="BIALLELIC">BIALLELIC</option>
+      <option selected="false" value="MULTIALLELIC">MULTIALLELIC</option>
+    </param>
+    <param name="sample_expressions" argument="--sample-expressions" type="text" optional="true" value="" label="Sample Expressions" help="Regular expression to select multiple samples"/>
+    <param name="sample_name" argument="--sample-name" type="text" optional="true" value="" label="Sample Name" help="Include genotypes from this sample"/>
+    <param name="seconds_between_progress_updates" argument="--seconds-between-progress-updates" type="float" optional="true" value="10.0" label="Seconds Between Progress Updates" help="Output traversal statistics every time this many seconds elapse"/>
+    <param name="select_random_fraction" argument="--select-random-fraction" type="float" optional="true" value="0.0" label="Select Random Fraction" help="Select a fraction of variants at random from the input"/>
+    <param name="select_type_to_exclude" argument="--select-type-to-exclude" type="text" optional="true" value="" label="Select Type To Exclude" help="Do not select certain type of variants from the input file"/>
+    <param name="select_type_to_include" argument="--select-type-to-include" type="text" optional="true" value="" label="Select Type To Include" help="Select only a certain type of variants from the input file"/>
+    <param name="selectExpressions" argument="--selectExpressions" type="text" optional="true" value="" label="Selectexpressions" help="One or more criteria to use when selecting the data"/>
+    <param name="set_filtered_gt_to_nocall" argument="--set-filtered-gt-to-nocall" type="boolean" truevalue="--set-filtered-gt-to-nocall" falsevalue="" optional="true" checked="false" label="Set Filtered Gt To Nocall" help="Set filtered genotypes to no-call"/>
+    <param name="sites_only_vcf_output" argument="--sites-only-vcf-output" type="boolean" truevalue="--sites-only-vcf-output" falsevalue="" optional="true" checked="false" label="Sites Only Vcf Output" help="If true, don&amp;apos;t emit genotype fields when writing vcf file output."/>
+    <param name="use_jdk_deflater" argument="--use-jdk-deflater" type="boolean" truevalue="--use-jdk-deflater" falsevalue="" optional="true" checked="false" label="Use Jdk Deflater" help="Whether to use the JdkDeflater (as opposed to IntelDeflater)"/>
+    <param name="use_jdk_inflater" argument="--use-jdk-inflater" type="boolean" truevalue="--use-jdk-inflater" falsevalue="" optional="true" checked="false" label="Use Jdk Inflater" help="Whether to use the JdkInflater (as opposed to IntelInflater)"/>
+    <param name="verbosity" argument="--verbosity" type="select" optional="true" label="Verbosity" help="Control verbosity of logging.">
+      <option selected="false" value="ERROR">ERROR</option>
+      <option selected="false" value="WARNING">WARNING</option>
+      <option selected="true" value="INFO">INFO</option>
+      <option selected="false" value="DEBUG">DEBUG</option>
+    </param>
+  </inputs>
+  <outputs>
+    <expand macro="gzip_vcf_output_params"/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[Select a subset of variants from a VCF file
+
+This tool makes it possible to select a subset of variants based on
+various criteria in order to facilitate certain analyses. Examples of
+such analyses include comparing and contrasting cases vs. controls,
+extracting variant or non-variant loci that meet certain requirements,
+or troubleshooting some unexpected results, to name a few.
+
+There are many different options for selecting subsets of variants from
+a larger callset:
+
+-  Extract one or more samples from a callset based on either a complete
+   sample name or a pattern match.
+-  Specify criteria for inclusion that place thresholds on annotation
+   values, e.g. "DP > 1000" (depth of coverage greater than 1000x), "AF
+   < 0.25" (sites with allele frequency less than 0.25). These criteria
+   are written as "JEXL expressions", which are documented in the
+   `article about using JEXL
+   expressions <https://www.broadinstitute.org/gatk/guide/article?id=1255>`__.
+-  Provide concordance or discordance tracks in order to include or
+   exclude variants that are also present in other given callsets.
+-  Select variants based on criteria like their type (e.g. INDELs only),
+   evidence of mendelian violation, filtering status, allelicity, etc.
+
+There are also several options for recording the original values of
+certain annotations which are recalculated when one subsets the new
+callset, trims alleles, etc.
+
+Input
+~~~~~
+
+A variant call set in VCF format from which a subset can be selected.
+
+Output
+~~~~~~
+
+A new VCF file containing the selected subset of variants.
+
+\*
+
+Usage examples
+~~~~~~~~~~~~~~
+
+Select SNPs
+^^^^^^^^^^^
+
+::
+
+        gatk SelectVariants \
+        -R Homo_sapiens_assembly38.fasta \
+        -V input.vcf \
+        --select-type-to-include SNP \
+        -O output.vcf
+    
+
+Query Chromosome 20 Variants from a GenomicsDB
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+        gatk SelectVariants \
+        -R Homo_sapiens_assembly38.fasta \
+        -V gendb://genomicsDB \
+        -L 20 \
+        -O output.chr20.vcf
+    
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>

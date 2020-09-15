@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<tool id="gatk4_splitvcfs" name="GATK4 SplitVcfs (Picard)" version="@WRAPPER_VERSION@0" profile="17.09">
+
+    <description>- Splits SNPs and INDELs into separate files.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    <expand macro="requirements"/>
+    <expand macro="version_cmd"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        #include source=$vcf_tabix#
+
+        @CMD_BEGIN@ SplitVcfs
+        --INDEL_OUTPUT ${indel_output}
+        --SNP_OUTPUT ${snp_output}
+        ${optional.strict}
+        #include source=$picard_opts#
+        #include source=$vcf_input#
+        #include source=$picard_ref_opts#
+        #include source=$picard_seqdict_opts#
+
+    ]]></command>
+
+    <inputs>
+        <expand macro="picard_vcf_params" />
+        <param name="indel_output" argument="--INDEL_OUTPUT" type="data" optional="false" format="vcf,vcf_bgzip" label="Indel_Output" help="The VCF or BCF file to which indel records should be written. The file format is determined by file extension." />
+        <param name="input" argument="--INPUT" type="data" optional="false" format="vcf,vcf_bgzip" label="Input" help="The VCF or BCF input file" />
+        <param name="snp_output" argument="--SNP_OUTPUT" type="data" optional="false" format="vcf,vcf_bgzip" label="Snp_Output" help="The VCF or BCF file to which SNP records should be written. The file format is determined by file extension." />
+        <section name="optional" title="Optional Parameters" expanded="False">
+
+            <expand macro="ref_sel" />
+            <expand macro="seq_dict_sel" />            <param name="strict" argument="--STRICT" type="boolean" truevalue="--STRICT" falsevalue="" optional="true" checked="true" label="Strict" help="If true an exception will be thrown if an event type other than SNP or indel is encountered" />
+
+        </section>
+        <expand macro="picard_params" />
+    </inputs>
+
+    <outputs>
+
+    </outputs>
+
+    <tests>
+    </tests>
+
+    <help><![CDATA[
+    Splits the input VCF file into two, one for indels and one for SNPs. The
+headers of the two output files will be identical.
+An index file is created for the output file by default. Using an output
+file name with a ".gz" extension will create gzip-compressed output.
+
+    ]]></help>
+
+    <expand macro="citations"/>
+
+</tool>

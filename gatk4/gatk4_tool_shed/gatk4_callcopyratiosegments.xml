@@ -1,0 +1,105 @@
+<tool id="gatk4_callcopyratiosegments" name="GATK4 CallCopyRatioSegments" profile="17.09" version="@WRAPPER_VERSION@0">
+  <description>- Calls copy-ratio segments as amplified, deleted, or copy-number neutral</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[@CMD_BEGIN@ CallCopyRatioSegments
+#if $calling_copy_ratio_z_score_threshold:
+--calling-copy-ratio-z-score-threshold $calling_copy_ratio_z_score_threshold
+#end if
+#if $gatk_config_file:
+--gatk-config-file $gatk_config_file
+#end if
+#if $gcs_max_retries:
+--gcs-max-retries $gcs_max_retries
+#end if
+--input $input
+#if $neutral_segment_copy_ratio_lower_bound:
+--neutral-segment-copy-ratio-lower-bound $neutral_segment_copy_ratio_lower_bound
+#end if
+#if $neutral_segment_copy_ratio_upper_bound:
+--neutral-segment-copy-ratio-upper-bound $neutral_segment_copy_ratio_upper_bound
+#end if
+#if $outlier_neutral_segment_copy_ratio_z_score_threshold:
+--outlier-neutral-segment-copy-ratio-z-score-threshold $outlier_neutral_segment_copy_ratio_z_score_threshold
+#end if
+--output $output
+#if $use_jdk_deflater:
+$use_jdk_deflater
+#end if
+#if $use_jdk_inflater:
+$use_jdk_inflater
+#end if
+#if $verbosity:
+--verbosity $verbosity
+#end if]]></command>
+  <inputs>
+    <param name="calling_copy_ratio_z_score_threshold" argument="--calling-copy-ratio-z-score-threshold" type="float" optional="true" value="2.0" min="0" label="Calling Copy Ratio Z Score Threshold" help="Threshold on z-score of non-log2 copy ratio used for calling segments."/>
+    <param name="gatk_config_file" argument="--gatk-config-file" type="data" optional="true" format="txt" label="Gatk Config File" help="A configuration file to use with the GATK."/>
+    <param name="gcs_max_retries" argument="--gcs-max-retries" type="integer" optional="true" value="20" label="Gcs Max Retries" help="If the GCS bucket channel errors out, how many times it will attempt to re-initiate the connection"/>
+    <param name="input" argument="--input" type="data" optional="false" format="tabular" label="Input" help="Input file containing copy-ratio segments (.cr.seg output of ModelSegments)."/>
+    <param name="neutral_segment_copy_ratio_lower_bound" argument="--neutral-segment-copy-ratio-lower-bound" type="float" optional="true" value="0.9" min="0" label="Neutral Segment Copy Ratio Lower Bound" help="Lower bound on non-log2 copy ratio used for determining copy-neutral segments."/>
+    <param name="neutral_segment_copy_ratio_upper_bound" argument="--neutral-segment-copy-ratio-upper-bound" type="float" optional="true" value="1.1" min="0" label="Neutral Segment Copy Ratio Upper Bound" help="Upper bound on non-log2 copy ratio used for determining copy-neutral segments."/>
+    <param name="outlier_neutral_segment_copy_ratio_z_score_threshold" argument="--outlier-neutral-segment-copy-ratio-z-score-threshold" type="float" optional="true" value="2.0" min="0" label="Outlier Neutral Segment Copy Ratio Z Score Threshold" help="Threshold on z-score of non-log2 copy ratio used for determining outlier copy-neutral segments.  If non-log2 copy ratio z-score is above this threshold for a copy-neutral segment, it is considered an outlier and not used in the calculation of the length-weighted mean and standard deviation used for calling."/>
+    <param name="use_jdk_deflater" argument="--use-jdk-deflater" type="boolean" truevalue="--use-jdk-deflater" falsevalue="" optional="true" checked="false" label="Use Jdk Deflater" help="Whether to use the JdkDeflater (as opposed to IntelDeflater)"/>
+    <param name="use_jdk_inflater" argument="--use-jdk-inflater" type="boolean" truevalue="--use-jdk-inflater" falsevalue="" optional="true" checked="false" label="Use Jdk Inflater" help="Whether to use the JdkInflater (as opposed to IntelInflater)"/>
+    <param name="verbosity" argument="--verbosity" type="select" optional="true" label="Verbosity" help="Control verbosity of logging.">
+      <option selected="false" value="ERROR">ERROR</option>
+      <option selected="false" value="WARNING">WARNING</option>
+      <option selected="true" value="INFO">INFO</option>
+      <option selected="false" value="DEBUG">DEBUG</option>
+    </param>
+  </inputs>
+  <outputs>
+    <data name="output" argument="--output" type="data" optional="false" format="tabular" label="${tool.name} on ${on_string}: output tabular" help="Output file for called copy-ratio segments."/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[Calls copy-ratio segments as amplified, deleted, or copy-number neutral.
+
+This is a relatively naive caller that takes the modeled-segments output
+of ModelSegments and performs a simple statistical test on the segmented
+log2 copy ratios to call amplifications and deletions, given a specified
+range for determining copy-number neutral segments. This caller is based
+on the calling functionality of
+`ReCapSeg <https://gatkforums.broadinstitute.org/gatk/discussion/5640/recapseg-overview>`__.
+
+If provided ModelSegments results that incorporate allele-fraction data,
+i.e. data with presumably improved segmentation, the statistical test
+performed by CallCopyRatioSegments ignores the modeled minor-allele
+fractions when making calls.
+
+Input
+~~~~~
+
+-  Copy-ratio-segments .cr.seg file from ModelSegments. This is a
+   tab-separated values (TSV) file with a SAM-style header containing a
+   read group sample name, a sequence dictionary, a row specifying the
+   column headers contained in
+   CopyRatioSegmentCollection.CopyRatioSegmentTableColumn, and the
+   corresponding entry rows.
+
+Output
+~~~~~~
+
+-  Called copy-ratio-segments file. This is a tab-separated values (TSV)
+   file with a SAM-style header containing a read group sample name, a
+   sequence dictionary, a row specifying the column headers contained in
+   CalledCopyRatioSegmentCollection.CalledCopyRatioSegmentTableColumn,
+   and the corresponding entry rows.
+
+Usage example
+~~~~~~~~~~~~~
+
+::
+
+        gatk CallCopyRatioSegments \
+             -I tumor.cr.seg \
+             -O tumor.called.seg
+    
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>

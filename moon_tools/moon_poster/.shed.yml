@@ -1,0 +1,12 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/moon_tools"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/moon_tools"
+categories:
+  - "KDL Tools"
+repositories:
+  moon_poster:
+    description: "Posts samples to moon."
+    include:
+      - moon_poster.xml
+      - moon_api.py
+      - mito_merge.sh

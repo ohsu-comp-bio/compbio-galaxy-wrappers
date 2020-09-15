@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<tool id="gatk4_collectvariantcallingmetrics" name="GATK4 CollectVariantCallingMetrics (Picard)" version="@WRAPPER_VERSION@0" profile="17.09">
+
+    <description>- Collects per-sample and aggregate (spanning all samples) metrics from the provided VCF file</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    <expand macro="requirements"/>
+    <expand macro="version_cmd"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+        #include source=$vcf_tabix#
+
+        @CMD_BEGIN@ CollectVariantCallingMetrics
+        --DBSNP ${dbsnp}
+        ${optional.gvcf_input}
+        --TARGET_INTERVALS ${optional.target_intervals}
+        --THREAD_COUNT ${optional.thread_count}
+        #include source=$picard_opts#
+        #include source=$picard_vcf_output_opts#
+        #include source=$vcf_input#
+        #include source=$picard_ref_opts#
+        #include source=$picard_seqdict_opts#
+
+    ]]></command>
+
+    <inputs>
+        <expand macro="picard_vcf_params" />
+        <param name="dbsnp" argument="--DBSNP" type="data" optional="false" format="vcf,vcf_bgzip" label="Dbsnp" help="Reference dbSNP file in dbSNP or VCF format." />
+        <param name="input" argument="--INPUT" type="data" optional="false" format="vcf,vcf_bgzip" label="Input" help="Input vcf file for analysis" />
+        <section name="optional" title="Optional Parameters" expanded="False">
+            <param name="gvcf_input" argument="--GVCF_INPUT" type="boolean" truevalue="--GVCF_INPUT" falsevalue="" optional="true" checked="false" label="Gvcf_Input" help="Set to true if running on a single-sample gvcf." />
+
+            <expand macro="ref_sel" />
+            <expand macro="seq_dict_sel" />            <param name="target_intervals" argument="--TARGET_INTERVALS" type="data" optional="true" format="vcf,vcf_bgzip" label="Target_Intervals" help="Target intervals to restrict analysis to." />
+            <param name="thread_count" argument="--THREAD_COUNT" type="integer" optional="true" value="1" label="Thread_Count" help="Undocumented option" />
+
+        </section>
+        <expand macro="picard_params" />
+    </inputs>
+
+    <outputs>
+        <expand macro="picard_vcf_output_params" />
+        <expand macro="picard_output_params" />
+
+    </outputs>
+
+    <tests>
+    </tests>
+
+    <help><![CDATA[
+    Collects summary and per-sample metrics about variant calls in a VCF
+file.
+
+    ]]></help>
+
+    <expand macro="citations"/>
+
+</tool>

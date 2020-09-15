@@ -1,0 +1,12 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/parklab/SigMA"
+homepage_url: "https://github.com/parklab/SigMA"
+categories:
+  - "KDL Tools"
+repositories:
+  sigma:
+    description: "Finds the most likely signature category for a tumor sample."
+    include:
+      - sigma.xml
+      - run_sigma.R
+      - SigMA-master

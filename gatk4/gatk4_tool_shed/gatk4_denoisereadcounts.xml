@@ -1,0 +1,148 @@
+<tool id="gatk4_denoisereadcounts" name="GATK4 DenoiseReadCounts" profile="17.09" version="@WRAPPER_VERSION@0">
+  <description>- Denoises read counts to produce denoised copy ratios</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[@CMD_BEGIN@ DenoiseReadCounts
+#if $annotated_intervals:
+--annotated-intervals $annotated_intervals
+#end if
+#if $count_panel_of_normals:
+--count-panel-of-normals $count_panel_of_normals
+#end if
+--denoised-copy-ratios $denoised_copy_ratios
+#if $gatk_config_file:
+--gatk-config-file $gatk_config_file
+#end if
+#if $gcs_max_retries:
+--gcs-max-retries $gcs_max_retries
+#end if
+#if $number_of_eigensamples:
+--number-of-eigensamples $number_of_eigensamples
+#end if
+--standardized-copy-ratios $standardized_copy_ratios
+#if $use_jdk_deflater:
+$use_jdk_deflater
+#end if
+#if $use_jdk_inflater:
+$use_jdk_inflater
+#end if
+#if $verbosity:
+--verbosity $verbosity
+#end if
+#include source=$hdf5_input_chth#]]></command>
+  <inputs>
+    <expand macro="hdf5_input"/>
+    <param name="annotated_intervals" argument="--annotated-intervals" type="data" optional="true" format="gatk_interval" label="Annotated Intervals" help="Input file containing annotations for GC content in genomic intervals (output of AnnotateIntervals).  Intervals must be identical to and in the same order as those in the input read-counts file.  If a panel of normals is provided, this input will be ignored."/>
+    <param name="count_panel_of_normals" argument="--count-panel-of-normals" type="data" optional="true" format="h5" label="Count Panel Of Normals" help="Input HDF5 file containing the panel of normals (output of CreateReadCountPanelOfNormals)."/>
+    <param name="gatk_config_file" argument="--gatk-config-file" type="data" optional="true" format="txt" label="Gatk Config File" help="A configuration file to use with the GATK."/>
+    <param name="gcs_max_retries" argument="--gcs-max-retries" type="integer" optional="true" value="20" label="Gcs Max Retries" help="If the GCS bucket channel errors out, how many times it will attempt to re-initiate the connection"/>
+    <param name="number_of_eigensamples" argument="--number-of-eigensamples" type="integer" optional="true" value="" label="Number Of Eigensamples" help="Number of eigensamples to use for denoising.  If not specified or if the number of eigensamples available in the panel of normals is smaller than this, all eigensamples will be used."/>
+    <param name="use_jdk_deflater" argument="--use-jdk-deflater" type="boolean" truevalue="--use-jdk-deflater" falsevalue="" optional="true" checked="false" label="Use Jdk Deflater" help="Whether to use the JdkDeflater (as opposed to IntelDeflater)"/>
+    <param name="use_jdk_inflater" argument="--use-jdk-inflater" type="boolean" truevalue="--use-jdk-inflater" falsevalue="" optional="true" checked="false" label="Use Jdk Inflater" help="Whether to use the JdkInflater (as opposed to IntelInflater)"/>
+    <param name="verbosity" argument="--verbosity" type="select" optional="true" label="Verbosity" help="Control verbosity of logging.">
+      <option selected="false" value="ERROR">ERROR</option>
+      <option selected="false" value="WARNING">WARNING</option>
+      <option selected="true" value="INFO">INFO</option>
+      <option selected="false" value="DEBUG">DEBUG</option>
+    </param>
+  </inputs>
+  <outputs>
+    <data name="denoised_copy_ratios" argument="--denoised-copy-ratios" type="data" optional="false" format="tabular" label="${tool.name} on ${on_string}: denoised_copy_ratios tabular" help="Output file for denoised copy ratios."/>
+    <data name="standardized_copy_ratios" argument="--standardized-copy-ratios" type="data" optional="false" format="tabular" label="${tool.name} on ${on_string}: standardized_copy_ratios tabular" help="Output file for standardized copy ratios.  GC-bias correction will be performed if annotations for GC content are provided."/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[Denoises read counts to produce denoised copy ratios.
+
+Typically, a panel of normals produced by CreateReadCountPanelOfNormals
+is provided as input. The input counts are then standardized by 1)
+transforming to fractional coverage, 2) performing optional explicit
+GC-bias correction (if the panel contains GC-content annotated
+intervals), 3) filtering intervals to those contained in the panel, 4)
+dividing by interval medians contained in the panel, 5) dividing by the
+sample median, and 6) transforming to log2 copy ratio. The result is
+then denoised by subtracting the projection onto the specified number of
+principal components from the panel.
+
+If no panel is provided, then the input counts are instead standardized
+by 1) transforming to fractional coverage, 2) performing optional
+explicit GC-bias correction (if GC-content annotated intervals are
+provided), 3) dividing by the sample median, and 4) transforming to log2
+copy ratio. No denoising is performed, so the denoised result is simply
+taken to be identical to the standardized result.
+
+If performed, explicit GC-bias correction is done by GCBiasCorrector.
+
+Note that number-of-eigensamples principal components from the input
+panel will be used for denoising; if only fewer are available in the
+panel, then they will all be used. This parameter can thus be used to
+control the amount of denoising, which will ultimately affect the
+sensitivity of the analysis.
+
+See comments for CreateReadCountPanelOfNormals regarding coverage on sex
+chromosomes. If sex chromosomes are not excluded from coverage
+collection, it is strongly recommended that case samples are denoised
+only with panels containing only individuals of the same sex as the case
+samples.
+
+Inputs
+~~~~~~
+
+-  Counts TSV or HDF5 file from CollectReadCounts.
+-  (Optional) Panel-of-normals from CreateReadCountPanelOfNormals. If
+   provided, it will be used to standardize and denoise the input
+   counts. This may include explicit GC-bias correction if annotated
+   intervals were used to create the panel.
+-  (Optional) GC-content annotated-intervals from AnnotateIntervals.
+   This can be provided in place of a panel of normals to perform
+   explicit GC-bias correction.
+
+Outputs
+~~~~~~~
+
+-  Standardized-copy-ratios file. This is a tab-separated values (TSV)
+   file with a SAM-style header containing a read group sample name, a
+   sequence dictionary, a row specifying the column headers contained in
+   CopyRatioCollection.CopyRatioTableColumn, and the corresponding entry
+   rows.
+-  Denoised-copy-ratios file. This is a tab-separated values (TSV) file
+   with a SAM-style header containing a read group sample name, a
+   sequence dictionary, a row specifying the column headers contained in
+   CopyRatioCollection.CopyRatioTableColumn, and the corresponding entry
+   rows.
+
+Usage examples
+~~~~~~~~~~~~~~
+
+::
+
+        gatk DenoiseReadCounts \
+             -I sample.counts.hdf5 \
+             --count-panel-of-normals panel_of_normals.pon.hdf5 \
+             --standardized-copy-ratios sample.standardizedCR.tsv \
+             --denoised-copy-ratios sample.denoisedCR.tsv
+    
+
+::
+
+        gatk DenoiseReadCounts \
+             -I sample.counts.hdf5 \
+             --annotated-intervals annotated_intervals.tsv \
+             --standardized-copy-ratios sample.standardizedCR.tsv \
+             --denoised-copy-ratios sample.denoisedCR.tsv
+    
+
+::
+
+        gatk DenoiseReadCounts \
+             -I sample.counts.hdf5 \
+             --standardized-copy-ratios sample.standardizedCR.tsv \
+             --denoised-copy-ratios sample.denoisedCR.tsv
+    
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>

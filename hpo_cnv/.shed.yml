@@ -1,0 +1,14 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/hpo_cnv"
+homepage_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/hpo_cnv"
+categories:
+  - "KDL Tools"
+repositories:
+  hpo_cnv_filter:
+    description: "Creates gene list from HPO terms and filters CNV lists by that list."
+    include:
+      - hpo_cnv.xml
+      - hpo_stuff.R
+      - gene_filter.py
+      - getHPO.sh
+      - hpo_from_moon.sh
