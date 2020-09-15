@@ -1,0 +1,13 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/broadinstitute/gatk/tree/4.0.5.1"
+homepage_url: "https://gatk.broadinstitute.org/hc/en-us/sections/360007381571-4-0-5-1"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  gatk4_haplotypecaller:
+    description: "Call germline SNPs and indels via local re-assembly of haplotypes"
+    include:
+      - macros.xml
+      - gatk4_haplotypecaller.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
