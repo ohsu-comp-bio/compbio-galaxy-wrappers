@@ -1,0 +1,291 @@
+<tool id="gatk4_modelsegments" name="GATK4 ModelSegments" profile="17.09" version="@WRAPPER_VERSION@0">
+  <description>- Models segmented copy ratios from denoised read counts and segmented minor-allele fractions from allelic counts</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[@CMD_BEGIN@ ModelSegments
+#if $allelic_counts:
+--allelic-counts $allelic_counts
+#end if
+#if $denoised_copy_ratios:
+--denoised-copy-ratios $denoised_copy_ratios
+#end if
+#if $gatk_config_file:
+--gatk-config-file $gatk_config_file
+#end if
+#if $gcs_max_retries:
+--gcs-max-retries $gcs_max_retries
+#end if
+#if $genotyping_base_error_rate:
+--genotyping-base-error-rate $genotyping_base_error_rate
+#end if
+#if $genotyping_homozygous_log_ratio_threshold:
+--genotyping-homozygous-log-ratio-threshold $genotyping_homozygous_log_ratio_threshold
+#end if
+#if $kernel_approximation_dimension:
+--kernel-approximation-dimension $kernel_approximation_dimension
+#end if
+#if $kernel_scaling_allele_fraction:
+--kernel-scaling-allele-fraction $kernel_scaling_allele_fraction
+#end if
+#if $kernel_variance_allele_fraction:
+--kernel-variance-allele-fraction $kernel_variance_allele_fraction
+#end if
+#if $kernel_variance_copy_ratio:
+--kernel-variance-copy-ratio $kernel_variance_copy_ratio
+#end if
+#if $maximum_number_of_segments_per_chromosome:
+--maximum-number-of-segments-per-chromosome $maximum_number_of_segments_per_chromosome
+#end if
+#if $maximum_number_of_smoothing_iterations:
+--maximum-number-of-smoothing-iterations $maximum_number_of_smoothing_iterations
+#end if
+#if $minimum_total_allele_count:
+--minimum-total-allele-count $minimum_total_allele_count
+#end if
+#if $minor_allele_fraction_prior_alpha:
+--minor-allele-fraction-prior-alpha $minor_allele_fraction_prior_alpha
+#end if
+#if $normal_allelic_counts:
+--normal-allelic-counts $normal_allelic_counts
+#end if
+#if $number_of_burn_in_samples_allele_fraction:
+--number-of-burn-in-samples-allele-fraction $number_of_burn_in_samples_allele_fraction
+#end if
+#if $number_of_burn_in_samples_copy_ratio:
+--number-of-burn-in-samples-copy-ratio $number_of_burn_in_samples_copy_ratio
+#end if
+#if $number_of_changepoints_penalty_factor:
+--number-of-changepoints-penalty-factor $number_of_changepoints_penalty_factor
+#end if
+#if $number_of_samples_allele_fraction:
+--number-of-samples-allele-fraction $number_of_samples_allele_fraction
+#end if
+#if $number_of_samples_copy_ratio:
+--number-of-samples-copy-ratio $number_of_samples_copy_ratio
+#end if
+#if $number_of_smoothing_iterations_per_fit:
+--number-of-smoothing-iterations-per-fit $number_of_smoothing_iterations_per_fit
+#end if
+#if $smoothing_credible_interval_threshold_allele_fraction:
+--smoothing-credible-interval-threshold-allele-fraction $smoothing_credible_interval_threshold_allele_fraction
+#end if
+#if $smoothing_credible_interval_threshold_copy_ratio:
+--smoothing-credible-interval-threshold-copy-ratio $smoothing_credible_interval_threshold_copy_ratio
+#end if
+#if $use_jdk_deflater:
+$use_jdk_deflater
+#end if
+#if $use_jdk_inflater:
+$use_jdk_inflater
+#end if
+#if $verbosity:
+--verbosity $verbosity
+#end if
+#if $window_size:
+--window-size $window_size
+#end if
+#include source=$modelsegments_chth#]]></command>
+  <inputs>
+    <param name="allelic_counts" argument="--allelic-counts" type="data" optional="true" format="tabular" label="Allelic Counts" help="Input file containing allelic counts (output of CollectAllelicCounts)."/>
+    <param name="denoised_copy_ratios" argument="--denoised-copy-ratios" type="data" optional="true" format="tabular" label="Denoised Copy Ratios" help="Input file containing denoised copy ratios (output of DenoiseReadCounts)."/>
+    <param name="gatk_config_file" argument="--gatk-config-file" type="data" optional="true" format="txt" label="Gatk Config File" help="A configuration file to use with the GATK."/>
+    <param name="gcs_max_retries" argument="--gcs-max-retries" type="integer" optional="true" value="20" label="Gcs Max Retries" help="If the GCS bucket channel errors out, how many times it will attempt to re-initiate the connection"/>
+    <param name="genotyping_base_error_rate" argument="--genotyping-base-error-rate" type="float" optional="true" value="0.05" label="Genotyping Base Error Rate" help="Maximum base-error rate for genotyping and filtering homozygous allelic counts, if available.  The likelihood for an allelic count to be generated from a homozygous site will be integrated from zero base-error rate up to this value.  Decreasing this value will increase the number of sites assumed to be heterozygous for modeling."/>
+    <param name="genotyping_homozygous_log_ratio_threshold" argument="--genotyping-homozygous-log-ratio-threshold" type="float" optional="true" value="-10.0" label="Genotyping Homozygous Log Ratio Threshold" help="Log-ratio threshold for genotyping and filtering homozygous allelic counts, if available.  Increasing this value will increase the number of sites assumed to be heterozygous for modeling."/>
+    <param name="kernel_approximation_dimension" argument="--kernel-approximation-dimension" type="integer" optional="true" value="100" min="1" label="Kernel Approximation Dimension" help="Dimension of the kernel approximation.  A subsample containing this number of data points will be used to construct the approximation for each chromosome.  If the total number of data points in a chromosome is greater than this number, then all data points in the chromosome will be used.  Time complexity scales quadratically and space complexity scales linearly with this parameter."/>
+    <param name="kernel_scaling_allele_fraction" argument="--kernel-scaling-allele-fraction" type="float" optional="true" value="1.0" min="0" label="Kernel Scaling Allele Fraction" help="Relative scaling S of the kernel K_AF for allele-fraction segmentation to the kernel K_CR for copy-ratio segmentation.  If multidimensional segmentation is performed, the total kernel used will be K_CR + S * K_AF."/>
+    <param name="kernel_variance_allele_fraction" argument="--kernel-variance-allele-fraction" type="float" optional="true" value="0.025" min="0" label="Kernel Variance Allele Fraction" help="Variance of Gaussian kernel for allele-fraction segmentation, if performed.  If zero, a linear kernel will be used."/>
+    <param name="kernel_variance_copy_ratio" argument="--kernel-variance-copy-ratio" type="float" optional="true" value="0.0" min="0" label="Kernel Variance Copy Ratio" help="Variance of Gaussian kernel for copy-ratio segmentation, if performed.  If zero, a linear kernel will be used."/>
+    <param name="maximum_number_of_segments_per_chromosome" argument="--maximum-number-of-segments-per-chromosome" type="integer" optional="true" value="1000" min="1" label="Maximum Number Of Segments Per Chromosome" help="Maximum number of segments allowed per chromosome."/>
+    <param name="maximum_number_of_smoothing_iterations" argument="--maximum-number-of-smoothing-iterations" type="integer" optional="true" value="25" min="0" label="Maximum Number Of Smoothing Iterations" help="Maximum number of iterations allowed for segmentation smoothing."/>
+    <param name="minimum_total_allele_count" argument="--minimum-total-allele-count" type="integer" optional="true" value="30" min="0" label="Minimum Total Allele Count" help="Minimum total count for filtering allelic counts, if available."/>
+    <param name="minor_allele_fraction_prior_alpha" argument="--minor-allele-fraction-prior-alpha" type="float" optional="true" value="25.0" min="1" label="Minor Allele Fraction Prior Alpha" help="Alpha hyperparameter for the 4-parameter beta-distribution prior on segment minor-allele fraction. The prior for the minor-allele fraction f in each segment is assumed to be Beta(alpha, 1, 0, 1/2). Increasing this hyperparameter will reduce the effect of reference bias at the expense of sensitivity."/>
+    <param name="normal_allelic_counts" argument="--normal-allelic-counts" type="data" optional="true" format="tabular" label="Normal Allelic Counts" help="Input file containing allelic counts for a matched normal (output of CollectAllelicCounts)."/>
+    <param name="number_of_burn_in_samples_allele_fraction" argument="--number-of-burn-in-samples-allele-fraction" type="integer" optional="true" value="50" min="0" label="Number Of Burn In Samples Allele Fraction" help="Number of burn-in samples to discard for allele-fraction model."/>
+    <param name="number_of_burn_in_samples_copy_ratio" argument="--number-of-burn-in-samples-copy-ratio" type="integer" optional="true" value="50" min="0" label="Number Of Burn In Samples Copy Ratio" help="Number of burn-in samples to discard for copy-ratio model."/>
+    <param name="number_of_changepoints_penalty_factor" argument="--number-of-changepoints-penalty-factor" type="float" optional="true" value="1.0" min="0" label="Number Of Changepoints Penalty Factor" help="Factor A for the penalty on the number of changepoints per chromosome for segmentation.  Adds a penalty of the form A * C * [1 + log (N / C)], where C is the number of changepoints in the chromosome, to the cost function for each chromosome.  Must be non-negative."/>
+    <param name="number_of_samples_allele_fraction" argument="--number-of-samples-allele-fraction" type="integer" optional="true" value="100" min="1" label="Number Of Samples Allele Fraction" help="Total number of MCMC samples for allele-fraction model."/>
+    <param name="number_of_samples_copy_ratio" argument="--number-of-samples-copy-ratio" type="integer" optional="true" value="100" min="1" label="Number Of Samples Copy Ratio" help="Total number of MCMC samples for copy-ratio model."/>
+    <param name="number_of_smoothing_iterations_per_fit" argument="--number-of-smoothing-iterations-per-fit" type="integer" optional="true" value="0" min="0" label="Number Of Smoothing Iterations Per Fit" help="Number of segmentation-smoothing iterations per MCMC model refit. (Increasing this will decrease runtime, but the final number of segments may be higher. Setting this to 0 will completely disable model refitting between iterations.)"/>
+    <param name="smoothing_credible_interval_threshold_allele_fraction" argument="--smoothing-credible-interval-threshold-allele-fraction" type="float" optional="true" value="2.0" min="0" label="Smoothing Credible Interval Threshold Allele Fraction" help="Number of 10% equal-tailed credible-interval widths to use for allele-fraction segmentation smoothing."/>
+    <param name="smoothing_credible_interval_threshold_copy_ratio" argument="--smoothing-credible-interval-threshold-copy-ratio" type="float" optional="true" value="2.0" min="0" label="Smoothing Credible Interval Threshold Copy Ratio" help="Number of 10% equal-tailed credible-interval widths to use for copy-ratio segmentation smoothing."/>
+    <param name="use_jdk_deflater" argument="--use-jdk-deflater" type="boolean" truevalue="--use-jdk-deflater" falsevalue="" optional="true" checked="false" label="Use Jdk Deflater" help="Whether to use the JdkDeflater (as opposed to IntelDeflater)"/>
+    <param name="use_jdk_inflater" argument="--use-jdk-inflater" type="boolean" truevalue="--use-jdk-inflater" falsevalue="" optional="true" checked="false" label="Use Jdk Inflater" help="Whether to use the JdkInflater (as opposed to IntelInflater)"/>
+    <param name="verbosity" argument="--verbosity" type="select" optional="true" label="Verbosity" help="Control verbosity of logging.">
+      <option selected="false" value="ERROR">ERROR</option>
+      <option selected="false" value="WARNING">WARNING</option>
+      <option selected="true" value="INFO">INFO</option>
+      <option selected="false" value="DEBUG">DEBUG</option>
+    </param>
+    <param name="window_size" argument="--window-size" type="integer" optional="true" value="" label="Window Size" help="Window sizes to use for calculating local changepoint costs.  For each window size, the cost for each data point to be a changepoint will be calculated assuming that the point demarcates two adjacent segments of that size.  Including small (large) window sizes will increase sensitivity to small (large) events.  Duplicate values will be ignored."/>
+  </inputs>
+  <outputs>
+    <expand macro="modelsegments_output"/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[Models segmented copy ratios from denoised read counts and segmented
+minor-allele fractions from allelic counts.
+
+Possible inputs are: 1) denoised copy ratios for the case sample, 2)
+allelic counts for the case sample, and 3) allelic counts for a
+matched-normal sample. All available inputs will be used to to perform
+segmentation and model inference.
+
+If allelic counts are available, the first step in the inference process
+is to genotype heterozygous sites, as the allelic counts at these sites
+will subsequently be modeled to infer segmented minor-allele fraction.
+We perform a relatively simple and naive genotyping based on the allele
+counts (i.e., pileups), which is controlled by a small number of
+parameters (minimum-total-allele-count,
+genotyping-homozygous-log-ratio-threshold, and
+genotyping-homozygous-log-ratio-threshold). If the matched normal is
+available, its allelic counts will be used to genotype the sites, and we
+will simply assume these genotypes are the same in the case sample.
+(This can be critical, for example, for determining sites with loss of
+heterozygosity in high purity case samples; such sites will be genotyped
+as homozygous if the matched-normal sample is not available.)
+
+Next, we segment, if available, the denoised copy ratios and the
+alternate-allele fractions at the genotyped heterozygous sites. This is
+done using kernel segmentation (see KernelSegmenter). Various
+segmentation parameters control the sensitivity of the segmentation and
+should be selected appropriately for each analysis.
+
+If both copy ratios and allele fractions are available, we perform
+segmentation using a combined kernel that is sensitive to changes that
+occur not only in either of the two but also in both. However, in this
+case, we simply discard all allele fractions at sites that lie outside
+of the available copy-ratio intervals (rather than imputing the missing
+copy-ratio data); these sites are filtered out during the genotyping
+step discussed above. This can have implications for analyses involving
+the sex chromosomes; see comments in CreateReadCountPanelOfNormals.
+
+After segmentation is complete, we run Markov-chain Monte Carlo (MCMC)
+to determine posteriors for segmented models for the log2 copy ratio and
+the minor-allele fraction; see CopyRatioModeller and
+AlleleFractionModeller, respectively. After the first run of MCMC is
+complete, smoothing of the segmented posteriors is performed by merging
+adjacent segments whose posterior credible intervals sufficiently
+overlap according to specified segmentation-smoothing parameters. Then,
+additional rounds of segmentation smoothing (with intermediate MCMC
+optionally performed in between rounds) are performed until convergence,
+at which point a final round of MCMC is performed.
+
+Inputs
+~~~~~~
+
+-  (Optional) Denoised-copy-ratios file from DenoiseReadCounts. If
+   allelic counts are not provided, then this is required.
+-  (Optional) Allelic-counts file from CollectAllelicCounts. If denoised
+   copy ratios are not provided, then this is required.
+-  (Optional) Matched-normal allelic-counts file from
+   CollectAllelicCounts. This can only be provided if allelic counts for
+   the case sample are also provided.
+-  Output prefix. This is used as the basename for output files.
+-  Output directory. This must be a pre-existing directory.
+
+Outputs
+~~~~~~~
+
+-  Modeled-segments .modelBegin.seg and .modelFinal.seg files. These are
+   tab-separated values (TSV) files with a SAM-style header containing a
+   read group sample name, a sequence dictionary, a row specifying the
+   column headers contained in
+   ModeledSegmentCollection.ModeledSegmentTableColumn, and the
+   corresponding entry rows. The initial result before segmentation
+   smoothing is output to the .modelBegin.seg file and the final result
+   after segmentation smoothing is output to the .modelFinal.seg file.
+-  Allele-fraction-model global-parameter files (.modelBegin.af.param
+   and .modelFinal.af.param). These are tab-separated values (TSV) files
+   with a SAM-style header containing a read group sample name, a row
+   specifying the column headers contained in
+   ParameterDecileCollection.ParameterTableColumn, and the corresponding
+   entry rows. The initial result before segmentation smoothing is
+   output to the .modelBegin.af.param file and the final result after
+   segmentation smoothing is output to the .modelFinal.af.param file.
+-  Copy-ratio-model global-parameter files (.modelBegin.cr.param and
+   .modelFinal.cr.param). These are tab-separated values (TSV) files
+   with a SAM-style header containing a read group sample name, a row
+   specifying the column headers contained in
+   ParameterDecileCollection.ParameterTableColumn, and the corresponding
+   entry rows. The initial result before segmentation smoothing is
+   output to the .modelBegin.cr.param file and the final result after
+   segmentation smoothing is output to the .modelFinal.cr.param file.
+-  Copy-ratio segment file (.cr.seg). This is a tab-separated values
+   (TSV) file with a SAM-style header containing a read group sample
+   name, a sequence dictionary, a row specifying the column headers
+   contained in CopyRatioSegmentCollection.CopyRatioSegmentTableColumn,
+   and the corresponding entry rows. It contains the segments from the
+   .modelFinal.seg file converted to a format suitable for input to
+   CallCopyRatioSegments.
+-  (Optional) Allelic-counts file containing the counts at sites
+   genotyped as heterozygous in the case sample (.hets.tsv). This is a
+   tab-separated values (TSV) file with a SAM-style header containing a
+   read group sample name, a sequence dictionary, a row specifying the
+   column headers contained in
+   AllelicCountCollection.AllelicCountTableColumn, and the corresponding
+   entry rows. This is only output if allelic counts are provided as
+   input.
+-  (Optional) Allelic-counts file containing the counts at sites
+   genotyped as heterozygous in the matched-normal sample
+   (.hets.normal.tsv). This is a tab-separated values (TSV) file with a
+   SAM-style header containing a read group sample name, a sequence
+   dictionary, a row specifying the column headers contained in
+   AllelicCountCollection.AllelicCountTableColumn, and the corresponding
+   entry rows. This is only output if matched-normal allelic counts are
+   provided as input.
+
+Usage examples
+~~~~~~~~~~~~~~
+
+::
+
+        gatk ModelSegments \
+             --denoised-copy-ratios tumor.denoisedCR.tsv \
+             --allelic-counts tumor.allelicCounts.tsv \
+             --normal-allelic-counts normal.allelicCounts.tsv \
+             --output-prefix tumor \
+             -O output_dir
+    
+
+::
+
+        gatk ModelSegments \
+             --denoised-copy-ratios normal.denoisedCR.tsv \
+             --allelic-counts normal.allelicCounts.tsv \
+             --output-prefix normal \
+             -O output_dir
+    
+
+::
+
+        gatk ModelSegments \
+             --allelic-counts tumor.allelicCounts.tsv \
+             --normal-allelic-counts normal.allelicCounts.tsv \
+             --output-prefix tumor \
+             -O output_dir
+    
+
+::
+
+        gatk ModelSegments \
+             --denoised-copy-ratios normal.denoisedCR.tsv \
+             --output-prefix normal \
+             -O output_dir
+    
+
+::
+
+        gatk ModelSegments \
+             --allelic-counts tumor.allelicCounts.tsv \
+             --output-prefix tumor \
+             -O output_dir
+    
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>

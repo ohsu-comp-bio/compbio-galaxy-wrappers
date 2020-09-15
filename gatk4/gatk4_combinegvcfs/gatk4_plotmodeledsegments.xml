@@ -1,0 +1,109 @@
+<tool id="gatk4_plotmodeledsegments" name="GATK4 PlotModeledSegments" profile="17.09" version="@WRAPPER_VERSION@0">
+  <description>- Creates plots of denoised and segmented copy-ratio and minor-allele-fraction estimates</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[@CMD_BEGIN@ PlotModeledSegments
+#if $allelic_counts:
+--allelic-counts $allelic_counts
+#end if
+#if $denoised_copy_ratios:
+--denoised-copy-ratios $denoised_copy_ratios
+#end if
+#if $gcs_max_retries:
+--gcs-max-retries $gcs_max_retries
+#end if
+#if $minimum_contig_length:
+--minimum-contig-length $minimum_contig_length
+#end if
+#if $segments:
+--segments $segments
+#end if
+#include source=$plotmodeledsegments_chth#
+#include source=$gatk_seqdict#]]></command>
+  <inputs>
+    <expand macro="seq_dict_sel"/>
+    <param name="segments" argument="--segments" type="data" optional="false" format="tabular" label="Segments" help="Input file containing modeled segments (output of ModelSegments)."/>
+    <param name="allelic_counts" argument="--allelic-counts" type="data" optional="true" format="tabular" label="Allelic Counts" help="Input file containing allelic counts at heterozygous sites (.hets.tsv output of ModelSegments)."/>
+    <param name="denoised_copy_ratios" argument="--denoised-copy-ratios" type="data" optional="true" format="tabular" label="Denoised Copy Ratios" help="Input file containing denoised copy ratios (output of DenoiseReadCounts)."/>
+    <param name="gcs_max_retries" argument="--gcs-max-retries" type="integer" optional="true" value="20" label="Gcs Max Retries" help="If the GCS bucket channel errors out, how many times it will attempt to re-initiate the connection"/>
+    <param name="minimum_contig_length" argument="--minimum-contig-length" type="integer" optional="true" value="1000000" label="Minimum Contig Length" help="Threshold length (in bp) for contigs to be plotted. Contigs with lengths less than this threshold will not be plotted. This can be used to filter out mitochondrial contigs, unlocalized contigs, etc."/>
+    <param name="gatk_config_file" argument="--gatk-config-file" type="data" optional="true" format="txt" label="Gatk Config File" help="A configuration file to use with the GATK."/>
+    <param name="use_jdk_deflater" argument="--use-jdk-deflater" type="boolean" truevalue="--use-jdk-deflater" falsevalue="" optional="true" checked="false" label="Use Jdk Deflater" help="Whether to use the JdkDeflater (as opposed to IntelDeflater)"/>
+    <param name="use_jdk_inflater" argument="--use-jdk-inflater" type="boolean" truevalue="--use-jdk-inflater" falsevalue="" optional="true" checked="false" label="Use Jdk Inflater" help="Whether to use the JdkInflater (as opposed to IntelInflater)"/>
+    <param name="verbosity" argument="--verbosity" type="select" optional="true" label="Verbosity" help="Control verbosity of logging.">
+        <option selected="false" value="ERROR">ERROR</option>
+        <option selected="false" value="WARNING">WARNING</option>
+        <option selected="true" value="INFO">INFO</option>
+        <option selected="false" value="DEBUG">DEBUG</option>
+    </param>
+  </inputs>
+  <outputs>
+    <expand macro="plotmodeledsegments_output"/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[Creates plots of denoised and segmented copy-ratio and
+minor-allele-fraction estimates.
+
+Inputs
+~~~~~~
+
+-  Modeled-segments file from ModelSegments.
+-  (Optional) Denoised-copy-ratios file from DenoiseReadCounts. If
+   allelic counts are not provided, then this is required.
+-  (Optional) Allelic-counts file containing the counts at sites
+   genotyped as heterozygous (.hets.tsv output of ModelSegments). If
+   denoised copy ratios are not provided, then this is required.
+-  Sequence-dictionary file. This determines the order and
+   representation of contigs in the plot.
+-  Output prefix. This is used as the basename for output files.
+-  Output directory. This must be a pre-existing directory.
+
+Output
+~~~~~~
+
+-  Modeled-segments-plot file. This shows the input denoised copy ratios
+   and/or alternate-allele fractions as points, as well as box plots for
+   the available posteriors in each segment. The colors of the points
+   alternate with the segmentation.
+
+Usage examples
+~~~~~~~~~~~~~~
+
+::
+
+        gatk PlotModeledSegments \
+             --denoised-copy-ratios tumor.denoisedCR.tsv \
+             --allelic-counts tumor.hets.tsv \
+             --segments tumor.modelFinal.seg \
+             --sequence-dictionary contigs_to_plot.dict \
+             --output-prefix tumor \
+             -O output_dir
+    
+
+::
+
+        gatk PlotModeledSegments \
+             --denoised-copy-ratios tumor.denoisedCR.tsv \
+             --segments tumor.modelFinal.seg \
+             --sequence-dictionary contigs_to_plot.dict \
+             --output-prefix tumor \
+             -O output_dir
+    
+
+::
+
+        gatk PlotModeledSegments \
+             --allelic-counts normal.hets.tsv \
+             --segments normal.modelFinal.seg \
+             --sequence-dictionary contigs_to_plot.dict \
+             --output-prefix normal \
+             -O output_dir
+    
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>
