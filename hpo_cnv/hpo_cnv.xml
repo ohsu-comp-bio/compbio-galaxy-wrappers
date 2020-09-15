@@ -1,5 +1,10 @@
 <tool id="hpo_gene_list" name="HPO and CNVs" version="1.0">
   <description>Gets HPO gene lists and filters CNVs by gene list.</description>
+  <requirements>
+    <requirement type="package" version="3.6.2">r-base</requirement>
+    <requirement type="package" version="0.6.1">r-xlsx</requirement>
+    <requirement type="package" version="8.0.152">openjdk</requirement>
+  </requirements>
   <command detect_errors="exit_code"><![CDATA[
     #if $hpo_source.source == "moon":
         echo "Moon" &&

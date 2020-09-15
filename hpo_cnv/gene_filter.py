@@ -14,7 +14,7 @@ def build_list(file_name):
     #iterate over each line the file
     for line in file:
         #strip off the end line character
-        entry = line.strip('\n')
+        entry = line.strip().upper()
         #strip off any extra white space and turn all letters uppercase to make it not case sensitive
         entry = entry.strip(' ').upper()
         #check if the gene is now empty
@@ -83,6 +83,7 @@ def filter_tsv_by_list(tsv_file_name, gene_list):
     for header in header_array:
         #strip off the new line character in case it is there
         header = header_array[count].strip('\n')
+        header = header.strip('"')
         #check if the header for this column is GENES
         if header == 'GENE':
             #if the header name is GENES then make the gene_index equal to this count
