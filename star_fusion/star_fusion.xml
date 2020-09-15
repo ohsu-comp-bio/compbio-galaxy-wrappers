@@ -1,27 +1,25 @@
-<tool id="star_fusion" name="STAR-Fusion" version="1.0.0.2">
+<tool id="star_fusion" name="STAR-Fusion" version="1.8.1.5">
     <description>detect fusion genes in RNA-Seq data</description>
     <requirements>
-        <requirement type="package" version="1.0.0">star-fusion</requirement>
-        <requirement type="package" version="0.1.19">samtools</requirement>
+        <requirement type="package" version="1.8.1">star-fusion</requirement>
         <requirement type="package" version="3.2">hmmer</requirement>
-        <requirement type="package" version="2.6.1">star</requirement>
+        <requirement type="package" version="2.7.2b">star</requirement>
+        <requirement type="package" version="1.9">samtools</requirement>
+        <requirement type="package" version="1.9">htslib</requirement>
     </requirements>
 
     <stdio>
         <regex match="command not found" source="stderr" level="fatal"/>
         <regex match="EXITING because of INPUT ERROR" source="stderr" level="fatal"/>
         <regex match="FATAL ERROR" source="stderr" level="fatal"/>
-        
         <regex match="Warning:" source="stderr" level="warning"/>
         <regex match="CMD:" source="stderr" level="warning"/>
-        
         <regex match="-done creating index file:" source="stderr" level="warning"/>
         <regex match="-parsing GTF file:" source="stderr" level="warning"/>
         <regex match="-building interval tree" source="stderr" level="warning"/>
         <regex match="-parsing fusion evidence:" source="stderr" level="warning"/>
         <regex match="-mapping reads to genes" source="stderr" level="warning"/>
         <regex match="-outputting fusion candidates to file:" source="stderr" level="warning"/>
-        
         <regex match="Process complete" source="stderr" level="warning"/>
     </stdio>
 
@@ -33,7 +31,7 @@
             --genome_fa '${genome_lib_type.fasta_type.ownFile.fields.path}'
             --gtf '${geneModel}'
             --blast_pairs "{blast_pairs}"
-            --CPU 8
+            --CPU \${GALAXY_SLOTS:-1}
             --output_dir "\$(pwd)/tmp_star_fusion_genome_dir"
             &&
         #end if
@@ -63,7 +61,13 @@
             --min_novel_junction_support $params.min_novel_junction_support
             --min_alt_pct_junction $params.min_alt_pct_junction
             --aggregate_novel_junction_dist $params.aggregate_novel_junction_dist
-            --E $params.E
+            --min_FFPM $params.min_FFPM
+            '${params.no_single_fusion_per_breakpoint}'
+            #if $params.FusionInspector != 'no_finspector'
+                --FusionInspector '${params.FusionInspector}'
+            #end if
+            '${params.no_remove_dups}'
+            '${params.examine_coding_effect}'
         #end if
     ]]></command>
 
@@ -75,8 +79,8 @@
             </param>
             <when value="use_chimeric">
                 <param name="chimeric_junction" type="data" format="interval" argument="--chimeric_junction" label="Chimeric junction file from STAR (with STAR-Fusion settings)"/>
-                <param name="left_fq" type="data" format="fastq,fastqsanger,fastqsanger.gz" optional="true" argument="--left_fq" label="left.fq file" help="include the left and right fastqs with the Chimeric.out.junction in order to compute the FFPM (normalized fusion fragments per million total rna-seq fragments) values in your summary report. Otherwise, you'll just get evidence fragment counts without the normalized values (empty fusion_candidates.final.abridged.FFPM file)"/>
-                <param name="right_fq" type="data" optional="true" format="fastq,fastqsanger,fastqsanger.gz" argument="--right_fq" label="right.fq file"/>
+                <param name="left_fq" type="data" format="fastq,fastqsanger" optional="true" argument="--left_fq" label="left.fq file" help="include the left and right fastqs with the Chimeric.out.junction in order to compute the FFPM (normalized fusion fragments per million total rna-seq fragments) values in your summary report. Otherwise, you'll just get evidence fragment counts without the normalized values (empty fusion_candidates.final.abridged.FFPM file)"/>
+                <param name="right_fq" type="data" optional="true" format="fastq,fastqsanger" argument="--right_fq" label="right.fq file"/>
             </when>
             <when value="use_fastq">
                 <param name="left_fq" type="data" format="fastq,fastqsanger,fastqsanger.gz" argument="--left_fq" label="left.fq file"/>
@@ -130,19 +134,42 @@
             <when value="full"><!-- Full/advanced params. -->
                 <param name="min_junction_reads" type="integer" value="1" label="minimum number of junction-spanning reads required." argument="--min_junction_reads"/>
                 <param name="min_sum_frags" type="integer" value="2" label="minimum fusion support = (#junction_reads + #spanning_frags)" argument="--min_sum_frags"/>
-                <param name="max_promiscuity" type="integer" value="3" label="maximum number of partners allowed for a given fusion" argument="--max_promiscuity"/>
-                <param name="min_novel_junction_support" type="integer" value="3" label="minimum of 3 junction reads required if breakpoint lacks involvement of only reference junctions" argument="--min_novel_junction_support"/>
+                <param name="require_LDAS" type="boolean" truevalue="1" falsevalue="0" checked="true" label="Long Double Anchor Support" argument="--require_LDAS" help="Require long double anchor support for split reads when no spanning frags are found."/>
+                <param name="max_promiscuity" type="integer" min="0" value="10" label="maximum number of partners allowed for a given fusion" argument="--max_promiscuity"/>
+                <param name="min_pct_dom_promiscuity" type="integer" min="0" value="20" label="Minimum Dominant Support" help="For promiscuous fusions, those with less than this support of the dominant scoring pair are filtered prior to applying the max_promiscuity filter." argument="--min_pct_dom_promiscuity"/>
+                <param name="aggregate_novel_junction_dist" type="integer" min="0" value="5" label="Non-ref Merge Distance" help="Non-ref junctions within 5 are merged into single calls" argument="--aggregate_novel_junction_dist"/>
+                <param name="min_novel_junction_support" type="integer" value="3" label="Minimum Novel Junction Support" help="Minimum of 3 junction reads required if breakpoint lacks involvement of only reference junctions" argument="--min_novel_junction_support"/>
+                <param name="min_spanning_frags_only" type="integer" value="5" label="Minimum Spanning Fragments" help="Minimum number of rna-seq fragments required as fusion evidence if there are no junction reads." argument="--min_spanning_frags_only"/>
                 <param name="min_alt_pct_junction" type="float" value="10.0" label="10% of the dominant isoform junction support" argument="--min_alt_pct_junction"/>
-                <param name="aggregate_novel_junction_dist" type="integer" value="5" label="non-ref junctions within 5 are merged into single calls" argument="--aggregate_novel_junction_dist"/>
-                <param name="E" type="float" value="0.001" label="E-value threshold for blast searches" argument="-E"/>
+                <param name="min_FFPM" type="float" value="0.1" label="Minimum FFPM" help="Minimum FFPM (fusion fragments per million rna-seq frags)" argument="--min_FFPM"/>
+                <param name="FusionInspector" type="select" label="FusionInspector">
+                    <option value="no_finspector" selected="true">No Fusion Inspector</option>
+                    <option value="inspect">inspect</option>
+                    <option value="validate">validate</option>
+                </param>
+                <param name="no_single_fusion_per_breakpoint" type="boolean" truevalue="--no_single_fusion_per_breakpoint" falsevalue="" checked="false" label="Multiple Fusion per Breakpoint?" help="Exclude filtering of potentially superfluous fusions involving different gene annotations overlapping the same fusion breakpoint."/>
+                <param name="no_remove_dups" type="boolean" truevalue="--no_remove_dups" falsevalue="" checked="false" label="Don't Remove Duplicates?" help="Do not remove duplicate reads."/>
+                <param name="examine_coding_effect" type="boolean" truevalue="--examine_coding_effect" falsevalue="" checked="false" label="Include coding effects in output?" help="Explore impact of fusions on coding sequences."/>
+                <param name="denovo_reconstruct" type="boolean" truevalue="--denovo_reconstruct" falsevalue="" checked="false" label="Denovo reconstruction?" help="Attempt to reconstruct fusion transcripts using Trinity de novo assembly (requires --FusionInspector)."/>
             </when>
         </conditional>
     </inputs>
 
     <outputs>
-        <data format="tabular" name="output_final" label="${tool.name} on ${on_string}: fusion_candidates" from_work_dir="star-fusion.fusion_candidates.final"/>
-        <data format="tabular" name="output_final_fpkm" label="${tool.name} on ${on_string}: fusion_candidates.abridged.FFPM" from_work_dir="star-fusion.fusion_candidates.final.abridged.FFPM"/>
-        <data format="tabular" name="pre_blast_filt_info" label="${tool.name} on ${on_string}: fusion_pre_blast_filt_info" from_work_dir="star-fusion.filter.intermediates_dir/star-fusion.pre_blast_filter.filt_info"/>
+        <data format="tabular" name="output_final" label="${tool.name} on ${on_string}: fusion_candidates" from_work_dir="STAR-Fusion_outdir/star-fusion.fusion_predictions.tsv"/>
+        <data format="tabular" name="output_final_coding" label="${tool.name} on ${on_string}: fusion_candidates coding_effects" from_work_dir="STAR-Fusion_outdir/star-fusion.fusion_predictions.abridged.coding_effect.tsv">
+            <filter>params['examine_coding_effect'] and params['FusionInspector'] == 'no_finspector'</filter>
+        </data>
+        <data format="tabular" name="output_final_coding_inspect" label="${tool.name} on ${on_string}: fusion_candidates coding_effects finspector_inspect" from_work_dir="STAR-Fusion_outdir/FusionInspector-inspect/finspector.FusionInspector.fusions.abridged.tsv.annotated.coding_effect">
+            <filter>params['examine_coding_effect'] and params['FusionInspector'] == 'inspect'</filter>
+        </data>
+        <data format="tabular" name="output_final_coding_validate" label="${tool.name} on ${on_string}: fusion_candidates coding_effects finspector_validate" from_work_dir="STAR-Fusion_outdir/FusionInspector-validate/finspector.FusionInspector.fusions.abridged.tsv.annotated.coding_effect">
+            <filter>params['examine_coding_effect'] and params['FusionInspector'] == 'validate'</filter>
+        </data>
+        <data format="html" name="output_html_report_validate" label="${tool.name} on ${on_string}: html report finspector_validate" from_work_dir="STAR-Fusion_outdir/FusionInspector-validate/finspector.fusion_inspector_web.html">
+            <filter>params['FusionInspector'] == 'validate'</filter>
+        </data>
+        <data format="tabular" name="pre_blast_filt_info" label="${tool.name} on ${on_string}: fusion_pre_blast_filt_info" from_work_dir="STAR-Fusion_outdir/star-fusion.preliminary/star-fusion.filter.intermediates_dir/star-fusion.pre_blast_filter.filt_info"/>
     </outputs>
 
     <help>

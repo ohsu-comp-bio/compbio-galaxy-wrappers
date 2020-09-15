@@ -1,6 +1,5 @@
-<tool id="pon_filt" name="PON Filter" version="0.5.2" >
+<tool id="pon_filt" name="PON Filter" version="0.5.3" >
     <description>Filter or remove variants from a sample VCF based on a panel of normals VCF.</description>
-    <version_command></version_command>
 
     <requirements>
       <requirement type="package" version="1.11.0">numpy</requirement>
@@ -59,14 +58,10 @@
     </inputs>
 
     <outputs>
-        <data format="vcf" name="outfile" label="${tool.name} on ${on_string}: VCF" help="Remaining sites after performing filtering." />
-        <data format="vcf" name="outfile_bad" label="${tool.name} on ${on_string}: Filtered Sites VCF" help="Sites filtered from tool." />
+        <data format="vcf" name="outfile" label="${tool.name} on ${on_string}: VCF" />
+        <data format="vcf" name="outfile_bad" label="${tool.name} on ${on_string}: Filtered Sites VCF" />
     </outputs>
 
-    <tests></tests>
-
     <help>Filter or remove variants from a sample VCF based on a panel of normals VCF.</help>
-
-    <citations></citations>
 
 </tool>

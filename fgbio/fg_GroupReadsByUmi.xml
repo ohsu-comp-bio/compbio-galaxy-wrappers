@@ -1,8 +1,9 @@
-<tool id="fg_GroupReadsByUmi" name="Group Reads by UMI" version="0.7.0">
+<tool id="fg_GroupReadsByUmi" name="Group Reads by UMI" version="@WRAPPER_VERSION@0">
   <description>Groups reads together that appear to have come from the same original molecule.</description>
   <macros>
     <import>macros.xml</import>
   </macros>
+  <expand macro="requirements"/>
   <command detect_errors="exit_code"><![CDATA[
     @CMD_BEGIN@ GroupReadsByUmi
     #include source=$input_output_cmd#
@@ -29,7 +30,7 @@
     <expand macro="min_umi_length_input"/>
   </inputs>
   <outputs>
-    <expand macro="sam_output"/>
+    <data format="unsorted.bam" name="output" label="${tool.name} on ${on_string}: UNSORTED BAM"/>
     <expand macro="family_size_histogram_output"/>
     <expand macro="log_output"/>
   </outputs>

@@ -1,0 +1,13 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/itd_detect"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  itd_detect:
+    description: "Call FLT3 ITD events from BAM file."
+    include:
+      - itd_detect.xml
+      - itd_detect.py
+      - tool_data_table_conf.xml.sample
+      - tool-data/*

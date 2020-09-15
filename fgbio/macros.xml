@@ -1,7 +1,15 @@
 <macros>
-  <token name="@CMD_BEGIN@">java -Xmx4g -XX:+AggressiveOpts -XX:+AggressiveHeap -jar $__tool_directory__/fgbio-0.7.0.jar</token>
-  
-  
+
+  <token name="@CMD_BEGIN@">fgbio -Xmx8g</token>
+  <token name="@VERSION@">1.2.0</token>
+  <token name="@WRAPPER_VERSION@">@VERSION@+galaxy</token>
+
+  <xml name="requirements">
+    <requirements>
+        <requirement type="package" version="@VERSION@">fgbio</requirement>
+    </requirements>
+  </xml>
+
   <!--Required Input and Output for SAM BAM-->
   <template name="sorted_input_output_cmd"><![CDATA[
     -i $sorted_bam
@@ -23,11 +31,11 @@
 
   
   <xml name="sam_input">
-    <param name="input" argument="-i" type="data" format="sam,bam" label="Input SAM or BAM file"/>
+    <param name="input" argument="-i" type="data" format="sam,bam,unsorted.bam" label="Input SAM or BAM file"/>
   </xml>
   
   <xml name="sam_output">
-    <data format="sam" name="output" label="${tool.name} on ${on_string}: SAM"/>
+    <data format="bam" name="output" label="${tool.name} on ${on_string}: BAM"/>
   </xml>
   
   <xml name="bam_output">

@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/calc_tmb"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  calc_tmb:
+    description: "Calculate TMB from VCF annotations."
+    include:
+      - calc_tmb.xml
+      - calc_tmb.py

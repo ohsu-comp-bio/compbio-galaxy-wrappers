@@ -1,88 +1,147 @@
-<tool id="gatk4_mutect2" name="Mutect2" version="@VERSION@.0" profile="17.09">
+<tool name="GATK4 Mutect2" id="gatk4_mutect2" version="@TOOL_VERSION@.2" profile="15.04">
     <description>Call somatic SNVs and indels via local assembly of haplotypes</description>
 
     <macros>
-        <import>macros.xml</import>
+        <import>gatk4_macros.xml</import>
     </macros>
 
-    @VERSION_CMD@
+    <expand macro="requirements" />
+    <expand macro="version_run" />
 
-    <expand macro="requirements"/>
+    <command detect_errors="exit_code"><![CDATA[
 
-    <command detect_errors="exit_code">
-        #include source=$gatk_ival_prep#
-        <![CDATA[
-        ln -s ${normal_inputs} normal.bam &&
-        ln -s ${tumor_inputs} tumor.bam &&
-        samtools index normal.bam &&
-        samtools index tumor.bam &&
-        @CMD_BEGIN@ Mutect2
+    ln -f -s ${inputFile} input.bam &&
+    samtools index input.bam &&
 
-        #for $tumor_input in $tumor_inputs:
-            -I tumor.bam
-        #end for
-	    --tumor-sample "${tumor_sample}"
+    #if $opt_param.intervals
+      #if $opt_param.intervals.is_of_type("gatk_interval")
+        ln -f -s ${opt_param.intervals} input.interval_list &&
+      #else
+        ln -f -s ${opt_param.intervals} input.vcf &&
+        bgzip input.vcf &&
+        tabix input.vcf.gz &&
+      #end if
+    #end if
 
-        #if $supply_normal.use_normal == "normal_yes":
-            #for $normal_input in $supply_normal.normal_inputs:
-                -I normal.bam
-            #end for
-    	    --normal-sample "${supply_normal.normal_sample}"
+    @cmd_begin@
+    --input input.bam
+    --output '${outFile}'
+    --reference '${reference.fields.path}'
+
+    #if $tumorSampleName:
+    --tumor-sample '${tumorSampleName}'
+    #end if
+
+    --native-pair-hmm-threads \${GALAXY_SLOTS:-4}
+
+    #if str( $opt_param.opt_param_selector ) == "opt_yes":
+        #if $opt_param.dbsnp:
+        --germline-resource '${opt_param.dbsnp}'
         #end if
-        -O ${output}
-        --native-pair-hmm-threads "\${GALAXY_SLOTS:-1}"
 
-        #if $mutect2_opt.germline_resource:
-            --germline-resource ${mutect2_opt.germline_resource}
+        #if $opt_param.alleles:
+        --alleles input.vcf.gz
         #end if
-        #if $mutect2_opt.panel_of_normals:
-            --panel-of-normals ${mutect2_opt.panel_of_normals}
+
+        --genotyping-mode '${opt_param.genotyping_mode}'
+
+        #if $opt_param.intervals
+          #if $opt_param.intervals.is_of_type("gatk_interval")
+            --intervals input.interval_list
+          #else
+            --intervals input.vcf.gz
+          #end if
         #end if
-        --max-alternate-alleles ${mutect2_opt.max_alternate_alleles}
-        --min-pruning ${mutect2_opt.min_pruning}
-        --normal-lod ${mutect2_opt.normal_lod}
-        --tumor-lod-to-emit ${mutect2_opt.tumor_lod_to_emit}
 
-        #include source=$gatk_req_opts#
-        #include source=$gatk_ival_opts#
+        #if $opt_param.interval_padding:
+        --interval-padding '${opt_param.interval_padding}'
+        #end if
 
-    ]]></command>
+        #if $opt_param.normal_panel:
+        --panel-of-normals '${opt_param.normal_panel}'
+        #end if
 
-    <inputs>
-        <expand macro="gatk_req_params" />
-        <expand macro="gatk_ival_params"/>
+        #if $opt_param.maxReadsPerAlignmentStart:
+        --max-reads-per-alignment-start '${opt_param.maxReadsPerAlignmentStart}'
+        #end if
 
-	    <param name="tumor_inputs" type="data" format="sam,bam" label="Tumor Input" multiple="true" help="BAM/SAM/CRAM file containing reads"/>
-        <conditional name="supply_normal">
-            <param name="use_normal" type="select" label="Include a normal sample?">
-                <option value="normal_yes">Yes</option>
-                <option value="normal_no" selected="True">No</option>
-            </param>
-            <when value="normal_yes">
-                <param name="normal_inputs" type="data" optional="true" label="Normal Input" multiple="true" help="BAM/SAM/CRAM file containing reads"/>
-                <param name="normal_sample" type="text" label="BAM sample name of normal"/>
-            </when>
-        </conditional>
-	    <param name="tumor_sample" type="text" label="BAM sample name of tumor"/>
-        <section name="mutect2_opt" title="Optional Mutect2 Parameters" expanded="False">
-            <param name="germline_resource" type="data" format="vcf,vcf_bgzip" optional="true" label="Germline Resource" help="Population vcf of germline sequencing containing allele fractions." />
-            <param name="panel_of_normals" type="data" format="vcf,vcf_bgzip" optional="true" label="Panel of Normals" help="VCF file of sites observed in normal." />
-            <param name="max_alternate_alleles" type="integer" optional="true" label="Max Alternate Alleles" value="6" help="Maximum number of alternate alleles to genotype." />
-            <param name="min_pruning" type="integer" optional="true" label="Minimum Pruning" value="2" help="Minimum support to not prune paths in the graph." />
-            <param name="normal_lod" type="float" optional="true" label="Normal LOD" value="2.2" help="LOD threshold for calling normal variant non-germline." />
-            <param name="tumor_lod_to_emit" type="float" optional="true" label="Tumor LOD" value="3.0" help="LOD threshold to emit tumor variant to VCF." />
-        </section>
-        <section name="mutect2_advanced" title="Advanced Mutect2 Parameters" expanded="False">
-        </section>
-    </inputs>
+        #if $opt_param.minPruning:
+        --min-pruning '${opt_param.minPruning}'
+        #end if
 
-    <outputs>
-        <data format="vcf" name="output" label="${tool.name} on ${on_string}: Mutect2"/>
-    </outputs>
+        #if $opt_param.max_mnp_distance:
+        --max-mnp-distance '${opt_param.max_mnp_distance}'
+        #end if
 
-    <help><![CDATA[
-    ]]></help>
+    --bam-writer-type ALL_POSSIBLE_HAPLOTYPES
+    -bamout '${bamout}'
+    #end if
 
-    <expand macro="citations" />
+  ]]></command>
+  <inputs>
+      <param format="bam" name="inputFile" type="data" label="BAM/SAM/CRAM file containing reads" help="--input,-I:String" />
+      <param name="reference" type="select" label="Reference sequence file" help="--reference,-R:String">
+          <options from_data_table="gatk2_picard_indexes" />
+          <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file" />
+      </param>
+      <param type="text" name="tumorSampleName" label="Tumor Sample Name" help="BAM sample name of tumor" />
+      <conditional name="opt_param">
+          <param name="opt_param_selector" type="select" label="Select optional parameters?">
+              <option value="opt_no" selected="true">No</option>
+              <option value="opt_yes">Yes</option>
+          </param>
+          <when value="opt_yes">
+              <param type="data" argument="--dbsnp" label="dbSNP" help="dbSNP file" optional="true" format="vcf" />
+              <param type="data" argument="--alleles" label="Alleles" help="Forced allele calls" optional="true" format="vcf" />
+              <param type="select" name="genotyping_mode" label="Genotyping Mode" help="Specifies how to determine the alternate alleles to use for genotyping.">
+		<option value="DISCOVERY" selected="true">DISCOVERY</option>
+		<option value="GENOTYPE_GIVEN_ALLELES">GENOTYPE_GIVEN_ALLELES</option>
+	      </param>
+              <param type="data" argument="--intervals" label="Genomic Intervals" help="One or more genomic intervals over which to operate" optional="true" format="gatk_interval,vcf" />
+              <param type="integer" argument="--interval_padding" label="Interval Padding" help="Amount of padding (in bp) to add to each interval you are including." optional="true" value="0" min="0" />
+              <param type="data" argument="--normal_panel" label="Panel of Normals" help="VCF file of sites observed in normal." optional="true" format="vcf" />
+              <param type="integer" argument="--maxReadsPerAlignmentStart" label="Maximum Reads Per Alignment Start" help="Maximum number of reads to retain per alignment start position. Reads above this threshold will be downsampled. Set to 0 to disable." optional="true" value="50" min="0" />
+              <param type="integer" argument="--min_base_quality_score" label="Base Quality Minimum" help="Minimum base quality required to consider a base for calling" optional="true" value="10" min="0" />
+              <param type="integer" argument="--minPruning" label="Minimum Pruning" help="Minimum support to not prune paths in the graph" optional="true" value="2" min="0" />
+              <param type="integer" argument="--max_mnp_distance" label="Maximum MNP Distance" help="Two or more phased substitutions separated by this distance or less are merged into MNPs." optional="true" value="1" min="0" />
+          </when>
+      </conditional>
 
+  </inputs>
+
+  <outputs>
+      <data format="vcf" name="outFile" label="${tool.name} on ${on_string}: VCF"/>
+      <data format="bam" name="bamout" label="${tool.name} on ${on_string}: BAM"/>
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="inputFile" value="picard_MarkDuplicates.bam" ftype="bam"/>
+      <param name="comment" value="test-run"/>
+      <param name="assume_sorted" value="True"/>
+      <param name="remove_duplicates" value="True"/>
+      <param name="read_name_regex" value="[a-zA-Z0-9]+:[0-9]:([0-9]+):([0-9]+):([0-9]+).*."/>
+      <param name="optical_duplicate_pixel_distance" value="100"/>
+      <param name="duplicate_scoring_strategy" value="SUM_OF_BASE_QUALITIES"/>
+      <param name="validation_stringency" value="LENIENT"/>
+      <output name="outFile" file="picard_MarkDuplicates_test1.bam" ftype="bam" lines_diff="4"/>
+    </test>
+  </tests>
+
+
+  <help>
+
+      **Purpose**
+
+      Call somatic short variants, both SNVs and indels, via local assembly of haplotypes
+
+      Mutect2 calls somatic single nucleotide (SNV) and insertion and deletion (indel) variants. The caller combines the DREAM challenge-winning somatic genotyping engine of the
+      original MuTect (Cibulskis et al., 2013) with the assembly-based machinery of HaplotypeCaller. Although we present the tool for somatic analyses, it may also apply to other contexts.
+      Examines aligned records in the supplied SAM or BAM dataset to locate duplicate molecules. All records are then written to the output file with the duplicate records flagged.
+
+      @dataset_collections@
+      @description@
+      @more_info@
+
+  </help>
 </tool>

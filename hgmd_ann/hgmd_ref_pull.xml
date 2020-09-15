@@ -1,6 +1,9 @@
-<tool id="hgmd_ref_pull" name="HGMD Reference Finder" version="0.1.0" profile="15.05">
+<tool id="hgmd_ref_pull" name="HGMD Reference Finder" version="0.1.1">
     <description>Retrieve HGMD references based on genomic coordinates.</description>
-
+    <requirements>
+		<requirement type="package" version="2.9.6">jinja2</requirement>
+		<requirement type="package" version="2.2.2">mysql-connector-python</requirement>
+	</requirements>
     <command detect_errors="exit_code"><![CDATA[
         python $__tool_directory__/hgmd_ref_pull.py
         --chrom '${chrom}'

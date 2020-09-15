@@ -21,7 +21,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.8.3'
+VERSION = '1.2.9.0'
 
 
 def supply_args():
@@ -45,6 +45,7 @@ def supply_args():
     parser.add_argument("--cnvpdf", help='CNV PDF to be sent.')
     parser.add_argument("--cgd_client", help="Location of the cgd_client.")
     parser.add_argument("--cgd_config", help="Location of the cgd_client config file.")
+    parser.add_argument("--include_chr", action="store_true", help="Include the chr prefix in reported variant output.")
     parser.add_argument("--tissue", help="Which tissue is the client receiving data for. Deprecated.")
     parser.add_argument("--servicebase",
                         help="The service host name and port + service base. e.g. kdlwebprod02:8080/cgd")
@@ -74,6 +75,8 @@ def rename_fastqc_output(runid, barcodeid, endpoint, ext):
     elif endpoint == "uploadqcsheetrtwo":
         newfile = "/tmp/" + '_'.join([runid, barcodeid, "R2"]) + ext
     elif endpoint == "cnvpdf":
+        newfile = "/tmp/" + '_'.join([runid, barcodeid]) + ext
+    elif endpoint == "geneFusionReport":
         newfile = "/tmp/" + '_'.join([runid, barcodeid]) + ext
     else:
         return None
@@ -134,6 +137,11 @@ def build_cmd(args, recvd_prof=False):
         logging.info("Copying CNV PDF to " + newfile)
         shutil.copyfile(args.pipeline_out, newfile)
         cmd.extend(["-f", newfile])
+    elif args.endpoint == "geneFusionReport":
+        newfile = rename_fastqc_output(args.runid, args.barcodeid, args.endpoint, 'html')
+        logging.info("Copying gene fusion HTML report to " + newfile)
+        shutil.copyfile(args.pipeline_out, newfile)
+        cmd.extend(["-f", newfile])
     elif args.endpoint == "annotationcomplete" \
             or args.endpoint == "completeRun" \
             or args.endpoint == "completeSampleRun" \
@@ -180,7 +188,7 @@ def write_vcf_header(outfile):
     outfile.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n")
 
 
-def prepare_reported(outfile, regions, stdout):
+def prepare_reported(outfile, regions, stdout, inc_chr=False):
     """
 
     :return:
@@ -188,7 +196,10 @@ def prepare_reported(outfile, regions, stdout):
     empty = '.'
     for entry in json.loads(stdout):
         if json.loads(stdout):
-            chrom = entry['chromosome'][3:]
+            if inc_chr:
+                chrom = entry['chromosome']
+            else:
+                chrom = entry['chromosome'][3:]
             pos = entry['positionStart']
             ref = entry['referenceBase']
             alt = entry['variantBase']
@@ -199,10 +210,16 @@ def prepare_reported(outfile, regions, stdout):
             regions.write('\n')
 
     if not json.loads(stdout):
-        outfile.write('\t'.join(['1', '3', empty, 'T', 'C', empty, empty, empty]))
-        outfile.write('\n')
-        regions.write('\t'.join(['1', '1', '2']))
-        regions.write('\n')
+        if inc_chr:
+            outfile.write('\t'.join(['chr1', '3', empty, 'T', 'C', empty, empty, empty]))
+            outfile.write('\n')
+            regions.write('\t'.join(['chr1', '1', '2']))
+            regions.write('\n')
+        else:
+            outfile.write('\t'.join(['1', '3', empty, 'T', 'C', empty, empty, empty]))
+            outfile.write('\n')
+            regions.write('\t'.join(['1', '1', '2']))
+            regions.write('\n')
 
     outfile.close()
     regions.close()
@@ -233,7 +250,7 @@ def main():
         vcf = open(args.report_vcf, 'w')
         regions = open(args.report_bed, 'w')
         write_vcf_header(vcf)
-        prepare_reported(vcf, regions, stdout)
+        prepare_reported(vcf, regions, stdout, args.include_chr)
 
         # Get the current profile ready.
         # We run one command here, then another down below.
@@ -269,7 +286,8 @@ def main():
     outfile.close()
 
     # Clean up temp file.
-    if args.endpoint == "uploadqcsheet" or args.endpoint == "uploadqcsheetrtwo" or args.endpoint == "cnvpdf":
+    if (args.endpoint == "uploadqcsheet" or args.endpoint == "uploadqcsheetrtwo"
+            or args.endpoint == "cnvpdf" or args.endpoint == "geneFusionReport"):
         os.remove(newfile)
 
 

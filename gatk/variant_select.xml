@@ -1,9 +1,9 @@
 <tool id="gatk2_variant_select" name="Select Variants" version="0.0.7">
   <description>from VCF files</description>
-  <expand macro="requirements" />
   <macros>
     <import>gatk2_macros.xml</import>
   </macros>
+  <expand macro="requirements" />
   <command interpreter="python">
     #from binascii import hexlify
 

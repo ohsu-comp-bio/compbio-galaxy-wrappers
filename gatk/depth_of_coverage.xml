@@ -1,9 +1,9 @@
-<tool id="gatk2_depth_of_coverage" name="Depth of Coverage" version="3.2.2">
+<tool id="gatk2_depth_of_coverage" name="Depth of Coverage" version="3.2.3">
   <description>on BAM files</description>
-  <expand macro="requirements" />
   <macros>
     <import>gatk2_macros.xml</import>
   </macros>
+  <expand macro="requirements" />
 
   <command interpreter="python">gatk2_wrapper.py
 
@@ -78,10 +78,7 @@
       <expand macro="reference_source_selector_param" />
       <when value="cached">
         <repeat name="input_bams" title="BAM file" min="1" help="-I,--input_file &amp;lt;input_file&amp;gt;">
-            <param name="input_bam" type="data" format="bam" label="BAM file">
-              <validator type="unspecified_build" />
-              <validator type="dataset_metadata_in_data_table" table_name="gatk2_picard_indexes" metadata_name="dbkey" metadata_column="dbkey" message="Sequences are not currently available for the specified build." /> <!-- fixme!!! this needs to be a select -->
-            </param>
+            <param name="input_bam" type="data" format="bam" label="BAM file"/>
         </repeat>
         <param name="ref_file" type="select" label="Using reference genome" help="-R,--reference_sequence &amp;lt;reference_sequence&amp;gt;">
           <options from_data_table="gatk2_picard_indexes">

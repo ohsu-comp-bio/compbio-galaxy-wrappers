@@ -1,0 +1,12 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/gatk4_auto"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  gatk4_auto_collectreadcounts:
+    description: "Collects read counts at specified intervals."
+    include:
+      - gatk4_auto_collectreadcounts.xml
+      - macros.xml
+      - tool-data/*
+      - tool_data_table_conf.xml.sample

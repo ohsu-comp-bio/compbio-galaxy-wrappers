@@ -1,0 +1,125 @@
+<tool id="post_freak" name="Freak Post Processing" version="@VERSION@.0" profile="17.09">
+
+    <description>Post Processing for Freak Output</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <expand macro="requirements"/>
+
+    <command detect_errors="exit_code"><![CDATA[
+    python $run
+    ]]></command>
+
+    <configfiles>
+        <configfile name="run">
+import pandas as pd
+
+def identity(freak, ref):
+    '''
+    An "identity" function which return the Freak output and reference file 
+    without altering them. Used as a default function in the argparser.
+    '''
+    return freak, ref
+
+    
+def mark_false_calls(freak, ref):
+    '''
+    Removes rows from the Freak output file which have bases that do not match 
+    the reference file, returns the modified Freak file and the reference as 
+    a tuple
+    '''
+    import sys
+    # Isolate the correct calls, according to the reference
+    merged = freak.merge(ref, how='inner', on=['Chromosome','Position Start','Variant Base'])
+    merged = merged.loc[:,freak.columns]
+
+    # Mark rows in the final table is either ignorable or not
+    result = freak.copy()
+    # Default rows to ignoreable
+    result['ignore'] = True
+    # Mark non-false calls as not ignoreable
+    for i, resultRow in result.loc[:,freak.columns].iterrows():
+        for j, mergeRow in merged.iterrows():
+            print(resultRow, file=sys.stderr)
+            print(mergeRow, file=sys.stderr)
+            if all(resultRow == mergeRow):
+                result.loc[i,'ignore'] = False
+    # Mark 'no variant' rows as not ignorable
+    result.loc[result['variant type']=='no variant','ignore'] = False
+    print(result['ignore'], file=sys.stderr)
+    return result, ref
+    
+
+# Read in Freak's output and the reference 
+freak_out = pd.read_csv("$freak_data", sep='\t', header=0).astype(str)
+variant_ref = pd.read_csv("$genetrails_reference", sep='\t', header=0).astype(str)
+variant_subset = variant_ref[variant_ref['Sample Code']=="$sample_id"].copy()
+# Relabel freak data columns
+freak_out.rename(columns={'rname':'Chromosome',
+                          'start (1-based, inclusive)':'Position Start',
+                          'variant': 'Variant Base'},
+                 inplace=True)
+# Set up the chromosome columns to match
+variant_subset.loc[:,'Chromosome'] = variant_subset['Chromosome'].map(lambda x: x[3:])
+
+# Apply all of the appropriate filters 
+#if $filters.mark_false
+freak_out, variant_subset = mark_false_calls(freak_out, variant_subset)
+#end if
+
+# Return the labels of the freak data to their old values
+freak_out.rename(columns={'Chromosome': 'rname',
+                          'Position Start': 'start (1-based, inclusive)',
+                          'Variant Base': 'variant'},
+                 inplace=True)
+
+# Output the results of the post processing
+freak_out.to_csv(path_or_buf='$output', sep='\t',index=False)
+        </configfile>
+    </configfiles>
+
+    <inputs>
+        <param type="data" name="freak_data" format="txt,tsv,tabular" label="Freak Output"/>
+        <param type="data" name="genetrails_reference" format="txt,tsv,tabular" label="GeneTrails Variant File"/>
+        <param type="text" name="sample_id" label="Sample ID"/>
+        <section name="filters" title="Filters">
+            <param type="boolean" name="mark_false" checked="true" label="Mark False Variants Base Calls" help="Adds an 'ignore' column which is True if the row is determined to be a false call" />
+        </section>
+    </inputs>
+
+    <outputs>
+        <data name="output" format="tsv" label="${tool.name} on ${on_string}"/>
+    </outputs>
+
+    <tests>
+        <test>
+            <param name="freak_data" value="dummy_freak_34.tsv"/>
+            <param name="ref" value="dummy_ref.tsv"/>
+            <param name="sample_id" value="34"/>
+            <output name="output" file="processed_freak_34.tsv"/>
+        </test>
+    </tests>
+
+
+    <help><![CDATA[
+    usage: post_processing_freak.py [-h] [-d] [-o OUTPUT] freak_out variant_ref
+    
+    Post processing for freak output
+    
+    positional arguments:
+      freak_out
+      variant_ref
+    
+    optional arguments:
+      -h, --help            show this help message and exit 
+      
+      -d, --no-dups
+
+      -o OUTPUT, --output=OUTPUT
+        
+    ]]></help>
+</tool>

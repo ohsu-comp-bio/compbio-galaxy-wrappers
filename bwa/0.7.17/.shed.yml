@@ -1,0 +1,12 @@
+name: "bwa_mem"
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/bwa"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  bwa_mem:
+    description: "Map low-divergent sequences against a large reference genome."
+    include:
+      - bwa_mem.xml
+      - tool-data/*
+      - tool_data_table_conf.xml.sample

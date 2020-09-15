@@ -1,9 +1,9 @@
 <tool id="gatk2_indel_realigner" name="Indel Realigner" version="3.2">
   <description>- perform local realignment</description>
-  <expand macro="requirements" />
   <macros>
     <import>gatk2_macros.xml</import>
   </macros>
+  <expand macro="requirements" />
   <command interpreter="python">
     gatk2_wrapper.py
     --stdout "${output_log}"

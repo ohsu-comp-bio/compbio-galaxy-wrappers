@@ -1,4 +1,4 @@
-<tool id="splitncigarreads" name="GATK v3.7 SplitNCigarReads" version="3.7.3" >
+<tool id="splitncigarreads" name="SplitNCigarReads" version="3.7.4" >
   <description>Splits reads that contain Ns in their CIGAR string</description>
 
   <requirements>
@@ -14,7 +14,7 @@
   ln -f -s "${input}" input.bam &&
   samtools index input.bam &&
 
-  gatk
+  gatk -Xmx16g
   -T SplitNCigarReads
   -R $index_path
   -I input.bam
@@ -28,7 +28,7 @@
 
   <inputs>   
     <param name="indexes" type="select" label="Select the reference genome">
-      <options from_data_table="bwa_indexes">
+      <options from_data_table="gatk2_picard_indexes">
         <validator type="no_options" message="No genome indexes are available" />
       </options>
     </param>
@@ -36,7 +36,7 @@
   </inputs>
 
   <outputs>
-    <data format="bam" name="output" label="${tool.name} on ${on_string}: SplitNCigarReads BAM" help="Output BAM file." />
+    <data format="bam" name="output" label="${tool.name} on ${on_string}: SplitNCigarReads BAM" />
   </outputs>
 
   <tests></tests>

@@ -1,0 +1,10 @@
+name: "move_file"
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/move_file"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  move_file:
+    description: "Move a file (Galaxy dataset) to some location on the file system."
+    include:
+      - move_file.xml

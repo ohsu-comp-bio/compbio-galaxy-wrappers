@@ -7,13 +7,13 @@
      ]]></command>
 
   <inputs>
-    <param name="remove_vcf" type="data" format="vcf" required="true" label="Remove Variants VCF" help="Remove variants from this VCF." />
-    <param name="vcf_cands" type="data" format="vcf" required="true" label="Candidate Variants VCF" help="Variants in this VCF will be removed from the other VCF if they exist." />
+    <param name="remove_vcf" type="data" format="vcf" label="Remove Variants VCF" help="Remove variants from this VCF." />
+    <param name="vcf_cands" type="data" format="vcf" label="Candidate Variants VCF" help="Variants in this VCF will be removed from the other VCF if they exist." />
   </inputs>
 
   <outputs>
-    <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" help="Output VCF." />
-    <data format="vcf" name="output_vcf_base" label="${tool.name} on ${on_string}: Source VCF" help="Source output VCF." />
+    <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" />
+    <data format="vcf" name="output_vcf_base" label="${tool.name} on ${on_string}: Source VCF" />
   </outputs>
 
   <tests></tests>

@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/primer_clip"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  primer_clip:
+    description: "Remove primer sequences from a BAM file based on QIAseq primer definitions."
+    include:
+      - primer_clip.xml
+      - primer_clip.py

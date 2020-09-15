@@ -21,7 +21,7 @@
     </inputs>
 
     <outputs>
-        <data format="vcf" name="outfile" label="${tool.name} on ${on_string}" help="Output VCF" />
+        <data format="vcf" name="outfile" label="${tool.name} on ${on_string}" />
     </outputs>
 
     <tests></tests>

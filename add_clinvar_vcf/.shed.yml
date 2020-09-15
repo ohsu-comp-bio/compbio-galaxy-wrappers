@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/add_clinvar_vcf"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  add_clinvar_vcf:
+    description: "Include INFO annotations from ClinVar VCF in your VCF."
+    include:
+      - add_clinvar_vcf.xml
+      - add_clinvar_vcf.py

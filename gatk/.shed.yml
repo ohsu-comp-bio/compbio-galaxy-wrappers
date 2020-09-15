@@ -1,0 +1,66 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/gatk"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  gatk2_depth_of_coverage:
+    description: "Generate coverage summary information for reads data."
+    include:
+      - depth_of_coverage.xml
+      - gatk2_macros.xml
+      - gatk2_wrapper.py
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
+  gatk2_variant_filtration:
+    description: "Filters variant calls using a number of user-selectable, parameterizable criteria."
+    include:
+      - variant_filtration.xml
+      - gatk2_macros.xml
+      - gatk2_wrapper.py
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
+  gatk2_indel_realigner:
+    description: "Perform local realignment on a BAM file."
+    include:
+      - indel_realigner.xml
+      - gatk2_macros.xml
+      - gatk2_wrapper.py
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
+  gatk2_variant_select:
+    description: "Select variants from a VCF file."
+    include:
+      - variant_select.xml
+      - gatk2_macros.xml
+      - gatk2_wrapper.py
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
+  splitncigarreads:
+    description: "Splits reads that contain Ns in their CIGAR string."
+    include:
+      - splitncigarreads.xml
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
+  gatk2_haplotype_caller:
+    description: "Call SNPs and indels simultaneously via local de-novo assembly of haplotypes in an active region."
+    include:
+      - haplotype_caller.xml
+      - gatk2_macros.xml
+      - gatk2_wrapper.py
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample
+      - gatk2_annotations.txt.sample
+  gatk2_realigner_target_creator:
+    description: "Create targets, for use in local realignment."
+    include:
+      - realigner_target_creator.xml
+      - gatk2_macros.xml
+      - gatk2_wrapper.py
+      - test-data/*
+      - tool_data_table_conf.xml.sample
+      - gatk2_picard_index.loc.sample

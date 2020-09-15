@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/remove_rare_ref_calls"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  remove_rare_ref_calls:
+    description: "Remove calls added to SeattleSeq output that are not called in VCF."
+    include:
+      - remove_rare_ref_calls.xml
+      - remove_rare_ref_calls.py

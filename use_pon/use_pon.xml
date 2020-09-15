@@ -1,10 +1,8 @@
-<tool id="use_pon" name="Panel of Normals Filter" version="0.3.2" >
+<tool id="use_pon" name="Panel of Normals Filter" version="0.4.1" >
     <description>Filter or remove variants from a sample VCF based on a panel of normals VCF.</description>
 
-    <version_command></version_command>
-
     <command><![CDATA[
-    python $__tool_directory__/use_pon.py
+    python $__tool_directory__/use_pon_dev.py
     "${pon}" "${infile}" "${hotspots}" "${outfile}"
     ]]></command>
 
@@ -15,13 +13,9 @@
     </inputs>
 
     <outputs>
-        <data format="vcf" name="outfile" label="${tool.name} on ${on_string}" help="" />
+        <data format="vcf" name="outfile" label="${tool.name} on ${on_string}" />
     </outputs>
 
-    <tests></tests>
-
     <help>Filter or remove variants from a sample VCF based on a panel of normals VCF.</help>
-
-    <citations></citations>
 
 </tool>

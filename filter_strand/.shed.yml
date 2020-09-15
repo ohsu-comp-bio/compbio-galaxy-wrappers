@@ -1,0 +1,13 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/filter_strand"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  filter_strand:
+    description: "Remove calls when forward and reverse read counts do not make sense."
+    include:
+      - filter_strand.xml
+      - filter_strand.py
+      - file_handle_ops.py 
+      - __init__.py

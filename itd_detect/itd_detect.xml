@@ -56,7 +56,7 @@
     </inputs>
 
     <outputs>
-        <data format="tabular" name="outfile" label="${tool.name} on ${on_string}: TSV OUTPUT" help="Output of the ITD detection process." />
+        <data format="tabular" name="outfile" label="${tool.name} on ${on_string}: TSV OUTPUT" />
     </outputs>
 
     <help>Detect ITD events in a BAM file.  Can be run as either single-end or paired-end.  Best results will be obtained if the reads
