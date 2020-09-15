@@ -1,0 +1,51 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/gatk_germline_cnv"
+homepage_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/gatk_germline_cnv"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  xhmm_annotate:
+    description: "Isolate sample data from xhmm matrix and grab entries that look interesting. Annonate these with whatever we want."
+    include:
+      - xhmm_annotate.py
+      - xhmm_annotate.xml
+      - macros.xml
+  xhmm_discover:
+    description: "Discover CNVs from normalized read depth matrix"
+    include:
+      - xhmm_discover.xml
+      - macros.xml
+  xhmm_genotype:
+    description: "Genotype list of CNVs from normalized read depth matrix"
+    include:
+      - xhmm_genotype.xml
+      - macros.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  xhmm_matrix:
+    description: "Process a read depth matri and output the resulting matrix."
+    include:
+      - xhmm_matrix.xml
+      - macros.xml
+  xhmm_mergegatkdepths:
+    description: "Merge the output from GATK into a single depth matrix of samples (rows) by targets (columns)"
+    include:
+      - xhmm_mergeGATKdepths.xml
+      - xhmm_mergeGATKdepths.py
+      - macros.xml
+  xhmm_normalize:
+    description: "Apply PCA factors in order to normalize read depth matrix"
+    include:
+      - xhmm_normalize.xml
+      - macros.xml
+  xhmm_pca:
+    description: "Run PCA to create normalization factors for read depth matrix"
+    include:
+      - xhmm_pca.xml
+      - macros.xml
+  xhmm_preparetargets:
+    description: "Sort all target intervals, merge overlapping ones, and print the resulting intervals list."
+    include:
+      - xhmm_prepareTargets.xml
+      - xhmm_prepareTargets.py
+      - macros.xml
