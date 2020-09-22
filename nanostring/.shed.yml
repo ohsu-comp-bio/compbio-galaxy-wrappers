@@ -1,5 +1,18 @@
-categories: []
-description: nanostring
-name: nanostring
 owner: patterja
 remote_repository_url: https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/nanostring
+categories:
+  - "CompBio Galaxy Wrappers"
+name: nanostring
+description: Nonostring whole slide assay
+repositories:
+  nanostring:
+    description: "Nanostring whole slide assay"
+    include:
+      - batch_correction_ruv.xml
+      - batch_correction_ruv.R
+      - check_qc.xml
+      - check_qc.py
+      - process_batch_qc.xml
+      - process_batch_qc.R
+      - process_rcc.xml
+      - process_rcc.py
