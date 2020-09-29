@@ -1,8 +1,12 @@
 <tool id='process_rcc' name='Process RCC Files' version='0.0.1'>
     <description>Process RCC output from nanostring.</description>
-    
+    <requirements>
+       <requirement type="package" version="3.6">python</requirement>
+       <requirement type="package" version="0.23.4">pandas</requirement>
+       <requirement type="package" version="">argparse</requirement>
+    </requirements>    
     <command detect_errors="exit_code"><![CDATA[
-        /usr/local/bin/python3 $__tool_directory__/process_rcc.py 
+        python3 $__tool_directory__/process_rcc.py 
           "${rcc1}" 
           "${rcc2}" 
           "${rcc3}" 
@@ -40,11 +44,10 @@
         <param type="boolean" name="omit_blank" label="Omit Blanks" checked="false"/>
     </inputs>
     <outputs>
-        <data format='tsv' name='rawdata' label='rawdata.txt' from_work_dir='rawdata.txt' help=''/>
-        <data format='tsv' name='run_metrics' label='runmetrics.txt'
-from_work_dir='run_metrics.txt' help=''/>
+        <data format='tsv' name='rawdata' label='rawdata.txt' from_work_dir='rawdata.txt'/>
+        <data format='tsv' name='run_metrics' label='runmetrics.txt' from_work_dir='run_metrics.txt'/>
     </outputs>
-    <help>
+    <help><![CDATA[
 
 This tool takes multiple RCC files, the output from Nanostring. There is an RCC file per sample in a batch of Nanostring data. 
 
@@ -57,6 +60,6 @@ This tool takes multiple RCC files, the output from Nanostring. There is an RCC 
  - rawdata.txt: tab-delimited file with the raw data from nanostring
  - run_metrics.txt: tab-delimited file with run metrics
 
-    </help>
+    ]]></help>
 
 </tool>
