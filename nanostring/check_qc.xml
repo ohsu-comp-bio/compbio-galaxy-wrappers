@@ -1,8 +1,12 @@
 <tool id='check_qc' name='Check Nanostring QC' version='0.0.1'>
     <description>Process RCC output from nanostring.</description>
-    
+    <requirements>
+       <requirement type="package" version="3.6">python</requirement>
+       <requirement type="package" version="0.23.4">pandas</requirement>
+       <requirement type="package" version="">argparse</requirement>
+    </requirements>
     <command detect_errors="exit_code"><![CDATA[
-        /usr/local/bin/python3 $__tool_directory__/check_qc.py 
+        python3 $__tool_directory__/check_qc.py 
           --rawdata "${rawdata}" 
           --runmetrics "${runmetrics}" 
     ]]></command>
@@ -13,7 +17,7 @@
 help='runmetrics.txt'/>
     </inputs>
     <outputs>
-        <data format='json' name='qc_metrics' label='qc_metrics.json on $on_string' from_work_dir='qc_metrics.json' help=''/>
+        <data format='json' name='qc_metrics' label='qc_metrics.json on $on_string' from_work_dir='qc_metrics.json'/>
     </outputs>
     <help>
 
