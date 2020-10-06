@@ -132,7 +132,7 @@ def main():
 
     raw_data = pandas.read_csv(args.rawdata, sep="\t", index_col=False)
     run_metrics = pandas.read_csv(args.runmetrics, sep="\t", index_col=0)
-    run_metrics.columns = run_metrics.loc["SampleName"].to_list()
+    run_metrics.columns = run_metrics.loc["SampleName"].values.tolist()
     samps = raw_data.columns.drop(['CodeClass', 'Name', 'Accession'])
 
     qc = {}

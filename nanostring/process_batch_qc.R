@@ -17,10 +17,10 @@ matrix_version = "20200512"
 parser <- ArgumentParser()
 parser$add_argument("-i", help="rawdata.txt", dest="input_file")
 parser$add_argument("--validation_file", type="character", 
-                    default=paste0("/Volumes/OHSU/CLINICAL/Nanostring/REFERENCE_FILES/validation_samples_rawdata_", matrix_version,".txt"),
+                    default=paste0("/Volumes/OHSU/CLINICAL/Nanostring/Assay_Whole_Slide/REFERENCE_FILES/validation_samples_rawdata_", matrix_version,".txt"),
                     dest="validation_file", help="validation file for controls comparison")
 parser$add_argument("--pos_file", type="character", 
-                    default=paste0("/Volumes/OHSU/CLINICAL/Nanostring/REFERENCE_FILES/knownpositives_v1.0.txt"),
+                    default=paste0("/Volumes/OHSU/CLINICAL/Nanostring/Assay_Whole_Slide/REFERENCE_FILES/knownpositives_v1.0.txt"),
                     dest="pos_file", help="validation file known positive cellline and antibodies")
 parser$add_argument("--md_file", type="character", default= "/Users/patterja/Box/NANOSTRING/nanostring_metadata.xlsx",
                     dest="md_file", help="metadata file")
