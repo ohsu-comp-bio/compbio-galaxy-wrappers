@@ -1,0 +1,6 @@
+[submodule "nanostring_old/nanostring"]
+	path = nanostring_old/nanostring
+	url = https://github.com/patterja/nanostring
+[submodule "nanostring"]
+	path = nanostring
+	url = https://github.com/patterja/nanostring
