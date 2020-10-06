@@ -2,8 +2,8 @@
     <description>Process RCC output from nanostring.</description>
     <requirements>
        <requirement type="package" version="3.6">python</requirement>
-       <requirement type="package" version="0.23.4">pandas</requirement>
-       <requirement type="package" version="">argparse</requirement>
+       <requirement type="package" version="1.1.2">pandas</requirement>
+       <requirement type="package" version="1.4.0">argparse</requirement>
     </requirements>    
     <command detect_errors="exit_code"><![CDATA[
         python3 $__tool_directory__/process_rcc.py 

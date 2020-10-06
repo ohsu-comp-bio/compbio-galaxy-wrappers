@@ -70,7 +70,7 @@ pcaplot <- function (mat, title = "PCA Plot", col=rownames(mat)) {
           "#BEBADA","#FB8072","#80B1D3","#FDB462","#B3DE69","#FCCDE5","#D9D9D9","#BC80BD","#CCEBC5","#FFED6F")
   p = ggplot(PCsmd,aes_string("PC1", "PC2", col="col")) +
     geom_point(size = 1.5) +
-    geom_text(aes(label = PCsmd$type), vjust = -1, size=2) +
+    geom_text(aes(label = PCsmd[,'type']), vjust = -1, size=2) +
     labs(title = title,x = labs[1], y = labs[2]) +
     theme(panel.background = element_rect(fill = "white"),
           panel.grid.major = element_line(colour = "gray90"),
@@ -124,11 +124,6 @@ cohs = list(BC_preTx = ihc$sampcolumn[ihc$cohort=="breast" & ihc$TNBC=="FALSE"],
 
 # antibody metadata
 ab_ref = read.csv(ab_ref_file, sep=",", stringsAsFactors=F)
-pathways = data.frame(ab_ref$X.AbID, Pathway = sapply(strsplit(as.character(ab_ref$Pathway), ","), `[`, 1))
-pathways = rbind(pathways, data.frame(ab_ref$X.AbID, Pathway=sapply(strsplit(as.character(ab_ref$Pathway), ","), `[`, 2)))
-pathways = rbind(pathways, data.frame(ab_ref$X.AbID, Pathway=sapply(strsplit(as.character(ab_ref$Pathway), ","), `[`, 3)))
-
-pathways = pathways[complete.cases(pathways),]
 
 # NEW BATCH
 new_batch = read.table(file = input_file, sep="\t", row.names=2, stringsAsFactors=F, header=T, check.names = T)
@@ -478,17 +473,21 @@ for (samp in setdiff(colnames(new_batch), controls)) {
     
     samp_cohorts_box = c()
     for (coh in unique(comb_cohorts$ab)){
-      samp_cohorts_box = rbind(samp_cohorts_box, data.frame(samp_cohorts, "ab"=coh))}
+      samp_cohorts_box = rbind(samp_cohorts_box, data.frame(samp_cohorts, "ab"=coh))
+      }
     
     #~ BOXPLOTS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     palette = c("#FF0000FF","#004CFFFF","#00A600FF","#984ea3","#ff7f00","#a65628")
     
     pwboxlist = list()
     
-    for (pathway in as.character(unique(pathways$Pathway))){
+    for (pathway in unique(ab_ref$Pathway[order(ab_ref$Pathway.Order)])){
       if (!pathway %in% c("Non-specific")){
-        antibodies = as.character(pathways$ab_ref.X.AbID[pathways$Pathway==pathway])
+        ab_o = ab_ref[ab_ref$Pathway==pathway,"Antibody.Order"]
+        antibodies = ab_ref[ab_ref$Pathway==pathway,"X.AbID"][ab_o]
         comb_cohorts_box = comb_cohorts[comb_cohorts$Var1 %in% antibodies,]
+        comb_cohorts_box$Var1 = factor(comb_cohorts_box$Var1, levels=antibodies)
+        
         samp_cohorts_boxab = samp_cohorts_box[samp_cohorts_box$Var1 %in% antibodies,]
         
         bp = ggplot(comb_cohorts_box, aes(x=ab, y=value)) + 
@@ -511,13 +510,14 @@ for (samp in setdiff(colnames(new_batch), controls)) {
         pwboxlist[[pathway]] = bp
       }
     }
-    lay <- rbind(c(1,1,1,1,NA,NA,NA,NA),
-                 c(2),
-                 c(3),
-                 c(4,4,4,NA,5,5,NA,NA))
+    lay <- rbind(c(1,NA,2,2,2,2),
+                 c(3,3,3,3,3,3),
+                 c(4,4,4,4,NA,NA),
+                 c(5,5,5,NA,NA,NA),
+                 c(6,6,6,6,6,NA))
     
     
-    pdf(file=sprintf("%s_boxplots.pdf", samp), width=10, height=8.5)
+    pdf(file=sprintf("%s_boxplots.pdf", samp), width=9, height=9)
     
     grid.arrange(grobs=pwboxlist, layout_matrix=lay, top=samp)
     dev.off()
