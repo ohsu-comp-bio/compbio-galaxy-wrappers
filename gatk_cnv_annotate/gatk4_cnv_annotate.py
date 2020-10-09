@@ -1,7 +1,7 @@
 import argparse
 import gffutils
 
-VERSION = '0.2.6'
+VERSION = '0.3.0'
 
 def supply_args():
     """
@@ -14,6 +14,7 @@ def supply_args():
     parser.add_argument('--cnv_denoised_infile', help='CNV DenoisedReadCounts Standardized TSV Infile')
     parser.add_argument('--genes', help='Gene list from which to produce output.')
     parser.add_argument('--tumor_pct', help='Tumor percentage.')
+    parser.add_argument('--incl_exon_numbers', help='Should exon numbers be included alongside gene-centric output.')
     parser.add_argument('--outfile', help='CNV enhanced output.')
     parser.add_argument('--outfile_genes', help='CNV enhanced output, gene-based.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
@@ -527,9 +528,13 @@ def main():
 
     write_order = ['CONTIG', 'START', 'END', 'NUM_POINTS_COPY_RATIO', 'MEAN_LOG2_COPY_RATIO', 'CALL',
                    'START_GENE', 'START_EXON', 'END_GENE', 'END_EXON']
+
     gene_write_order = ['GENE_CHROM', 'GENE_START', 'GENE_STOP', 'GENE', 'NUM_POINTS_SEGMENT',
                         'NUM_POINTS_GENE', 'MEAN_LOG2_COPY_RATIO', 'RAW_COPY_NUMBER', 'TUMOR_COPY_NUMBER',
                         'CALL', 'REGION_CHROM', 'REGION_START', 'REGION_STOP']
+    if args.incl_exon_numbers:
+        gene_write_order.extend(['START_EXON', 'END_EXON'])
+
     to_write = []
     for ival in pic_ints.regions:
         to_write.append(KdlCopyInterval(ival, dbname, common_to_refseq, args.genes).ival)
