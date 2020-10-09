@@ -12,8 +12,14 @@
     --cnv_denoised_infile '${denoised_infile}'
     --tumor_pct '${tumor_pct}'
     --genes '${genes}'
+    #if $incl_exon_numbers
+        --incl_exon_numbers
+    #end if
     --outfile '${outfile}'
     --outfile_genes '${outfile_genes}'
+
+
+
     ]]></command>
 
     <inputs>
@@ -22,6 +28,7 @@
         <param name="genes" type="data" format="txt" label="Input Gene List" help="Gene list from which to filter genomic interval output." />
         <param name="tumor_pct" type="integer" value= "100" min="0" max="100" label="Tumor Percentage" help="Estimated tumor percentage (between 0 and 100)." />
         <param name="gffutils" type="text" label="GffUtils DB Path" help="GffUtils DB Path" />
+        <param name="incl_exon_numbers" type="boolean" checked="false" label="Exon Numbers?" help="Should exon numbers be included alongside gene-centric output." />
     </inputs>
 
     <outputs>
