@@ -14,7 +14,7 @@ def supply_args():
     parser.add_argument('--cnv_denoised_infile', help='CNV DenoisedReadCounts Standardized TSV Infile')
     parser.add_argument('--genes', help='Gene list from which to produce output.')
     parser.add_argument('--tumor_pct', help='Tumor percentage.')
-    parser.add_argument('--incl_exon_numbers', help='Should exon numbers be included alongside gene-centric output.')
+    parser.add_argument('--incl_exon_numbers', action='store_true', help='Should exon numbers be included alongside gene-centric output.')
     parser.add_argument('--outfile', help='CNV enhanced output.')
     parser.add_argument('--outfile_genes', help='CNV enhanced output, gene-based.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
