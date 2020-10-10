@@ -216,7 +216,7 @@ class GeneImport(object):
 
     def _file_to_list(self):
         genes = []
-        with open(self.filename, 'rU') as myfile:
+        with open(self.filename, 'r') as myfile:
             for line in myfile:
                 if len(line.split('\t')) > 1:
                     raise Exception("Line has more than one column.")
@@ -245,7 +245,7 @@ class PicardIntervals(object):
         :return:
         """
         header = []
-        with open(self.filename, 'rU') as myfile:
+        with open(self.filename, 'r') as myfile:
             for line in myfile:
                 if line.startswith('@'):
                     header.append(line)
@@ -256,7 +256,7 @@ class PicardIntervals(object):
         Place titles in a list.
         :return:
         """
-        with open(self.filename, 'rU') as myfile:
+        with open(self.filename, 'r') as myfile:
             for line in myfile:
                 if line.startswith(self.header_start):
                     return line.rstrip('\n').split('\t')
@@ -267,7 +267,7 @@ class PicardIntervals(object):
         :return:
         """
         regions = []
-        with open(self.filename, 'rU') as myfile:
+        with open(self.filename, 'r') as myfile:
             for line in myfile:
                 if not line.startswith('@') and not line.startswith(self.header_start):
                     ival = PicardInterval(line.rstrip('\n').split('\t'), self.titles)
