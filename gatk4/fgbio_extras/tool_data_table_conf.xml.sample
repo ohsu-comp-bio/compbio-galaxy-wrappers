@@ -107,29 +107,4 @@
     </table>
 
     <!-- User-added locations -->
-    <!-- GATK2 -->
-    <table name="gatk2_picard_indexes" comment_char="#" allow_duplicate_entries="False">
-        <columns>value, dbkey, name, path</columns>
-        <file path="tool-data/all_fasta.loc" />
-    </table>
-    <!-- Available of GATK references -->
-    <table name="gatk2_annotations" comment_char="#">
-        <columns>value, name, gatk_value, tools_valid_for</columns>
-        <file path="tool-data/gatk2_annotations.txt" />
-    </table>
-    <!-- for vt -->
-    <table name="fasta_indexes" comment_char="#">
-        <columns>value, dbkey, name, path</columns>
-        <file path="tool-data/all_fasta.loc" />
-    </table>
-    <!-- for STAR_RNA_Exome_Fusions -->
-    <table name="rnastar_index2" comment_char="#" allow_duplicate_entries="False">
-      <columns>value, dbkey, name, path, with-gtf</columns>
-      <file path="tool-data/rnastar_index2.loc" />
-    </table>
-    <!-- Location of STAR Fusion genome indexes -->
-    <table name="starfusion_indexes" comment_char="#">
-      <columns>value, dbkey, name, path</columns>
-      <file path="tool-data/starfusion_indexes.loc" />
-    </table>
 </tables>
