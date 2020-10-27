@@ -16,5 +16,3 @@
 #fasta file. So there will be multiple fasta files for each build,
 #such as with hg19 above.
 #
-hg19	hg19	hg19	/home/groups/clinical/clinglxy/installed/galaxy_genomes/hg19/Homo_sapiens_assembly19.fasta
-ctat_100119_hg19_fa	ctat_100119_hg19	ctat_100119_hg19_fa	/home/groups/clinical/clinglxy/installed/galaxy_genomes/GRCh37_gencode_v19_CTAT_lib_Oct012019.plug-n-play/ctat_genome_lib_build_dir/ref_genome.fa
