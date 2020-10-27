@@ -1,7 +1,7 @@
 <tool id="gatk4_combinegvcfs" name="GATK4 CombineGVCFs" profile="17.09" version="@WRAPPER_VERSION@0">
   <description>- Merges one or more HaplotypeCaller GVCF files into a single GVCF with appropriate annotations</description>
   <macros>
-    <import>macros.xml</import>
+    <import>macros_2.xml</import>
   </macros>
   <expand macro="requirements"/>
   <expand macro="version_cmd"/>
