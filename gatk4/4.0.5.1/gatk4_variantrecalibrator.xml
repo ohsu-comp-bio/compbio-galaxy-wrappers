@@ -1,7 +1,7 @@
 <tool id="gatk4_auto_variantrecalibrator" name="GATK4 VariantRecalibrator" profile="17.09" version="@WRAPPER_VERSION@0">
   <description>- Build a recalibration model to score variant quality for filtering purposes</description>
   <macros>
-    <import>macros.xml</import>
+    <import>macros_3.xml</import>
   </macros>
   <expand macro="requirements"/>
   <expand macro="version_cmd"/>
