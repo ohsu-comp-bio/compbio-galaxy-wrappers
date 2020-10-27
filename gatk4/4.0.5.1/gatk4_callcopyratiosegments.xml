@@ -1,7 +1,7 @@
 <tool id="gatk4_callcopyratiosegments" name="GATK4 CallCopyRatioSegments" profile="17.09" version="@WRAPPER_VERSION@0">
   <description>- Calls copy-ratio segments as amplified, deleted, or copy-number neutral</description>
   <macros>
-    <import>macros.xml</import>
+    <import>macros_2.xml</import>
   </macros>
   <expand macro="requirements"/>
   <expand macro="version_cmd"/>
