@@ -88,3 +88,10 @@ gatk4_combinegvcfs:
       - gatk4_applyvqsr.xml
       - tool_data_table_conf.xml.sample
       - all_fasta.loc.sample
+  gatk4_haplotypecaller:
+    description: "Call germline SNPs and indels via local re-assembly of haplotypes"
+    include:
+      - macros_4.xml
+      - gatk4_haplotypecaller.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
