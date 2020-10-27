@@ -1,7 +1,7 @@
 <tool id="gatk4_auto_applyvqsr" name="GATK4 ApplyVQSR" profile="17.09" version="@WRAPPER_VERSION@0">
   <description>-  Apply a score cutoff to filter variants based on a recalibration table</description>
   <macros>
-    <import>macros.xml</import>
+    <import>macros_3.xml</import>
   </macros>
   <expand macro="requirements"/>
   <expand macro="version_cmd"/>
