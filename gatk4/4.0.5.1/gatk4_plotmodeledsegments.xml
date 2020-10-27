@@ -1,7 +1,7 @@
 <tool id="gatk4_plotmodeledsegments" name="GATK4 PlotModeledSegments" profile="17.09" version="@WRAPPER_VERSION@0">
   <description>- Creates plots of denoised and segmented copy-ratio and minor-allele-fraction estimates</description>
   <macros>
-    <import>macros.xml</import>
+    <import>macros_2.xml</import>
   </macros>
   <expand macro="requirements"/>
   <expand macro="version_cmd"/>
