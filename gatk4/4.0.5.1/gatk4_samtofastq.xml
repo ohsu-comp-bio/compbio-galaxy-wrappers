@@ -1,7 +1,7 @@
 <tool id="gatk4_auto_samtofastq" name="GATK4 SamToFastq (Picard)" profile="17.09" version="@WRAPPER_VERSION@0">
   <description>- Converts a SAM or BAM file to FASTQ.</description>
   <macros>
-    <import>macros.xml</import>
+    <import>macros_1.xml</import>
   </macros>
   <expand macro="requirements"/>
   <expand macro="version_cmd"/>
