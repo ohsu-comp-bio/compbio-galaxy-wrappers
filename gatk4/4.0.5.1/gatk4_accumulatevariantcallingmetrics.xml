@@ -4,7 +4,7 @@
     <description>- Combines multiple Variant Calling Metrics files into a single file</description>
 
     <macros>
-        <import>macros.xml</import>
+        <import>macros_2.xml</import>
     </macros>
 
     <expand macro="requirements"/>
