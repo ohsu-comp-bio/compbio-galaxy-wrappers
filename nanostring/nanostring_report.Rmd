@@ -1,0 +1,83 @@
+---
+title: "KDL Nanostring Instracellular Signaling Panel Report"
+header-includes:
+- \usepackage{float}
+- \usepackage{booktabs}
+- \usepackage{xcolor}
+- \usepackage{colortbl}
+output: 
+  pdf_document:
+fontsize: 11pt
+params:
+  samp: ""
+  batch: ""
+  data_dir: "/Volumes/OHSU/CLINICAL/Nanostring/output"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+---
+
+
+```{r, include=FALSE, echo=FALSE}
+library(dplyr)
+library(knitr)
+library(kableExtra)
+library(jsonlite)
+options(knitr.table.format = "latex")
+```
+
+Sample: `r params$samp`
+
+Batch: `r params$batch`
+
+Data_Directory: `r params$data_dir`
+
+```{r, include=TRUE,echo=FALSE}
+samp = params$samp
+batch = params$batch
+data_dir = params$data_dir
+controls=c("MCF7","HCC1954","BT474","HeyA8","MDA468.control","MDA468+EGF")
+omit = c("Histone H3", "S6", "RbAb-IgG", "MmAb-IgG1", "p-TSC2", "TSC2")
+omitregex = paste0(paste0("^", omit), collapse = "|")
+ab.ctrl = "IgG|POS|NEG|^S6|^Histone"
+```
+
+\pagebreak
+```{r boxplot, include=TRUE, fig.align="center", echo=FALSE}
+knitr::include_graphics(file.path(data_dir, sprintf("%s_boxplots.pdf", samp)), auto_pdf = T)
+
+```
+\pagebreak
+```{r, echo=FALSE, results='asis'}
+
+
+
+qc_metrics <- fromJSON(txt =file.path(data_dir, "qc_metrics.json"))
+names(qc_metrics) = make.names(names(qc_metrics))
+filt_qc = qc_metrics[c(intersect(controls, names(qc_metrics)), samp)]
+
+for (batchsamp in names(filt_qc)){
+  qcsamp=data.frame(do.call("rbind", qc_metrics[[batchsamp]]))
+  print(kable(qcsamp, format="latex", escape=TRUE) %>%
+    add_header_above(setNames(ncol(qcsamp)+1, batchsamp)) %>%
+    kable_styling(position = "left",  full_width = F, fixed_thead = T, font_size = 10))
+}
+
+```
+\pagebreak
+```{r, echo=FALSE}
+
+qc_controls = read.table(file.path(data_dir, "qc_controls_positive.tsv"), sep="\t", header=T, row.names = 1)
+#rounding numeric columns
+qc_controls[,-which(colnames(qc_controls) %in% c("Cell.line","Antibody","status"))] <-round(qc_controls[,-which(colnames(qc_controls) %in% c("Cell.line","Antibody","status"))],2)
+#rounding status col, mix of strings and numbers. Suppress NA when converting string to numeric, just getting index of actual numbers
+qc_controls[!is.na(suppressWarnings(as.numeric(qc_controls[,"status"]))),"status"] = round(as.numeric(qc_controls[!is.na(suppressWarnings(as.numeric(qc_controls[,"status"]))),"status"]),2)
+
+
+qc_controls[,"status"] =cell_spec(qc_controls[,"status"], format="latex", color= ifelse(qc_controls[,"status"]=="PASS", "black","red"))
+
+colnames(qc_controls) <- gsub("_", "\\\\_", colnames(qc_controls))
+rownames(qc_controls)=c()
+kable(qc_controls, format = "latex", escape=F, row.names=FALSE) %>%
+  kable_styling(full_width = F, latex_options ="scale_down", position = "left")
+```
+
+

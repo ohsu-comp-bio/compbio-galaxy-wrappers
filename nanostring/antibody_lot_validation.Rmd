@@ -1,0 +1,307 @@
+---
+title: "New Antibody Lot Validation"
+date: 
+output: None
+---
+
+This document assess performance of new lots by assessing the raw data of 6 control 
+cell lines for all antibodies. 
+
+4 Metrics are used to assess performance:
+
+ 1) Correlation: between average of prior batches and new lot
+ 2) Technical replicate agreement (TRA): between all replicates
+ 3) General heatmap of prior samples and new with clustering
+ 4) RLE boxplot
+ 5) RLE heatmap
+
+### Lot comparison
+```{r, echo=TRUE}
+oldlot="STP10004F"
+newlot="STP10005F"
+print(sprintf("oldlot = %s", oldlot))
+print(sprintf("newlot = %s", oldlot))
+#set to x dive QC directory
+wd="/Volumes/Histopathology Shared Resource/CLINICAL/Nanostring/QC/Antibody Lot/STP10005F"
+data_dir="/Volumes/Histopathology Shared Resource/CLINICAL/Nanostring/output"
+```
+
+Load Libraries
+```{r libarary}
+library(ruv)
+library(ggplot2)
+library(pheatmap)
+library(RColorBrewer)
+library(reshape2)
+library(openxlsx)
+library(gridExtra)
+```
+
+Load Metadata
+```{r metadata for making eda metadata}
+controls=c("MCF7","HCC1954","BT474","HeyA8","MDA468 control","MDA468+EGF")
+
+md_file="/Users/patterja/Box/NANOSTRING/nanostring_metadata.xlsx"
+md = read.xlsx(xlsxFile = md_file, sheet = "nanostring_metadata", check.names=F)
+md$sampcolumn = paste0(md$Batch, "__", md$Sample.Name)
+
+md$samp_deid = ifelse(make.names(as.character(md$Sample.Name)) %in% make.names(controls), yes=make.names(as.character(md$Sample.Name)), no="sample")
+only_controls = md$Sample.Name %in% controls
+control_samples = md$sampcolumn[md$Study %in% c("control")]
+
+```
+
+Batch sorting
+```{r, echo=TRUE}
+newlot_batch = "20190627_208420521020"
+nbatch = "20190627"
+
+md$batchdate = sapply(strsplit(md$Batch, split="_"), `[`, 1)
+oldlot_batches = unique(md$Batch[md$batchdate < nbatch])
+print("Old lot batches to summarize:")
+print(oldlot_batches)
+print("New lot:")
+print(newlot_batch)
+```
+
+### Load raw data
+```{r load raw data, echo=TRUE}
+
+trawdat=data.frame()
+batches = c()
+for (batchid in oldlot_batches){
+  rdfile = file.path(data_dir, batchid,"rawdata.txt")
+  if (file.exists(rdfile)){
+    dat = read.table(file = file.path(data_dir, batchid,"/rawdata.txt"), sep="\t", row.names=2, stringsAsFactors=F, header=T, check.names = T)
+    dat[,c("CodeClass", "Accession")] <- NULL
+    colnames(dat) = paste0(batchid, "__", colnames(dat))
+    trawdat = rbind(trawdat, t(dat))
+    batches = append(batches, batchid)
+  }
+}
+oldlot_raw = t(trawdat)
+dim(oldlot_raw)
+colnames(oldlot_raw)
+
+newlot_raw = read.table(file = file.path(data_dir, newlot_batch,"/rawdata.txt"), sep="\t", row.names=2, stringsAsFactors=F, header=T, check.names = T)
+newlot_raw[,c("CodeClass", "Accession")] <- NULL
+
+```
+
+### Make mean of old lot data
+```{r mean of old lots}
+
+
+#old lot
+ctls_oldlot = as.matrix(oldlot_raw[,make.names(colnames(oldlot_raw)) %in% make.names(control_samples)])
+ctls_oldlot.m = melt(ctls_oldlot)
+ctls_oldlot.m$batch = sapply(strsplit(as.character(ctls_oldlot.m$Var2), "__"), `[`, 1)
+ctls_oldlot.m$ctlname = sapply(strsplit(as.character(ctls_oldlot.m$Var2), "__"), `[`, 2)
+ctls_oldlot.m$ctl_probe = factor(paste0(ctls_oldlot.m$ctlname,"__", ctls_oldlot.m$Var1))
+
+mean_ctls_oldlot = data.frame(value=tapply(ctls_oldlot.m$value, ctls_oldlot.m$ctl_probe, mean))
+mean_ctls_oldlot$ctlname = sapply(strsplit(rownames(mean_ctls_oldlot), "__"), `[`, 1)
+mean_ctls_oldlot$antibody = sapply(strsplit(rownames(mean_ctls_oldlot), "__"), `[`, 2)
+
+#new lot
+ctls_newlot = as.matrix(newlot_raw[,make.names(colnames(newlot_raw)) %in% make.names(controls)])
+ctls_newlot.m = melt(ctls_newlot)
+ctls_newlot.m$ctl_probe = factor(paste0(ctls_newlot.m$Var2,"__", ctls_newlot.m$Var1))
+
+
+lotraw = data.frame(ctlprobe=rownames(mean_ctls_oldlot), 
+                    mean_oldlot = mean_ctls_oldlot$value, 
+                    newlot = ctls_newlot.m$value[match(rownames(mean_ctls_oldlot), as.character(ctls_newlot.m$ctl_probe))])
+
+```
+
+### Correlation
+
+```{r}
+
+
+#pairs plot for ERCC, average of old lot vs newlot
+p_ercc = ggplot(lotraw[grepl("POS|NEG", lotraw$ctlprobe),]) +
+  geom_point(aes(x=mean_oldlot, y=newlot)) +
+  geom_abline(slope=1, intercept=0, color="red") +
+  labs(title=paste0("Mean of old lots v. New lot=", newlot, 
+                    "\nCorrelation of ERCC POS and NEG controls for each cell line+antibody",
+                    "\nCorrelation R=", cor(lotraw[grepl("POS|NEG", lotraw$ctlprobe),"mean_oldlot"],lotraw[grepl("POS|NEG", lotraw$ctlprobe),"newlot"]))) +
+    theme(plot.title = element_text(size=9))
+
+p_ab = ggplot(lotraw[!grepl("POS|NEG", lotraw$ctlprobe),]) +
+  geom_point(aes(x=mean_oldlot, y=newlot)) +
+  geom_abline(slope=1, intercept=0, color="red") +
+  labs(title=paste0("Mean of old lots v. New lot=", newlot, 
+                    "\nCorrelation of Antibodies (no ERCC) for each cell line+antibody",
+                    "\nCorrelation R=", cor(lotraw[!grepl("POS|NEG", lotraw$ctlprobe),"mean_oldlot"],lotraw[!grepl("POS|NEG", lotraw$ctlprobe),"newlot"]))) +
+    theme(plot.title = element_text(size=9))
+
+pdf(file = file.path(wd,"correlation.pdf"), width=6,height =8)
+print(grid.arrange(p_ercc, p_ab, nrow=2))
+
+for (b in unique(ctls_oldlot.m$batch)){
+  blot = ctls_oldlot.m[ctls_oldlot.m$batch==b,]
+  batchlot=data.frame(ctlprobe=blot$ctl_probe, 
+                    blot = blot$value, 
+                    newlot = ctls_newlot.m$value[match(blot$ctl_probe, as.character(ctls_newlot.m$ctl_probe))])
+  
+  colnames(batchlot)[which(colnames(batchlot)=="blot")]=b
+  
+  paste(b, "\n Lot = ", unique(md$Antibody.Lot[which(md$Batch==b)]))
+  p_bercc = ggplot(batchlot[grepl("POS|NEG", batchlot$ctlprobe),]) +
+    geom_point(aes_(x=as.name(b), y=quote(newlot))) +
+    geom_abline(slope=1, intercept=0, color="red") +
+    labs(title=paste0(b,"\nCorrelation of ERCC POS and NEG controls\n",
+                     "Old lot=",unique(md$Antibody.Lot[which(md$Batch==b)]), " v. New lot= ", newlot,
+                      "\nCorrelation R=", cor(batchlot[grepl("POS|NEG", batchlot$ctlprobe),c(2)],batchlot[grepl("POS|NEG", batchlot$ctlprobe),c(3)]))) +
+    theme(plot.title = element_text(size=9))
+  p_bab = ggplot(batchlot[!grepl("POS|NEG", batchlot$ctlprobe),]) +
+    geom_point(aes_(x=as.name(b), y=quote(newlot))) +
+    geom_abline(slope=1, intercept=0, color="red") +
+    labs(title=paste0(b,"\nCorrelation of Antibodies (no ERCC)\n",
+                     "Old lot=",unique(md$Antibody.Lot[which(md$Batch==b)]), " v. New lot= ", newlot,
+                      "\nCorrelation R=", cor(batchlot[!grepl("POS|NEG", batchlot$ctlprobe),c(2)],batchlot[!grepl("POS|NEG", batchlot$ctlprobe),c(3)])))+
+    theme(plot.title = element_text(size=9))
+  print(grid.arrange(p_bercc, p_bab, nrow=2))
+
+}
+dev.off()
+```
+
+### Technical Repeatability Agreement
+
+```{r}
+
+mtraold = matrix(NA, nrow = 0, ncol = 4)
+mtranew = matrix(NA, nrow = 0, ncol = 4)
+
+for (ctrl in make.names(controls)){
+  selctl.old = ctls_oldlot[!grepl("POS|NEG", rownames(ctls_oldlot)),grepl(ctrl, colnames(ctls_oldlot)),drop=F]
+  selctl.new = ctls_newlot[!grepl("POS|NEG", rownames(ctls_newlot)),grepl(ctrl, colnames(ctls_newlot)),drop=F]
+  #old lot tra
+  tra_old = c()
+    for (idx in 1:ncol(selctl.old)){
+      temptra = log(as.matrix(selctl.old[,-idx])/as.numeric(selctl.old[,idx]))
+      m=melt(as.matrix(temptra))
+      m$Var2=colnames(selctl.old)[idx] #actual comparison is with this sample.
+      tra_old = rbind(tra_old, m)
+    }
+  mtraold = rbind(mtraold, data.frame(ctrl,tra_old))
+  tranew = log(as.matrix(selctl.old)/as.numeric(selctl.new))
+  mn=melt(as.matrix(tranew))
+  mn$Var2 = newlot_batch
+  mtranew = rbind(mtranew, data.frame(ctrl, mn))
+}
+
+mtracomb = rbind(data.frame(mtraold,lot=oldlot), data.frame(mtranew, lot=newlot))
+mtracomb$batch = sapply(strsplit(mtracomb$Var2, split="__"), `[`, 1)
+
+pdf(file = file.path(wd,"tra_bycellline.pdf"), width=8,height =6)
+
+for (ictrl in 1:length(unique(mtracomb$ctrl))){
+  ctrl=as.character(unique(mtracomb$ctrl)[ictrl])
+  ctrlmat = mtracomb[mtracomb$ctrl==ctrl,]
+  ptra=ggplot(ctrlmat) + 
+      geom_boxplot(aes(x=batch, y=value, fill=lot)) +
+      facet_wrap(~ctrl, scale="free", ncol = 1) +
+      geom_hline(yintercept =0, color="red",linetype="dashed") +
+      labs(title=paste0("Distribution of TRA (technical replicate agreement)\nlog ratio of all replicates overall antibodies")) +
+      theme(legend.position = "right",
+            axis.text.x = element_text(size=9, colour=c("black"), angle=-90, hjust=0.5,vjust=0.5),
+            plot.title = element_text(size=12),
+            strip.text = element_text(size = 14))
+  print(ptra)
+}
+dev.off()
+
+pdf(file = file.path(wd,"tra_byantibody.pdf"), width=8,height =6)
+
+for (iab in 1:length(unique(mtracomb$Var1))){
+  ab=as.character(unique(mtracomb$Var1)[iab])
+  mat = mtracomb[mtracomb$Var1==ab,]
+  ptraab=ggplot(mat) + 
+    geom_boxplot(aes(x=batch, y=value, fill=lot)) +
+    facet_wrap(~Var1, scale="free", ncol = 2) +
+    geom_hline(yintercept =0, color="red",linetype="dashed") +
+    labs(title=paste0("Distribution of TRA (technical replicate agreement)\nlog",
+    "ratio of all replicates overall celllines")) +
+    theme(legend.position = "right",
+          axis.text.x = element_text(size=9, colour=c("black"), angle=-90, hjust=0.5,vjust=0.5),
+          plot.title = element_text(size=12),
+          strip.text = element_text(size = 14))
+  print(ptraab)
+}
+
+dev.off()
+
+```
+
+### General Heatmaps
+```{r}
+
+combctls = cbind(ctls_oldlot, ctls_newlot)
+lcombctls = log(combctls+1)
+mdcomb = data.frame(name=c(colnames(ctls_oldlot), paste0("newlot__", colnames(ctls_newlot))))
+mdcomb$batch = sapply(strsplit(mdcomb$name, split="__"), `[`, 1)
+mdcomb$cellline = sapply(strsplit(mdcomb$name, split="__"), `[`, 2)
+rownames(mdcomb)=colnames(combctls)
+
+pdf(file = file.path(wd,"signal_heatmap.pdf"), width=7,height =8)
+
+pheat_ercc = pheatmap(mat = t(lcombctls[grepl("POS|NEG", rownames(ctls_oldlot)),]),
+  color             = brewer.pal(n = 9, name = "YlOrRd"),
+  border_color      = TRUE,
+  show_colnames     = TRUE,
+  show_rownames     = TRUE,
+  annotation_row    = mdcomb[,-which(colnames(mdcomb)=="name")], 
+  drop_levels       = TRUE,
+  fontsize          = 8,
+  fontsize_row      = 8,
+  fontsize_col      = 8,
+  main              = "log raw of ERCC", 
+  cluster_rows      = T,
+  cluster_cols      = F)
+
+pheat_ab = pheatmap(mat = t(lcombctls[!grepl("POS|NEG", rownames(ctls_oldlot)),]),
+  color             = brewer.pal(n = 9, name = "YlOrRd"),
+  show_colnames     = TRUE,
+  show_rownames     = TRUE,
+  annotation_row    = mdcomb[,-which(colnames(mdcomb)=="name")], 
+  border_color      = TRUE,
+  drop_levels       = TRUE,
+  fontsize          = 8,
+  fontsize_row      = 8,
+  fontsize_col      = 8,
+  main              = "log raw of Antibodies", 
+  cluster_rows      = T,
+  cluster_cols      = T)
+
+dev.off()
+  
+```
+
+### RLE
+```{r rle}
+rleercc= rel_log_exp(Y=t(lcombctls[grepl("POS|NEG", rownames(ctls_oldlot)),]))
+rleab= rel_log_exp(Y=t(lcombctls[!grepl("POS|NEG", rownames(ctls_oldlot)),]))
+
+# RLE HEATMAP
+pdf(file.path(wd,"RLE_heatmap.pdf"), width = 9.5, height = 8.5)
+pheat_raw = pheatmap(mat = rleab,
+                     color         = colorRampPalette(c("green", "black", "red"))(50),
+                     border_color  = "darkgray",
+                     show_colnames = TRUE,
+                     show_rownames = TRUE,
+                     annotation_row= mdcomb[,-which(colnames(mdcomb)=="name")], 
+                     drop_levels   = TRUE,
+                     fontsize      = 8,
+                     fontsize_row  = 8,
+                     fontsize_col  = 8,
+                     main          = "Relative Log Expression of Antibodies", 
+                     cluster_rows  = T,
+                     cluster_cols  = T)
+
+
+dev.off()
+```
