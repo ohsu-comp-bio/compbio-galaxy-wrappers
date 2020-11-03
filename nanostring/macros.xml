@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<macros>
+
+  <xml name="requirements">
+    <requirements>
+      <requirement type="package" version="@VERSION@">nanostring</requirement>
+    </requirements>
+  </xml>
+
+</macros>
+

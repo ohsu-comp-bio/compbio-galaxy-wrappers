@@ -1,0 +1,103 @@
+
+
+---
+title: "nanostring"
+output: 
+---
+
+```{r libraries}
+suppressPackageStartupMessages(library(argparse))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(reshape2))
+library(xlsx)
+
+```
+
+
+
+```{r data}
+
+data_dir="/Volumes/OHSU/CLINICAL/Nanostring/output"
+ab_ref_file="/Volumes/Histopathology Shared Resource/CLINICAL/Nanostring/REFERENCE_FILES/ANTIBODY_REFERENCE.csv"
+md_file = "/Users/patterja/Box Sync/NANOSTRING/nanostring_metadata.xlsx"
+exclude=c("20190131_30102232840920", "20190905_20824231220-20190905-KD0007","20190221_30102234070920","20200318_208800320621-kd0014")
+controls=c("MCF7","HCC1954","BT474","HeyA8","MDA468 control","MDA468+EGF")
+
+
+abref = read.table(file=ab_ref_file, sep=",", header=F)
+
+```
+
+
+```{r metadata}
+
+md = read.xlsx(file= "/Users/patterja/Box Sync/NANOSTRING/nanostring_metadata.xlsx", sheetName = "nanostring_metadata", check.names=T, stringsAsFactors=F)
+md$sampcolumn = make.names(paste0(md$Batch, "__", md$Sample.Name))
+
+head(md)
+length(unique(md$BatchID))
+```
+
+
+
+
+```{r}
+raw = c()
+ercc_norm = c()
+geosamp = c()
+iggsub = c()
+liggsub = c()
+batches=c()
+for (batchid in list.files(data_dir)){
+  print(batchid)
+  if (!batchid %in% exclude){
+    if (batchid %in% unique(md$Batch[!md$cohort %in% c("failed", "sample")])){
+      if (file.exists(paste0(data_dir,"/", batchid, "/1_ERCC_NORMALIZED.tsv"))){
+        new0 = read.table(file= paste0(data_dir,"/",batchid, "/rawdata.txt"), sep="\t", header=T, check.names = F)[,-c(1,3)]
+        rownames(new0) = new0[,"Name"]
+        new0[,"Name"] <- NULL
+        colnames(new0) = paste0(batchid, "__", colnames(new0))
+        print(dim(new0))
+        new_norm1 = read.table(file= paste0(data_dir,"/",batchid, "/1_ERCC_NORMALIZED.tsv"), sep="\t", header=T, row.names = 1)
+        colnames(new_norm1) = paste0(batchid, "__", colnames(new_norm1))
+        
+        new_norm2 = read.table(file= paste0(data_dir,"/",batchid, "/2_GEOMEAN_NORMALIZED.tsv"), sep="\t", header=T, row.names = 1)
+        colnames(new_norm2) = paste0(batchid, "__", colnames(new_norm2))
+        
+        new_norm3 = read.table(file= paste0(data_dir,"/",batchid, "/3_IGG_SUBTRACTED.tsv"), sep="\t", header=T, row.names = 1)
+        colnames(new_norm3) = paste0(batchid, "__", colnames(new_norm3))
+        
+        new_norm4 = read.table(file= paste0(data_dir,"/",batchid, "/4_LOG_2_NORMALIZED.tsv"), sep="\t", header=T, row.names = 1)
+        colnames(new_norm4) = paste0(batchid, "__", colnames(new_norm4))
+          if (length(nrow(ercc_norm)) < 1){
+            raw = new0
+            ercc_norm = new_norm1
+            geosamp = new_norm2
+            iggsub = new_norm3
+            liggsub = new_norm4
+          } else {
+            raw=cbind(raw, new0[match(rownames(raw), rownames(new0)),])
+            ercc_norm=cbind(ercc_norm, new_norm1[match(rownames(ercc_norm), rownames(new_norm1)),])
+            geosamp=cbind(geosamp, new_norm2[match(rownames(geosamp), rownames(new_norm2)),])
+            iggsub=cbind(iggsub, new_norm3[match(rownames(iggsub), rownames(new_norm3)),])
+            liggsub=cbind(liggsub, new_norm4[match(rownames(liggsub), rownames(new_norm4)),])
+          }
+        batches = append(batches, batchid)
+        }
+    }
+  }
+}
+
+head(geosamp)
+
+write.table(raw, file="/Volumes/Histopathology Shared Resource/CLINICAL/Nanostring/REFERENCE_FILES/validation_samples_rawdata_20200512.txt", sep="\t", quote = F, row.names = T, col.names = NA)
+write.table(raw, file="/Volumes/Histopathology Shared Resource/CLINICAL/Nanostring/REFERENCE_FILES/validation_samples_rawdata_20200320.txt", sep="\t", quote = F, row.names = T, col.names = NA)
+write.table(ercc_norm, file="/Volumes/Histopathology Shared Resource/CLINICAL/Nanostring/REFERENCE_FILES/validation_samples_erccnormalized_20200320.txt", sep="\t", quote = F, row.names = T, col.names = NA)
+write.table(geosamp, file="/Volumes/Histopathology Shared Resource/CLINICAL/Nanostring/REFERENCE_FILES/validation_samples_geosamp_normalized_20200320.txt", sep="\t", quote = F, row.names = T, col.names = NA)
+
+
+write.table(iggsub, file="/Volumes/Histopathology Shared Resource/CLINICAL/Nanostring/REFERENCE_FILES/validation_samples_iggsub_normalized_v2.txt", sep="\t", quote = F, row.names = T, col.names = NA)
+
+
+write.table(igg_sub, file="/Volumes/Histopathology Shared Resource/CLINICAL/Nanostring/REFERENCE_FILES/validation_samples_iggsub_normalized.txt", sep="\t", quote = F, row.names = T, col.names = NA)
+```
