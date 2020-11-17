@@ -1,4 +1,4 @@
-<tool id="splitncigarreads" name="SplitNCigarReads" version="3.7.4" >
+<tool id="splitncigarreads" name="SplitNCigarReads" version="3.7.5" >
   <description>Splits reads that contain Ns in their CIGAR string</description>
 
   <requirements>
@@ -14,7 +14,7 @@
   ln -f -s "${input}" input.bam &&
   samtools index input.bam &&
 
-  gatk -Xmx16g
+  gatk -Xmx32g
   -T SplitNCigarReads
   -R $index_path
   -I input.bam
