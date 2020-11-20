@@ -37,7 +37,7 @@ if (normalize==TRUE){
 
 
 smmartsamps = colnames(ndata)[eval(parse(text=idxSamples))]
-smmartcpm = cpm[,smmartsamps]
+smmartcpm = ndata[,smmartsamps]
 #FILTER
 filter <-  apply(smmartcpm, 1, function(x) length(x[x>minNumReads])>=minNumSamples)
 filtered <- ndata[filter,]
