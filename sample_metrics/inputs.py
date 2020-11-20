@@ -7,6 +7,34 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
+
+class GatkCollectRnaSeqMetrics:
+    """
+    Grab data from files in this format.
+    ## denotes section headers
+    # is more or less a comment?
+    """
+    def __init__(self, filename):
+        self.filename = filename
+        self.metrics = self._fill_metrics()
+
+    def _fill_metrics(self):
+        """
+        This will only grab the METRICS section values.
+        :return:
+        """
+        metrics = {}
+        with open(self.filename, 'r') as outfile:
+            for line in outfile:
+                if line.startswith('PF_BASES'):
+                    headers = line.rstrip('\n').split('\t')
+                    raw_metrics = outfile.readline().rstrip('\n').split('\t')
+                    for i in range(len(headers)):
+                        metrics[headers[i]] = raw_metrics[i]
+                    return metrics
+        raise ImportError("Can't find METRICS CLASS data from the input CollectRnaSeqMetrics file.")
+
+
 class SamReader:
     """
     Read a BAM file, get stuff we need from it, like total counts of all reads.
