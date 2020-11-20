@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.6.4" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.6.5" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
   
   <requirements>
@@ -36,6 +36,9 @@
     #if $gatk_count_reads_ints:
         --gatk_count_reads_ints '${gatk_count_reads_ints}'
     #end if
+    #if $gatk_coll_rnaseq_mets
+        --gatk_coll_rnaseq_mets '${gatk_coll_rnaseq_mets}'
+    #end if
     #for $input in $json_in:
         #if $input:
             --json_in "${input}"
@@ -54,6 +57,7 @@
       <param name="primers_bam" type="data" format="bam" optional="true" label="Primers BAM" help="BAM file to calculate primer reads on target." />
       <param name="gatk_count_reads_total" type="data" format="txt" optional="true" label="GATK4 CountReads Total" help="Total counts resulting from CountReads on a BAM file." />
       <param name="gatk_count_reads_ints" type="data" format="txt" optional="true" label="GATK4 CountReads Intervals" help="Target interval counts resulting from CountReads on a BAM file." />
+      <param name="gatk_coll_rnaseq_mets" type="data" format="tabular" optional="true" label="GATK4 CollectRNASeqMetrics Text" help="Tab-delimited metrics file coming from GATK CollectRNASeqMetrics." />
       <param name="msi" type="data" format="tabular" optional="true" label="MSIsensor TSV" help="TSV file with MSI results." />
       <param name="json_in" type="data" format="txt" optional="true" multiple="true" label="JSON Formatted Metrics File" help="Some arbitrary number of input files containing json formatted metrics." />
       <conditional name="umi">
