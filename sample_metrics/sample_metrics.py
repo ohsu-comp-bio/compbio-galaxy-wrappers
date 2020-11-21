@@ -327,6 +327,9 @@ class MetricPrep(SampleMetrics):
         Old style metrics.  Will need to handle special json metrics separately.
         :return:
         'parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed'
+        {"COUNT_0": 21916, "COUNT_1": 15287, "COUNT_10": 11012, "COUNT_100": 3505, "COUNT_1000": 187,
+        "COUNT_10000": 9, "COUNT_100000": 0, "TPM_0": 22296, "TPM_0.01": 15366, "TPM_0.1": 15360, "TPM_1": 14323,
+        "TPM_10": 9791, "TPM_100": 1505, "TPM_1000": 98}
         """
         mets = {'qthirty': self._get_avg_probeqc('Q30'),
                 'averageDepth': self._get_avg_probeqc('AVGD'),
@@ -356,6 +359,20 @@ class MetricPrep(SampleMetrics):
                 'parentage_sites': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_sites'),
                 'percentOnTarget': self._reduce_sig(self.on_target),
                 'percentUmi': self.pumi,
+                'rna_count_zero': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_0'),
+                'rna_count_one': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_1'),
+                'rna_count_ten': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_10'),
+                'rna_count_onehundred': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_100'),
+                'rna_count_onethousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_1000'),
+                'rna_count_tenthousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_10000'),
+                'rna_count_hundredthousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_100000'),
+                'rna_tpm_zero': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_0'),
+                'rna_tpm_hundredth': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_0.01'),
+                'rna_tpm_tenth': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_0.1'),
+                'rna_tpm_one': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_1'),
+                'rna_tpm_ten': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_10'),
+                'rna_tpm_onehundred': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_100'),
+                'rna_tpm_onethousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_1000'),
                 'tmb': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb'),
                 'msi_pct': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_pct'),
                 'msi_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='total_sites'),
@@ -448,7 +465,11 @@ class MetricPrep(SampleMetrics):
                 'QIAseq_V3_HEME2': [],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
-                                          'gatk_pct_correct_strand_reads'],
+                                          'gatk_pct_correct_strand_reads', 'rna_count_zero', 'rna_count_one',
+                                          'rna_count_ten', 'rna_count_onehundred', 'rna_count_onethousand',
+                                          'rna_count_tenthousand', 'rna_count_hundredthousand', 'rna_tpm_zero',
+                                          'rna_tpm_hundredth', 'rna_tpm_tenth', 'rna_tpm_one', 'rna_tpm_ten',
+                                          'rna_tpm_onehundred', 'rna_tpm_onethousand'],
                 'QIAseq_V3_HOP': ['allele_balance', 'allele_balance_het_count'],
                 'QIAseq_V3_HOP2': ['allele_balance', 'allele_balance_het_count']
                 }
