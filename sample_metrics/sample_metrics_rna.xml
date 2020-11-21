@@ -1,15 +1,15 @@
-<tool id="sample_metrics_rna" name="Sample Level Metrics RNA" version="0.2.2" >
+<tool id="sample_metrics_rna" name="Sample Level Metrics RNA" version="0.3.0" >
   <description>Metrics calculated at the sample RNA metrics, for use in CGD and for additional QC.</description>
   <version_command>python $__tool_directory__/sample_metrics_rna.py --version</version_command>
 
   <requirements>
-    <requirement type="package" version="1.11.0">numpy</requirement>
+    <requirement type="package" version="1.11">numpy</requirement>
     <requirement type="package" version="0.7.10">pybedtools</requirement>
     <requirement type="package" version="0.15.3">pysam</requirement>
   </requirements>
 
   <command><![CDATA[
-    python $__tool_directory__/sample_metrics_rna.py
+    $__tool_directory__/sample_metrics_rna.py
     --counts '${counts}'
     --tpm '${tpm}'
     --filtered_gtf '${gtf}'
