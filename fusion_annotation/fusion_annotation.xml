@@ -1,4 +1,4 @@
-<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.2.7">
+<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.3.0">
   <description>Create annotated fusion output, based off of STAR-Fusion output.</description>
   <requirements>
     <requirement type="package" version="0.15.3">pysam</requirement>
@@ -13,6 +13,9 @@
     --starfusion '${starfusion}'
     '${filter}'
     --json_sample_metrics '${json_sample_metrics}'
+    #if $ensembl_mapping
+        --ensembl_mapping '${ensembl_mapping}'
+    #end if
     #if $refGenomeSource.genomeSource == "history":
         --path_to_fasta ${refGenomeSource.ownFile}
     #else:
@@ -24,6 +27,7 @@
   <inputs>
      <param name="starfusion" type="data" format="tabular" label="STAR-Fusion result: star-fusion.fusion_candidates.final.abridged.FFPM" />
      <param name="json_sample_metrics" type="data" format="txt" label="Sample metrics output in JSON format." />
+     <param name="ensembl_mapping" type="data" format="txt" optional="true" label="ENST and RefSeq Mapping" help="TSV mapping of ENST to RefSeq transcript IDs." />
      <param name="filter" type="select" label="Filter non-coding RNAs" help="Check to remove specific non coding RNAs and tRNA mitochondrial genes. Keeps all others such as protein-coding mitochondrial genes. Based on this regular expression: MT-T|MT-RNR|RNA18S5|RNA28S5|RNA5-85S">
        <option value="--filt">Yes</option>
        <option value=''>No</option>
