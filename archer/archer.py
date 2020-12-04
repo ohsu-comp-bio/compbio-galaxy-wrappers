@@ -1,3 +1,4 @@
+import json
 import requests
 
 
@@ -16,6 +17,40 @@ class ArcherOps:
         self.token = token
         self.url_prefix = url
         self.header = {'authorization': 'Basic {}'.format(token)}
+
+    def put_dep_file(self, filename, loc='dependency-files', dtype='targeted_region_file'):
+        """
+        Send a file of certain type to Archer.
+        dependency_file_type *
+        string
+        (formData)
+        The type of dependency file being uploaded
+        Available values : target_region_file, targeted_variant_file, qc_target_region_file
+        custom_file *
+        file
+        (formData)
+        The file that is being added
+
+        curl -X PUT "https://ohsukdldev.analysis.archerdx.com/rest_api/dependency-files/"
+        -H "accept: application/json" -H "Content-Type: multipart/form-data" -u $user_email:$user_password
+        -d {"dependency_file_type":"targeted_variant_file","ignore_warnings":"false","custom_file":{}}
+        :return:
+        """
+        url = self._create_api_url(loc) + '/'
+        payload = self._create_payload(dtype, filename)
+        response = requests.put(url, data=payload, headers=self.header)
+        print(response)
+        return response.content.decode("utf-8")
+
+    def _create_payload(self, dtype, filename, ignore=False):
+        """
+        {"dependency_file_type":"targeted_variant_file","ignore_warnings":"false","custom_file":{}}
+        :return:
+        """
+        payload = {'dependency_file_type': dtype,
+                   'ignore_warnings': str(ignore).lower(),
+                   'custom_file': filename}
+        return payload
 
     def _create_api_url(self, *args):
         """
@@ -81,9 +116,6 @@ class ArcherOps:
         :return:
         """
         targ_list = self._get_all_targ_muts_file()
-        # print(targ_list)
-        # print(self._get_latest_targ_vers(targ_list))
-        # exit(0)
         return self._get_latest_targ_vers(targ_list)
 
     def get_targ_vcf(self):
@@ -95,4 +127,4 @@ class ArcherOps:
             if self._create_targ_name() == entry['name']:
                 url = entry['file_url']
                 response = requests.get(url, headers=self.header)
-                return response.content.decode("utf-8")
+                return response.content.decode("utf-8"), entry['name']
