@@ -1,0 +1,144 @@
+---
+title: "Gene Expression Report"
+output:
+  pdf_document: default
+always_allow_html: yes
+mainfont: Calibri
+fontsize: 11pt
+params: 
+  sample: ''
+  gene_map: ''
+  smmartexpmat: ''
+  tcgaexmat: ''
+  tcga_md: ''
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+---
+
+
+```{r, echo=FALSE, warning=FALSE}
+options(knitr.table.format = "html")
+
+opts_knit$set(root.dir=".")
+
+sampleid = params$sample
+gene_map=read.csv(params$gene_map, sep="\t", header=TRUE, check.names=FALSE)
+smmartexpmat=read.csv(params$smmartexpmat, sep="\t", header=TRUE, check.names=FALSE, row.names=1)
+load(params$tcgaexmat)
+tcga_md=read.csv(params$tcga_md, sep="\t", header=TRUE, check.names=FALSE, row.names=1)
+
+#see test.R for tests
+```
+Patient Information
+-------------------
+
+SAMPLE ID: ``r paste0(sampleid)``
+
+```{r expression figures, echo=FALSE, warning=FALSE, message=FALSE}
+genes = c("AR", "ESR1", "PGR", "ERBB2", "BCL2", "CD274", "TYMS", "YES1")
+ens_hugo_map = gene_map[gene_map$GeneID %in% genes,]
+
+#SMMART FILTERING
+#1) genes in expression value you want to see
+#2) log2 everything!!!!
+#3) get SMMART breast samples only and scale to get breast only mean and sd 
+#5) z-scale based on mean and sd of breast smmart.
+    #get this val from original matrix because mean and sd if filtered
+    #ex. if you wanted to make a report for a prostate cancer
+#sm_filter=smmartexpmat[ens_hugo_map$GeneID,]
+sm_filter=smmartexpmat[ens_hugo_map$EnsemblID,]
+rownames(sm_filter) <- ens_hugo_map$GeneID
+sm_scale=t(scale(t(log(sm_filter+1, base=2)), scale=TRUE, center=TRUE))
+samp_smrec=sm_scale[,sampleid, drop=FALSE]
+
+#TCGA logging!
+#TCGA is scaling!
+#filter out Normal Tissue samples
+tcgatpm <- t(tcgatpm)
+tcgaexmat_tm = tcgatpm[,make.names(rownames(tcga_md[tcga_md$"Pam50_Claudin"!="Normal_Tissue",]))]
+rownames(tcgaexmat_tm) <- gsub("\\..*","",rownames(tcgaexmat_tm))
+tcga_filter=tcgaexmat_tm[ens_hugo_map$EnsemblID,]
+rownames(tcga_filter) <- ens_hugo_map$GeneID
+tcga_scale=t(scale(t(log(tcga_filter+1, base=2)), scale=TRUE, center=TRUE))
+
+dir.create(path = "figures", showWarnings = F)
+for (gene in genes){
+  mean_tcga=mean(tcga_scale[c(gene),])
+  genetpm = rbind(data.frame("expression" = tcga_scale[c(gene),], "set" = "TCGA", stringsAsFactors = F), 
+                  data.frame("expression" = sm_scale[c(gene),], "set"="SMMART"))
+  
+  p <- ggplot(genetpm) + 
+    geom_density(mapping=aes(x=expression, fill=set), alpha=0.65, show.legend = T) + 
+    scale_fill_manual(values=c("#fc8d62","#8da0cb")) +
+    geom_vline(data=as.data.frame(samp_smrec[gene, ,drop=F]), 
+               mapping=aes(xintercept=as.numeric(samp_smrec[gene,])), color="black", size =2) +
+    theme_classic() +
+    labs(x=paste0("log2 ", gene, " +1")) +
+    ggtitle(paste0(gene, " Expression")) +
+    theme(plot.title = element_text(size = 40),
+          legend.title = element_blank(),
+          legend.text = element_text(size=20),
+          legend.position="bottom")
+  
+  ggsave(filename = paste0("figures/",sampleid, "_",gene, ".png"), plot=p,width = 6.5, height = 5)
+  
+
+  genetpm_tcga = genetpm[genetpm$set=="TCGA",]
+  subtypes = c("Basal", "Claudin", "LumA", "LumB", "Normal")
+  subtype_plots=list()
+
+  for (subtype in subtypes) {
+	  p <- ggplot(genetpm_tcga[rownames(genetpm_tcga) %in% make.names(rownames(tcga_md[tcga_md$Pam50_Claudin == subtype,])),]) + 
+	    geom_density(mapping=aes(x=expression, fill=set), alpha=0.65, show.legend = FALSE) + 
+	    scale_fill_manual(values=c("#8da0cb")) +
+	    geom_vline(data=as.data.frame(samp_smrec[gene, ,drop=F]), mapping=aes(xintercept=as.numeric(samp_smrec[gene,])), color="black", size =2) +
+	    theme_classic() +
+	    labs(x=paste0("log2 ", gene, " +1")) +
+	    ggtitle(paste0(gene, "- TCGA", subtype," Type")) + 
+	    theme(plot.title = element_text(size = 25))
+	  
+	  subtype_plots[subtype] <- p
+	  ggsave(filename = paste0("figures/",sampleid, "_",gene, "_",tolower(subtype),".png"), plot=p,width = 5, height = 3.5)
+  
+  }
+ 
+}
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+
+colnames(samp_smrec) <- c("Z-score")
+samp_smrec <- as.data.frame(samp_smrec)
+samp_smrec$`Mean` = 
+    ifelse(samp_smrec$`Z-score` > 0, "above",
+    ifelse(samp_smrec$`Z-score`==0, "equal", 
+           "below"))
+
+samp_smrec$`TCGA and SMMART` = knitr::include_graphics(sprintf('%s/%s/%s_%s.png', getwd(),paste0("figures"), sampleid, rownames(samp_smrec)), error = FALSE)
+
+for (subtype in subtypes) {
+    samp_smrec[[paste("TCGA ", subtype, sep="")]]= knitr::include_graphics(sprintf('%s/%s/%s_%s_%s.png',getwd(),paste0("figures"),sampleid, rownames(samp_smrec), tolower(subtype)), error = FALSE)
+}
+samp_smrec = samp_smrec[order(rownames(samp_smrec)),]
+
+img_table = as.data.frame(matrix(nrow=nrow(samp_smrec), ncol=ncol(samp_smrec[,-c(1,2)])))
+colnames(img_table) <- colnames(samp_smrec[,-c(1,2)])
+hr_table = data.frame(samp_smrec[,1:2],img_table, check.names=FALSE)
+hr_table[is.na(hr_table)]<-""
+
+ktable <- hr_table %>%
+  kbl(booktabs = F, format="html", align='c', row.names=TRUE, digits=2) %>%
+  kable_styling(font_size=20) %>%
+  column_spec(1,bold=TRUE, ) %>%
+  column_spec(2:3, width="2.25cm") %>%
+  column_spec(4, image =  spec_image(samp_smrec[[3]], 375, 325)) %>%
+  column_spec(5, image =  spec_image(samp_smrec[[4]], 375, 325)) %>%
+  column_spec(6, image =  spec_image(samp_smrec[[5]], 375, 325)) %>%
+  column_spec(7, image =  spec_image(samp_smrec[[6]], 375, 325)) %>%
+  column_spec(8, image =  spec_image(samp_smrec[[7]], 375, 325)) %>%
+  column_spec(9, image =  spec_image(samp_smrec[[8]], 375, 325)) 
+
+as_image(ktable, width=7.75)
+
+```
+Figure 1. RNA expression distribution. SMMART distribution is in orange, blue distribution depicts BRCA TCGA cohort. The black line marks the patient's RNA expression.
