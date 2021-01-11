@@ -1,0 +1,13 @@
+owner: "creason"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/rnaseq_reports"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/rnaseq_reports"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  rnaseq_reports:
+    description: "A set of reports to summarize gene expression, disease subtype analysis, and drug predictions"
+    include:
+        - Breast_Expression_Report.Rmd
+        - gene_expression_report.xml
+        - expression_report.R
+        - tool-data/**
