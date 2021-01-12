@@ -11,5 +11,6 @@ repositories:
       - fusion_annotation.py
       - __init__.py
       - ensembldb.py
+      - gtf.py
       - tool_data_table_conf.xml.sample
       - tool-data/*
