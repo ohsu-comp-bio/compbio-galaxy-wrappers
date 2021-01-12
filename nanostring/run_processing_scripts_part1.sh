@@ -18,8 +18,8 @@ NEWBATCH=$(basename "$1")
 omit_blank=$2
 
 echo $NEWBATCH
-DATA_DIR="/Volumes/OHSU/CLINICAL/Nanostring"
-REPO_DIR="/Users/patterja/Workspace/nanostring/nanostring"
+DATA_DIR="/Volumes/Histopathology\ Shared\ Resource/CLINICAL/Nanostring"
+REPO_DIR="/Users/letaw/PycharmProjects/compbio-galaxy-wrappers/nanostring"
 
 ss_dir="${DATA_DIR}""/""automated_data/""$NEWBATCH"
 output_dir="${DATA_DIR}""/""Assay_Whole_Slide/output/""$NEWBATCH"
