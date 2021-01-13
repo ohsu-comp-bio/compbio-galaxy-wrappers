@@ -12,7 +12,7 @@ import vcfreader
 import vcfwriter
 import argparse
 
-VERSION = '0.6.0'
+VERSION = '0.7.0'
 
 
 def supply_args():
@@ -50,30 +50,79 @@ class VcfRecDecomp(object):
     """
 
     def __init__(self, vrnt, info_number, samples_number):
+        self.alts = self._choose_alts(vrnt)
+        self.alt_count = len(vrnt.ALT)
+        self.gl_map = self._create_gl_map()
         self.info_number = info_number
         self.samples_number = samples_number
-        self.vrnt_samples = self._decomp_samples_vrnt(vrnt)
+        if len(vrnt.rec) >= 9:
+            self.vrnt_samples = self._decomp_samples_vrnt(vrnt)
+        else:
+            self.vrnt_samples = None
         self.vrnt_info = self._decomp_info_vrnt(vrnt)
         self.decomp_vrnts = self._vrnt_update(vrnt)
 
-    def _vrnt_update(self, vrnt):
+    def _choose_alts(self, vrnt):
+        """
+        We don't want to do anything with the asterisks, other than ignore them.
+        :return:
+        """
+        excl = ['*']
+        alts = []
+        for alt in vrnt.ALT:
+            if alt not in excl:
+                alts.append(alt)
+        return alts
+
+    def _assess_depths(self, samps, alle):
+        """
+        After a split, a variant may end up with zero depth.  For a single sample VCF, we don't want to
+        write this entry if it is zero depth.  For a multi-sample VCF, we would not write the record if all samples
+        were of depth zero.
+        to file.
+
+        [{'A': {'AD': '0,44', 'PL': '941,567,3942', 'GT': '0/1'}, 'ATT': {'AD': '0,66', 'PL': '941,3942,2650', 'GT': './.'}, 'ATTT': {'AD': '0,0', 'PL': '941,0,4630', 'GT': '0/1'}}, ...]
+
+        :return:
+        """
+        for samp in samps:
+            ad = samp[alle]['AD'].split(',')
+            depth = int(ad[0]) + int(ad[1])
+            if depth != 0:
+                return False
+        return True
+
+    def _vrnt_update(self, vrnt, filt_phr='MAsite'):
         """
         Update VcfRecBase obj with split metrics.
         :return:
         """
         vrnt_updt = []
+        has_zero_depth = False
         for allele, vals in self.vrnt_info.items():
             new_vrnt = deepcopy(vrnt)
             new_vrnt.ALT = [allele]
+            new_vrnt.ID = None
+            if vrnt.FILTER and vrnt.FILTER != ['.']:
+                new_vrnt.FILTER.append(filt_phr)
+            else:
+                new_vrnt.FILTER = [filt_phr]
             for val in vals:
                 new_vrnt.INFO[val] = vals[val]
 
-            ind = 0
-            for samp in self.vrnt_samples:
-                for frmt in samp[allele]:
-                    new_vrnt.samples[ind][frmt] = samp[allele][frmt]
-                ind += 1
-            vrnt_updt.append(new_vrnt)
+            if self.vrnt_samples:
+                ind = 0
+                has_zero_depth = self._assess_depths(self.vrnt_samples, allele)
+                for samp in self.vrnt_samples:
+                    for frmt in samp[allele]:
+                        new_vrnt.samples[ind][frmt] = samp[allele][frmt]
+                    ind += 1
+
+            if not has_zero_depth:
+                vrnt_updt.append(new_vrnt)
+            else:
+                # print(new_vrnt.rec)
+                has_zero_depth = False
 
         return vrnt_updt
 
@@ -81,11 +130,11 @@ class VcfRecDecomp(object):
         """
         Decompose variant in to pieces, to be split.
         split dict:
-        {'C': {'GT': './.', 'AD': '0,2', 'PL': '437,258,504'}, 
-        'CA': {'GT': './.', 'AD': '0,1', 'PL': '437,504,417'}, 
-        'CAA': {'GT': './.', 'AD': '0,5', 'PL': '437,261,199'}, 
-        'CAAA': {'GT': './.', 'AD': '0,8', 'PL': '437,378,109'}, 
-        'CAAAA': {'GT': './.', 'AD': '0,0', 'PL': '437,417,569'}, 
+        {'C': {'GT': './.', 'AD': '0,2', 'PL': '437,258,504'},
+        'CA': {'GT': './.', 'AD': '0,1', 'PL': '437,504,417'},
+        'CAA': {'GT': './.', 'AD': '0,5', 'PL': '437,261,199'},
+        'CAAA': {'GT': './.', 'AD': '0,8', 'PL': '437,378,109'},
+        'CAAAA': {'GT': './.', 'AD': '0,0', 'PL': '437,417,569'},
         'CAAAAAA': {'GT': './.', 'AD': '0,0', 'PL': '437,126,569'}}
         :return:
         """
@@ -93,14 +142,14 @@ class VcfRecDecomp(object):
         for samp in vrnt.samples:
             split = {}
             for entry in samp:
-                for alt in vrnt.ALT:
+                for alt in self.alts:
                     idx = vrnt.ALT.index(alt)
                     if alt not in split:
                         split[alt] = {}
                     if self.samples_number[entry] == 'A':
                         split[alt][entry] = self._decomp_alt(samp[entry], idx)
                     elif self.samples_number[entry] == 'R':
-                        split[alt][entry] = self._decomp_ref(samp[entry], idx)
+                        split[alt][entry] = self._decomp_ref(samp[entry], idx + 1)
                     elif self.samples_number[entry] == 'G':
                         split[alt][entry] = self._decomp_geno(samp[entry], idx + 1)
 
@@ -117,7 +166,7 @@ class VcfRecDecomp(object):
         """
         split = {}
         for entry in vrnt.INFO:
-            for alt in vrnt.ALT:
+            for alt in self.alts:
                 idx = vrnt.ALT.index(alt)
                 if alt not in split:
                     split[alt] = {}
@@ -125,7 +174,7 @@ class VcfRecDecomp(object):
                 if self.info_number[entry] == 'A':
                     split[alt][entry] = self._decomp_alt(vrnt.INFO[entry], idx)
                 elif self.info_number[entry] == 'R':
-                    split[alt][entry] = self._decomp_ref(vrnt.INFO[entry], idx)
+                    split[alt][entry] = self._decomp_ref(vrnt.INFO[entry], idx + 1)
                 elif self.info_number[entry] == 'G':
                     split[alt][entry] = self._decomp_geno(vrnt.INFO[entry], idx + 1)
 
@@ -154,7 +203,7 @@ class VcfRecDecomp(object):
                 return "1/1"
             else:
                 raise Exception("PL field should not contain more than three values.")
-            
+
     @staticmethod
     def _decomp_alt(val, idx):
         """
@@ -170,30 +219,54 @@ class VcfRecDecomp(object):
         Find fields in SAMPLE columns that need to be split.
         :return:
         """
-        new_val = ['0', val.split(',')[idx+1]]
+        ref = val.split(',')[0]
+        alt = val.split(',')[idx]
+        new_val = [ref, alt]
         return ','.join(new_val)
 
     def _decomp_geno(self, val, idx):
         """
-
+        Get the indexes that we will pull from the GL values, for each allele.
         :param val:
         :return:
         """
-        geno_idxs = [self._calc_gl_pos(0, idx),
-                     self._calc_gl_pos(idx, idx)]
+        geno_idxs = [self.gl_map.index((0, idx)),
+                     self.gl_map.index((idx, idx))]
         sval = val.split(',')
         new_val = [sval[0], sval[geno_idxs[0]], sval[geno_idxs[1]]]
         return ','.join(new_val)
 
+    def _create_gl_map(self):
+        """
+        Using the _calc_gl_pos equation, we need to get values based on all possible genotypes.
+        :return:
+        """
+        gl_map = []
+        top = 2
+        while top <= (self.alt_count + 1):
+            for j in range(top):
+                for k in range(top):
+                    if k >= j:
+                        if (j, k) not in gl_map:
+                            gl_map.append((j, k))
+            top += 1
+        return gl_map
+
     @staticmethod
     def _calc_gl_pos(ref, alt):
         """
+        GL : genotype likelihoods comprised of comma separated floating point log10-scaled likelihoods for all possible
+        genotypes given the set of alleles defined in the REF and ALT fields. In presence of the GT field the same
+        ploidy is expected and the canonical order is used; without GT field, diploidy is assumed. If A is the allele in
+        REF and B,C,... are the alleles as ordered in ALT, the ordering of genotypes for the likelihoods is given by:
+        F(j/k) = (k*(k+1)/2)+j. In other words, for biallelic sites the ordering is: AA,AB,BB; for triallelic sites the
+        ordering is: AA,AB,BB,AC,BC,CC, etc. For example: GT:GL 0/1:-323.03,-99.29,-802.53 (Floats)
         F(j/k) = (k*(k+1)/2)+j
         j = allele 1
         k = allele 2
         :return:
         """
-        return int(((ref*(ref+1)/2)+alt))
+        return int(((ref * (ref + 1) / 2) + alt))
 
 
 def main():
@@ -239,18 +312,25 @@ def main():
     myvcf = vcfreader.VcfReader(args.input)
     info_number = myvcf.info_number
     samples_number = myvcf.samples_number
+    header_dict = {'id': 'MAsite',
+                   'desc': 'Site was split from a multiallelic site.'}
     out_vcf_recs = []
 
     for vrnt in myvcf.myvcf.values():
         if len(vrnt.ALT) > 1:
             split_vrnt = VcfRecDecomp(vrnt, info_number, samples_number).decomp_vrnts
             for svrnt in split_vrnt:
-                if '*' not in svrnt.ALT and svrnt.samples[0]['GT'] != './.':
+                if svrnt.samples:
+                    if svrnt.samples[0]['GT'] != './.':
+                        out_vcf_recs.append(svrnt.print_rec())
+                else:
                     out_vcf_recs.append(svrnt.print_rec())
         else:
             out_vcf_recs.append(vrnt.print_rec())
 
-    vcfwriter.VcfWriter(args.output, out_vcf_recs, myvcf.raw_header).write_me()
+    new_header = vcfwriter.VcfHeader(myvcf.raw_header)
+    new_header.add_header_line('FILTER', header_dict)
+    vcfwriter.VcfWriter(args.output, out_vcf_recs, new_header.raw_header).write_me()
 
 
 if __name__ == "__main__":

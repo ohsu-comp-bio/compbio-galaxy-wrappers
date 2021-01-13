@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import re
 
+
 class VcfAllele(object):
     """
     Define what a VCF allele looks like.
@@ -41,7 +42,6 @@ class VcfAllele(object):
                 return None
             else:
                 raise Exception('The allele \"' + str(allele) + '\" does not comply with the specification.')
-
 
 
 class VcfFilt(object):
@@ -121,6 +121,7 @@ class VcfRecBase(object):
 
 
     """
+
     def __init__(self, rec):
 
         self.rec = rec.rstrip('\n').split('\t')
@@ -168,9 +169,13 @@ class VcfRecBase(object):
 
         try:
             self.my_samps = VcfSamples(self.rec[8], self.rec[9:])
+        except IndexError:
+            self.my_samps = None
+
+        try:
             self.FORMAT = self.my_samps.frmt
             self.samples = self.my_samps.my_samps
-        except ValueError:
+        except (ValueError, AttributeError):
             self.FORMAT = None
             self.samples = None
 
@@ -200,7 +205,7 @@ class VcfRecBase(object):
             write_line.append(str(self.QUAL))
         else:
             write_line.append(self.QUAL)
-        
+
         filt = ';'.join(self.FILTER)
         write_line.append(filt)
 
@@ -214,19 +219,19 @@ class VcfRecBase(object):
 
         write_line.append(';'.join(info_str))
 
-        frmt_str = []
-        for key, val in self.samples[0].items():
-            frmt_str.append(key)
-        write_line.append(':'.join(frmt_str))
+        if self.my_samps:
+            frmt_str = []
+            for key, val in self.samples[0].items():
+                frmt_str.append(key)
+            write_line.append(':'.join(frmt_str))
 
-        for samp in self.samples:
-            samp_str = []
-            for val in samp.values():
-                samp_str.append(val)
-            write_line.append(':'.join(samp_str))
+            for samp in self.samples:
+                samp_str = []
+                for val in samp.values():
+                    samp_str.append(val)
+                write_line.append(':'.join(samp_str))
 
         return self._dot_for_none(write_line)
-
 
     def _dot_for_none(self, val):
         """
@@ -238,7 +243,6 @@ class VcfRecBase(object):
                 ind = val.index(entry)
                 val[ind] = '.'
         return val
-
 
     def print_me(self):
         """
@@ -261,6 +265,7 @@ class VcfHeader(object):
     """
 
     """
+
     def __init__(self, header):
         self.header = header
         self.info_number = self._prep_info_number(self.header, '##INFO')
@@ -303,6 +308,7 @@ class VcfReader(object):
     """
     Hold VCF records, manage access to them based in chrom, pos, ref, alt.
     """
+
     def __init__(self, filename):
         self.filename = filename
         self.raw_header = []
@@ -310,7 +316,6 @@ class VcfReader(object):
         self.header = VcfHeader(self.raw_header)
         self.info_number = self.header.info_number
         self.samples_number = self.header.samples_number
-
 
     def _create_vcf(self):
         """
