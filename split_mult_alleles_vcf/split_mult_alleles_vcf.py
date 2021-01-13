@@ -50,6 +50,7 @@ class VcfRecDecomp(object):
     """
 
     def __init__(self, vrnt, info_number, samples_number):
+        self.alts = self._choose_alts(vrnt)
         self.alt_count = len(vrnt.ALT)
         self.gl_map = self._create_gl_map()
         self.info_number = info_number
@@ -60,6 +61,18 @@ class VcfRecDecomp(object):
             self.vrnt_samples = None
         self.vrnt_info = self._decomp_info_vrnt(vrnt)
         self.decomp_vrnts = self._vrnt_update(vrnt)
+
+    def _choose_alts(self, vrnt):
+        """
+        We don't want to do anything with the asterisks, other than ignore them.
+        :return:
+        """
+        excl = ['*']
+        alts = []
+        for alt in vrnt.ALT:
+            if alt not in excl:
+                alts.append(alt)
+        return alts
 
     def _assess_depths(self, samps, alle):
         """
@@ -90,7 +103,7 @@ class VcfRecDecomp(object):
             new_vrnt = deepcopy(vrnt)
             new_vrnt.ALT = [allele]
             new_vrnt.ID = None
-            if vrnt.FILTER:
+            if vrnt.FILTER and vrnt.FILTER != ['.']:
                 new_vrnt.FILTER.append(filt_phr)
             else:
                 new_vrnt.FILTER = [filt_phr]
@@ -108,7 +121,7 @@ class VcfRecDecomp(object):
             if not has_zero_depth:
                 vrnt_updt.append(new_vrnt)
             else:
-                print(new_vrnt.rec)
+                # print(new_vrnt.rec)
                 has_zero_depth = False
 
         return vrnt_updt
@@ -129,14 +142,14 @@ class VcfRecDecomp(object):
         for samp in vrnt.samples:
             split = {}
             for entry in samp:
-                for alt in vrnt.ALT:
+                for alt in self.alts:
                     idx = vrnt.ALT.index(alt)
                     if alt not in split:
                         split[alt] = {}
                     if self.samples_number[entry] == 'A':
                         split[alt][entry] = self._decomp_alt(samp[entry], idx)
                     elif self.samples_number[entry] == 'R':
-                        split[alt][entry] = self._decomp_ref(samp[entry], idx)
+                        split[alt][entry] = self._decomp_ref(samp[entry], idx + 1)
                     elif self.samples_number[entry] == 'G':
                         split[alt][entry] = self._decomp_geno(samp[entry], idx + 1)
 
@@ -153,7 +166,7 @@ class VcfRecDecomp(object):
         """
         split = {}
         for entry in vrnt.INFO:
-            for alt in vrnt.ALT:
+            for alt in self.alts:
                 idx = vrnt.ALT.index(alt)
                 if alt not in split:
                     split[alt] = {}
@@ -161,7 +174,7 @@ class VcfRecDecomp(object):
                 if self.info_number[entry] == 'A':
                     split[alt][entry] = self._decomp_alt(vrnt.INFO[entry], idx)
                 elif self.info_number[entry] == 'R':
-                    split[alt][entry] = self._decomp_ref(vrnt.INFO[entry], idx)
+                    split[alt][entry] = self._decomp_ref(vrnt.INFO[entry], idx + 1)
                 elif self.info_number[entry] == 'G':
                     split[alt][entry] = self._decomp_geno(vrnt.INFO[entry], idx + 1)
 
@@ -206,7 +219,9 @@ class VcfRecDecomp(object):
         Find fields in SAMPLE columns that need to be split.
         :return:
         """
-        new_val = ['0', val.split(',')[idx+1]]
+        ref = val.split(',')[0]
+        alt = val.split(',')[idx]
+        new_val = [ref, alt]
         return ','.join(new_val)
 
     def _decomp_geno(self, val, idx):
@@ -297,22 +312,25 @@ def main():
     myvcf = vcfreader.VcfReader(args.input)
     info_number = myvcf.info_number
     samples_number = myvcf.samples_number
+    header_dict = {'id': 'MAsite',
+                   'desc': 'Site was split from a multiallelic site.'}
     out_vcf_recs = []
 
     for vrnt in myvcf.myvcf.values():
         if len(vrnt.ALT) > 1:
             split_vrnt = VcfRecDecomp(vrnt, info_number, samples_number).decomp_vrnts
             for svrnt in split_vrnt:
-                if '*' not in svrnt.ALT:
-                    if svrnt.samples:
-                        if svrnt.samples[0]['GT'] != './.':
-                            out_vcf_recs.append(svrnt.print_rec())
-                    else:
+                if svrnt.samples:
+                    if svrnt.samples[0]['GT'] != './.':
                         out_vcf_recs.append(svrnt.print_rec())
+                else:
+                    out_vcf_recs.append(svrnt.print_rec())
         else:
             out_vcf_recs.append(vrnt.print_rec())
 
-    vcfwriter.VcfWriter(args.output, out_vcf_recs, myvcf.raw_header).write_me()
+    new_header = vcfwriter.VcfHeader(myvcf.raw_header)
+    new_header.add_header_line('FILTER', header_dict)
+    vcfwriter.VcfWriter(args.output, out_vcf_recs, new_header.raw_header).write_me()
 
 
 if __name__ == "__main__":
