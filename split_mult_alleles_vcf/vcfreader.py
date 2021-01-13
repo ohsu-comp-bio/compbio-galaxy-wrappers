@@ -168,9 +168,13 @@ class VcfRecBase(object):
 
         try:
             self.my_samps = VcfSamples(self.rec[8], self.rec[9:])
+        except IndexError:
+            self.my_samps = None
+
+        try:
             self.FORMAT = self.my_samps.frmt
             self.samples = self.my_samps.my_samps
-        except ValueError:
+        except (ValueError, AttributeError):
             self.FORMAT = None
             self.samples = None
 
@@ -214,16 +218,17 @@ class VcfRecBase(object):
 
         write_line.append(';'.join(info_str))
 
-        frmt_str = []
-        for key, val in self.samples[0].items():
-            frmt_str.append(key)
-        write_line.append(':'.join(frmt_str))
+        if self.my_samps:
+            frmt_str = []
+            for key, val in self.samples[0].items():
+                frmt_str.append(key)
+            write_line.append(':'.join(frmt_str))
 
-        for samp in self.samples:
-            samp_str = []
-            for val in samp.values():
-                samp_str.append(val)
-            write_line.append(':'.join(samp_str))
+            for samp in self.samples:
+                samp_str = []
+                for val in samp.values():
+                    samp_str.append(val)
+                write_line.append(':'.join(samp_str))
 
         return self._dot_for_none(write_line)
 
