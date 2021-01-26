@@ -8,10 +8,12 @@
         <requirement type="package" version="3.3.2">r-ggplot2</requirement>
         <requirement type="package" version="2.1.1">phantomjs</requirement>
         <requirement type="package" version="0.27">r-tinytex</requirement>
-
+        <requirement type="package" version="20180414=pl526hc0a3334_3">texlive-core</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
-        Rscript $run ${__tool_directory__}/Breast_Expression_Report.Rmd $sample ${__tool_directory__}/tool-data/gene_symbol_mapping.tsv $smmartexpmat ${__tool_directory__}/tool-data/TCGA_BRCA_tpm_proteincoding_tumor.RData ${__tool_directory__}/tool-data/tcgaBreastSampleAnnotationCat.tsv
+        export HOME="/home/users/clgalaxyuser" &&
+        cp ${__tool_directory__}/Breast_Expression_Report.Rmd . && 
+        Rscript $run "./Breast_Expression_Report.Rmd" $sample ${__tool_directory__}/tool-data/gene_symbol_mapping.tsv $smmartexpmat ${__tool_directory__}/tool-data/TCGA_BRCA_tpm_proteincoding_tumor.RData ${__tool_directory__}/tool-data/tcgaBreastSampleAnnotationCat.tsv
     ]]></command>
 
     <configfiles>
@@ -32,7 +34,8 @@
             if (length(args) != 6) {
               stop(print(usage), call.=FALSE)
             } else {
-              rmd = args[1]
+              print(args[1])
+              rmd=args[1]
               sample=args[2]
               gene_map=args[3]
               smmartexpmat=args[4]
@@ -56,7 +59,8 @@
         <param name="smmartexpmat" type="data" format="txt,tsv,tabular" label="SMMART Base Expression matrix" help=""/>
     </inputs>
     <outputs>
-        <data format="pdf" name="expression_report" label="Gene Expression Report" from_work_dir="Breast_Expression_Report.pdf"/>
+        <data format="pdf" name="expression_report" label="Gene Expression Report: PDF" from_work_dir="Breast_Expression_Report.pdf"/>
+        <data format="png" name="expression_report_png" label="Gene Expression Report: PNG" from_work_dir="Breast_Expression_Report.png"/>
     </outputs>
    <help><![CDATA[
 Gene Expression Report version 1.0.0
