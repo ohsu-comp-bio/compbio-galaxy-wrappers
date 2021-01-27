@@ -1,32 +1,31 @@
 #!/usr/bin/env python3
 
-### Add an allele frequency and total depth entry, useful for Pindel VCF's.
-### USAGE: python add_af.py <input VCF> <output VCF>
+# Add an allele frequency and total depth entry, useful for Pindel VCF's.
+# USAGE: python add_af.py <input VCF> <output VCF>
 # TODO: Split filtering functionality out of this script in to with another tool
 # or a separate script.  This script was originally put together for one specific
 # use case (Pindel) but now may be more widely applicable.
 
-import sys
 import argparse
+VERSION = '0.4.5'
 
-VERSION = '0.4.4'
 
-def createHeaderEntry(attrib):
+def create_header_entry(attrib):
     """
     This goes in the header of the VCF, and looks like this:
     ##FORMAT=<ID=AD,Number=2,Type=Integer,Description="Allele depth, how many reads support this allele">
     Modify to allow for different Number, Type, and Description field to be passed.
     """
 
+    header = None
     if attrib == "AF":
         header = "##FORMAT=<ID=AF,Number=1,Type=Float,Description=\"Variant allele frequency\">\n"
     elif attrib == "DP":
         header = "##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"Total read depth at this locus.\">\n"
-        
     return header
 
 
-def findIndex(splitting, delim, to_find):
+def find_index(splitting, delim, to_find):
     """
     Find the index of the field in the FORMAT column you care about.  Usually will be AD.
     """
@@ -39,7 +38,7 @@ def findIndex(splitting, delim, to_find):
     return None
 
 
-def calcAF(ref, alt):
+def calc_af(ref, alt):
     """
     Calculate the allele frequency and format the output.
     """
@@ -54,7 +53,7 @@ def calcAF(ref, alt):
     return af
 
 
-def calcDP(ref_count, alt_count):
+def calc_dp(ref_count, alt_count):
     """
     Pindel VCF's do not contain a DP value in the SAMPLE field.  Calculate it here.
     """
@@ -62,7 +61,7 @@ def calcDP(ref_count, alt_count):
     return str(ref_count + alt_count)
 
 
-def checkGenos(geno1, geno2):
+def check_genos(geno1, geno2):
     """
     If the genotypes are the same, do not write to output.
     """
@@ -72,7 +71,7 @@ def checkGenos(geno1, geno2):
     return False
 
 
-def compareAF(af1, af2, margin=0.2, thresh=0.1):
+def compare_af(af1, af2, margin=0.2, thresh=0.1):
     """
     Make a comparison between the allele frequencies, and remove variants that don't
     differ by at least margin and aren't greater than thresh.
@@ -93,11 +92,11 @@ def compareAF(af1, af2, margin=0.2, thresh=0.1):
     return True
 
 
-def check_format(format, field):
+def check_format(frmt, field):
     """
     Check to see if the field you want to add is already there.
     """
-    return field in format
+    return field in frmt
 
 
 def gather_header_terms(header_line):
@@ -105,20 +104,11 @@ def gather_header_terms(header_line):
     Gather everything from the header, and determine which fields are already there.
     Can look like:
     ##INFO=<ID=NTLEN,Number=.,Type=Integer,Description="Number of bases inserted in place of deleted code">
-    ##FORMAT=<ID=PL,Number=3,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
+    ##FORMAT=<ID=PL,Number=3,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined
+    in the VCF specification">
     """
 
     return header_line.split('=')[2].split(',')[0]
-
-
-def replace_field(info):
-    """
-    Replace one of the fields in the INFO column of a VCF.
-    For instance:
-    0/1:1253,5:2.037e-03:5:0:1.00:41072,171:659:594:1258
-    Want to replace AF in scientific notation so we can compare it.
-    """
-    pass
 
 
 def supply_args():
@@ -131,9 +121,13 @@ def supply_args():
     parser.add_argument('infile', help='Input VCF')
     parser.add_argument('outfile', help='Output VCF')
     parser.add_argument('format_label', type=str, help='Label to search for in the format field, such as AD or DPR.')
-    parser.add_argument('--margin', type=float, help='Allele frequencies with spread lower than this value will be considered the same if they are also not below the threshold defined below.')
-    parser.add_argument('--thresh', type=float, help='If allele frequencies are below this value, this record will be included regardless.')
-    parser.add_argument('--filtering', action="store_true", help='Should additional filtering be performed based on --margin and --thresh')
+    parser.add_argument('--margin', type=float, help='Allele frequencies with spread lower than this value will be '
+                                                     'considered the same if they are also not below the threshold '
+                                                     'defined below.')
+    parser.add_argument('--thresh', type=float, help='If allele frequencies are below this value, this record will '
+                                                     'be included regardless.')
+    parser.add_argument('--filtering', action="store_true", help='Should additional filtering be performed based on '
+                                                                 '--margin and --thresh')
     parser.add_argument('--vaf', type=float, help='Provide a VAF cutoff for '
                                                   'final output.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
@@ -143,15 +137,15 @@ def supply_args():
 
 
 def main():
-
     args = supply_args()
-
     handle_vcf = open(args.infile, 'r')
     handle_out = open(args.outfile, 'w')
     margin = args.margin
     thresh = args.thresh
-    delim = ':'  # We will usually target ':' delimeters, as that is what the VCF uses.
-    to_find = args.format_label  # Generally should be looking for AD's (allele depth) here.
+    # We will usually target ':' delimeters, as that is what the VCF uses.
+    delim = ':'
+    # Generally should be looking for AD's (allele depth) here.
+    to_find = args.format_label
     header_terms = []
 
     with handle_vcf as myvcf:
@@ -160,11 +154,11 @@ def main():
 
                 curr_index = None
                 split_variant = variant.rstrip('\n').split('\t')
-                format = split_variant[8]
+                frmt = split_variant[8]
 
-                if curr_index == None:
-                    curr_index = findIndex(format, delim, to_find)
-                if curr_index == None:
+                if not curr_index:
+                    curr_index = find_index(frmt, delim, to_find)
+                if not curr_index:
                     continue
 
                 if len(split_variant) == 11 and split_variant[10] == '':
@@ -178,38 +172,37 @@ def main():
                     tumor_ref = int(tumor.split(':')[curr_index].split(',')[0])
                     tumor_alt = int(tumor.split(':')[curr_index].split(',')[1])
 
-                    normal_af = calcAF(normal_ref, normal_alt)
-                    tumor_af = calcAF(tumor_ref, tumor_alt)
+                    normal_af = calc_af(normal_ref, normal_alt)
+                    tumor_af = calc_af(tumor_ref, tumor_alt)
 
-                    if check_format(format, "AF") == False:
-                ### Create FORMAT and SAMPLE strings with AF included.
-                        format = format + delim + "AF"
+                    if not check_format(frmt, "AF"):
+                        # Create FORMAT and SAMPLE strings with AF included.
+                        frmt = frmt + delim + "AF"
                         normal = normal + delim + str(normal_af)
                         tumor = tumor + delim + str(tumor_af)
 
-                    if check_format(format, "DP") == False:
-                ### Create FORMAT and SAMPLE strings with DP included.
-                        format = format + delim + "DP"
-                        normal = normal + delim + calcDP(normal_ref, normal_alt)
-                        tumor = tumor + delim + calcDP(tumor_ref, tumor_alt)
+                    if not check_format(frmt, "DP"):
+                        # Create FORMAT and SAMPLE strings with DP included.
+                        frmt = frmt + delim + "DP"
+                        normal = normal + delim + calc_dp(normal_ref, normal_alt)
+                        tumor = tumor + delim + calc_dp(tumor_ref, tumor_alt)
 
                     normal_geno = normal.split(':')[0]
                     tumor_geno = tumor.split(':')[0]
 
                     if args.filtering:
-                        if checkGenos(normal_geno, tumor_geno) == False and \
-                                compareAF(float(normal_af), float(tumor_af), margin, thresh) == False and \
-                                calcDP(tumor_ref, tumor_alt) > 2 and \
-                                normal_af < .05:
-                            handle_out.write('\t'.join(['\t'.join(split_variant[:8]), format, normal, tumor, '\n']))
+                        if not check_genos(normal_geno, tumor_geno) and \
+                                not compare_af(float(normal_af), float(tumor_af), margin, thresh) \
+                                and int(calc_dp(tumor_ref, tumor_alt)) > 2 and normal_af < .05:
+                            handle_out.write('\t'.join(['\t'.join(split_variant[:8]), frmt, normal, tumor, '\n']))
                     else:
-                        handle_out.write('\t'.join(['\t'.join(split_variant[:8]), format, normal, tumor, '\n']))
+                        handle_out.write('\t'.join(['\t'.join(split_variant[:8]), frmt, normal, tumor, '\n']))
 
-                ### For situation where there is not a matched normal.
+                # For situation where there is not a matched normal.
                 elif len(split_variant) == 10:
                     tumor = split_variant[9]
                     if to_find == "DPR":
-                        curr_index = findIndex(format, delim, to_find)
+                        curr_index = find_index(frmt, delim, to_find)
                         dpr0 = int(tumor.split(':')[curr_index].split(',')[0])
                         try:
                             dpr1 = int(tumor.split(':')[curr_index].split(',')[1])
@@ -217,48 +210,46 @@ def main():
                             dpr1 = 0
                         tumor_ref = dpr0 - dpr1
                         tumor_alt = dpr1
-                        tumor_af = calcAF(tumor_ref, tumor_alt)
+                        tumor_af = calc_af(tumor_ref, tumor_alt)
                     else:
                         try:
                             tumor_ref = int(tumor.split(':')[curr_index].split(',')[0])
                             tumor_alt = int(tumor.split(':')[curr_index].split(',')[1])
-                            tumor_af = calcAF(tumor_ref, tumor_alt)
-                        except:
+                            tumor_af = calc_af(tumor_ref, tumor_alt)
+                        except ZeroDivisionError:
                             tumor_af = 0
 
-                    if check_format(format, "AF") == False:
-                ### Create FORMAT and SAMPLE strings with AF included.
-                        format = format + delim + "AF"
+                    if not check_format(frmt, "AF"):
+                        # Create FORMAT and SAMPLE strings with AF included.
+                        frmt = frmt + delim + "AF"
                         tumor = tumor + delim + str(tumor_af)
 
-                    if check_format(format, "DP") == False:
-                ### Create FORMAT and SAMPLE strings with DP included.
-                        format = format + delim + "DP"
-                        tumor = tumor + delim + calcDP(tumor_ref, tumor_alt)
-
-                    tumor_geno = tumor.split(':')[0]
+                    if not check_format(frmt, "DP"):
+                        # Create FORMAT and SAMPLE strings with DP included.
+                        frmt = frmt + delim + "DP"
+                        tumor = tumor + delim + calc_dp(tumor_ref, tumor_alt)
 
                     if args.filtering:
                         raise Exception("This option is not valid for tumor-only VCF's.")
                     elif args.vaf:
                         if float(tumor_af) >= args.vaf:
                             handle_out.write('\t'.join(['\t'.join(
-                                split_variant[:8]), format, tumor, '\n']))
+                                split_variant[:8]), frmt, tumor, '\n']))
                     elif not args.vaf:
                         handle_out.write('\t'.join(['\t'.join(
-                            split_variant[:8]), format, tumor, '\n']))
+                            split_variant[:8]), frmt, tumor, '\n']))
 
             else:
-                
                 if "CHROM" not in variant:
                     handle_out.write(variant)
-                    if "INFO" in variant or "FORMAT" in variant:
+                    if "FORMAT" in variant:
                         header_terms.append(gather_header_terms(variant))
                 else:
+                    print(header_terms)
                     if "AF" not in header_terms:
-                        handle_out.write(createHeaderEntry("AF"))
+                        handle_out.write(create_header_entry("AF"))
                     if "DP" not in header_terms:
-                            handle_out.write(createHeaderEntry("DP"))
+                        handle_out.write(create_header_entry("DP"))
                     handle_out.write(variant)
 
 
