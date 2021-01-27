@@ -21,7 +21,7 @@ repID <- args[7]
 cIdx <- args[8]
 
 #read datafile
-data <- read.table(dataFile, header = TRUE, sep="\t", row.names=1)
+data <- read.table(dataFile, header = TRUE, sep="\t", row.names=1, check.names=FALSE)
 
 #BCCL is included then use counts and normalize
 if (normalize==TRUE){
