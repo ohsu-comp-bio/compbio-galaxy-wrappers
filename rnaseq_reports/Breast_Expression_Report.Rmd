@@ -44,9 +44,12 @@ ens_hugo_map = gene_map[gene_map$GeneID %in% genes,]
 #5) z-scale based on mean and sd of breast smmart.
     #get this val from original matrix because mean and sd if filtered
     #ex. if you wanted to make a report for a prostate cancer
-#sm_filter=smmartexpmat[ens_hugo_map$GeneID,]
-sm_filter=smmartexpmat[ens_hugo_map$EnsemblID,]
-rownames(sm_filter) <- ens_hugo_map$GeneID
+if (length(rownames(smmartexpmat[rownames(smmartexpmat) %in% genes,])) == length(genes)) {
+    sm_filter=smmartexpmat[ens_hugo_map$GeneID,]
+} else {
+    sm_filter=smmartexpmat[ens_hugo_map$EnsemblID,]
+    rownames(sm_filter) <- ens_hugo_map$GeneID
+}
 sm_scale=t(scale(t(log(sm_filter+1, base=2)), scale=TRUE, center=TRUE))
 samp_smrec=sm_scale[,sampleid, drop=FALSE]
 
@@ -138,7 +141,7 @@ ktable <- hr_table %>%
   column_spec(8, image =  spec_image(samp_smrec[[7]], 375, 325)) %>%
   column_spec(9, image =  spec_image(samp_smrec[[8]], 375, 325)) 
 
-as_image(ktable, width=7.75)
+as_image(ktable, width=7.75, file="Breast_Expression_Report.png")
 
 ```
 Figure 1. RNA expression distribution. SMMART distribution is in orange, blue distribution depicts BRCA TCGA cohort. The black line marks the patient's RNA expression.

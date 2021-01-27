@@ -1,5 +1,5 @@
-<tool id='expression_report' name="Gene Expression Report" version='1.0.0'>
-    <description>removes unwated variation based on replicate samples.</description>
+<tool id='expression_report' name="Gene Expression Report" version='1.1.4'>
+    <description>Creates a gene expression report.</description>
     <requirements>
         <requirement type="package" version="1.30">r-knitr</requirement>
         <requirement type="package" version="1.4.4">r-reshape2</requirement>
