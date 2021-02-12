@@ -5,15 +5,13 @@
 # USAGE: sample_metrics.py -h
 # CODED BY: John Letaw
 
-from __future__ import print_function
-
 import argparse
 import json
-
 # User libraries
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
+from inputs import FastQcRead
 
-VERSION = '0.6.5'
+VERSION = '0.6.6'
 
 
 def supply_args():
@@ -27,6 +25,8 @@ def supply_args():
                         help='Probe coverage QC after UMI deduplication metrics.')
     parser.add_argument('--probeqc_before', type=ProbeQcRead,
                         help='Probe coverage QC before UMI deduplication metrics.')
+    parser.add_argument('--fastqc_r1', type=FastQcRead, help='FastQC stats for read 1.')
+    parser.add_argument('--fastqc_r2', type=FastQcRead, help='FastQC stats for read 2.')
     parser.add_argument('--picard_summary', type=AlignSummaryMetrics, help='Picard alignment summary metrics file.')
     parser.add_argument('--gatk_coll_rnaseq_mets', type=GatkCollectRnaSeqMetrics,
                         help='GATK CollectRnaSeqMetrics file.')
@@ -99,6 +99,16 @@ class RawMetricCollector:
         else:
             self.gatk_coll_rnaseq_mets = None
 
+        if args.fastqc_r1:
+            self.gc_pct_1 = args.fastqc_r1.gc_pct
+        else:
+            self.gc_pct_1 = None
+
+        if args.fastqc_r2:
+            self.gc_pct_2 = args.fastqc_r2.gc_pct
+        else:
+            self.gc_pct_2 = None
+
         if args.probeqc_before:
             self.probeqc_before = args.probeqc_before.probeqc
             self.probeqc_header_before = args.probeqc_before.headers
@@ -152,6 +162,8 @@ class RawMetricCollector:
         print("MSI: {0}".format(self.msi))
         print("ProbeQC Before: {0}".format(self.probeqc_before))
         print("ProbeQC After: {0}".format(self.probeqc_after))
+        print("FastQC R1 GC: {0}".format(self.gc_pct_1))
+        print("FastQC R2 GC: {0}".format(self.gc_pct_2))
         print("GATK CountReads Total: {0}".format(self.gatk_cr_total))
         print("GATK CountReads Intervals: {0}".format(self.gatk_cr_ints))
         print("Picard: {0}".format(self.picard_summary))
@@ -317,7 +329,7 @@ class MetricPrep(SampleMetrics):
     Get the metrics we want from SampleMetrics, and prepare them for being written.
     """
     def __init__(self, raw_mets):
-        super().__init__(raw_mets)
+        super(MetricPrep, self).__init__(raw_mets)
         self.mets = self._gather_metrics()
         self.req_old = self._req_old()
         self.req_new = self._req_new()
@@ -352,6 +364,9 @@ class MetricPrep(SampleMetrics):
                 'gatk_cr_ints': self.raw_mets.gatk_cr_ints,
                 'gatk_pct_mrna_bases': self._reduce_sig_pct(self.gatk_pct_mrna_bases),
                 'gatk_pct_correct_strand_reads': self._reduce_sig_pct(self.gatk_pct_correct_strand_reads),
+                'gc_pct_r1': self.raw_mets.gc_pct_1,
+                'gc_pct_r2': self.raw_mets.gc_pct_2,
+                'gender_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='gender_check'),
                 'parentage_binom': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_binom'),
                 'parentage_disc': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_disc'),
                 'parentage_confirmed': self._add_json_mets(lookin=self.raw_mets.json_mets,
@@ -459,9 +474,10 @@ class MetricPrep(SampleMetrics):
         :return:
         """
         return {'QIAseq_V3_RNA': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
-                'TruSightOne': [],
-                'TruSightOneV2_5': [],
-                'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed'],
+                'TruSightOne': ['gc_pct_r1', 'gc_pct_r2', 'gender_check'],
+                'TruSightOneV2_5': ['gc_pct_r1', 'gc_pct_r2', 'gender_check'],
+                'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
+                                  'gc_pct_r1', 'gc_pct_r2', 'gender_check'],
                 'QIAseq_V3_HEME2': [],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',

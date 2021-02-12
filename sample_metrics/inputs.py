@@ -246,3 +246,29 @@ class AlignSummaryMetrics:
                             metrics[line[0]][titles[i]] = line[i]
 
         return header, metrics
+
+
+class FastQcRead:
+    """
+    ##FastQC	0.11.8
+    >>Basic Statistics	pass
+    #Measure	Value
+    Filename	19KD-004H8888-1_S1_R2_001_fastq_gz.gz
+    File type	Conventional base calls
+    Encoding	Sanger / Illumina 1.9
+    Total Sequences	1000000
+    Sequences flagged as poor quality	0
+    Sequence length	32-151
+    %GC	46
+    >>END_MODULE
+    """
+    def __init__(self, infile):
+        self.filename = open(infile, 'r')
+        self.gc_pct = self._get_gc_pct()
+
+    def _get_gc_pct(self):
+        with self.filename as myfile:
+            for line in myfile:
+                if line.startswith('%GC'):
+                    gc_pct = line.rstrip('\n').split('\t')[1]
+                    return gc_pct
