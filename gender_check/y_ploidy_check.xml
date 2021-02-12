@@ -1,4 +1,4 @@
-<tool id="y_ploidy_check" name="Gender Check- Y ploidy" version="1.1.1">
+<tool id="y_ploidy_check" name="Gender Check- Y ploidy" version="1.1.2">
   <description>Checks the gender of a sample based on the ploidy of the y chromosome from DetermineGermlineContigPloidy</description>
   <command detect_errors="exit_code"><![CDATA[
         grep "^Y" $input > $output &&
@@ -8,14 +8,14 @@
         echo \$GENDER_NUM &&
         echo $gender &&
         if [ \$GENDER_NUM -eq $gender ]; then 
-	   echo {"gender_check":1} > $json_output;
+	   echo "{\"gender_check\": 1}" > $json_output;
 	   exit 0; else 
 	   if [ -z ${5} ]; then
               echo "Gender does not match Samplesheet";
 	   else
               cat email.txt | mailx -s "\$(hostname) Gender Check Tool Error" "${email}"; 
 	   fi;
-	   echo {"gender_check":0} > $json_output;
+	   echo "{\"gender_check\": 0}" > $json_output;
            exit 1; fi
         ]]>
   </command>
