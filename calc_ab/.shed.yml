@@ -1,0 +1,11 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/calc_ab"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/calc_ab"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  calc_ab:
+    description: "Calculate allele balance from variant calls."
+    include:
+      - calc_ab.xml
+      - calc_ab.py

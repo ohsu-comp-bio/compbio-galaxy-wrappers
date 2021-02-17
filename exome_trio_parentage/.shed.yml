@@ -1,0 +1,11 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/exome_trio_parentage"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/exome_trio_parentage"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  exome_trio_parentage:
+    description: "Determine parentage for exome trios, give a three-column VCF."
+    include:
+      - exome_trio_parentage.xml
+      - exome_trio_parentage.py

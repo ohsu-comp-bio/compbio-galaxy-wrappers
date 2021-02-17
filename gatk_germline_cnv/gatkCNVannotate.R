@@ -13,6 +13,11 @@ cnvData <- read.table(cnvvcf, header=TRUE, sep="\t", comment.char="", skip=11)
 geneData <- read.table(geneFile, header=FALSE, sep="\t", skip=8)
 readCounts <- read.table(readCountsFile, header=TRUE, sep="\t", comment.char="@")
 
+if (nrow(cnvData) > 1000){
+   print("The CNV Data has too many lines. Please check to make sure that the segements file was run correctly.")
+   quit("no",1,FALSE)
+}
+
 colnames(geneData) <- c("ContigID", "ref", "type", "START", "END", "dot1", "sign", "dot2", "INFO")
 
 #remove anything that isn't a gene or a region from the gene list
@@ -126,22 +131,22 @@ for( segment_row in 1:nrow(cnvData) ) {
 	print(id)
 	#Local freq same genotype
 	genotype <- paste0(cnvData[segment_row, "Genotype"])
-	grep_string <- paste0("grep -s ", id, " ", segmentsDir, "* | grep \t", genotype, ": | wc -l")
+	grep_string <- paste0("grep -s ", id, " ", segmentsDir, "*/* | grep \t", genotype, ": | wc -l")
 	localNum <- as.numeric(system(grep_string, intern=TRUE))
 	print(localNum)
-	numCase <- as.numeric(system(paste0("ls ", segmentsDir, " | wc -l"), intern=TRUE))
+	numCase <- as.numeric(system(paste0("ls ", segmentsDir, "* | wc -l"), intern=TRUE))
 	print(numCase)
 	localFreq <- as.numeric(localNum)/as.numeric(numCase)
 	cnvData[segment_row, "LocalFreq"] <- round(localFreq, 3)
 	
 	#deletion frequency
-	grep_string_del <- paste0("grep -s ", id, " ", segmentsDir,  "* | grep \t1: | wc -l")
+	grep_string_del <- paste0("grep -s ", id, " ", segmentsDir,  "*/* | grep \t1: | wc -l")
 	local_Del_Num <- as.numeric(system(grep_string_del, intern=TRUE))
 	del_freq <- local_Del_Num/numCase
 	cnvData[segment_row, "DelFreq"] <- round(del_freq, 3)
 	
 	#Dup freq
-	grep_string_dup <- paste0("grep -s ", id, " ", segmentsDir, "* | grep \t2: | wc -l")
+	grep_string_dup <- paste0("grep -s ", id, " ", segmentsDir, "*/* | grep \t2: | wc -l")
 	local_Dup_Num <- as.numeric(system(grep_string_dup, intern=TRUE))
 	dup_freq <- local_Dup_Num/numCase
 	cnvData[segment_row, "DupFreq"] <- round(dup_freq, 3)

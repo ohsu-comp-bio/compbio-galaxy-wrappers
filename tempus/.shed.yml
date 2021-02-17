@@ -1,0 +1,21 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/tempus"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/tempus"
+categories:
+  - "KDL Tools"
+repositories:
+  tempus_add_corrected_copies:
+    description: "adds the tumor corrected copies to tempus CNV data."
+    include:
+      - addCorrectedCopies.R
+      - addCorrectedCopies.xml
+  tempus_plot_cnv:
+    description: "plots tempus CNV data."
+    include:
+      - plot_CNV.xml
+      - gtrellis_CNV_Tempus.R
+  to_excel:
+    description: "combined TSVs and PNGs into a single Excel cocument"
+    include:
+      - toExcel.R
+      - toExcel.xml

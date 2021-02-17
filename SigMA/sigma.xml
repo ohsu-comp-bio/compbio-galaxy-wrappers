@@ -1,0 +1,71 @@
+<tool id='sigma' name="SigMA" version='1.0.0'>
+    <description>finds the most likely signature category for a tumor sample</description>
+    <requirements>
+        <requirement type="package" version="1.52.0">bioconductor-bsgenome</requirement>
+        <requirement type="package" version="1.4.0">bioconductor-bsgenome.hsapiens.ucsc.hg19</requirement>
+        <requirement type="package" version="1.30.1">bioconductor-variantannotation</requirement>
+        <requirement type="package" version="2.1.5">r-gbm</requirement>
+        <requirement type="package" version="1.4">r-nnls</requirement>
+        <requirement type="package" version="1.5">r-rmisc</requirement>
+	<requirement type="package" version="2.3.0">r-devtools</requirement>
+	<requirement type="package" version="1.4.4">r-reshape2</requirement>
+	<requirement type="package" version="3.3.0">r-ggplot2</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+        cd $__tool_directory__/SigMA-master &&
+        tmp_dir=\$(mktemp -d -t temp-sig-XXXXX) &&
+        #for $num, $case in enumerate($input)
+            ln -s "${case.vcf}" "\$tmp_dir/${case.name}.vcf" &&
+        #end for
+        pwd -P &&
+        ls \$tmp_dir &&
+        Rscript $__tool_directory__/run_sigma.R $tumor_type $platform $lite $do_mva $do_assign $output \$tmp_dir &&
+        rm -R \$tmp_dir
+
+    
+]]>
+    </command>
+    <inputs>
+        <repeat name="input" title="Inputs">
+            <param type="data" name="vcf" label="VCF Input" format="vcf"/>
+            <param type="text" name="name" label="Sample ID"/> 
+        </repeat>
+        <param type="select" name="tumor_type" label="Tumor Type">
+            <option value="bladder">Urothelial Bladder Cancer</option>
+            <option value="breast">Breast Cancer</option>
+            <option value="eso">Oesophageal Carcinoma</option>
+            <option value="ewing">Ewing Sarcoma</option>
+            <option value="lms">Leiomyosarcoma</option>
+            <option value="medullo">Medulloblastoma</option>
+            <option value="osteo">Osteosarcoma</option>
+            <option value="ovary">Ovarian Cancer</option>
+            <option value="panc_ad">Pancreas Adenocarcinoma</option>
+            <option value="panc_en">Pancreas Neuroendocrine</option>
+            <option value="prost">Prostate Adenocarcinoma</option>
+            <option value="stomach">Stomach Adenocarcinoma</option>
+            <option value="uterus">Uterine Corpus Endometrial Carcinoma</option>
+            <option value="biliary">Biliary Tract Cancer (untuned)</option>
+            <option value="cervix">Cervical Cencer (untuned)</option>
+            <option value="crc">Colorectal Adenocarcinoma (untuned)</option>
+            <option value="glioma">Glioblastoma (untuned)</option>
+            <option value="head">Head and Neck Cancer (untuned)</option>
+            <option value="leuk">Leukemia (untuned)</option>
+            <option value="lung">Lung Adenocarcinoma</option>
+            <option value="thyroid">Thyroid Cancer</option>
+        </param>
+        <param type="select" name="platform" label="Platform">
+            <option value="msk" selected="true">Targeted Gene Panels</option>
+            <option value="seqcap">Whole Exome Sequencing 37 Mb</option>
+            <option value="seqcap_probe">Whole Exome Sequencing 64 Mb</option>
+            <option value="tcga_mc3">Whole Exome Sequencing TCGA MC3</option>
+            <option value="wgs">Whole Genome Sequencing</option>
+            <option value="wgs_pancan">Whole Genome Sequencing Pacan Classifier</option>
+        </param>
+        <param type="boolean" name="lite" label="Lite" checked="false" truevalue="1" falsevalue="0"/>
+        <param type="boolean" name="do_mva" label="MVA" checked="false" truevalue="1" falsevalue="0"/>
+        <param type="boolean" name="do_assign" label="Assign" checked="true" truevalue="1" falsevalue="0"/>
+    </inputs>
+    <outputs>
+        <data format="csv" name="output" label="${tool.name} on $on_string"/>
+    </outputs>
+</tool>

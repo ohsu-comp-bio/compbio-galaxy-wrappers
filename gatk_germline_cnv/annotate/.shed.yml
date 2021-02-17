@@ -1,0 +1,11 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/gatk_germline_cnv"
+homepage_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/gatk_germline_cnv"
+categories:
+  - "KDL Tools"
+repositories:
+  annotate_gatk_cnv:
+    description: "take the segments file outputted from PostProcessGermlineCNVs and format and annotate for use by analysts."
+    include:
+      - annotate.xml
+      - gatkCNVannotate.R

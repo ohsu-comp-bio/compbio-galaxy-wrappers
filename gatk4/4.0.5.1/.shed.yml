@@ -1,0 +1,97 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/fgbio"
+homepage_url: "http://fulcrumgenomics.github.io/fgbio/"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  gatk4_merge_bam_alignment:
+    description: "Merge alignment data from a SAM or BAM with data in an unmapped BAM file."
+    include:
+      - macros_1.xml
+      - gatk4_mergebamalignment.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_sam_to_fastq:
+    description: "Converts a SAM or BAM file to FASTQ."
+    include:
+      - macros_1.xml
+      - gatk4_samtofastq.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+gatk4_combinegvcfs:
+    description: "Merges one or more HaplotypeCaller GVCF files into a single GVCF with appropriate annotations"
+    include:
+      - macros_2.xml
+      - gatk4_combinegvcfs.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_genotypegvcfs:
+    description: "Perform joint genotyping on one or more samples pre-called with HaplotypeCaller"
+    include:
+      - macros_2.xml
+      - gatk4_genotypegvcfs.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_collectreadcounts_qiaseq:
+    description: "Collects read counts at specified intervals"
+    include:
+      - macros_2.xml
+      - gatk4_collectreadcounts.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_selectvariants:
+    description: "Select a subset of variants from a VCF file"
+    include:
+      - macros_2.xml
+      - gatk4_selectvariants.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_denoisereadcounts:
+    description: "Denoises read counts to produce denoised copy ratios"
+    include:
+      - macros_2.xml
+      - gatk4_denoisereadcounts.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_modelsegments:
+    description: "Models segmented copy ratios from denoised read counts and segmented minor-allele fractions from allelic counts"
+    include:
+      - macros_2.xml
+      - gatk4_modelsegments.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_callcopyratiosegments:
+    description: "Calls copy-ratio segments as amplified, deleted, or copy-number neutral"
+    include:
+      - macros_2.xml
+      - gatk4_callcopyratiosegments.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_plotmodeledsegments:
+    description: "Creates plots of denoised and segmented copy-ratio and minor-allele-fraction estimates"
+    include:
+      - macros_2.xml
+      - gatk4_plotmodeledsegments.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_variantrecalibrator:
+    description: "Build a recalibration model to score variant quality for filtering purposes."
+    include:
+      - macros_3.xml
+      - gatk4_variantrecalibrator.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_applyvqsr:
+    description: "Apply a score cutoff to filter variants based on a recalibration table"
+    include:
+      - macros_3.xml
+      - gatk4_applyvqsr.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
+  gatk4_haplotypecaller:
+    description: "Call germline SNPs and indels via local re-assembly of haplotypes"
+    include:
+      - macros_4.xml
+      - gatk4_haplotypecaller.xml
+      - tool_data_table_conf.xml.sample
+      - all_fasta.loc.sample
