@@ -4,10 +4,13 @@ homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/mas
 categories:
   - "KDL Tools"
 repositories:
-  homozygosity:
-    description: "Finds runs of homozygosity."
+  gtrellis_homozygosity:
+    description: "Provide plot reflecting runs of homozygosity."
     include:
       - gtrellis_homozygosity.R
-      - homozygosity.sh
-      - homozygosity.xml
+      - gtrellis_homozygosity.xml
+  zygosity_runs:
+    description: "Finds runs of homozygosity, provide text output describing runs."
+    include:
       - zygosity_runs.py
+      - zygosity_runs.xml
