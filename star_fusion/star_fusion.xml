@@ -1,4 +1,4 @@
-<tool id="star_fusion" name="STAR-Fusion" version="1.9.1.0">
+<tool id="star_fusion" name="STAR-Fusion" version="1.9.1.1">
     <description>detect fusion genes in RNA-Seq data</description>
     <requirements>
         <requirement type="package" version="1.9.1">star-fusion</requirement>
@@ -25,6 +25,15 @@
 
     <command detect_errors="exit_code"><![CDATA[
 
+        #if $input_params.left_fq.is_of_type("fastqsanger.gz")
+            ln -s $input_params.left_fq input_r1.fastq.gz &&
+        #end if
+        #if $input_params.right_fq
+            #if $input_params.right_fq.is_of_type("fastqsanger.gz")
+                ln -s $input_params.right_fq input_r2.fastq.gz &&
+            #end if
+        #end if
+
         ## 1. create reference index - using \$(pwd) is necessary, probably because the perl script changes work directory
         #if $genome_lib_type.genome_lib_type_selector == "build_lib":
             prep_genome_lib.pl
@@ -40,13 +49,25 @@
         STAR-Fusion
             #if str($input_params.input_source) == "use_chimeric":
                 --chimeric_junction '${input_params.chimeric_junction}'
-                --left_fq '${input_params.left_fq}'
+                #if $input_params.left_fq.is_of_type("fastqsanger.gz")
+                    --left_fq 'input_r1.fastq.gz'
+                #else
+                    --left_fq '${input_params.left_fq}'
+                #end if
             #end if
             #if str($input_params.input_source) == "use_fastq":
-                --left_fq '${input_params.left_fq}'
+                #if $input_params.left_fq.is_of_type("fastqsanger.gz")
+                    --left_fq 'input_r1.fastq.gz'
+                #else
+                    --left_fq '${input_params.left_fq}'
+                #end if
             #end if
             #if $input_params.right_fq:
-                --right_fq '${input_params.right_fq}'
+                #if $input_params.right_fq.is_of_type("fastqsanger.gz")
+                    --right_fq 'input_r2.fastq.gz'
+                #else
+                    --right_fq '${input_params.right_fq}'
+                #end if
             #end if
 
          #if $genome_lib_type.genome_lib_type_selector == "build_lib":
