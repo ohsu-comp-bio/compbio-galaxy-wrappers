@@ -7,7 +7,7 @@
 # use case (Pindel) but now may be more widely applicable.
 
 import argparse
-VERSION = '0.4.5'
+VERSION = '0.4.6'
 
 
 def create_header_entry(attrib):
@@ -216,7 +216,7 @@ def main():
                             tumor_ref = int(tumor.split(':')[curr_index].split(',')[0])
                             tumor_alt = int(tumor.split(':')[curr_index].split(',')[1])
                             tumor_af = calc_af(tumor_ref, tumor_alt)
-                        except ZeroDivisionError:
+                        except IndexError:
                             tumor_af = 0
 
                     if not check_format(frmt, "AF"):
@@ -245,7 +245,6 @@ def main():
                     if "FORMAT" in variant:
                         header_terms.append(gather_header_terms(variant))
                 else:
-                    print(header_terms)
                     if "AF" not in header_terms:
                         handle_out.write(create_header_entry("AF"))
                     if "DP" not in header_terms:
