@@ -1,4 +1,4 @@
-<tool id='gtrellis_homozygosity' name="Homozygosity Check Plot" version='1.1.0'>
+<tool id='gtrellis_homozygosity' name="Homozygosity Check Plot" version='1.2.0'>
     <description>Provide plot reflecting runs of homozygosity.</description>
     <requirements>
         <requirement type="package" version="1.14.0">bioconductor-gtrellis</requirement>
