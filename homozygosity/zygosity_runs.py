@@ -1,10 +1,16 @@
+#!/usr/bin/env python
+
 import argparse
+
+VERSION = '1.1.0'
+
 
 def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('input_file', help='input file')
     args = parser.parse_args()
     return args
+
 
 def is_hom(line):
     line = line.split("\t")
@@ -14,11 +20,11 @@ def is_hom(line):
             return True
     return False
 
+
 def get_runs(input_file):
     with open(input_file, 'r') as geno_file:
         chrom = "CHROM"
         start = 0
-        end = 0
         count = 0
         runs = []
         sum_homs = 0.0
@@ -55,7 +61,6 @@ def get_runs(input_file):
             
     return [runs, chrom_ratios, float(sum_hets), float(sum_homs)]
 
-    
     
 def main():
     args = supply_args()

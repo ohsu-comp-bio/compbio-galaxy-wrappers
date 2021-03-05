@@ -1,30 +1,22 @@
 from scipy.stats import binom_test
+import argparse
+import vcfpy
 
-import gzip
-import vcf
+VERSION = '0.2.0'
 
-VERSION = '0.1.0'
 
-def file_type(filename):
+def supply_args():
     """
-    Check for the file type and return the extension.
-    http://stackoverflow.com/questions/13044562/python-mechanism-to-identify-compressed-file-type-and-uncompress
+    Populate args.
+    https://docs.python.org/2.7/library/argparse.html
     """
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('input1', help='First VCF input.')
+    parser.add_argument('input2', help='Second VCF input.')
+    parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
+    args = parser.parse_args()
+    return args
 
-    magic_dict = {
-        "\x1f\x8b\x08": "gz",
-        "\x42\x5a\x68": "bz2",
-        "\x50\x4b\x03\x04": "zip"
-        }
-
-    max_len = max(len(x) for x in magic_dict)
-
-    with open(filename) as f:
-        file_start = f.read(max_len)
-    for magic, filetype in magic_dict.items():
-        if file_start.startswith(magic):
-            return filetype
-    return None
 
 class SnpProfile(object):
     """
@@ -39,17 +31,11 @@ class SnpProfile(object):
     (POST)
     java8 -jar ~/cgd_client-1.2.4.jar -c ~/cgd_client.properties -u <url> -j blah -d
     {"message":"ok","items":[]}
-
-
     """
     def __init__(self, filename):
 
-        if file_type(filename) == 'gz':
-            handle = gzip.open(filename, 'rb')
-            self.vcf_read = vcf.Reader(handle)
-        else:
-            handle = open(filename, 'r')
-            self.vcf_read = vcf.Reader(handle)
+        self.vcf_read = vcfpy.Reader.from_path(filename)
+        self.ab_dict = {}
         self.geno_items = self._vcf_parse()
 
     def _vcf_parse(self):
@@ -59,26 +45,43 @@ class SnpProfile(object):
         """
         geno_items = []
         for record in self.vcf_read:
+            samp_cnt = len([call for call in record.calls])
             chrom = str(record.CHROM)
             pos = int(record.POS)
-            if len(record.samples) == 1:
-                geno = record.samples[0].gt_type
-                ref = record.samples[0]['AD'][0]
-                alt = record.samples[0]['AD'][1]
+            if samp_cnt == 1:
+                geno = self._get_geno([call.data.get('GT') for call in record.calls][0])
+                ref = [call.data.get('AD') for call in record.calls][0][0]
+                alt = [call.data.get('AD') for call in record.calls][0][1]
                 ab = self._calc_ab(ref, alt, geno)
+                self.ab_dict[(chrom, pos)] = ab
                 geno = self._assess_ab(ab, geno)
             else:
-                raise Exception("The input VCF should only have one sample column, this one has " + str(len(record.samples)))
+                raise Exception("The input VCF should only have one sample column, this one has " +
+                                str(len(record.samples)))
             geno_items.append({"chromosome": chrom, "position": pos, "genotype": geno})
 
         return geno_items
 
-    def _assess_ab(self, ab, geno, hom_thresh=0.01, het_thresh=0.1):
+    @staticmethod
+    def _get_geno(geno):
         """
+        For genotypes, set values 0, 1, and 2.
+        :return:
         """
-        if not ab:
+        if geno == '0/0':
+            return 0
+        elif geno == '0/1':
+            return 1
+        elif geno == '1/1':
+            return 2
+        else:
             return -1
-        elif geno == None:
+
+    @staticmethod
+    def _assess_ab(ab, geno, hom_thresh=0.01, het_thresh=0.1):
+        """
+        """
+        if ab is None or geno is None:
             return -1
         elif ab > hom_thresh and geno == 0:
             return -1
@@ -89,7 +92,8 @@ class SnpProfile(object):
         else:
             return geno
 
-    def _calc_ab(self, ref, alt, geno):
+    @staticmethod
+    def _calc_ab(ref, alt, geno):
         """
         Calculate the allele balance.
         :return:
@@ -111,15 +115,15 @@ class CompareProfiles(object):
     profp = patient profile
     """
     def __init__(self, proft, profp):
-        # self.proft = self._create_dict(json.loads(proft))
-        # self.profp = self._create_dict(json.loads(profp))
         self.proft = self._create_dict(proft)
         self.profp = self._create_dict(profp)
+        self.mm_loc = []
         self._compare_them()
         self.for_cgd = self.dict_to_json(self.new_snps)
         self.pvalue = self._perform_binom()
 
-    def _create_dict(self, prof):
+    @staticmethod
+    def _create_dict(prof):
         """
         Make a dictionary, to facilitate easy comparison between profiles.
         {(chrom, pos): genotype}
@@ -133,8 +137,8 @@ class CompareProfiles(object):
             this_dict[(chrom, pos)] = geno
         return this_dict
 
-
-    def dict_to_json(self, to_json):
+    @staticmethod
+    def dict_to_json(to_json):
         """
         Put the dictionary that will be sent back in a format that the CGD will accept.
         The format we want is: [{"chromosome": <str>, "position": <int>, "genotype": <int>}, {}, ...]
@@ -149,7 +153,6 @@ class CompareProfiles(object):
             new_json.append(to_add)
         return new_json
 
-
     def _count_matches(self):
         """
         Look for the valid genotypes contained within the list of SNPs, and count them.
@@ -157,14 +160,16 @@ class CompareProfiles(object):
         """
         return len([x for x in (list(set(self.proft) & set(self.profp))) if x != '-1'])
 
-
-    def _perform_binom(self, prob=0.02, pfail=0.05):
+    def _perform_binom(self, prob=0.001, pfail=0.05):
         """
         Look at total and mismatch values from compare_them, and find a p-value.
         :return:
         """
         pvalue = binom_test(self.mismatch, self.total, prob)
-        print("Null hypothesis(p=" + str(pfail) + ") of patient profiles being the same p-value: " + str(pvalue))
+        if pvalue <= pfail:
+            print(f"Null hypothesis(p={str(pfail)}) of sample profiles being the same is rejected: {str(pvalue)}")
+        else:
+            print(f"Null hypothesis(p={str(pfail)}) of sample profiles being the same is confirmed: {str(pvalue)}")
         return pvalue
 
     def _compare_them(self):
@@ -194,6 +199,7 @@ class CompareProfiles(object):
                     # Situation 2
                     if geno != self.proft[pos] and self.proft[pos] != -1:
                         self.mismatch += 1
+                        self.mm_loc.append(pos)
                     self.total += 1
                 else:
                     # Situation 4

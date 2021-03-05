@@ -142,14 +142,10 @@ def build_cmd(args, recvd_prof=False):
         logging.info("Copying gene fusion HTML report to " + newfile)
         shutil.copyfile(args.pipeline_out, newfile)
         cmd.extend(["-f", newfile])
-    elif args.endpoint == "annotationcomplete" \
-            or args.endpoint == "completeRun" \
-            or args.endpoint == "completeSampleRun" \
-            or args.endpoint == "annotate" \
-            or args.endpoint == "annotateRun" \
-            or args.endpoint == "annotateSampleRun" \
-            or args.endpoint == "reportedvariants" \
-            or (args.endpoint == "snpProfile" and not recvd_prof):
+    elif (args.endpoint == "annotationcomplete" or args.endpoint == "completeRun"
+          or args.endpoint == "completeSampleRun" or args.endpoint == "annotate" or args.endpoint == "annotateRun"
+          or args.endpoint == "annotateSampleRun" or args.endpoint == "reportedvariants"
+          or (args.endpoint == "snpProfile" and not recvd_prof)):
         # The cmd for this endpoint is already set, don't do anything.
         pass
     elif args.endpoint == "updatesamplerun" or args.endpoint == "metrics":

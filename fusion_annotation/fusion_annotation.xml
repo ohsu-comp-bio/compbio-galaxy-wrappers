@@ -1,4 +1,4 @@
-<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.2.6">
+<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.4.0">
   <description>Create annotated fusion output, based off of STAR-Fusion output.</description>
   <requirements>
     <requirement type="package" version="0.15.3">pysam</requirement>
@@ -13,6 +13,12 @@
     --starfusion '${starfusion}'
     '${filter}'
     --json_sample_metrics '${json_sample_metrics}'
+    #if $ensembl_mapping
+        --ensembl_mapping '${ensembl_mapping}'
+    #end if
+    #if $gencode
+        --gencode_gtf '${gencode}'
+    #end if
     #if $refGenomeSource.genomeSource == "history":
         --path_to_fasta ${refGenomeSource.ownFile}
     #else:
@@ -24,6 +30,8 @@
   <inputs>
      <param name="starfusion" type="data" format="tabular" label="STAR-Fusion result: star-fusion.fusion_candidates.final.abridged.FFPM" />
      <param name="json_sample_metrics" type="data" format="txt" label="Sample metrics output in JSON format." />
+     <param name="ensembl_mapping" type="data" format="txt" optional="true" label="ENST and RefSeq Mapping" help="TSV mapping of ENST to RefSeq transcript IDs." />
+     <param name="gencode" type="data" format="gtf" optional="true" label="GENCODE GTF" help="GENCODE GTF, as used by CTAT resource package." />
      <param name="filter" type="select" label="Filter non-coding RNAs" help="Check to remove specific non coding RNAs and tRNA mitochondrial genes. Keeps all others such as protein-coding mitochondrial genes. Based on this regular expression: MT-T|MT-RNR|RNA18S5|RNA28S5|RNA5-85S">
        <option value="--filt">Yes</option>
        <option value=''>No</option>
@@ -51,26 +59,31 @@
   </outputs>
 
   <help>
-usage: fusion_annotation.py [-h] [-f] [--version]
-                            starfusion json_sample_metrics path_to_fasta
+usage: fusion_annotation.py [-h] [--starfusion STARFUSION]
+                            [--json_sample_metrics JSON_SAMPLE_METRICS]
+                            [--ensembl_mapping ENSEMBL_MAPPING]
+                            [--path_to_fasta PATH_TO_FASTA]
+                            [--gencode_gtf GENCODE_GTF] [--filt]
+                            [--output OUTPUT] [--version]
 
 Annotate starfusion output with oncotator and nts sequences.
 
-positional arguments:
-  starfusion           STAR-Fusion output star-
-                       fusion.fusion_candidates.final.abridged.FFPM
-  json_sample_metrics  Sample level metrics file
-  path_to_fasta        Full path to fasta.fa file, with index file
-
 optional arguments:
-  -h, --help           show this help message and exit
-  -f                   filter out specific ribosomal and mitochondrial fusions
-  --version            show program's version number and exit
-# Input
-Input should be the final, abridged, FFPM from STAR-Fusion. Should be called star-fusion.fusion_candidates.final.abridged.FFPM.
-Sample Metrics from sample_metrics.xml Galaxy tool.
-
-# Output
-Bedpe formatted, 25 base pair sequences around breakpoint, optionally filtered
+  -h, --help            show this help message and exit
+  --starfusion STARFUSION
+                        STAR-Fusion output star-
+                        fusion.fusion_candidates.final.abridged.FFPM
+  --json_sample_metrics JSON_SAMPLE_METRICS
+                        Sample level metrics file
+  --ensembl_mapping ENSEMBL_MAPPING
+                        TSV mapping of ENST to RefSeq transcript IDs.
+  --path_to_fasta PATH_TO_FASTA
+                        Full path to fasta.fa file, with index file
+  --gencode_gtf GENCODE_GTF
+                        GENCODE GTF, as used in CTAT resource package.
+  --filt                filter out specific ribosomal and mitochondrial
+                        fusions
+  --output OUTPUT       output file
+  --version             show program's version number and exit
   </help>
 </tool>

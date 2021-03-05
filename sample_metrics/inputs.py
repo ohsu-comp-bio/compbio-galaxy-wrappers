@@ -7,6 +7,34 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
+
+class GatkCollectRnaSeqMetrics:
+    """
+    Grab data from files in this format.
+    ## denotes section headers
+    # is more or less a comment?
+    """
+    def __init__(self, filename):
+        self.filename = filename
+        self.metrics = self._fill_metrics()
+
+    def _fill_metrics(self):
+        """
+        This will only grab the METRICS section values.
+        :return:
+        """
+        metrics = {}
+        with open(self.filename, 'r') as outfile:
+            for line in outfile:
+                if line.startswith('PF_BASES'):
+                    headers = line.rstrip('\n').split('\t')
+                    raw_metrics = outfile.readline().rstrip('\n').split('\t')
+                    for i in range(len(headers)):
+                        metrics[headers[i]] = raw_metrics[i]
+                    return metrics
+        raise ImportError("Can't find METRICS CLASS data from the input CollectRnaSeqMetrics file.")
+
+
 class SamReader:
     """
     Read a BAM file, get stuff we need from it, like total counts of all reads.
@@ -218,3 +246,29 @@ class AlignSummaryMetrics:
                             metrics[line[0]][titles[i]] = line[i]
 
         return header, metrics
+
+
+class FastQcRead:
+    """
+    ##FastQC	0.11.8
+    >>Basic Statistics	pass
+    #Measure	Value
+    Filename	19KD-004H8888-1_S1_R2_001_fastq_gz.gz
+    File type	Conventional base calls
+    Encoding	Sanger / Illumina 1.9
+    Total Sequences	1000000
+    Sequences flagged as poor quality	0
+    Sequence length	32-151
+    %GC	46
+    >>END_MODULE
+    """
+    def __init__(self, infile):
+        self.filename = open(infile, 'r')
+        self.gc_pct = self._get_gc_pct()
+
+    def _get_gc_pct(self):
+        with self.filename as myfile:
+            for line in myfile:
+                if line.startswith('%GC'):
+                    gc_pct = line.rstrip('\n').split('\t')[1]
+                    return gc_pct

@@ -5,6 +5,12 @@
         <requirement type="package" version="">argparse</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
+        #for $f in $files:
+            ln -s $f ${f.name}
+        #end for
+
+        &&
+
         python "$script"
     ]]></command>
     <configfiles>
@@ -23,9 +29,13 @@ def format_df(df, sample, ids, unit):
     df.index.name = "GeneID"
     return df
 
+fns = []
+#for $f in $files:
+fns.append("${f.name}")
+#end for
+
 dfs = []
-files="$files".split(",")
-for f in files:
+for f in fns:
     sample = os.path.splitext(os.path.basename(f))[0]
     df = pd.read_csv(f,sep="\t")
     df = format_df(df,sample, "$ids", "$unit")
@@ -35,7 +45,7 @@ for f in files:
 
 #if $matrix:
 mat = pd.read_csv("$matrix",sep="\t",index_col=0)
-exp_df = pd.merge(exp_df,mat, left_index=True, right_index=True, how='outer')
+exp_df = pd.merge(mat, exp_df, left_index=True, right_index=True, how='outer')
 #end if
 
 exp_df.to_csv("expression_matrix.tsv", sep="\t")

@@ -5,15 +5,13 @@
 # USAGE: sample_metrics.py -h
 # CODED BY: John Letaw
 
-from __future__ import print_function
-
 import argparse
 import json
-
 # User libraries
-from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader
+from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
+from inputs import FastQcRead
 
-VERSION = '0.6.4'
+VERSION = '0.6.6'
 
 
 def supply_args():
@@ -27,7 +25,11 @@ def supply_args():
                         help='Probe coverage QC after UMI deduplication metrics.')
     parser.add_argument('--probeqc_before', type=ProbeQcRead,
                         help='Probe coverage QC before UMI deduplication metrics.')
+    parser.add_argument('--fastqc_r1', type=FastQcRead, help='FastQC stats for read 1.')
+    parser.add_argument('--fastqc_r2', type=FastQcRead, help='FastQC stats for read 2.')
     parser.add_argument('--picard_summary', type=AlignSummaryMetrics, help='Picard alignment summary metrics file.')
+    parser.add_argument('--gatk_coll_rnaseq_mets', type=GatkCollectRnaSeqMetrics,
+                        help='GATK CollectRnaSeqMetrics file.')
     parser.add_argument('--gatk_count_reads_total', type=GatkCountReads,
                         help='Output from GATK4 CountReads with total read count.')
     parser.add_argument('--gatk_count_reads_ints', type=GatkCountReads,
@@ -92,6 +94,21 @@ class RawMetricCollector:
         else:
             self.picard_summary = None
 
+        if args.gatk_coll_rnaseq_mets:
+            self.gatk_coll_rnaseq_mets = args.gatk_coll_rnaseq_mets.metrics
+        else:
+            self.gatk_coll_rnaseq_mets = None
+
+        if args.fastqc_r1:
+            self.gc_pct_1 = args.fastqc_r1.gc_pct
+        else:
+            self.gc_pct_1 = None
+
+        if args.fastqc_r2:
+            self.gc_pct_2 = args.fastqc_r2.gc_pct
+        else:
+            self.gc_pct_2 = None
+
         if args.probeqc_before:
             self.probeqc_before = args.probeqc_before.probeqc
             self.probeqc_header_before = args.probeqc_before.headers
@@ -145,6 +162,8 @@ class RawMetricCollector:
         print("MSI: {0}".format(self.msi))
         print("ProbeQC Before: {0}".format(self.probeqc_before))
         print("ProbeQC After: {0}".format(self.probeqc_after))
+        print("FastQC R1 GC: {0}".format(self.gc_pct_1))
+        print("FastQC R2 GC: {0}".format(self.gc_pct_2))
         print("GATK CountReads Total: {0}".format(self.gatk_cr_total))
         print("GATK CountReads Intervals: {0}".format(self.gatk_cr_ints))
         print("Picard: {0}".format(self.picard_summary))
@@ -153,14 +172,8 @@ class RawMetricCollector:
 
 
 class SampleMetrics:
-    """
-
-    """
-
     def __init__(self, raw_mets):
-
         self.raw_mets = raw_mets
-
         self.probeqc_before = self.raw_mets.probeqc_before
         if self.probeqc_before:
             self.total_cov_before = self._calc_cov(self.probeqc_before, 'AVGD')
@@ -207,6 +220,13 @@ class SampleMetrics:
             self.gatk_cr_on_target = self._gatk_cr_on_target()
         except:
             self.gatk_cr_on_target = None
+
+        try:
+            self.gatk_pct_mrna_bases = self.raw_mets.gatk_coll_rnaseq_mets['PCT_MRNA_BASES']
+            self.gatk_pct_correct_strand_reads = self.raw_mets.gatk_coll_rnaseq_mets['PCT_CORRECT_STRAND_READS']
+        except:
+            self.gatk_pct_mrna_bases = None
+            self.gatk_pct_correct_strand_reads = None
 
     def _gatk_cr_on_target(self):
         """
@@ -309,7 +329,7 @@ class MetricPrep(SampleMetrics):
     Get the metrics we want from SampleMetrics, and prepare them for being written.
     """
     def __init__(self, raw_mets):
-        super().__init__(raw_mets)
+        super(MetricPrep, self).__init__(raw_mets)
         self.mets = self._gather_metrics()
         self.req_old = self._req_old()
         self.req_new = self._req_new()
@@ -319,6 +339,9 @@ class MetricPrep(SampleMetrics):
         Old style metrics.  Will need to handle special json metrics separately.
         :return:
         'parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed'
+        {"COUNT_0": 21916, "COUNT_1": 15287, "COUNT_10": 11012, "COUNT_100": 3505, "COUNT_1000": 187,
+        "COUNT_10000": 9, "COUNT_100000": 0, "TPM_0": 22296, "TPM_0.01": 15366, "TPM_0.1": 15360, "TPM_1": 14323,
+        "TPM_10": 9791, "TPM_100": 1505, "TPM_1000": 98}
         """
         mets = {'qthirty': self._get_avg_probeqc('Q30'),
                 'averageDepth': self._get_avg_probeqc('AVGD'),
@@ -332,17 +355,39 @@ class MetricPrep(SampleMetrics):
                 'depthOneThousand': self._get_avg_probeqc('D1000'),
                 'depthTwelveHundredFifty': self._get_avg_probeqc('D1250'),
                 'depthTwoThousand': self._get_avg_probeqc('D2000'),
-                'allele_balance': self._reduce_sig(self._add_json_mets(lookin=self.raw_mets.json_mets, metric='allele_balance')),
-                'allele_balance_het_count': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='allele_balance_het_count'),
+                'allele_balance': self._reduce_sig(self._add_json_mets(lookin=self.raw_mets.json_mets,
+                                                                       metric='allele_balance')),
+                'allele_balance_het_count': self._add_json_mets(lookin=self.raw_mets.json_mets,
+                                                                metric='allele_balance_het_count'),
                 'gatk_cr_on_target': self._reduce_sig_pct(self.gatk_cr_on_target),
                 'gatk_cr_total': self.raw_mets.gatk_cr_total,
                 'gatk_cr_ints': self.raw_mets.gatk_cr_ints,
+                'gatk_pct_mrna_bases': self._reduce_sig_pct(self.gatk_pct_mrna_bases),
+                'gatk_pct_correct_strand_reads': self._reduce_sig_pct(self.gatk_pct_correct_strand_reads),
+                'gc_pct_r1': self.raw_mets.gc_pct_1,
+                'gc_pct_r2': self.raw_mets.gc_pct_2,
+                'gender_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='gender_check'),
                 'parentage_binom': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_binom'),
                 'parentage_disc': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_disc'),
-                'parentage_confirmed': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_confirmed'),
+                'parentage_confirmed': self._add_json_mets(lookin=self.raw_mets.json_mets,
+                                                           metric='parentage_confirmed'),
                 'parentage_sites': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_sites'),
                 'percentOnTarget': self._reduce_sig(self.on_target),
                 'percentUmi': self.pumi,
+                'rna_count_zero': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_0'),
+                'rna_count_one': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_1'),
+                'rna_count_ten': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_10'),
+                'rna_count_onehundred': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_100'),
+                'rna_count_onethousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_1000'),
+                'rna_count_tenthousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_10000'),
+                'rna_count_hundredthousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_100000'),
+                'rna_tpm_zero': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_0'),
+                'rna_tpm_hundredth': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_0.01'),
+                'rna_tpm_tenth': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_0.1'),
+                'rna_tpm_one': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_1'),
+                'rna_tpm_ten': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_10'),
+                'rna_tpm_onehundred': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_100'),
+                'rna_tpm_onethousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_1000'),
                 'tmb': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb'),
                 'msi_pct': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_pct'),
                 'msi_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='total_sites'),
@@ -354,7 +399,8 @@ class MetricPrep(SampleMetrics):
 
         return mets
 
-    def _add_json_mets(self, lookin, metric):
+    @staticmethod
+    def _add_json_mets(lookin, metric):
         """
         Currently the following metrics are sent in standalone.  Need to think about ways to do this better.
         allele_balance
@@ -407,15 +453,14 @@ class MetricPrep(SampleMetrics):
                 'TruSightOne': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
                                 'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
                 'TruSightOneV2_5': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
+                                    'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
                 'AgilentCRE_V1': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
                 'QIAseq_V3_HEME2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                     'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'QIAseq_V3_STP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                    'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
-                'TruSeq_RNA_Exome_V1-2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                          'depthOneHundred', 'percentOnTarget', 'depthFiveHundred', 'depthOneThousand'],
+                'TruSeq_RNA_Exome_V1-2': ['qthirty'],
                 'QIAseq_V3_HOP': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi'],
                 'QIAseq_V3_HOP2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
@@ -429,13 +474,18 @@ class MetricPrep(SampleMetrics):
         :return:
         """
         return {'QIAseq_V3_RNA': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
-                'TruSightOne': [],
-                'TruSightOneV2_5': [],
-                'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed'],
+                'TruSightOne': ['gc_pct_r1', 'gc_pct_r2', 'gender_check'],
+                'TruSightOneV2_5': ['gc_pct_r1', 'gc_pct_r2', 'gender_check'],
+                'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
+                                  'gc_pct_r1', 'gc_pct_r2', 'gender_check'],
                 'QIAseq_V3_HEME2': [],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
-                'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'total_on_target_transcripts_pct', 'gatk_cr_on_target',
-                                          'gatk_cr_total', 'gatk_cr_ints'],
+                'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
+                                          'gatk_pct_correct_strand_reads', 'rna_count_zero', 'rna_count_one',
+                                          'rna_count_ten', 'rna_count_onehundred', 'rna_count_onethousand',
+                                          'rna_count_tenthousand', 'rna_count_hundredthousand', 'rna_tpm_zero',
+                                          'rna_tpm_hundredth', 'rna_tpm_tenth', 'rna_tpm_one', 'rna_tpm_ten',
+                                          'rna_tpm_onehundred', 'rna_tpm_onethousand'],
                 'QIAseq_V3_HOP': ['allele_balance', 'allele_balance_het_count'],
                 'QIAseq_V3_HOP2': ['allele_balance', 'allele_balance_het_count']
                 }

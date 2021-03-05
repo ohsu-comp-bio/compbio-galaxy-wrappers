@@ -1,4 +1,4 @@
-<tool id="gatk2_depth_of_coverage" name="Depth of Coverage" version="3.2.3">
+<tool id="gatk2_depth_of_coverage" name="Depth of Coverage" version="3.2.4">
   <description>on BAM files</description>
   <macros>
     <import>gatk2_macros.xml</import>
@@ -16,7 +16,7 @@
       #end if
    #end for
    -p '
-   _JAVA_OPTIONS="-Xmx13g -Xms2g" @JAR_PATH@
+   _JAVA_OPTIONS="-Xmx32g -Xms4g" @JAR_PATH@
     -T "DepthOfCoverage"
 
     #if $reference_source.reference_source_selector != "history":

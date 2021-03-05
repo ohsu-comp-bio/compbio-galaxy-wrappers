@@ -1,0 +1,12 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/pear"
+homepage_url: "https://github.com/tseemann/PEAR"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  iuc_pear:
+    description: "Paired-End read merger."
+    include:
+      - pear.xml
+      - test-data/*

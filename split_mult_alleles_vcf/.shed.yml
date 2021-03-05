@@ -1,0 +1,14 @@
+name: "split_mult_alleles_vcf"
+owner: campbena
+remote_repository_url: https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/split_mult_alleles_vcf
+categories:
+  - "CompBio Galaxy Wrappers"
+description: Where multiple alleles are listed by commas in a VCF, make each a separate entry.
+repositories:
+  split_mult_alleles_vcf:
+    include:
+      - split_mult_alleles_vcf.xml
+      - split_mult_alleles_vcf.py
+      - vcfreader.py
+      - vcfwriter.py
+      - __init__.py

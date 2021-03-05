@@ -3,12 +3,13 @@
 
 import argparse
 import json
+import pysam
 import re
 from collections import OrderedDict
+from ensembldb import EnsemblDbImport
+from gtf import Gtf
 
-import pysam
-
-VERSION = '0.2.7'
+VERSION = '0.4.0'
 
 
 def supply_args():
@@ -19,10 +20,11 @@ def supply_args():
     parser = argparse.ArgumentParser(description='Annotate starfusion output with oncotator and nts sequences.')
     parser.add_argument('--starfusion', help='STAR-Fusion output star-fusion.fusion_candidates.final.abridged.FFPM')
     parser.add_argument('--json_sample_metrics', help="Sample level metrics file")
+    parser.add_argument('--ensembl_mapping', help="TSV mapping of ENST to RefSeq transcript IDs.")
     parser.add_argument('--path_to_fasta', help='Full path to fasta.fa file, with index file')
+    parser.add_argument('--gencode_gtf', help='GENCODE GTF, as used in CTAT resource package.')
     parser.add_argument('--filt', action='store_true', help='filter out specific ribosomal and mitochondrial fusions')
-    parser.add_argument('--output', default='starfusion_output.bedpe',
-                        help='Full path to fasta.fa file, with index file')
+    parser.add_argument('--output', default='starfusion_output.bedpe', help='output file')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
@@ -32,6 +34,21 @@ class StarFusionOutput:
     def __init__(self, filename):
         self.filename = filename
         self.header, self.fusions = self.out_create()
+        self.cds_left = self._get_tx_list(left=True)
+        self.cds_right = self._get_tx_list(left=False)
+
+    def _get_tx_list(self, left=True):
+        """
+        Get a list of all ENST IDs in output.
+        :return:
+        """
+        tx_list = []
+        for fuse in self.fusions:
+            if left:
+                tx_list.append(fuse.cds_left_id)
+            else:
+                tx_list.append(fuse.cds_right_id)
+        return tx_list
 
     def out_create(self):
         fusions = []
@@ -47,7 +64,7 @@ class StarFusionOutput:
 
 class StarFusionOutputLine:
     """
-    COLUMN HEADERS FROM V1.8.1 STAR-Fusion output, include all extra headings as well.
+    COLUMN HEADERS FROM V1.9.1 STAR-Fusion output, include all extra headings as well.
     #FusionName
     JunctionReadCount
     SpanningFragCount
@@ -87,6 +104,8 @@ class StarFusionOutputLine:
         self.fusion = self._fusion_dict_create()
         if len(self.line) != len(self.header):
             raise Exception("Data line length does not match header length.")
+        self.cds_left_id = self.fusion['CDS_LEFT_ID']
+        self.cds_right_id = self.fusion['CDS_RIGHT_ID']
 
     def _fusion_dict_create(self):
         """
@@ -107,7 +126,8 @@ class FusionAnnot:
         self.line = line.fusion
         self.output_line = self._convert_starfusion_to_bedpe()
 
-    def _kinase_from_pfam(self, pfam):
+    @staticmethod
+    def _kinase_from_pfam(pfam):
         """
         Determine whether the Pkinase annotation exists within PFAM strings.
         NOTE: Temporarily returning dots, until this functionality has been improved.
@@ -183,6 +203,15 @@ class FusionAnnot:
 
         if 'FFPM' in self.line:
             annot['FFPM'] = self.line['FFPM']
+
+        annot['ENST_LEFT_ID'] = self.line['CDS_LEFT_ID']
+        annot['ENST_RIGHT_ID'] = self.line['CDS_RIGHT_ID']
+        annot['REFSEQ_LEFT_ID'] = '.'
+        annot['REFSEQ_RIGHT_ID'] = '.'
+        annot['CCDS_LEFT_ID'] = '.'
+        annot['CCDS_RIGHT_ID'] = '.'
+        annot['EXON_LEFT'] = '.'
+        annot['EXON_RIGHT'] = '.'
 
         return annot
 
@@ -262,9 +291,44 @@ def get_nucleotides_with_samtools(mafline, genome_refpath, fusionside):
     return [interval, seq]
 
 
+def collect_exon_coords(txs, gencode, left):
+    """
+    Get the exon-coordinate mappings.
+    :return:
+    """
+    exons = {}
+    mygtf = Gtf(gencode, txs=txs)
+    for entry in txs:
+        tx_only = mygtf.filt_tx(mygtf.raw, entry)
+        feat_only = mygtf.filt_feature(tx_only)
+        exons[entry] = mygtf.exon_to_coord(feat_only, left)
+    return exons
+
+
+def collect_ccds(txs, gencode):
+    """
+    Get CCDS values from the GENCODE GTF.
+    :param txs:
+    :param gencode:
+    :return:
+    """
+    ccds = {}
+    mygtf = Gtf(gencode, txs=txs)
+    for entry in txs:
+        tx_only = mygtf.filt_tx(mygtf.raw, entry)
+        feat_only = mygtf.filt_feature(tx_only, feat='transcript')
+        ccds[entry] = mygtf.exon_to_ccds(feat_only)
+    return ccds
+
+
 def main():
     args = supply_args()
     sf_out = open(args.output, 'w')
+    if args.ensembl_mapping:
+        enst_refseq = EnsemblDbImport(args.ensembl_mapping).enst_refseq
+    else:
+        enst_refseq = None
+
     on_target = get_sample_met(args.json_sample_metrics)
     if args.filt:
         hard_filter = ["ATP6", "ATP8", "COX1", "COX2", "COX3", "CYTB", "ND1",
@@ -284,7 +348,17 @@ def main():
         hard_filter = None
         regex_filt = None
 
-    my_sf = StarFusionOutput(args.starfusion).fusions
+    sf = StarFusionOutput(args.starfusion)
+    my_sf = sf.fusions
+
+    # Get the transcript list from the star-fusion file, so we can then create exon-coord mappings from gencode.
+    if args.gencode_gtf:
+        left_exons = collect_exon_coords(sf.cds_left, args.gencode_gtf, left=True)
+        right_exons = collect_exon_coords(sf.cds_right, args.gencode_gtf, left=False)
+        ccds = collect_ccds(sf.cds_left + sf.cds_right, args.gencode_gtf)
+    else:
+        left_exons, right_exons, ccds = None, None, None
+
     cols = False
     # If there are no results, we need at least a header to send to the CGD...
     hard_header = ["chrom1", "start1", "end1", "chrom2", "start2", "end2", "name", "score", "strand1", "strand2",
@@ -292,7 +366,9 @@ def main():
                    "EnsGene2", "LargeAnchorSupport", "LeftBreakDinuc", "LeftBreakEntropy", "RightBreakDinuc",
                    "RightBreakEntropy", "PROT_FUSION_TYPE", "FUSION_CDS", "FAR_left", "FAR_right", "PFAM_LEFT",
                    "PFAM_RIGHT", "KINASE_IN_PFAM_LEFT", "KINASE_IN_PFAM_RIGHT", "J_FFPM", "S_FFPM", "FFPM",
-                   "NormalizedFrags", "leftgene", "leftseq", "rightgene", "rightseq", "combinedseq"]
+                   "NormalizedFrags", "leftgene", "leftseq", "rightgene", "rightseq", "combinedseq", "ENST_LEFT_ID",
+                   "ENST_RIGHT_ID", "REFSEQ_LEFT_ID", "REFSEQ_RIGHT_ID", "CCDS_LEFT_ID", "CCDS_RIGHT_ID",
+                   "EXON_LEFT", "EXON_RIGHT"]
     if len(my_sf) == 0:
         sf_out.write('\t'.join(hard_header))
         sf_out.write('\n')
@@ -303,19 +379,14 @@ def main():
         linebedpe = fusion.output_line
 
         if not header_set:
-            if 'PROT_FUSION_TYPE' in linebedpe:
+            if 'PROT_FUSION_TYPE' not in linebedpe:
                 hard_header = ["chrom1", "start1", "end1", "chrom2", "start2", "end2", "name", "score", "strand1",
-                               "strand2", "JunctionReadCount", "SpanningFragCount", "SpliceType", "HGVSGene1", "EnsGene1",
-                               "HGVSGene2", "EnsGene2", "LargeAnchorSupport", "LeftBreakDinuc", "LeftBreakEntropy",
-                               "RightBreakDinuc", "RightBreakEntropy", "PROT_FUSION_TYPE", "FUSION_CDS", "FAR_left", "FAR_right",
-                               "PFAM_LEFT", "PFAM_RIGHT", "KINASE_IN_PFAM_LEFT", "KINASE_IN_PFAM_RIGHT", "J_FFPM", "S_FFPM", "FFPM",
-                               "NormalizedFrags", "leftgene", "leftseq", "rightgene", "rightseq", "combinedseq"]
-            else:
-                hard_header = ["chrom1", "start1", "end1", "chrom2", "start2", "end2", "name", "score", "strand1",
-                               "strand2", "JunctionReadCount", "SpanningFragCount", "SpliceType", "HGVSGene1", "EnsGene1",
-                               "HGVSGene2", "EnsGene2", "LargeAnchorSupport", "LeftBreakDinuc", "LeftBreakEntropy",
-                               "RightBreakDinuc", "RightBreakEntropy", "J_FFPM", "S_FFPM", "FFPM",
-                               "NormalizedFrags", "leftgene", "leftseq", "rightgene", "rightseq", "combinedseq"]
+                               "strand2", "JunctionReadCount", "SpanningFragCount", "SpliceType", "HGVSGene1",
+                               "EnsGene1", "HGVSGene2", "EnsGene2", "LargeAnchorSupport", "LeftBreakDinuc",
+                               "LeftBreakEntropy", "RightBreakDinuc", "RightBreakEntropy", "J_FFPM", "S_FFPM", "FFPM",
+                               "NormalizedFrags", "leftgene", "leftseq", "rightgene", "rightseq", "combinedseq",
+                               "ENST_LEFT_ID", "ENST_RIGHT_ID", "REFSEQ_LEFT_ID", "REFSEQ_RIGHT_ID", "CCDS_LEFT_ID",
+                               "CCDS_RIGHT_ID", "EXON_LEFT", "EXON_RIGHT"]
             header_set = True
 
         # get seqs left and right
@@ -327,7 +398,8 @@ def main():
         seq_right = get_nucleotides_with_samtools(mafline_right, args.path_to_fasta, "right")
 
         if on_target:
-            linebedpe['NormalizedFrags'] = calc_on_target(on_target, linebedpe['JunctionReadCount'], linebedpe['SpanningFragCount'])
+            linebedpe['NormalizedFrags'] = calc_on_target(on_target, linebedpe['JunctionReadCount'],
+                                                          linebedpe['SpanningFragCount'])
         else:
             linebedpe['NormalizedFrags'] = '-1'
 
@@ -346,6 +418,38 @@ def main():
             combined_right = linebedpe['rightseq']
         combinedseq = combined_left + combined_right
         linebedpe['combinedseq'] = combinedseq
+
+        if enst_refseq:
+            enst_l = linebedpe['ENST_LEFT_ID']
+            enst_r = linebedpe['ENST_RIGHT_ID']
+            if enst_l in enst_refseq:
+                linebedpe['REFSEQ_LEFT_ID'] = enst_refseq[enst_l]
+            if enst_r in enst_refseq:
+                linebedpe['REFSEQ_RIGHT_ID'] = enst_refseq[enst_r]
+
+        if left_exons:
+            enst_l = linebedpe['ENST_LEFT_ID']
+            coord = linebedpe['end1']
+            if enst_l in left_exons:
+                if coord in left_exons[enst_l]:
+                    linebedpe['EXON_LEFT'] = left_exons[enst_l][coord]
+
+        if right_exons:
+            enst_r = linebedpe['ENST_RIGHT_ID']
+            coord = linebedpe['end2']
+            if enst_r in right_exons:
+                if coord in right_exons[enst_r]:
+                    linebedpe['EXON_RIGHT'] = right_exons[enst_r][coord]
+
+        if ccds:
+            enst_l = linebedpe['ENST_LEFT_ID']
+            enst_r = linebedpe['ENST_RIGHT_ID']
+            if enst_l in ccds:
+                if ccds[enst_l]:
+                    linebedpe['CCDS_LEFT_ID'] = ccds[enst_l]
+            if enst_r in ccds:
+                if ccds[enst_r]:
+                    linebedpe['CCDS_RIGHT_ID'] = ccds[enst_r]
 
         # Writing section.
         filter_me = False

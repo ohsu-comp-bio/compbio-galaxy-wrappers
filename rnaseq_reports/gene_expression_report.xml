@@ -1,0 +1,68 @@
+<tool id='expression_report' name="Gene Expression Report" version='1.1.4'>
+    <description>Creates a gene expression report.</description>
+    <requirements>
+        <requirement type="package" version="1.30">r-knitr</requirement>
+        <requirement type="package" version="1.4.4">r-reshape2</requirement>
+        <requirement type="package" version="2.5">r-rmarkdown</requirement>
+        <requirement type="package" version="1.3.1">r-kableextra</requirement>
+        <requirement type="package" version="3.3.2">r-ggplot2</requirement>
+        <requirement type="package" version="2.1.1">phantomjs</requirement>
+        <requirement type="package" version="0.27">r-tinytex</requirement>
+        <requirement type="package" version="20180414=pl526hc0a3334_3">texlive-core</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+        export HOME="/home/users/clgalaxyuser" &&
+        cp ${__tool_directory__}/Breast_Expression_Report.Rmd . && 
+        Rscript $run "./Breast_Expression_Report.Rmd" $sample ${__tool_directory__}/tool-data/gene_symbol_mapping.tsv $smmartexpmat ${__tool_directory__}/tool-data/TCGA_BRCA_tpm_proteincoding_tumor.RData ${__tool_directory__}/tool-data/tcgaBreastSampleAnnotationCat.tsv
+    ]]></command>
+
+    <configfiles>
+        <configfile name="run">
+            ## Setup R error handling to go to stderr
+            options( show.error.messages=F, error = function () { cat( geterrmessage(), file=stderr() ); q( "no", 1, F ) } )
+            listofpackages=c("knitr", "reshape2", "ggplot2", "rmarkdown", "kableExtra")
+            for (i in listofpackages){
+              if(! i %in% installed.packages()){
+                install.packages(i, dependencies=TRUE, repos="https://cran.rstudio.com/")
+              }}
+            lapply(listofpackages, require, character.only = TRUE)
+            # ---- md ----
+            usage = paste0("Rscript expression_report.R  sample gene_map smmartexpmat tcgaexmat tcga_md")
+
+            args = commandArgs(trailingOnly=TRUE)
+
+            if (length(args) != 6) {
+              stop(print(usage), call.=FALSE)
+            } else {
+              print(args[1])
+              rmd=args[1]
+              sample=args[2]
+              gene_map=args[3]
+              smmartexpmat=args[4]
+              tcgaexmat=args[5]
+              tcga_md=args[6]
+              print(args)
+
+              rmarkdown::render(rmd,
+                                params = list(sample=sample,
+                                              gene_map=gene_map,
+                                              smmartexpmat=smmartexpmat,
+                                              tcgaexmat=tcgaexmat,
+                                              tcga_md=tcga_md))
+            }
+
+        </configfile>
+    </configfiles>
+
+    <inputs>
+        <param name="sample" type="text" value="" label="Sample Name"/>
+        <param name="smmartexpmat" type="data" format="txt,tsv,tabular" label="SMMART Base Expression matrix" help=""/>
+    </inputs>
+    <outputs>
+        <data format="pdf" name="expression_report" label="Gene Expression Report: PDF" from_work_dir="Breast_Expression_Report.pdf"/>
+        <data format="png" name="expression_report_png" label="Gene Expression Report: PNG" from_work_dir="Breast_Expression_Report.png"/>
+    </outputs>
+   <help><![CDATA[
+Gene Expression Report version 1.0.0
+    ]]></help>
+</tool>
