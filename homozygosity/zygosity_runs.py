@@ -8,6 +8,7 @@ VERSION = '1.1.0'
 def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('input_file', help='input file')
+    parser.add_argument('--cut_off', default=50)
     args = parser.parse_args()
     return args
 
@@ -21,7 +22,7 @@ def is_hom(line):
     return False
 
 
-def get_runs(input_file):
+def get_runs(input_file, cut_off):
     with open(input_file, 'r') as geno_file:
         chrom = "CHROM"
         start = 0
@@ -52,7 +53,7 @@ def get_runs(input_file):
             else:
                 hets = hets + 1
                 sum_hets = sum_hets + 1
-                if count >= 50:
+                if count >= cut_off:
                     # and not chrom == "X"
                     end = line.split("\t")[1]
                     runs.append((chrom, count, start, end))
@@ -64,7 +65,13 @@ def get_runs(input_file):
     
 def main():
     args = supply_args()
-    stuff = get_runs(args.input_file)
+    with open(args.input_file) as f:
+      first_line = f.readline()
+      sample_gt = first_line.split("\t")[2]
+      sample_name = sample_gt.split(".")[0]
+      print(sample_name)
+    
+    stuff = get_runs(args.input_file, int(args.cut_off))
     if stuff[3] == 0:
         stuff[3] = 1
     ratio = stuff[2]/stuff[3]
@@ -72,7 +79,7 @@ def main():
     for chrom in stuff[1]:
         print("Chr" + str(chrom[0]) + " Ratio: " + str(chrom[1]))
     stuff[0].sort(key=lambda tup: tup[1])
-    print("Homozygosity Runs Over 50:")
+    print("Homozygosity Runs Over " + str(args.cut_off) + ": ")
     for run in stuff[0]:
         print(str(run[1]) + " at chr" + str(run[0]) + ":" + str(run[2]) + "-" + str(run[3]))
     
