@@ -2,7 +2,7 @@ from scipy.stats import binom_test
 import argparse
 import vcfpy
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 
 
 def supply_args():
@@ -21,7 +21,7 @@ def supply_args():
 class SnpProfile(object):
     """
     Structure of json sent back and forth to/from CGD.
-    {"message":"ok","items":[{"chromosome":"22","position":700,"genotype":0},
+    {"message":"ok","items":[{"chrompposome":"22","position":700,"genotype":0},
     {"chromosome":"3","position":500,"genotype":1},{"chromosome":"7","position":600,"genotype":2}]}
 
     This works (GET):
@@ -165,7 +165,7 @@ class CompareProfiles(object):
         Look at total and mismatch values from compare_them, and find a p-value.
         :return:
         """
-        pvalue = binom_test(self.mismatch, self.total, prob)
+        pvalue = binom_test(self.mismatch, self.total, prob, alternative='greater')
         if pvalue <= pfail:
             print(f"Null hypothesis(p={str(pfail)}) of sample profiles being the same is rejected: {str(pvalue)}")
         else:
