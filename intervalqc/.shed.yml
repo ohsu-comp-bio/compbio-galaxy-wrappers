@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/intervalqc"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  intervalqc_v2:
+    description: "Create QC metrics from GATK DepthOfCoverage per locus output."
+    include:
+      - intervalqc_v2.xml
+      - intervalqc_v2.py
