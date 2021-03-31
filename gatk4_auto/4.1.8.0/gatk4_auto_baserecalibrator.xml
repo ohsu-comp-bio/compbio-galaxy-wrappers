@@ -1,5 +1,5 @@
-<tool id="gatk4_auto_collectreadcounts" name="GATK4 AUTO CollectReadCounts" version="@WRAPPER_VERSION@0" profile="18.01">
-  <description>- Collects read counts at specified intervals</description>
+<tool id="gatk4_auto_baserecalibrator" name="GATK4 AUTO BaseRecalibrator" version="@WRAPPER_VERSION@0" profile="18.01">
+  <description>- Generates recalibration table for Base Quality Score Recalibration (BQSR)</description>
   <macros>
     <import>macros.xml</import>
   </macros>
@@ -9,7 +9,17 @@
 #include source=$pre_gatk_excl_ints_chth#
 #include source=$bam_index_pre_chth_req#
 #include source=$pre_gatk_ints_chth#
-@CMD_BEGIN@ CollectReadCounts
+#if $known_sites
+#set datatype = $known_sites.datatype
+#if $known_sites.is_of_type("vcf_bgzip")
+ln -s $known_sites known_sites.vcf.gz &&
+tabix known_sites.vcf.gz &&
+#else
+ln -s $known_sites known_sites.vcf &&
+gatk IndexFeatureFile -I known_sites.vcf &&
+#end if
+#end if
+@CMD_BEGIN@ BaseRecalibrator
 #if $common.add_output_sam_program_record
   $common.add_output_sam_program_record
 #end if
@@ -22,12 +32,28 @@
   --arguments_file $optional.arguments_file
 #end if
 
+#if $optional.binary_tag_name
+  --binary-tag-name $optional.binary_tag_name
+#end if
+
+#if $optional.bqsr_baq_gap_open_penalty
+  --bqsr-baq-gap-open-penalty $optional.bqsr_baq_gap_open_penalty
+#end if
+
 #if $optional.cloud_index_prefetch_buffer
   --cloud-index-prefetch-buffer $optional.cloud_index_prefetch_buffer
 #end if
 
 #if $optional.cloud_prefetch_buffer
   --cloud-prefetch-buffer $optional.cloud_prefetch_buffer
+#end if
+
+#if $optional.default_base_qualities
+  --default-base-qualities $optional.default_base_qualities
+#end if
+
+#if $optional.deletions_default_quality
+  --deletions-default-quality $optional.deletions_default_quality
 #end if
 
 #if $optional.disable_bam_index_caching
@@ -48,10 +74,6 @@
 #end if
 
 #include source=$gatk_excl_ints_chth#
-#if $optional.format
-  --format $optional.format
-#end if
-
 #if $common.gatk_config_file
   --gatk-config-file $common.gatk_config_file
 #end if
@@ -60,7 +82,15 @@
   --gcs-max-retries $optional.gcs_max_retries
 #end if
 
+#if $optional.indels_context_size
+  --indels-context-size $optional.indels_context_size
+#end if
+
 #include source=$gatk_bam_input_req#
+#if $optional.insertions_default_quality
+  --insertions-default-quality $optional.insertions_default_quality
+#end if
+
 #if $optional.interval_merging_rule
   --interval-merging-rule $optional.interval_merging_rule
 #end if
@@ -70,11 +100,42 @@
 #end if
 
 #include source=$gatk_ints_chth#
+#if $known_sites
+#if $known_sites.is_of_type("vcf_bgzip")
+--known-sites known_sites.vcf.gz
+#else
+--known-sites known_sites.vcf
+#end if
+#end if
 #if $common.lenient
   $common.lenient
 #end if
 
+#if $optional.low_quality_tail
+  --low-quality-tail $optional.low_quality_tail
+#end if
+
+#if $optional.maximum_cycle_value
+  --maximum-cycle-value $optional.maximum_cycle_value
+#end if
+
+#if $optional.mismatches_context_size
+  --mismatches-context-size $optional.mismatches_context_size
+#end if
+
+#if $optional.mismatches_default_quality
+  --mismatches-default-quality $optional.mismatches_default_quality
+#end if
+
 --output $output
+#if $optional.preserve_qscores_less_than
+  --preserve-qscores-less-than $optional.preserve_qscores_less_than
+#end if
+
+#if $optional.quantizing_levels
+  --quantizing-levels $optional.quantizing_levels
+#end if
+
 #if $common.QUIET
   --QUIET $common.QUIET
 #end if
@@ -110,30 +171,44 @@
   $common.use_jdk_inflater
 #end if
 
+#if $optional.use_original_qualities
+  --use-original-qualities $optional.use_original_qualities
+#end if
+
 #if $common.verbosity
   --verbosity $common.verbosity
 #end if
 ]]></command>
   <inputs>
-    <expand macro="gatk_ints"/>
+    <param name="known_sites" argument="--known-sites" type="data" optional="false" format="vcf,vcf_bgzip" label="Known Sites" help="One or more databases of known polymorphic sites used to exclude regions around known polymorphisms from analysis. This algorithm treats every reference mismatch as an indication of error. However, real genetic variation is expected to mismatch the reference,&#10; so it is critical that a database of known polymorphic sites is given to the tool in order to skip over those sites. This tool accepts any number of&#10; Feature-containing files (VCF, BCF, BED, etc.) for use as this database. For users wishing to exclude an interval list of known variation simply&#10; use -XL my.interval.list to skip over processing those sites. Please note however that the statistics reported by the tool will not accurately&#10; reflected those sites skipped by the -XL argument."/>
+    <expand macro="ref_sel"/>
     <expand macro="gatk_bam_req_params"/>
     <section name="optional" title="Optional Parameters" expanded="False">
-      <expand macro="ref_sel"/>
+      <expand macro="gatk_ints"/>
       <param name="arguments_file" argument="--arguments_file" type="data" optional="true" format="txt" label="Arguments_File" help="read one or more arguments files and add them to the command line. "/>
+      <param name="binary_tag_name" argument="--binary-tag-name" type="text" optional="true" value="" label="Binary Tag Name" help="the binary tag covariate name if using it. The tag name for the binary tag covariate (if using it)"/>
+      <param name="bqsr_baq_gap_open_penalty" argument="--bqsr-baq-gap-open-penalty" type="float" optional="true" value="40.0" label="Bqsr Baq Gap Open Penalty" help="BQSR BAQ gap open penalty (Phred Scaled).  Default value is 40.  30 is perhaps better for whole genome call sets. "/>
       <param name="cloud_index_prefetch_buffer" argument="--cloud-index-prefetch-buffer" type="integer" optional="true" value="-1" label="Cloud Index Prefetch Buffer" help="Size of the cloud-only prefetch buffer (in MB; 0 to disable). Defaults to cloudPrefetchBuffer if unset. "/>
       <param name="cloud_prefetch_buffer" argument="--cloud-prefetch-buffer" type="integer" optional="true" value="40" label="Cloud Prefetch Buffer" help="Size of the cloud-only prefetch buffer (in MB; 0 to disable). "/>
+      <param name="default_base_qualities" argument="--default-base-qualities" type="integer" optional="true" value="-1" label="Default Base Qualities" help="Assign a default base quality. If reads are missing some or all base quality scores, this value will be used for all base quality scores.&#10; By default this is set to -1 to disable default base quality assignment."/>
+      <param name="deletions_default_quality" argument="--deletions-default-quality" type="integer" optional="true" value="45" label="Deletions Default Quality" help="default quality for the base deletions covariate. A default base qualities to use as a prior (reported quality) in the mismatch covariate model. This value will replace all base qualities in the read for this default value. Negative value turns it off. [default is on]"/>
       <param name="disable_bam_index_caching" argument="--disable-bam-index-caching" type="boolean" truevalue="--disable-bam-index-caching" falsevalue="" optional="true" checked="false" label="Disable Bam Index Caching" help="If true, don&amp;apos;t cache bam indexes, this will reduce memory requirements but may harm performance if many intervals are specified.  Caching is automatically disabled if there are no intervals specified. "/>
       <param name="disable_sequence_dictionary_validation" argument="--disable-sequence-dictionary-validation" type="boolean" truevalue="--disable-sequence-dictionary-validation" falsevalue="" optional="true" checked="false" label="Disable Sequence Dictionary Validation" help="If specified, do not check the sequence dictionaries from our inputs for compatibility. Use at your own risk!. "/>
-      <param name="format" argument="--format" type="select" optional="true" label="Format" help="Output file format. ">
-        <option value="TSV">TSV</option>
-        <option selected="true" value="HDF5">HDF5</option>
-      </param>
       <param name="gcs_max_retries" argument="--gcs-max-retries" type="integer" optional="true" value="20" label="Gcs Max Retries" help="If the GCS bucket channel errors out, how many times it will attempt to re-initiate the connection. "/>
+      <param name="indels_context_size" argument="--indels-context-size" type="integer" optional="true" value="3" label="Indels Context Size" help="Size of the k-mer context to be used for base insertions and deletions. The context covariate will use a context of this size to calculate its covariate value for base insertions and deletions. Must be between 1 and 13 (inclusive). Note that higher values will increase runtime and required java heap size."/>
+      <param name="insertions_default_quality" argument="--insertions-default-quality" type="integer" optional="true" value="45" label="Insertions Default Quality" help="default quality for the base insertions covariate. A default base qualities to use as a prior (reported quality) in the insertion covariate model. This parameter is used for all reads without insertion quality scores for each base. [default is on]"/>
       <param name="interval_merging_rule" argument="--interval-merging-rule" type="select" optional="true" label="Interval Merging Rule" help="Interval merging rule for abutting intervals. By default, the program merges abutting intervals (i.e. intervals that are directly side-by-side but do not&#10; actually overlap) into a single continuous interval. However you can change this behavior if you want them to be&#10; treated as separate intervals instead.">
         <option selected="true" value="ALL">ALL</option>
         <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
       </param>
+      <param name="low_quality_tail" argument="--low-quality-tail" type="integer" optional="true" value="2" label="Low Quality Tail" help="minimum quality for the bases in the tail of the reads to be considered. Reads with low quality bases on either tail (beginning or end) will not be considered in the context. This parameter defines the quality below which (inclusive) a tail is considered low quality"/>
+      <param name="maximum_cycle_value" argument="--maximum-cycle-value" type="integer" optional="true" value="500" label="Maximum Cycle Value" help="The maximum cycle value permitted for the Cycle covariate. The cycle covariate will generate an error if it encounters a cycle greater than this value.&#10; This argument is ignored if the Cycle covariate is not used."/>
+      <param name="mismatches_context_size" argument="--mismatches-context-size" type="integer" optional="true" value="2" label="Mismatches Context Size" help="Size of the k-mer context to be used for base mismatches. The context covariate will use a context of this size to calculate its covariate value for base mismatches. Must be between 1 and 13 (inclusive). Note that higher values will increase runtime and required java heap size."/>
+      <param name="mismatches_default_quality" argument="--mismatches-default-quality" type="integer" optional="true" value="-1" label="Mismatches Default Quality" help="default quality for the base mismatches covariate. A default base qualities to use as a prior (reported quality) in the mismatch covariate model. This value will replace all base qualities in the read for this default value. Negative value turns it off. [default is off]"/>
+      <param name="preserve_qscores_less_than" argument="--preserve-qscores-less-than" type="integer" optional="true" value="6" label="Preserve Qscores Less Than" help="Don&amp;apos;t recalibrate bases with quality scores less than this threshold (with -bqsr). This flag tells GATK not to modify quality scores less than this value. Instead they will be written out unmodified in the recalibrated BAM file.&#10; In general it&amp;apos;s unsafe to change qualities scores below &amp;lt; 6, since base callers use these values to indicate random or bad bases.&#10; For example, Illumina writes Q2 bases when the machine has really gone wrong. This would be fine in and of itself,&#10; but when you select a subset of these reads based on their ability to align to the reference and their dinucleotide effect,&#10; your Q2 bin can be elevated to Q8 or Q10, leading to issues downstream."/>
+      <param name="quantizing_levels" argument="--quantizing-levels" type="integer" optional="true" value="16" label="Quantizing Levels" help="number of distinct quality scores in the quantized output. BQSR generates a quantization table for quick quantization later by subsequent tools. BQSR does not quantize the base qualities, this is done by the engine with the -qq or -bqsr options.&#10; This parameter tells BQSR the number of levels of quantization to use to build the quantization table."/>
       <param name="sites_only_vcf_output" argument="--sites-only-vcf-output" type="boolean" truevalue="--sites-only-vcf-output" falsevalue="" optional="true" checked="false" label="Sites Only Vcf Output" help="If true, don&amp;apos;t emit genotype fields when writing vcf file output. "/>
+      <param name="use_original_qualities" argument="--use-original-qualities" type="boolean" truevalue="--use-original-qualities" falsevalue="" optional="true" checked="false" label="Use Original Qualities" help="Use the base quality scores from the OQ tag. This flag tells GATK to use the original base qualities (that were in the data before BQSR/recalibration) which&#10; are stored in the OQ tag, if they are present, rather than use the post-recalibration quality scores. If no OQ&#10; tag is present for a read, the standard qual score will be used."/>
     </section>
     <section name="common" title="Common Parameters" expanded="False">
       <expand macro="gatk_excl_ints"/>
@@ -172,50 +247,58 @@
     </section>
   </inputs>
   <outputs>
-    <data format="tsv" name="output" label="${tool.name} on ${on_string}: output tsv"/>
+    <data format="gatk_recal" name="output" label="${tool.name} on ${on_string}: output gatk_recal"/>
   </outputs>
   <tests/>
-  <help><![CDATA[Collects read counts at specified intervals. The count for each interval
-is calculated by counting the number of read starts that lie in the
-interval.
+  <help><![CDATA[First pass of the base quality score recalibration. Generates a
+recalibration table based on various covariates. The default covariates
+are read group, reported quality score, machine cycle, and nucleotide
+context.
 
-Inputs
-~~~~~~
+This walker generates tables based on specified covariates. It does a
+by-locus traversal operating only at sites that are in the known sites
+VCF. ExAc, gnomAD, or dbSNP resources can be used as known sites of
+variation. We assume that all reference mismatches we see are therefore
+errors and indicative of poor base quality. Since there is a large
+amount of data one can then calculate an empirical probability of error
+given the particular covariates seen at this site, where p(error) = num
+mismatches / num observations. The output file is a table (of the
+several covariate values, num observations, num mismatches, empirical
+quality score).
 
--  SAM format read data
--  Intervals at which counts will be collected. The argument
-   interval-merging-rule must be set to
-   IntervalMergingRule#OVERLAPPING_ONLY and all other common arguments
-   for interval padding or merging must be set to their defaults.
--  Output file format. This can be used to select TSV or HDF5 output.
+Input
+~~~~~
+
+The input read data whose base quality scores need to be assessed.
+
+A database of known polymorphic sites to skip over.
 
 Output
 ~~~~~~
 
--  Counts file. By default, the tool produces HDF5 format results. This
-   can be changed with the format option to TSV format. Using HDF5 files
-   with CreateReadCountPanelOfNormals can decrease runtime, by reducing
-   time spent on IO, so this is the default output format. The HDF5
-   format contains information in the paths defined in
-   HDF5SimpleCountCollection. HDF5 files may be viewed using
-   `hdfview <https://support.hdfgroup.org/products/java/hdfview/>`__ or
-   loaded in python using `PyTables <http://www.pytables.org/>`__ or
-   `h5py <http://www.h5py.org/>`__. The TSV format has a SAM-style
-   header containing a read group sample name, a sequence dictionary, a
-   row specifying the column headers contained in
-   SimpleCountCollection.SimpleCountTableColumn, and the corresponding
-   entry rows.
+A GATK Report file with many tables:
 
-Usage example
-~~~~~~~~~~~~~
+#. The list of arguments
+#. The quantized qualities table
+#. The recalibration table by read group
+#. The recalibration table by quality score
+#. The recalibration table for all the optional covariates
+
+The GATK Report is intended to be easy to read by humans or computers.
+Check out the documentation of the GATKReport to learn how to manipulate
+this table.
+
+Examples
+~~~~~~~~
 
 ::
 
-        gatk CollectReadCounts \
-             -I sample.bam \
-             -L intervals.interval_list \
-             --interval-merging-rule OVERLAPPING_ONLY \
-             -O sample.counts.hdf5
+    gatk BaseRecalibrator \
+      -I my_reads.bam \
+      -R reference.fasta \
+      --known-sites sites_of_variation.vcf \
+      --known-sites another/optional/setOfSitesToMask.vcf \
+      -O recal_data.table
     
 ]]></help>
   <citations>

@@ -1,0 +1,398 @@
+<tool id="gatk4_auto_markduplicatesspark" name="GATK4 AUTO MarkDuplicatesSpark" version="@WRAPPER_VERSION@0" profile="18.01">
+  <description>- MarkDuplicates on Spark</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[#include source=$set_sections#
+#include source=$pre_gatk_excl_ints_chth#
+#include source=$bam_index_pre_chth_no_index#
+#include source=$pre_gatk_ints_chth#
+@CMD_BEGIN@ MarkDuplicatesSpark
+#if $common.add_output_vcf_command_line
+  $common.add_output_vcf_command_line
+#end if
+
+#if $advanced.allow_multiple_sort_orders_in_input
+  $advanced.allow_multiple_sort_orders_in_input
+#end if
+
+#if $optional.arguments_file
+  --arguments_file $optional.arguments_file
+#end if
+
+#if $optional.bam_partition_size
+  --bam-partition-size $optional.bam_partition_size
+#end if
+
+#for $num, $txt in enumerate($optional.conf_rpt)
+#if $txt.conf
+--conf '$txt.conf'
+#end if
+#end for
+#if $common.create_output_bam_splitting_index
+  $common.create_output_bam_splitting_index
+#end if
+
+#for $num, $txt in enumerate($common.disable_read_filter_rpt)
+#if $txt.disable_read_filter
+--disable-read-filter '$txt.disable_read_filter'
+#end if
+#end for
+#if $optional.disable_sequence_dictionary_validation
+  $optional.disable_sequence_dictionary_validation
+#end if
+
+#if $common.disable_tool_default_read_filters
+  $common.disable_tool_default_read_filters
+#end if
+
+#if $optional.do_not_mark_unmapped_mates
+  $optional.do_not_mark_unmapped_mates
+#end if
+
+#if $optional.duplicate_scoring_strategy
+  --duplicate-scoring-strategy $optional.duplicate_scoring_strategy
+#end if
+
+#if $optional.duplicate_tagging_policy
+  --duplicate-tagging-policy $optional.duplicate_tagging_policy
+#end if
+
+#include source=$gatk_excl_ints_chth#
+#if $common.gatk_config_file
+  --gatk-config-file $common.gatk_config_file
+#end if
+
+#if $optional.gcs_max_retries
+  --gcs-max-retries $optional.gcs_max_retries
+#end if
+
+#include source=$gatk_bam_input_req#
+#if $optional.interval_merging_rule
+  --interval-merging-rule $optional.interval_merging_rule
+#end if
+
+#if $common.interval_set_rule
+  --interval-set-rule $common.interval_set_rule
+#end if
+
+#include source=$gatk_ints_chth#
+#if $optional.metrics_file
+  --metrics-file $optional.metrics_file
+#end if
+
+#if $optional.num_reducers
+  --num-reducers $optional.num_reducers
+#end if
+
+#if $optional.optical_duplicate_pixel_distance
+  --optical-duplicate-pixel-distance $optional.optical_duplicate_pixel_distance
+#end if
+
+--output $output
+#if $optional.output_shard_tmp_dir
+  --output-shard-tmp-dir $optional.output_shard_tmp_dir
+#end if
+
+#if $optional.program_name
+  --program-name $optional.program_name
+#end if
+
+#if $common.QUIET
+  --QUIET $common.QUIET
+#end if
+
+#for $num, $txt in enumerate($common.read_filter_rpt)
+#if $txt.read_filter
+--read-filter '$txt.read_filter'
+#end if
+#end for
+#if $common.read_validation_stringency
+  --read-validation-stringency $common.read_validation_stringency
+#end if
+
+#include source=$ref_opts#
+#if $optional.remove_all_duplicates
+  $optional.remove_all_duplicates
+#end if
+
+#if $optional.remove_sequencing_duplicates
+  $optional.remove_sequencing_duplicates
+#end if
+
+#if $optional.sharded_output
+  $optional.sharded_output
+#end if
+
+#if $optional.spark_verbosity
+  --spark-verbosity $optional.spark_verbosity
+#end if
+
+#if $common.splitting_index_granularity
+  --splitting-index-granularity $common.splitting_index_granularity
+#end if
+
+#if $common.tmp_dir
+  --tmp-dir $common.tmp_dir
+#end if
+
+#if $advanced.treat_unsorted_as_querygroup_ordered
+  $advanced.treat_unsorted_as_querygroup_ordered
+#end if
+
+#if $common.use_jdk_deflater
+  $common.use_jdk_deflater
+#end if
+
+#if $common.use_jdk_inflater
+  $common.use_jdk_inflater
+#end if
+
+#if $optional.use_nio
+  $optional.use_nio
+#end if
+
+#if $common.verbosity
+  --verbosity $common.verbosity
+#end if
+]]></command>
+  <inputs>
+    <expand macro="gatk_bam_req_params"/>
+    <section name="optional" title="Optional Parameters" expanded="False">
+      <expand macro="gatk_ints"/>
+      <expand macro="ref_sel"/>
+      <param name="arguments_file" argument="--arguments_file" type="data" optional="true" format="txt" label="Arguments_File" help="read one or more arguments files and add them to the command line. "/>
+      <param name="bam_partition_size" argument="--bam-partition-size" type="integer" optional="true" value="0" label="Bam Partition Size" help="maximum number of bytes to read from a file into each partition of reads. Setting this higher will result in fewer partitions. Note that this will not be equal to the size of the partition in memory. Defaults to 0, which uses the default split size (determined by the Hadoop input format, typically the size of one HDFS block). "/>
+      <repeat name="conf_rpt" default="1" title="Conf">
+        <param name="conf" argument="--conf" type="text" optional="true" value="" label="Conf" help="Spark properties to set on the Spark context in the format &amp;lt;property&amp;gt;=&amp;lt;value&amp;gt;. "/>
+      </repeat>
+      <param name="disable_sequence_dictionary_validation" argument="--disable-sequence-dictionary-validation" type="boolean" truevalue="--disable-sequence-dictionary-validation" falsevalue="" optional="true" checked="false" label="Disable Sequence Dictionary Validation" help="If specified, do not check the sequence dictionaries from our inputs for compatibility. Use at your own risk!. "/>
+      <param name="do_not_mark_unmapped_mates" argument="--do-not-mark-unmapped-mates" type="boolean" truevalue="--do-not-mark-unmapped-mates" falsevalue="" optional="true" checked="false" label="Do Not Mark Unmapped Mates" help="Enabling this option will mean unmapped mates of duplicate marked reads will not be marked as duplicates. "/>
+      <param name="duplicate_scoring_strategy" argument="--duplicate-scoring-strategy" type="select" optional="true" label="Duplicate Scoring Strategy" help="The scoring strategy for choosing the non-duplicate among candidates. ">
+        <option selected="true" value="SUM_OF_BASE_QUALITIES">SUM_OF_BASE_QUALITIES</option>
+        <option value="TOTAL_MAPPED_REFERENCE_LENGTH">TOTAL_MAPPED_REFERENCE_LENGTH</option>
+      </param>
+      <param name="duplicate_tagging_policy" argument="--duplicate-tagging-policy" type="select" optional="true" label="Duplicate Tagging Policy" help="Determines how duplicate types are recorded in the DT optional attribute. ">
+        <option selected="true" value="DontTag">DontTag</option>
+        <option value="OpticalOnly">OpticalOnly</option>
+        <option value="All">All</option>
+      </param>
+      <param name="gcs_max_retries" argument="--gcs-max-retries" type="integer" optional="true" value="20" label="Gcs Max Retries" help="If the GCS bucket channel errors out, how many times it will attempt to re-initiate the connection. "/>
+      <param name="interval_merging_rule" argument="--interval-merging-rule" type="select" optional="true" label="Interval Merging Rule" help="Interval merging rule for abutting intervals. By default, the program merges abutting intervals (i.e. intervals that are directly side-by-side but do not&#10; actually overlap) into a single continuous interval. However you can change this behavior if you want them to be&#10; treated as separate intervals instead.">
+        <option selected="true" value="ALL">ALL</option>
+        <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
+      </param>
+      <param name="metrics_file" argument="--metrics-file" type="text" optional="true" value="" label="Metrics File" help="Path to write duplication metrics to. "/>
+      <param name="num_reducers" argument="--num-reducers" type="integer" optional="true" value="0" label="Num Reducers" help="For tools that shuffle data or write an output, sets the number of reducers. Defaults to 0, which gives one partition per 10MB of input. "/>
+      <param name="optical_duplicate_pixel_distance" argument="--optical-duplicate-pixel-distance" type="integer" optional="true" value="100" label="Optical Duplicate Pixel Distance" help="The maximum offset between two duplicate clusters in order to consider them optical duplicates. This should usually be set to some fairly small number (e.g. 5-10 pixels) unless using later versions of the Illumina pipeline that multiply pixel values by 10, in which case 50-100 is more normal. "/>
+      <param name="output_shard_tmp_dir" argument="--output-shard-tmp-dir" type="text" optional="true" value="" label="Output Shard Tmp Dir" help="when writing a bam, in single sharded mode this directory to write the temporary intermediate output shards, if not specified .parts/ will be used. "/>
+      <param name="program_name" argument="--program-name" type="text" optional="true" value="" label="Program Name" help="Name of the program running. "/>
+      <param name="remove_all_duplicates" argument="--remove-all-duplicates" type="boolean" truevalue="--remove-all-duplicates" falsevalue="" optional="true" checked="false" label="Remove All Duplicates" help="If true do not write duplicates to the output file instead of writing them with appropriate flags set. "/>
+      <param name="remove_sequencing_duplicates" argument="--remove-sequencing-duplicates" type="boolean" truevalue="--remove-sequencing-duplicates" falsevalue="" optional="true" checked="false" label="Remove Sequencing Duplicates" help="If true do not write optical/sequencing duplicates to the output file instead of writing them with appropriate flags set. "/>
+      <param name="sharded_output" argument="--sharded-output" type="boolean" truevalue="--sharded-output" falsevalue="" optional="true" checked="false" label="Sharded Output" help="For tools that write an output, write the output in multiple pieces (shards). "/>
+      <param name="spark_verbosity" argument="--spark-verbosity" type="text" optional="true" value="" label="Spark Verbosity" help="Spark verbosity. Overrides --verbosity for Spark-generated logs only. Possible values: {ALL, DEBUG, INFO, WARN, ERROR, FATAL, OFF, TRACE}. "/>
+      <param name="use_nio" argument="--use-nio" type="boolean" truevalue="--use-nio" falsevalue="" optional="true" checked="false" label="Use Nio" help="Whether to use NIO or the Hadoop filesystem (default) for reading files. (Note that the Hadoop filesystem is always used for writing files.). "/>
+    </section>
+    <section name="advanced" title="Advanced Parameters" expanded="False">
+      <param name="allow_multiple_sort_orders_in_input" argument="--allow-multiple-sort-orders-in-input" type="boolean" truevalue="--allow-multiple-sort-orders-in-input" falsevalue="" optional="true" checked="false" label="Allow Multiple Sort Orders In Input" help="Allow non-queryname sorted inputs when specifying multiple input bams. "/>
+      <param name="treat_unsorted_as_querygroup_ordered" argument="--treat-unsorted-as-querygroup-ordered" type="boolean" truevalue="--treat-unsorted-as-querygroup-ordered" falsevalue="" optional="true" checked="false" label="Treat Unsorted As Querygroup Ordered" help="Treat unsorted files as query-group orderd files. WARNING: This option disables a basic safety check and may result in unexpected behavior if the file is truly unordered. "/>
+    </section>
+    <section name="common" title="Common Parameters" expanded="False">
+      <expand macro="gatk_excl_ints"/>
+      <param name="add_output_vcf_command_line" argument="--add-output-vcf-command-line" type="boolean" truevalue="--add-output-vcf-command-line" falsevalue="" optional="true" checked="true" label="Add Output Vcf Command Line" help="If true, adds a command line header line to created VCF files. "/>
+      <param name="create_output_bam_splitting_index" argument="--create-output-bam-splitting-index" type="boolean" truevalue="--create-output-bam-splitting-index" falsevalue="" optional="true" checked="true" label="Create Output Bam Splitting Index" help="If true, create a BAM splitting index (SBI) when writing a coordinate-sorted BAM file. "/>
+      <repeat name="disable_read_filter_rpt" default="1" title="Disable Read Filter">
+        <param name="disable_read_filter" argument="--disable-read-filter" type="text" optional="true" value="" label="Disable Read Filter" help="Read filters to be disabled before analysis. "/>
+      </repeat>
+      <param name="disable_tool_default_read_filters" argument="--disable-tool-default-read-filters" type="boolean" truevalue="--disable-tool-default-read-filters" falsevalue="" optional="true" checked="false" label="Disable Tool Default Read Filters" help="Disable all tool default read filters (WARNING: many tools will not function correctly without their default read filters on). "/>
+      <param name="gatk_config_file" argument="--gatk-config-file" type="data" optional="true" format="txt" label="Gatk Config File" help="A configuration file to use with the GATK. "/>
+      <param name="interval_set_rule" argument="--interval-set-rule" type="select" optional="true" label="Interval Set Rule" help="Set merging approach to use for combining interval inputs. By default, the program will take the UNION of all intervals specified using -L and/or -XL. However, you can&#10; change this setting for -L, for example if you want to take the INTERSECTION of the sets instead. E.g. to&#10; perform the analysis only on chromosome 1 exomes, you could specify -L exomes.intervals -L 1 --interval-set-rule&#10; INTERSECTION. However, it is not possible to modify the merging approach for intervals passed using -XL (they will&#10; always be merged using UNION).&#10;&#10; Note that if you specify both -L and -XL, the -XL interval set will be subtracted from the -L interval set.">
+        <option selected="true" value="UNION">UNION</option>
+        <option value="INTERSECTION">INTERSECTION</option>
+      </param>
+      <param name="QUIET" argument="--QUIET" type="boolean" truevalue="--QUIET" falsevalue="" optional="true" checked="false" label="Quiet" help="Whether to suppress job-summary info on System.err. "/>
+      <repeat name="read_filter_rpt" default="1" title="Read Filter">
+        <param name="read_filter" argument="--read-filter" type="text" optional="true" value="" label="Read Filter" help="Read filters to be applied before analysis. "/>
+      </repeat>
+      <param name="read_validation_stringency" argument="--read-validation-stringency" type="select" optional="true" label="Read Validation Stringency" help="Validation stringency for all SAM/BAM/CRAM/SRA files read by this program.  The default stringency value SILENT can improve performance when processing a BAM file in which variable-length data (read, qualities, tags) do not otherwise need to be decoded. ">
+        <option value="STRICT">STRICT</option>
+        <option value="LENIENT">LENIENT</option>
+        <option selected="true" value="SILENT">SILENT</option>
+      </param>
+      <param name="splitting_index_granularity" argument="--splitting-index-granularity" type="integer" optional="true" value="4096" min="1" label="Splitting Index Granularity" help="Granularity to use when writing a splitting index, one entry will be put into the index every n reads where n is this granularity value. Smaller granularity results in a larger index with more available split points. "/>
+      <param name="tmp_dir" argument="--tmp-dir" type="text" optional="true" value="" label="Tmp Dir" help="Temp directory to use. "/>
+      <param name="use_jdk_deflater" argument="--use-jdk-deflater" type="boolean" truevalue="--use-jdk-deflater" falsevalue="" optional="true" checked="false" label="Use Jdk Deflater" help="Whether to use the JdkDeflater (as opposed to IntelDeflater). "/>
+      <param name="use_jdk_inflater" argument="--use-jdk-inflater" type="boolean" truevalue="--use-jdk-inflater" falsevalue="" optional="true" checked="false" label="Use Jdk Inflater" help="Whether to use the JdkInflater (as opposed to IntelInflater). "/>
+      <param name="verbosity" argument="--verbosity" type="select" optional="true" label="Verbosity" help="Control verbosity of logging. ">
+        <option value="ERROR">ERROR</option>
+        <option value="WARNING">WARNING</option>
+        <option selected="true" value="INFO">INFO</option>
+        <option value="DEBUG">DEBUG</option>
+      </param>
+    </section>
+  </inputs>
+  <outputs>
+    <data format="bam" name="output" label="${tool.name} on ${on_string}: output bam"/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[MarkDuplicates on Spark
+
+This is a Spark implementation of `Picard
+MarkDuplicates <https://software.broadinstitute.org/gatk/documentation/tooldocs/current/picard_sam_markduplicates_MarkDuplicates.php>`__
+that allows the tool to be run in parallel on multiple cores on a local
+machine or multiple machines on a Spark cluster while still matching the
+output of the non-Spark Picard version of the tool. Since the tool
+requires holding all of the readnames in memory while it groups read
+information, machine configuration and starting sort-order impact tool
+performance.
+
+Here are some differences of note between MarkDuplicatesSpark and Picard
+MarkDuplicates.
+
+-  MarkDuplicatesSpark processing can replace both the MarkDuplicates
+   and SortSam steps of the Best Practices `single sample
+   pipeline <https://software.broadinstitute.org/gatk/documentation/article?id=7899#2>`__.
+   After flagging duplicate sets, the tool automatically
+   coordinate-sorts the records. It is still necessary to subsequently
+   run SetNmMdAndUqTags before running BQSR.
+-  The tool is optimized to run on queryname-grouped alignments (that
+   is, all reads with the same queryname are together in the input
+   file). If provided coordinate-sorted alignments, the tool will spend
+   additional time first queryname sorting the reads internally. This
+   can result in the tool being up to 2x slower processing under some
+   circumstances.
+-  Due to MarkDuplicatesSpark queryname-sorting coordinate-sorted inputs
+   internally at the start, the tool produces identical results
+   regardless of the input sort-order. That is, it will flag duplicates
+   sets that include secondary, and supplementary and unmapped mate
+   records no matter the sort-order of the input. This differs from how
+   Picard MarkDuplicates behaves given the differently sorted inputs.
+-  Collecting duplicate metrics slows down performance and thus the
+   metrics collection is optional and must be specified for the Spark
+   version of the tool with '-M'. It is possible to collect the metrics
+   with the standalone Picard tool
+   `EstimateLibraryComplexity <https://software.broadinstitute.org/gatk/documentation/tooldocs/current/picard_sam_markduplicates_EstimateLibraryComplexity.php>`__.
+-  MarkDuplicatesSpark is optimized to run locally on a single machine
+   by leveraging core parallelism that MarkDuplicates and SortSam
+   cannot. It will typically run faster than MarkDuplicates and SortSam
+   by a factor of 15% over the same data at 2 cores and will scale
+   linearly to upwards of 16 cores. This means MarkDuplicatesSpark, even
+   without access to a Spark cluster, is faster than MarkDuplicates.
+-  MarkDuplicatesSpark can be run with multiple input bams. If this is
+   the case all of the inputs must be a mix queryname-grouped or
+   queryname sorted.
+
+For a typical 30x coverage WGS BAM, we recommend running on a machine
+with at least 16 GB. Memory usage scales with library complexity and the
+tool will need more memory for larger or more complex data. If the tool
+is running slowly it is possible Spark is running out of memory and is
+spilling data to disk excessively. If this is the case then increasing
+the memory available to the tool should yield speedup to a threshold;
+otherwise, increasing memory should have no effect beyond that
+threshold.
+
+Note that this tool does not support UMI based duplicate marking.
+
+See `MarkDuplicates
+documentation <https://software.broadinstitute.org/gatk/documentation/tooldocs/current/picard_sam_markduplicates_MarkDuplicates.php>`__
+for details on tool features and background information.
+
+Usage examples
+~~~~~~~~~~~~~~
+
+Provide queryname-grouped reads to MarkDuplicatesSpark
+
+::
+
+         gatk MarkDuplicatesSpark \
+               -I input.bam \
+               -O marked_duplicates.bam
+        
+
+Additionally produce estimated library complexity metrics
+
+::
+
+        gatk MarkDuplicatesSpark \
+                -I input.bam \
+                -O marked_duplicates.bam \
+                -M marked_dup_metrics.txt
+
+        
+
+MarkDuplicatesSpark run locally specifying the removal of sequencing
+duplicates
+
+::
+
+          gatk MarkDuplicatesSpark \
+               -I input.bam \
+               -O marked_duplicates.bam \
+               --remove-sequencing-duplicates
+        
+
+MarkDuplicatesSpark run locally tagging OpticalDuplicates using the "DT"
+attribute for reads
+
+::
+
+          gatk MarkDuplicatesSpark \
+               -I input.bam \
+               -O marked_duplicates.bam \
+               --duplicate-tagging-policy OpticalOnly
+        
+
+MarkDuplicates run locally specifying the core input. Note if
+'spark.executor.cores' is unset, Spark will use all available cores on
+the machine.
+
+::
+
+          gatk MarkDuplicatesSpark \
+               -I input.bam \
+               -O marked_duplicates.bam \
+               -M marked_dup_metrics.txt \
+               --conf 'spark.executor.cores=5'
+        
+
+MarkDuplicates run on a Spark cluster of five executors and with eight
+executor cores
+
+::
+
+          gatk MarkDuplicatesSpark \
+               -I input.bam \
+               -O marked_duplicates.bam \
+               -M marked_dup_metrics.txt \
+               -- \
+               --spark-runner SPARK \
+               --spark-master MASTER_URL \
+               --num-executors 5 \
+               --executor-cores 8
+        
+
+Please see `Picard
+DuplicationMetrics <http://broadinstitute.github.io/picard/picard-metric-definitions.html#DuplicationMetrics>`__
+for detailed explanations of the output metrics.
+
+--------------
+
+Notes
+~~~~~
+
+#. This Spark tool requires a significant amount of disk operations. Run
+   with both the input data and outputs on high throughput SSDs when
+   possible. When pipelining this tool on Google Compute Engine
+   instances, for best performance requisition machines with LOCAL SSDs.
+#. Furthermore, we recommend explicitly setting the Spark temp directory
+   to an available SSD when running this in local mode by adding the
+   argument --conf 'spark.local.dir=/PATH/TO/TEMP/DIR'. See `this forum
+   discussion <https://gatkforums.broadinstitute.org/gatk/discussion/comment/56337>`__
+   for details.
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>
