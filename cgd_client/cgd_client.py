@@ -11,6 +11,7 @@ import argparse
 import json
 import logging
 import os
+import socket
 import sys
 import shutil
 
@@ -21,7 +22,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.9.0'
+VERSION = '1.2.9.1'
 
 
 def supply_args():
@@ -221,6 +222,32 @@ def prepare_reported(outfile, regions, stdout, inc_chr=False):
     regions.close()
 
 
+def service_name_frmt(url):
+    """
+    Reformat the service name so that we can check whether the connection is open.
+    https://kdlwebuser02.ohsu.edu/cgd_next should be
+    kdlwebuser02.ohsu.edu
+    :return:
+    """
+    if url.startswith('http'):
+        return url.split('/')[2].split(':')[0]
+    else:
+        return url.split('/')[0].split(':')[0]
+
+
+def check_conn(host, port=22, timeout=3):
+    """
+    Before sending the command to import SampleSheet, check to see if connection is open.
+    :return:
+    """
+    try:
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        return True
+    except socket.error as ex:
+        raise ConnectionError(ex)
+
+
 def main():
     args = supply_args()
     # outfile = open(args.stdout_log, 'w')
@@ -236,7 +263,8 @@ def main():
     # Run the command and write command to log.
     logger.info("Running the following command:")
     logger.info('\t'.join(cmd))
-    stdout = run_cmd(cmd)
+    if check_conn(service_name_frmt(args.servicebase)):
+        stdout = run_cmd(cmd)
 
     # Write CGD return json to log.
     logger.info("From CGD:")
