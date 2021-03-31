@@ -9,9 +9,10 @@ import hgvs
 import hgvs.dataproviders.uta
 import hgvs.parser
 import hgvs.assemblymapper
+import hgvs.exceptions
 import vcfpy
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 # Going to work on a better way to do this, but we definitely can't spin this parser up over and over again.
 hp = hgvs.parser.Parser()
 # hdp = hgvs.dataproviders.uta.connect()
@@ -44,9 +45,9 @@ class AnnovarRec:
     Two files contain very similar fields, with exception of first one where it denotes line number.
 
     splicing	NM_001122819.3,NM_001287212.2,NM_020816.4	1	20992819	20992819
-    G	C	1	240.78	8	1	20992819	.	G	C	240.78
-	.	AC=2;AF=1.00;AN=2;DP=8;ExcessHet=3.0103;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=60.00;QD=30.10;SOR=0.693	GT:AD:DP:GQ:PL
-	1/1:0,8:8:24:269,24,0
+    G	C	1	240.78	8	1	20992819	.	G	C	240.78.
+    AC=2;AF=1.00;AN=2;DP=8;ExcessHet=3.0103;FS=0.000;MLEAC=2;MLEAF=1.00;MQ=60.00;QD=30.10;SOR=0.693	GT:AD:DP:GQ:PL
+    1/1:0,8:8:24:269,24,0
 
     line96	synonymous SNV	CDK11A:NM_001313982.2:exon4:c.321A>G:p.E107E,CDK11B:
     NM_001787.3:exon4:c.321A>G:p.E107E,CDK11A:NM_024011.4:exon4:c.321A>G:p.E107E,CDK11A:
@@ -60,18 +61,14 @@ class AnnovarRec:
 
     def __init__(self, rec, tfx_type="ANNOVAR"):
         self.tfx_type = tfx_type
+        self.rec = rec
 
-        self.chrom = rec[7]
-        self.pos = rec[8]
-        self.ref = rec[10]
-        self.alt = rec[11]
-        if len(self.alt.split(',')) > 1:
-            self.chrom = rec[2]
-            self.pos = rec[3]
-            self.ref = rec[5]
-            self.alt = rec[6]
-
+        self.chrom = self.rec[10]
+        self.pos = self.rec[11]
+        self.ref = self.rec[13]
+        self.alt = self.rec[14]
         self.uniq_key = (self.chrom, self.pos, self.ref, self.alt)
+
         self.metrics = {}
 
 
@@ -171,6 +168,7 @@ class AnnovarRecExonVrntFunc(AnnovarRec):
     def __init__(self, rec):
         self.rec = rec.rstrip('\n').split('\t')[1:]
         super().__init__(self.rec)
+
         self.veff = self.rec[0]
         self.info = self.rec[1].rstrip(',').split(',')
         if self.rec[1] != 'UNKNOWN':
@@ -179,10 +177,6 @@ class AnnovarRecExonVrntFunc(AnnovarRec):
                 if new_met['TXC']:
                     tx = new_met['TXC']
                     self.metrics[tx] = new_met
-
-        # if self.uniq_key == ('22', '42416056', 'A', 'G'):
-        #     print(self.metrics)
-        #     exit(1)
 
     def _make_metric_dict(self, metrics):
         """
@@ -278,7 +272,8 @@ class CollectMetrics:
     def __init__(self):
         self.metrics = {}
 
-    def _metrics_update(self, orig, new):
+    @staticmethod
+    def _metrics_update(orig, new):
         """
         When we are getting metrics from multiple sources, figure out what the combined on should look like.
         :return:
@@ -295,8 +290,7 @@ class CollectMetrics:
             elif not new[k] or v:
                 pass
             else:
-                raise Exception("AISHFIASF")
-        print(revsd)
+                raise Exception("_metrics_update error")
         return revsd
 
     def metrics_push(self, annovar):
@@ -322,11 +316,10 @@ class CollectMetrics:
 
 class VcfReader:
     """
-
+    Handles reading the VCF and placing variants in to a dictionary.
     """
     def __init__(self, filename):
         self.vcf_reader = vcfpy.Reader.from_path(filename)
-
 
     def get_vrnts(self):
         vrnts = {}
@@ -419,6 +412,10 @@ class VcfWriter:
                     tx_key = '_'.join([fld_prefix, tx])
                     if tx_key not in vrnt.rec.INFO:
                         vrnt.rec.INFO[tx_key] = mets
+                a = len(set([len(v) for k, v in vrnt.rec.INFO.items() if k.startswith('TFX_')]))
+                if a > 1:
+                    print(vrnt.rec.INFO)
+                    raise Exception("TFX field lengths are not the same, please check.")
                 self.writer.write_record(vrnt.rec)
             else:
                 # LOG ME
@@ -456,7 +453,8 @@ def main():
     myvcf.vcf_reader.header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_EXON'),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
-                                                            ('Description', 'Exon number associated with given transcript.')]))
+                                                            ('Description', 'Exon number associated with given '
+                                                                            'transcript.')]))
     myvcf.vcf_reader.header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_HGNC'),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
@@ -468,11 +466,13 @@ def main():
     myvcf.vcf_reader.header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_HGVSP1'),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
-                                                            ('Description', 'HGVS pdot nomenclature, single letter amino acids.')]))
+                                                            ('Description', 'HGVS pdot nomenclature, single letter '
+                                                                            'amino acids.')]))
     myvcf.vcf_reader.header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_HGVSP3'),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
-                                                            ('Description', 'HGVS pdot nomenclature, three letter amino acids.')]))
+                                                            ('Description', 'HGVS pdot nomenclature, three letter '
+                                                                            'amino acids.')]))
     myvcf.vcf_reader.header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_SOURCE'),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
@@ -515,7 +515,6 @@ def main():
             comb[k].append(v)
         to_write[coord] = comb
 
-    print(to_write)
     writer = VcfWriter(args.outfile, myvcf.vcf_reader)
     writer.write_metrics(vrnts, to_write)
 
