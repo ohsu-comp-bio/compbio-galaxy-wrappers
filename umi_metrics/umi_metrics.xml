@@ -12,8 +12,8 @@
 ]]></command>
 
   <inputs>
-      <param name="perlocus_before" type="data" format="tabular" label="DepthOfCoverage per locus Pre-UMI" help="GATK DepthOfCoverage perlocus output before deduplication." />
-      <param name="perlocus_after" type="data" format="tabular" label="DepthOfCoverage per locus Post-UMI" help="GATK DepthOfCoverage perlocus output after deduplication." />
+      <param name="perlocus_before" type="data" format="tsv,tabular" label="DepthOfCoverage per locus Pre-UMI" help="GATK DepthOfCoverage perlocus output before deduplication." />
+      <param name="perlocus_after" type="data" format="tsv,tabular" label="DepthOfCoverage per locus Post-UMI" help="GATK DepthOfCoverage perlocus output after deduplication." />
       <param name="invcf" type="data" format="vcf" label="Input VCF" help="This VCF file will have the PUMI tag added to the sample section." />
   </inputs>
 
