@@ -13,3 +13,11 @@ repositories:
       - mnp.RData
       - mnp.v11b4_0.1.124.tar.gz
       - mnpqc_0.1.0.tar.gz
+  meth_qc:
+    description: "Generate methylation QC from idat files."
+    include:
+      - meth_qc.R
+      - meth_qc.xml
+      - mnp.RData
+      - mnp.v11b4_0.1.124.tar.gz
+      - mnpqc_0.1.0.tar.gz
