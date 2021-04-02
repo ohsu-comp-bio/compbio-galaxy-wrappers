@@ -1,0 +1,15 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/methylation"
+homepage_url: "https://www.molecularneuropathology.org/mnp"
+categories:
+  - "KDL Tools"
+repositories:
+  methylation:
+    description: "Generate methylation reports from idat files."
+    include:
+      - methylation.xml
+      - report_2.R
+      - report.R
+      - mnp.RData
+      - mnp.v11b4_0.1.124.tar.gz
+      - mnpqc_0.1.0.tar.gz
