@@ -11,7 +11,7 @@ import json
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
 
-VERSION = '0.6.6'
+VERSION = '0.6.7'
 
 
 def supply_args():
@@ -367,6 +367,7 @@ class MetricPrep(SampleMetrics):
                 'gc_pct_r1': self.raw_mets.gc_pct_1,
                 'gc_pct_r2': self.raw_mets.gc_pct_2,
                 'gender_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='gender_check'),
+                'homozygosity_flag': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='homozygosity_flag'),
                 'parentage_binom': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_binom'),
                 'parentage_disc': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_disc'),
                 'parentage_confirmed': self._add_json_mets(lookin=self.raw_mets.json_mets,
@@ -475,9 +476,9 @@ class MetricPrep(SampleMetrics):
         """
         return {'QIAseq_V3_RNA': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
                 'TruSightOne': ['gc_pct_r1', 'gc_pct_r2', 'gender_check'],
-                'TruSightOneV2_5': ['gc_pct_r1', 'gc_pct_r2', 'gender_check'],
+                'TruSightOneV2_5': ['gc_pct_r1', 'gc_pct_r2', 'gender_check', 'homozygosity_flag'],
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
-                                  'gc_pct_r1', 'gc_pct_r2', 'gender_check'],
+                                  'gc_pct_r1', 'gc_pct_r2', 'gender_check', 'homozygosity_flag'],
                 'QIAseq_V3_HEME2': [],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',

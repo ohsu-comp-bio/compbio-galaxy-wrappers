@@ -1,0 +1,17 @@
+name: "sample_metrics"
+owner: letaw
+remote_repository_url: https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/sample_metrics
+categories:
+  - "CompBio Galaxy Wrappers"
+description: Metrics calculated at the sample level, for use in CGD and for additional QC.
+repositories:
+  sample_metrics:
+    include:
+      - sample_metrics.xml
+      - sample_metrics.py
+      - inputs.py
+      - __init__.py
+  sample_metrics_rna:
+    include:
+      - sample_metrics_rna.xml
+      - sample_metrics_rna.py
