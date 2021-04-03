@@ -45,11 +45,14 @@
     #if $gatk_coll_rnaseq_mets
         --gatk_coll_rnaseq_mets '${gatk_coll_rnaseq_mets}'
     #end if
-    #for $input in $json_in:
-        #if $input:
-            --json_in "${input}"
-        #end if
-    #end for
+    #if $json_in:
+        --json_in
+        #for $input in $json_in:
+            #if $input:
+                "${input}"
+            #end if
+        #end for
+    #end if
     #if $workflow:
         --workflow '${workflow}'
     #end if
