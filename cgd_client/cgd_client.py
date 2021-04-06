@@ -6,12 +6,12 @@
 # CODED BY: John Letaw
 
 # Not providing this code until we have finalized SNP profile reqs for lab.
-# from snp_profile import SnpProfile, CompareProfiles
+from snp_profile import SnpProfile
 import argparse
 import json
 import logging
 import os
-import socket
+import requests
 import sys
 import shutil
 
@@ -47,7 +47,6 @@ def supply_args():
     parser.add_argument("--cgd_client", help="Location of the cgd_client.")
     parser.add_argument("--cgd_config", help="Location of the cgd_client config file.")
     parser.add_argument("--include_chr", action="store_true", help="Include the chr prefix in reported variant output.")
-    parser.add_argument("--tissue", help="Which tissue is the client receiving data for. Deprecated.")
     parser.add_argument("--servicebase",
                         help="The service host name and port + service base. e.g. kdlwebprod02:8080/cgd")
 
@@ -115,7 +114,7 @@ def run_cmd(cmd):
     return stdout
 
 
-def build_cmd(args, recvd_prof=False):
+def build_cmd(args):
     """
     Build the command that will send data to the CGD.
     """
@@ -145,13 +144,12 @@ def build_cmd(args, recvd_prof=False):
         cmd.extend(["-f", newfile])
     elif (args.endpoint == "annotationcomplete" or args.endpoint == "completeRun"
           or args.endpoint == "completeSampleRun" or args.endpoint == "annotate" or args.endpoint == "annotateRun"
-          or args.endpoint == "annotateSampleRun" or args.endpoint == "reportedvariants"
-          or (args.endpoint == "snpProfile" and not recvd_prof)):
+          or args.endpoint == "annotateSampleRun" or args.endpoint == "reportedvariants"):
         # The cmd for this endpoint is already set, don't do anything.
         pass
     elif args.endpoint == "updatesamplerun" or args.endpoint == "metrics":
         cmd.extend(["-j", args.pipeline_out])
-    elif args.endpoint == "snpProfile" and recvd_prof:
+    elif args.endpoint == "snpProfile":
         cmd.extend(["-j", args.json_out])
     elif args.endpoint == "none":
         cmd = [args.java8_path, "-jar", args.cgd_client, "-f", args.pipeline_out, "-u", args.cgd_url]
@@ -167,10 +165,6 @@ def build_cmd(args, recvd_prof=False):
     if args.qcversion:
         cmd.append("-v")
         cmd.append(args.qcversion)
-
-    # cmd.append("-d")
-
-    logging.info("The client is receiving data for a " + args.tissue + " sample.")
 
     return cmd, newfile
 
@@ -222,30 +216,16 @@ def prepare_reported(outfile, regions, stdout, inc_chr=False):
     regions.close()
 
 
-def service_name_frmt(url):
+def check_conn(url, timeout=3):
     """
-    Reformat the service name so that we can check whether the connection is open.
-    https://kdlwebuser02.ohsu.edu/cgd_next should be
-    kdlwebuser02.ohsu.edu
-    :return:
-    """
-    if url.startswith('http'):
-        return url.split('/')[2].split(':')[0]
-    else:
-        return url.split('/')[0].split(':')[0]
-
-
-def check_conn(host, port=22, timeout=3):
-    """
-    Before sending the command to import SampleSheet, check to see if connection is open.
+    Before trying to hit an endpoint, check to see if connection is open.
     :return:
     """
     try:
-        socket.setdefaulttimeout(timeout)
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        request = requests.get(url, timeout=timeout)
         return True
-    except socket.error as ex:
-        raise ConnectionError(ex)
+    except (requests.ConnectionError, requests.Timeout) as exception:
+        raise ConnectionError(exception)
 
 
 def main():
@@ -258,12 +238,18 @@ def main():
     outfile.setLevel(logging.DEBUG)
     logger.addHandler(outfile)
     # logging.basicConfig(filename=args.stdout_log, level=logging.DEBUG)
+
+    if args.endpoint == 'snpProfile':
+        json_to_send = SnpProfile(args.pipeline_out).geno_items
+        with open(args.json_out, 'w') as to_cgd:
+            json.dump(json_to_send, to_cgd)
+
     # Build the command.
-    cmd, newfile = build_cmd(args, False)
+    cmd, newfile = build_cmd(args)
     # Run the command and write command to log.
     logger.info("Running the following command:")
     logger.info('\t'.join(cmd))
-    if check_conn(service_name_frmt(args.servicebase)):
+    if check_conn(args.servicebase):
         stdout = run_cmd(cmd)
 
     # Write CGD return json to log.
@@ -275,37 +261,6 @@ def main():
         regions = open(args.report_bed, 'w')
         write_vcf_header(vcf)
         prepare_reported(vcf, regions, stdout, args.include_chr)
-
-        # Get the current profile ready.
-        # We run one command here, then another down below.
-
-    if args.endpoint == 'snpProfile' and stdout:
-        # Command has been run to retrieve the profile.  Now, we need to figure out if the overlap of the
-        # two profiles match.
-        # If the match, no need to run anything else.
-        # If they don't match, error.
-        # If they match, but there are loci that aren't contained within the CGD profile, send the updated loci to CGD.
-        # If there is no profile in the CGD, send the created profile.
-        # stdout = {"message": "ok", "items": [{"chromosome": "1", "position": 2488153, "genotype": -1},
-        #                                      {"chromosome": "1", "position": 16256007, "genotype": 1},
-        #                                      {"chromosome": "1", "position": 36937059, "genotype": 2},
-        #                                      {"chromosome": "1", "position": 65321388, "genotype": 2},
-        #                                      {"chromosome": "9", "position": 139418260, "genotype": 2}]}
-        # TODO: Deal with (Exception: error_patient_not_found)
-        # This is on hold until the lab decides whether they want to use it.  We will be implementing a version of the
-        # profiling tool for HOP, which will compare all samples against each other and produce a table.
-        pass
-
-        # json_to_send = SnpProfile(args.pipeline_out).geno_items
-        # cgd_json = json.loads(stdout)['items']
-        # compare_snps = CompareProfiles(cgd_json, json_to_send)
-        # with open(args.json_out, 'w') as to_cgd:
-        #     json.dump(compare_snps.for_cgd, to_cgd)
-        # cmd, newfile = build_cmd(args, True)
-        # stdout = run_cmd(cmd)
-        # out_metric = {'snp_profile_pvalue': compare_snps.pvalue,
-        # 'snp_profile_total': compare_snps.total, 'snp_profile_mismatch': compare_snps.mismatch}
-        # json.dump(out_metric, outfile)
 
     outfile.close()
 
