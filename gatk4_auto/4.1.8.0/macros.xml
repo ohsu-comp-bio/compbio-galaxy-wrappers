@@ -182,7 +182,7 @@
                 <option value="ival_text" selected="false">Interval Text Input</option>
             </param>
             <when value="ival_file">
-                <param name="intervals" argument="--intervals" type="data" optional="true" format="bed,vcf,gatk_interval,picard_interval_list" label="Intervals File" help="One or more genomic intervals over which to operate"/>
+                <param name="intervals" argument="--intervals" type="data" optional="true" format="bed,vcf,vcf_bgzip,gatk_interval,picard_interval_list" label="Intervals File" help="One or more genomic intervals over which to operate"/>
                 <param name="interval_padding" argument="--interval-padding" type="integer" optional="true" value="0" label="Interval Padding" help="Amount of padding (in bp) to add to each interval you are including."/>
             </when>
             <when value="ival_text">
