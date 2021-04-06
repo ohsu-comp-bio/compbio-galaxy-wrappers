@@ -1,21 +1,7 @@
 from scipy.stats import binom_test
-import argparse
 import vcfpy
 
-VERSION = '0.2.1'
-
-
-def supply_args():
-    """
-    Populate args.
-    https://docs.python.org/2.7/library/argparse.html
-    """
-    parser = argparse.ArgumentParser(description='')
-    parser.add_argument('input1', help='First VCF input.')
-    parser.add_argument('input2', help='Second VCF input.')
-    parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
-    args = parser.parse_args()
-    return args
+VERSION = '0.2.2'
 
 
 class SnpProfile(object):
@@ -50,11 +36,12 @@ class SnpProfile(object):
             pos = int(record.POS)
             if samp_cnt == 1:
                 geno = self._get_geno([call.data.get('GT') for call in record.calls][0])
-                ref = [call.data.get('AD') for call in record.calls][0][0]
-                alt = [call.data.get('AD') for call in record.calls][0][1]
-                ab = self._calc_ab(ref, alt, geno)
-                self.ab_dict[(chrom, pos)] = ab
-                geno = self._assess_ab(ab, geno)
+                if geno != -1:
+                    ref = [call.data.get('AD') for call in record.calls][0][0]
+                    alt = [call.data.get('AD') for call in record.calls][0][1]
+                    ab = self._calc_ab(ref, alt, geno)
+                    self.ab_dict[(chrom, pos)] = ab
+                    geno = self._assess_ab(ab, geno)
             else:
                 raise Exception("The input VCF should only have one sample column, this one has " +
                                 str(len(record.samples)))

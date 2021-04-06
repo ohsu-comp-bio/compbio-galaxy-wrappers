@@ -56,13 +56,6 @@ def supply_args():
     return args
 
 
-def eprint(*args, **kwargs):
-    """
-    http://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
-    """
-    print(*args, file=sys.stderr, **kwargs)
-
-
 def rename_fastqc_output(runid, barcodeid, endpoint, ext):
     """
     CGD needs the filename to be restructured.

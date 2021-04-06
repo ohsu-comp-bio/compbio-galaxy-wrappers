@@ -6,11 +6,22 @@
         <requirement type="package" version="1.6.0">scipy</requirement>
         <requirement type="package" version="0.13.3">vcfpy</requirement>
         <requirement type="package" version="2.25.1">requests</requirement>
+        <requirement type="package" version="0.2.6">tabix</requirement>
     </requirements>
 
     <version_command>python '$__tool_directory__/cgd_client.py' --version</version_command>
 
     <command detect_errors="exit_code"><![CDATA[
+        #if $endpoint_choice.endpoint=="snpProfile"
+            #if $endpoint_choice.pipeline_output
+                #set datatype = $endpoint_choice.pipeline_output.datatype
+                #if $endpoint_choice.pipeline_output.is_of_type("vcf_bgzip")
+                    ln -s $endpoint_choice.pipeline_output profile.vcf.gz &&
+                    tabix profile.vcf.gz &&
+                #end if
+            #end if
+        #end if
+
         python '$__tool_directory__/cgd_client.py'
         --endpoint '$endpoint_choice.endpoint'
         --cgd_client '$cgd_client'
@@ -175,7 +186,14 @@
         #end if
 
         #if $endpoint_choice.endpoint=="snpProfile"
-            --pipeline_out $endpoint_choice.pipeline_output
+            #if $endpoint_choice.pipeline_output
+                #set datatype = $endpoint_choice.pipeline_output.datatype
+                #if $endpoint_choice.pipeline_output.is_of_type("vcf_bgzip")
+                    --pipeline_out profile.vcf.gz
+                #else
+                    --pipeline_out $endpoint_choice.pipeline_output
+                #end if
+            #end if
             --runid $endpoint_choice.runid
             --barcodeid $endpoint_choice.barcodeid
         #end if
@@ -348,7 +366,7 @@
             </when>
 
             <when value="snpProfile">
-                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
+                <param name="pipeline_output" type="data" format="vcf,vcf_bgzip" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
             </when>
