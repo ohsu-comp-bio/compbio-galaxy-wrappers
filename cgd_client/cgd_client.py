@@ -102,8 +102,6 @@ def run_cmd(cmd):
     elif 'message' in json.loads(stdout):
         if json.loads(stdout)['message'] == 'error_patient_not_found':
             return None
-        elif json.loads(stdout)['message'] != 'ok':
-            raise Exception(json.loads(stdout)['message'])
     return stdout
 
 
