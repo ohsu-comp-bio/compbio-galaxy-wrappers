@@ -1,0 +1,31 @@
+<tool id="vcf_combine_multi" name="Uniquify multiple VCFs" version="0.1.0" >
+    <description>Combine VCFs produced by various tools and keep only unique variants.</description>
+  <version_command>$__tool_directory__/vcf_combine_multi.py --version</version_command>
+
+  <command interpreter="python">
+    vcf_combine_multi.py
+    #for $i, input in enumerate( $input_vcfs ):
+    "${input.input_vcf}"
+    #end for
+    "${output_vcf}"
+  </command>
+
+  <inputs>
+    <repeat name="input_vcfs" title="Input VCF File(s)" help="Input VCF files to combine.">
+      <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
+    </repeat>
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" />
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+    Combine VCFs produced by various tools and keep only unique variants.
+  </help>
+
+  <citations></citations>
+
+</tool>
