@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# DESCRIPTION: vcf_combine_multi.py [<input1_vcf>, <input2_vcf>] <output_vcf>
+# DESCRIPTION: vcf_combine_multi.py --input_vcfs "file1.vcf" "file2.vcf" "fileN.vcf" --output_vcf "output.vcf"
 # BY: O.K
 
 """
@@ -19,7 +19,7 @@ def supply_args():
     Populate args.
     https://docs.python.org/2.7/library/argparse.html
     """
-    parser = argparse.ArgumentParser(description="")
+    parser = argparse.ArgumentParser(description="vcf_combine_multi.py --input_vcfs 'file1.vcf' 'file2.vcf' 'fileN.vcf' --output_vcf 'output.vcf'")
     parser.add_argument('-i', '--input_vcfs', nargs="+", help="vcf files from several tools")
     parser.add_argument('-o', '--output_vcf', help="Output VCF.")
     parser.add_argument('-v', '--version', action='version', version="%(prog)s " + VERSION)
