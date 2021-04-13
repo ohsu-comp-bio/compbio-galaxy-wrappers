@@ -51,7 +51,7 @@ def main():
         var = var.drop_duplicates()
         var = var.astype({'QUAL': object})
         var[['QUAL', 'ID']] = '.'
-        var.loc[var['FILTER'] != '.', 'FILTER'] = header_info[1] + ':' + var['FILTER']
+        var.loc[var['FILTER'] != '.', 'FILTER'] = header_info[1] + '=' + var['FILTER']
         var.loc[var['FILTER'] == '.', 'FILTER'] = header_info[1]
         vars.append(var)
 
