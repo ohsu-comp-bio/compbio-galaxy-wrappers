@@ -20,9 +20,9 @@ def supply_args():
     https://docs.python.org/2.7/library/argparse.html
     """
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument('input_vcfs', type=argparse.FileType('r'), nargs="+", help="vcf files from several tools")
-    parser.add_argument('output_vcf', help="Output VCF.")
-    parser.add_argument('--version', action='version', version="%(prog)s " + VERSION)
+    parser.add_argument('-i', '--input_vcfs', nargs="+", help="vcf files from several tools")
+    parser.add_argument('-o', '--output_vcf', help="Output VCF.")
+    parser.add_argument('-v', '--version', action='version', version="%(prog)s " + VERSION)
     args = parser.parse_args()
     return args
 
@@ -40,6 +40,7 @@ def get_header(vcffile):
 def main():
 
     args = supply_args()
+
     vcfs = args.input_vcfs
 
     vars = []
@@ -62,6 +63,7 @@ def main():
         merged[col] = merged[join_cols].apply(lambda x: '|'.join(x.dropna()), axis=1)
 
     merged = merged[var.columns]
+    merged = merged.sort_values(['#CHROM', 'POS'], ascending=(True, True))
 
     with open(args.output_vcf, 'w') as outfile, open(args.input_vcfs[0], 'r') as infile:
         for line in infile:
