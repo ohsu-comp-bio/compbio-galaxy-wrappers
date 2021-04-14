@@ -84,8 +84,7 @@
   <command><![CDATA[
     #import datetime
     #set $date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    #set $outfile = '${run_id}' + '_' + '${date}' + '_samplesheet.txt'
-    printf "%s\n%s\n%s\t%s_r1.fastq.gz\n%s\t%s_r2.fastq.gz\n" "${run_id}" "${date}" "${sample_id}" "${sample_id}" "${sample_id}" "${sample_id}" > "${outfile}"
+    printf "%s\n%s\n%s\t%s_r1.fastq.gz\n%s\t%s_r2.fastq.gz\n" "${run_id}" "${date}" "${sample_id}" "${sample_id}" "${sample_id}" "${sample_id}" > "samplesheet.txt" &&
 
     ln -s \${NUPROBE} . &&
     ln -s ${input_fq} ${sample_id}_r1.fastq.gz &&
