@@ -1,0 +1,10 @@
+name: "nuprobe"
+owner: letaw
+remote_repository_url: https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/nuprobe
+categories:
+  - "CompBio Galaxy Wrappers"
+description: VarMap Pan-Cancer NGS Panel
+repositories:
+  nuprobe:
+    include:
+      - nuprobe.xml
