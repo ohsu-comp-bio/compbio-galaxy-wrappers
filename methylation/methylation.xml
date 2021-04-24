@@ -2,7 +2,7 @@
 <tool id='methylation' name="Methylation" version='1.1.0'>
     <description>Generates a methylation report from idat files based on the MNP R-script</description>
     <requirements>
-        <requirement type="package" version="3.6.2">r-base</requirement>
+        <requirement type="package" version="3.6.3">r-base</requirement>
         <requirement type="package" version="1.12">r-rmarkdown</requirement>
         <requirement type="package" version="2.9.1.1">pandoc</requirement>
         <requirement type="package" version="4.6_14">r-randomforest</requirement>
