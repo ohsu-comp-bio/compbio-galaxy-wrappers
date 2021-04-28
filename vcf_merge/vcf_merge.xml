@@ -1,0 +1,42 @@
+<tool id="vcf_merge" name="Merge multiple VCFs" version="0.1.0" >
+    <description>Merge VCFs produced by various variant callers.</description>
+    <requirements>
+      <requirement type="package" version="1.2.3">pandas</requirement>
+      <requirement type="package" version="">vcfpy</requirement>
+      <requirement type="package" version="">operator</requirement>
+      <requirement type="package" version="">natsort</requirement>
+    </requirements>
+  <version_command>$__tool_directory__/vcf_combine_multi.py --version</version_command>
+
+  <command interpreter="python">
+    vcf_combine_multi.py
+    #for $i, input in enumerate( $input_vcfs ):
+    "${input.input_vcf}"
+    #for $c, caller in enumerate( $caller_labels ):
+    "${caller.caller_label}"
+    #end for
+    "${output_vcf}"
+  </command>
+
+  <inputs>
+    <repeat name="input_vcfs" title="Input VCF File(s)" help="Input VCF files to merge.">
+      <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
+    </repeat>
+    <repeat name="caller_labels" title="Labels for variant caller" help="Labels for variant caller of each vcf.">
+      <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
+    </repeat>
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" />
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+    Merge VCFs produced by various variant callers.
+  </help>
+
+  <citations></citations>
+
+</tool>
