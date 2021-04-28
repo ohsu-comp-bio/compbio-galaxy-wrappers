@@ -2,28 +2,29 @@
     <description>Merge VCFs produced by various variant callers.</description>
     <requirements>
       <requirement type="package" version="1.2.3">pandas</requirement>
-      <requirement type="package" version="">vcfpy</requirement>
-      <requirement type="package" version="">operator</requirement>
-      <requirement type="package" version="">natsort</requirement>
+      <requirement type="package" version="0.13.3">vcfpy</requirement>
+      <requirement type="package" version="7.1.1">natsort</requirement>
     </requirements>
-  <version_command>$__tool_directory__/vcf_combine_multi.py --version</version_command>
+  <version_command>$__tool_directory__/vcf_merge.py --version</version_command>
 
   <command interpreter="python">
-    vcf_combine_multi.py
-    #for $i, input in enumerate( $input_vcfs ):
-    "${input.input_vcf}"
-    #for $c, caller in enumerate( $caller_labels ):
-    "${caller.caller_label}"
+    vcf_merge.py
+    --input_vcfs
+    #for $i, input in enumerate( $inputs ):
+      "${input.input_vcf}"
     #end for
+    --caller_labels
+    #for $i, input in enumerate( $inputs ):
+      "${input.caller_label}"
+    #end for
+    --output_vcf
     "${output_vcf}"
   </command>
 
   <inputs>
-    <repeat name="input_vcfs" title="Input VCF File(s)" help="Input VCF files to merge.">
+    <repeat name="inputs" title="Input VCF file and labels" help="Input VCF files and their labels.">
       <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
-    </repeat>
-    <repeat name="caller_labels" title="Labels for variant caller" help="Labels for variant caller of each vcf.">
-      <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
+      <param name="caller_label" type="text" label="Caller label" />
     </repeat>
   </inputs>
 
