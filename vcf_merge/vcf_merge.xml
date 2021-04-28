@@ -7,8 +7,8 @@
     </requirements>
   <version_command>$__tool_directory__/vcf_merge.py --version</version_command>
 
-  <command interpreter="python">
-    vcf_merge.py
+  <command><![CDATA[
+    python $__tool_directory__/vcf_merge.py
     --input_vcfs
     #for $i, input in enumerate( $inputs ):
       "${input.input_vcf}"
@@ -19,7 +19,7 @@
     #end for
     --output_vcf
     "${output_vcf}"
-  </command>
+  ]]></command>
 
   <inputs>
     <repeat name="inputs" title="Input VCF file and labels" help="Input VCF files and their labels.">
