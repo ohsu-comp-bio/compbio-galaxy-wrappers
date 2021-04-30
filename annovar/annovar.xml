@@ -1,0 +1,269 @@
+<tool id='annovar' name="ANNOVAR" version='20191024.0.0'>
+    <description>Functionally annotates genetic variants</description>
+    <command detect_errors="exit_code"><![CDATA[
+
+    perl 
+
+    #if $mode.mode_type == "table":
+        table_annovar.pl $input $dbloc -buildver $buildver -protocol $mode.protocol -operation $mode.operation
+
+        #if $mode.xref:
+            -xref $mode.xref
+        #end if
+
+        #if $mode.nastring:
+            -nastring $mode.nastring
+        #end if
+
+        #if $mode.csvout:
+            -csvout
+        #end if
+
+        #if $mode.polish:
+            -polish
+        #end if
+
+        #if $input.is_of_type("vcf"):
+            -vcfinput
+        #end if
+
+        #if $mode.remove:
+            -remove
+        #end if
+
+        -out outfile &&
+
+        #if $input.is_of_type("vcf):
+        
+            cp outfile.${buildver}_multianno.vcf outfile.vcf &&
+        
+        #end if
+
+        cp outfile.${buildver}_multianno.txt outfile.txt
+
+    #end if
+
+    #if mode.mode_type == "variation":
+        
+        annotate_variation.pl -$mode.annotation_type -dbtype $mode.dbtype -buildver $buildver -out outfile
+
+        #if $mode.splicing_threshold:
+            --splicing_threshold $mode.splicing_threshold
+        #end if
+
+        #if $mode.neargene:
+            --neargene $mode.neargene
+        #end if
+
+        #if $mode.separate:
+            --separate
+        #end if
+
+        #if $mode.precedence:
+            -precedence $mode.precedence
+        #end if
+
+        #if $mode.transcript_function:
+            --transcript_function
+        #end if
+
+        #if $mode.aamtrixfile:
+            --aamatrixfile $mode.aamatrixfile
+        #end if
+
+        #if $mode.hgvs:
+            -hgvs
+        #end if
+
+        #if $mode.exonsort:
+            -exonsort
+        #end if
+
+        #if $mode.normscore_threshold:
+            -normscore_threshold $mode.normscore_threshold
+        #end if
+
+        #if $mode.colsWanted:
+            -colsWanted $mode.colsWanted
+        #end if
+
+        #if $mode.scorecolumn:
+            -scorecolumn mode.scorecolumn
+        #end if
+
+        #if $mode.minqueryfrac:
+            -minqueryfrac $mode.minqueryfrac
+        #end if
+
+        #if $mode.gff3dbfile:
+            -gff3dbfile $mode.gff3dbfile
+        #end if
+
+        #if $mode.gff3attr:
+            -gff3attr
+        #end if
+
+        #if $mode.bedfile:
+            -bedfile $mode.bedfile
+        #end if
+
+        #if $mode.maf:
+            -maf $mode.maf
+        #end if
+
+        #if $mode.reverse:
+            -reverse
+        #end if
+
+        #if $mode.score_threshold:
+            -score_threshold $mode.score_threshold
+        #end if
+
+        #if $mode.maf_threshold:
+            -maf_threshold $mode.maf_threshold
+        #end if
+
+        #if $mode.vcfdbfile:
+            -vcfdbfile $mode.vcfdbfile
+        #end if
+
+        #if $mode.infoasscore:
+            -infoasscore
+        #end if
+
+        #if $mode.otherinfo:
+            -otherinfo
+        #end if
+
+        #if $mode.genericdbfile:
+            -genericdbfile $mode.genericdbfile
+        #end if
+
+        $input
+
+        $db_loc &&
+
+        #if $mode.annotation_type == "regionanno":
+        
+            cp outfile.${buildver}_${mode.dbtype} outfile.txt
+
+        #end if
+
+        #if $mode.annotation_type == "filter":
+
+            cp outfile.${buildver}_${mode.dbtype}_filtered outfile_filtered.txt &&
+
+            cp outfile.${buildver}_${mode.dbtype}_dropped outfile_dropped.txt
+
+        #end if
+
+    #end if
+
+
+
+]]>
+    </command>
+    <inputs>
+        <param name="annovar_loc" type="text" label="ANNOVAR Program Location"/>
+        <param name="input" type="data" format="vcf, txt" label="Variant File" help="Input file with variants, either in vcf format or in ANNOVAR input file format."/>
+        <param name="dbloc" type="text" label="Database Folder Location"/>
+        <param name="buildver" type="select" label="Genome Build">
+            <option value="hg19">hg19</option>
+            <option value="hg38">hg38</option>
+            <option value="hg19_MT">hg19 Mitochondrial</option>
+            <option value="hg37_MT">hg37 Mitochondrial</option>
+            <option value="dm3">dm3</option>
+            <option value="mm9">mm9</option>
+        </param>
+        <conditional name="mode">
+            <param name="mode_type" type="select" label="Mode">
+                <option value="table" selected="true">Basic (table_annovar.pl)</option>
+                <option value="variation">Advanced (annotate_variation.pl) - TXT INPUT ONLY</option>
+            </param>
+            <when value="table">
+                <param name="protocol" type="text" label="Protocols" help="Comma seperated list of databases to use. Example: refGene,cytoBand,exac03,avsnp147,dbnsfp30a"/>
+                <param name="operation" type="text" label="Operations" help="Comma separated list of operations to perform on each database in protocol. Options: g (gene-based),gx (gene-based with cross reference),r (region-based),f (filter-based) Example: g,r,f,f,f"/>
+                <param name="xref" type="data" format="txt" label="Gene Cross Reference File" optional="true"/>
+                <param name="nastring" type="text" label="NA String" help="String to represent missing data."/>
+                <param name="csvout" type="boolean" checked="false" label="Output as CSV?"/>
+                <param name="polish" type="boolean" checked="true" label="Polish?"/>
+                <param name="remove" type="boolean" checked="true" label="Remove?" help="Remove temporary files when finished."/>
+            </when>
+            <when value="variation">
+                <param name="annotation_type" type="select" label="Annotation Type">
+                    <option value="geneanno">Gene-based Annotation</option>
+                    <option value="regionanno">Region-based Annotation</option>
+                    <option value="filter">Filter-based Annotation</option>
+                </param>
+                <param name="dbtype" type="text" label="Database Type"/>
+                <param name="splicing_threshold" type="integer" label="Splicing threshold" help="Defaults to 2bp" optional="true"/>
+                <param name="neargene" type="integer" label="Near gene threshold" optional="true" help="Defaults to 1kb"/>
+                <param name="separate" type="boolean" checked="false" label="Seperate?"/>
+                <param name="precedence" type="text" label="Precedence" optional="true"/>
+                <param name="transcript_function" type="boolean" label="Transcript Function?" checked="false"/>
+                <param name="aamatrixfile" type="data" format="txt" label="Grantham Matrix File" optional="true"/>
+                <param name="hgvs" type="boolean" checked="false" label="HGVS?"/>
+                <param name="exonsort" type="boolean" checked="fasle" label="Exon Sort?"/>
+                <param name="normscore_threshold" type="integer" label="Normscore Threshold" optional="true"/>
+                <param name="colsWanted" type="text" optional="true" label="Columns Wanted"/>
+                <param name="scorecolumn" type="integer" optional="true" label="Score Column"/>
+                <param name="minqueryfrac" type="float" optional="true" label="Minimun Query Fraction"/>
+                <param name="gff3dbfile" type="data" format="gff" label="GFF3 Database File" optional="true"/>
+                <param name="gff3attr" type="boolean" checked="false" label="Include GFF3 attribute?"/>
+                <param name="bedfile" type="data" format="bed" label="bed File" optional="true"/>
+                <param name="maf" type="float" optional="true" label="MAF"/>
+                <param name="reverse" type="boolean" checked="false" label="Reverse?"/>
+                <param name="score_threshold" type="float" optional="true" label="Score Threshold"/>
+                <param name="maf_threshold" type="float" optional="true" label="MAF Threshold"/>
+                <param name="vcfdbfile" type="data" format="vcf" optional="true" label="VCF Database File"/>
+                <param name="infoasscore" type="boolean" checked="false" label="Use INFO as Score"/>
+                <param name="otherinfo" type="boolean" checked="false" label="Other Info"/>
+                <param name="genericdbfile" type="data" format="txt" label="Generic Database File" optional="true"/>
+            </when>
+        </conditional>
+    </inputs>
+    <outputs>
+        <data name="table_tsv_out" format="txt" name="${tool.name} on $on_string: txt" from_work_dir="outfile.txt">
+            <filter>mode['mode_type'] == "table" and not mode[csvout]</filter>
+        </data>
+        <data name="table_csv_out" format="csv" name="${tool.name} on $on_string: csv" from_work_dir="outfile.txt">
+            <filter>mode['mode_type'] == "table" and mode[csvout]</filter>
+        </data>
+        <data name="table_vcf_out" format="vcf" name="${tool.name} on $on_string: vcf" from_work_dir="outfile.vcf">
+            <filter>mode['mode_type'] == "table" and input.is_of_type("vcf")</filter>
+        </data>
+        <data name="variation_function" format="txt" name="${tool.name} on $on_string: variant function" from_work_dir="outfile.variant_function">
+            <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "geneanno"</filter>
+        </data>
+        <data name="exon_variation_function" format="txt" name="${tool.name} on $on_string: exonic variant function" from_work_dir="outfile.exonic_variant_function">
+            <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "geneanno"</filter>
+        </data>
+        <data name="region_out" format="txt" name="${tool.name} on $on_string: ${mode.dbtype}" from_work_dir="outfile.txt">
+            <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "regionanno"</filter>
+        </data>
+        <data name="filtered_output" format="txt" name="${tool.name} on $on_string: ${mode.dbtype} filtered" from_work_dir="outfile_filtered.txt">
+            <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "filter"</filter>
+        </data>
+        <data name="dropped" format="txt" name="${tool.name} on $on_string: ${mode.dbtype} dropped" from_work_dir="outfile_dropped.txt">
+            <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "filter"</filter>
+        </data>
+    </outputs>
+    <help>
+    ANNOVAR is an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes (including human genome hg18, hg19, hg38, as well as mouse, worm, fly, yeast and many others). Given a list of variants with chromosome, start position, end position, reference nucleotide and observed nucleotides, ANNOVAR can perform:
+
+        Gene-based annotation: identify whether SNPs or CNVs cause protein coding changes and the amino acids that are affected. Users can flexibly use RefSeq genes, UCSC genes, ENSEMBL genes, GENCODE genes, AceView genes, or many other gene definition systems.
+        
+        Region-based annotation: identify variants in specific genomic regions, for example, conserved regions among 44 species, predicted transcription factor binding sites, segmental duplication regions, GWAS hits, database of genomic variants, DNAse I hypersensitivity sites, ENCODE H3K4Me1/H3K4Me3/H3K27Ac/CTCF sites, ChIP-Seq peaks, RNA-Seq peaks, or many other annotations on genomic intervals.
+        
+        Filter-based annotation: identify variants that are documented in specific databases, for example, whether a variant is reported in dbSNP, what is the allele frequency in the 1000 Genome Project, NHLBI-ESP 6500 exomes or Exome Aggregation Consortium (ExAC) or Genome Aggregation Database (gnomAD), calculate the SIFT/PolyPhen/LRT/MutationTaster/MutationAssessor/FATHMM/MetaSVM/MetaLR scores, find intergenic variants with GERP++ score less than 2 or CADD over 10, or many other annotations on specific mutations.
+        
+    Acknowledgements
+
+        The ANNOVAR software is originally designed by Dr. Kai Wang. Other developers and significant contributors include Dr. German Gaston Leparc, Paul Leo and Jamie Teer. The index-based filter operation were designed by Allen Day, Marine Huang and Stephen Weinberg at Ion Flux. Mehdi Pirooznia from Johnas Hopkins provided 1000g2012apr population-specific allele frequency files, Magali Olivier from International Agency for Research on Cancer and the COSMIC teamprovided COSMIC61 database and instructions on generating COSMIC63 database, Jun Ding from NIH/National Institute of Aging compiled human mitochondria gene annotation file on 1000 Genomes Project reference (GRCh37), Konrad Herbst from German Cancer Research Center compiled human mitochondria gene annotation file on UCSC hg19 coordiante (AF347015.1 or NC001807), Nancy F. Hansen from NIH/NHGRI provided patches to handle gzipped files. Numerous other ANNOVAR users have provided feedbacks, bug reports, code snipets and suggestions to improve the functionality of ANNOVAR and I am indebted to them for their invaluable help.
+
+
+    </help>
+    <citations>
+        <citation type="doi">10.1093/nar/gkq603</citation>
+    </citations>
+</tool>
