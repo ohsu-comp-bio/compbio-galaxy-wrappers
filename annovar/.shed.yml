@@ -1,6 +1,6 @@
 owner: "campbena"
-remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/homozygosity"
-homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/homozygosity"
+remote_repository_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/blob/annovar/annovar"
+homepage_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/blob/annovar/annovar/"
 categories:
   - "KDL Tools"
 repositories:
