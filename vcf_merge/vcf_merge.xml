@@ -17,8 +17,7 @@
     #for $i, input in enumerate( $inputs ):
       "${input.caller_label}"
     #end for
-    --output_vcf
-    "${output_vcf}"
+    --output_vcf "${output_vcf}"
   ]]></command>
 
   <inputs>

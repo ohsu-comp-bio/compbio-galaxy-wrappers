@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
-# USAGE: vcf_merge.py --input_vcfs file1.vcf file2.vcf fileN.vcf --caller_labels label1 label2 labelN --output_vcf "output.vcf"
-# BY: O.K
-
 """
 Merge VCFs produced by various variant callers.
+
+Example usage: vcf_merge.py  --input_vcfs file1 file2 --caller_labels m2 fb --output_vcf output.vcf
+
+Details: Given multiple vcfs produced by various variant callers, this will merge all vcfs into one.
+For variants called by multiple callers, it will output a single record and the info column and sample column
+will contain those of all callers that made the call.
 """
 
 import argparse
@@ -21,8 +24,9 @@ def supply_args():
     https://docs.python.org/2.7/library/argparse.html
     """
     parser = argparse.ArgumentParser(
-        description="vcf_combine_multi.py --input_vcfs 'file1.vcf' 'file2.vcf' 'fileN.vcf' --caller_labels label1 label2 labelN --output_vcf 'output.vcf'")
-    parser.add_argument('--input_vcfs', nargs="+", help="vcf files from multiple variant callers")
+        description="vcf_merge.py --input_vcfs 'file1.vcf' 'file2.vcf' 'fileN.vcf' --caller_labels label1 label2 labelN --output_vcf 'output.vcf'")
+    parser.add_argument('--input_vcfs', nargs="+",
+                        help="vcf files from multiple variant callers")
     parser.add_argument('--caller_labels', nargs="+",
                         help="Labels for the variant callers used to produce the input vcfs.")
     parser.add_argument('--output_vcf', help="Output VCF.")
@@ -49,9 +53,9 @@ class Merger(object):
         self.merge_filter_header()
         self.merge_info_header()
         self.merge_format_header()
-        self.order_records = self.merge_records()
+        self.records = self.merge_records()
         self.output_vcf = output_vcf
-        self.write_merged(self.order_records)
+        self.write_merged(self.records)
 
     def add_file_format(self):
         self.merge_header.add_line(vcfpy.HeaderLine('fileformat', 'VCFv4.2'))
@@ -78,15 +82,22 @@ class Merger(object):
             )
 
     def merge_filter_header(self):
+        exclude = ['PASS']
+        exclude.extend(self.callers)
         for reader, caller in zip(self.readers, self.callers):
             for filter in reader.header.get_lines('FILTER'):
-                if filter not in ['PASS']:
+                if filter.id not in exclude:
                     self.merge_header.add_filter_line(
                         vcfpy.OrderedDict(
                             [('ID', '{}_{}'.format(caller, filter.id)),
                              ('Description', '{} {}'.format(caller, filter.description))]
                         )
                     )
+                else:
+                    self.merge_header.add_filter_line(
+                        vcfpy.OrderedDict([('ID', filter.id), ('Description', filter.description)])
+                    )
+
 
     def merge_info_header(self):
         for reader, caller in zip(self.readers, self.callers):
@@ -113,7 +124,6 @@ class Merger(object):
                 )
 
     def merge_records(self):
-
         records = {}
         for reader, caller in zip(self.readers, self.callers):
             for record in reader:
@@ -161,9 +171,9 @@ class Merger(object):
             reader.close()
         return records
 
-    def write_merged(self, order_records):
+    def write_merged(self, records):
         writer = vcfpy.Writer.from_path(self.output_vcf, header=self.merge_header)
-        for record in natsorted(order_records.values(), key=attrgetter('CHROM', 'POS')):
+        for record in natsorted(records.values(), key=attrgetter('CHROM', 'POS')):
             writer.write_record(record)
 
 
