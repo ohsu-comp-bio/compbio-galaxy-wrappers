@@ -1,0 +1,11 @@
+owner: "onwuzu"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/vcf_select"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  vcf_select:
+    description: "Select fields of interest from a merged VCF."
+    include:
+      - vcf_select.xml
+      - vcf_select.py

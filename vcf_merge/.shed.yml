@@ -4,7 +4,7 @@ type: "unrestricted"
 categories:
   - "CompBio Galaxy Wrappers"
 repositories:
-  vcf_combine_multi:
+  vcf_merge:
     description: "Merge VCFs produced by various variant callers."
     include:
       - vcf_merge.xml
