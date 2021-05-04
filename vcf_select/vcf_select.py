@@ -53,6 +53,7 @@ class VcfSelectFields(object):
         self.sample_fields = sample_fields
         self.caller_priority = caller_priority
         self.write_header = vcfpy.Header(samples=self.reader.header.samples)
+        self.add_file_format()
         self.select_contig_header()
         self.select_filter_header()
         self.select_info_header()
@@ -60,6 +61,9 @@ class VcfSelectFields(object):
         self.records = self.select_record_fields()
         self.output_vcf = output_vcf
         self.write_merged(self.records)
+
+    def add_file_format(self):
+        self.write_header.add_line(vcfpy.HeaderLine('fileformat', 'VCFv4.2'))
 
     def select_contig_header(self):
         for contig in self.reader.header.get_lines('contig'):
@@ -106,8 +110,8 @@ class VcfSelectFields(object):
         for sample_field in self.sample_fields:
             for caller in self.caller_priority:
                 id = '{}_{}'.format(caller, sample_field)
-                if id in self.reader.header.info_ids():
-                    format = self.reader.header.get_info_field_info('{}_{}'.format(caller, sample_field))
+                if id in self.reader.header.format_ids():
+                    format = self.reader.header.get_format_field_info('{}_{}'.format(caller, sample_field))
                     self.write_header.add_format_line(
                         vcfpy.OrderedDict(
                             [('ID', format.id.split('_', 1)[1]),
@@ -119,7 +123,7 @@ class VcfSelectFields(object):
                     break
                 else:
                     print('{} not found for {} in sample column.'.format(sample_field, caller))
-        not_found = list(set(list(self.sample_fields)) - set(self.write_header.info_ids()))
+        not_found = list(set(list(self.sample_fields)) - set(self.write_header.format_ids()))
         if len(not_found) > 0:
             raise Exception(', '.join(not_found) + ' sample field(s) not found in VCF')
 
