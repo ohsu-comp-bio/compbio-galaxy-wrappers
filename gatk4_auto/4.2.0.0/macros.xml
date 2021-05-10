@@ -1,0 +1,1068 @@
+<?xml version="1.0"?>
+<macros>
+    <token name="@VERSION@">4.2.0.0</token>
+    <token name="@WRAPPER_VERSION@">@VERSION@+galaxy</token>
+
+    <xml name="requirements">
+        <requirements>
+            <requirement type="package" version="@VERSION@">gatk4</requirement>
+            <requirement type="package" version="1.9">htslib</requirement>
+            <requirement type="package" version="1.9">samtools</requirement>
+            <requirement type="package" version="3.3.2">r-base</requirement>
+            <requirement type="package" version="1.3.2">r-optparse</requirement>
+            <requirement type="package" version="1.20.0">r-getopt</requirement>
+            <requirement type="package" version="1.10.4">r-data.table</requirement>
+            <requirement type="package" version="2.1">r-gsalib</requirement>
+            <requirement type="package" version="2.2.1">r-ggplot2</requirement>
+            <yield />
+        </requirements>
+    </xml>
+
+    <!--Hacky way to determine GATK version, for display in tool info-->
+    <xml name="version_cmd">
+        <version_command>gatk --version | grep -Eo "v[0-9].*"</version_command>
+    </xml>
+
+    <!--Command token, java options should not be hard coded here.-->
+    <token name="@CMD_BEGIN@">gatk --java-options "-Xmx24g -Xms2g"</token>
+
+    <!--Define sections that parameters could exist within.-->
+    <template name="set_sections">
+        #set global $sections = ['', 'optional.', 'advanced.', 'common.', 'deprecated.']
+    </template>
+
+    <!--Reference genome handling-->
+    <!--One template each for the different reference genome parameter names.-->
+    <!--TODO: Can the reference parameters all be the same?-->
+    <xml name="ref_sel">
+        <conditional name="reference_source">
+            <param name="reference_source_selector" type="select" label="Choose the source for the reference list">
+                <option value="cached">Locally cached</option>
+                <option value="history">History</option>
+                <option value="no_ref" selected="true">Do not pass</option>
+            </param>
+            <when value="cached">
+                <param name="reference_sequence" type="select" label="Reference" help="Reference sequence file." >
+                    <options from_data_table="all_fasta" >
+                        <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file" />
+                    </options>
+                </param>
+            </when>
+            <when value="history">
+                <param name="reference_sequence" type="data" format="fasta" label="Reference" help="Reference sequence file." />
+            </when>
+        </conditional>
+    </xml>
+
+    <template name="ref_opts">
+    #for $sect in $sections
+        #if $varExists($sect + "reference_source.reference_source_selector")
+            #if $getVar($sect + "reference_source.reference_source_selector") != "no_ref"
+                #if $getVar($sect + "reference_source.reference_source_selector") != "history"
+                    --reference $getVar($sect + "reference_source.reference_sequence.fields.path")
+                #else
+                    --reference $getVar($sect + "reference_source.reference_sequence")
+                #end if
+            #end if
+        #end if
+    #end for
+    </template>
+
+    <template name="picard_ref_opts">
+    #for $sect in $sections
+        #if $varExists($sect + "reference_source.reference_source_selector")
+            #if $getVar($sect + "reference_source.reference_source_selector") != "no_ref"
+                #if $getVar($sect + "reference_source.reference_source_selector") != "history"
+                    --REFERENCE_SEQUENCE $getVar($sect + "reference_source.reference_sequence.fields.path")
+                #else
+                    --REFERENCE_SEQUENCE $getVar($sect + "reference_source.reference_sequence")
+                #end if
+            #end if
+        #end if
+    #end for
+    </template>
+
+    <template name="picard_ref_opts_plain">
+    #for $sect in $sections
+        #if $varExists($sect + "reference_source.reference_source_selector")
+            #if $getVar($sect + "reference_source.reference_source_selector") != "no_ref"
+                #if $getVar($sect + "reference_source.reference_source_selector") != "history"
+                    --REFERENCE $getVar($sect + "reference_source.reference_sequence.fields.path")
+                #else
+                    --REFERENCE $getVar($sect + "reference_source.reference_sequence")
+                #end if
+            #end if
+        #end if
+    #end for
+    </template>
+
+    <template name="ref_opts_input">
+    #for $sect in $sections
+        #if $varExists($sect + "reference_source.reference_source_selector")
+            #if $getVar($sect + "reference_source.reference_source_selector") != "no_ref"
+                #if $getVar($sect + "reference_source.reference_source_selector") != "history"
+                    --input $getVar($sect + "reference_source.reference_sequence.fields.path")
+                #else
+                    --input $getVar($sect + "reference_source.reference_sequence")
+                #end if
+            #end if
+        #end if
+    #end for
+    </template>
+
+
+    <!--Interval Macros-->
+    <template name="gatk_ints_chth">
+    #for $sect in $sections
+        #if $varExists($sect + "ival_type.ival_type_sel")
+            #if $getVar($sect + "ival_type.ival_type_sel") == "ival_file"
+                #if $varExists($sect + "ival_type.intervals")
+                    #if $getVar($sect + "ival_type.intervals").is_of_type("gatk_interval")
+                        --intervals intervals.intervals
+                    #end if
+                    #if $getVar($sect + "ival_type.intervals").is_of_type("bed")
+                        --intervals intervals.bed
+                    #end if
+                    #if $getVar($sect + "ival_type.intervals").is_of_type("vcf")
+                        --intervals intervals.vcf
+                    #end if
+                    #if $getVar($sect + "ival_type.intervals").is_of_type("vcf_bgzip")
+                        --intervals intervals.vcf.gz
+                    #end if
+                    #if $getVar($sect + "ival_type.intervals").is_of_type("picard_interval_list")
+                        --intervals intervals.interval_list
+                    #end if
+                #end if
+            #else
+                #if $varExists($sect + "ival_type.intervals")
+                    --intervals $getVar($sect + "ival_type.intervals")
+                #end if
+            #end if
+            #if $varExists($sect + "ival_type.interval_padding")
+                --interval-padding $getVar($sect + "ival_type.interval_padding")
+            #end if
+        #end if
+    #end for
+    </template>
+
+
+    <template name="pre_gatk_ints_chth"><![CDATA[
+    #for $sect in $sections
+        #if $varExists($sect + "ival_type.ival_type_sel")
+            #if $getVar($sect + "ival_type.ival_type_sel") == "ival_file"
+                #if $varExists($sect + "ival_type.intervals")
+                    #if $getVar($sect + "ival_type.intervals").is_of_type("gatk_interval")
+                        ln -s $getVar($sect + "ival_type.intervals") intervals.intervals &&
+                    #end if
+                    #if $getVar($sect + "ival_type.intervals").is_of_type("bed")
+                        ln -s $getVar($sect + "ival_type.intervals") intervals.bed &&
+                    #end if
+                    #if $getVar($sect + "ival_type.intervals").is_of_type("vcf")
+                        ln -s $getVar($sect + "ival_type.intervals") intervals.vcf &&
+			            gatk IndexFeatureFile -I intervals.vcf &&
+                    #end if
+                    #if $getVar($sect + "ival_type.intervals").is_of_type("vcf_bgzip")
+                        ln -s $getVar($sect + "ival_type.intervals") intervals.vcf.gz &&
+			            gatk IndexFeatureFile -I intervals.vcf.gz &&
+                    #end if
+                    #if $getVar($sect + "ival_type.intervals").is_of_type("picard_interval_list")
+                        ln -s $getVar($sect + "ival_type.intervals") intervals.interval_list &&
+			            gatk IndexFeatureFile -I intervals.interval_list &&
+                    #end if
+                 #end if
+            #end if
+        #end if
+    #end for
+    ]]></template>
+
+    <xml name="gatk_ints">
+        <conditional name="ival_type">
+            <param name="ival_type_sel" type="select" label="Choose Genomic Interval Source">
+                <option value="ival_file" selected="true">Interval File</option>
+                <option value="ival_text" selected="false">Interval Text Input</option>
+            </param>
+            <when value="ival_file">
+                <param name="intervals" argument="--intervals" type="data" optional="true" format="bed,vcf,gatk_interval,picard_interval_list" label="Intervals File" help="One or more genomic intervals over which to operate"/>
+                <param name="interval_padding" argument="--interval-padding" type="integer" optional="true" value="0" label="Interval Padding" help="Amount of padding (in bp) to add to each interval you are including."/>
+            </when>
+            <when value="ival_text">
+                <param name="intervals" argument="--intervals" type="text" optional="true" label="Intervals Text Input" help="One or more genomic intervals over which to operate.  Enter in chrom:start-stop format."/>
+                <param name="interval_padding" argument="--interval-padding" type="integer" optional="true" value="0" label="Interval Padding" help="Amount of padding (in bp) to add to each interval you are including."/>
+            </when>
+        </conditional>
+    </xml>
+
+    <!--Exclude Intervals-->
+    <xml name="gatk_excl_ints">
+        <conditional name="excl_ival_type">
+            <param name="excl_ival_type_sel" type="select" label="Choose Genomic Interval Exclusion Source">
+                <option value="excl_ival_file" selected="true">Exclude Interval File</option>
+                <option value="excl_ival_text" selected="false">Exclude Interval Text Input</option>
+            </param>
+            <when value="excl_ival_file">
+                <param name="exclude_intervals" argument="--exclude-intervals" type="data" optional="true" format="bed,vcf,gatk_interval,picard_interval_list" label="Exclude Intervals File" help="One or more genomic intervals to exclude from processing"/>
+                <param name="interval_exclusion_padding" argument="--interval-exclusion-padding" type="integer" optional="true" value="0" label="Interval Exclusion Padding" help="Amount of padding (in bp) to add to each interval you are excluding."/>
+            </when>
+            <when value="excl_ival_text">
+                <param name="exclude_intervals" argument="--exclude-intervals" type="text" optional="true" label="Exclude Intervals Text Input" help="One or more genomic intervals to exclude from processing.  Enter in chrom:start-stop format."/>
+                <param name="interval_exclusion_padding" argument="--interval-exclusion-padding" type="integer" optional="true" value="0" label="Interval Exclusion Padding" help="Amount of padding (in bp) to add to each interval you are excluding."/>
+            </when>
+        </conditional>
+    </xml>
+
+        <template name="gatk_excl_ints_chth">
+    #for $sect in $sections
+        #if $varExists($sect + "excl_ival_type.excl_ival_type_sel")
+            #if $getVar($sect + "excl_ival_type.excl_ival_type_sel") == "ival_file"
+                #if $varExists($sect + "excl_ival_type.exclude_intervals")
+                    #if $getVar($sect + "excl_ival_type.exclude_intervals").is_of_type("gatk_interval")
+                        --exclude-intervals excl_intervals.interval_list
+                    #end if
+                    #if $getVar($sect + "excl_ival_type.exclude_intervals").is_of_type("bed")
+                        --exclude-intervals excl_intervals.bed
+                    #end if
+                    #if $getVar($sect + "excl_ival_type.exclude_intervals").is_of_type("vcf")
+                        --exclude-intervals excl_intervals.vcf
+                    #end if
+                #end if
+            #elif $getVar($sect + "excl_ival_type.excl_ival_type_sel") == "excl_ival_text"
+                #if $varExists($sect + "excl_ival_type.exclude_intervals")
+                    --exclude-intervals $getVar($sect + "excl_ival_type.exclude_intervals")
+                #end if
+            #else
+                #pass
+            #end if
+            #if $varExists($sect + "excl_ival_type.interval_exclusion_padding")
+                --interval-exclusion-padding $getVar($sect + "excl_ival_type.interval_exclusion_padding")
+            #end if
+        #end if
+    #end for
+    </template>
+
+    <template name="pre_gatk_excl_ints_chth"><![CDATA[
+    #for $sect in $sections
+        #if $varExists($sect + "excl_ival_type.excl_ival_type_sel")
+            #if $getVar($sect + "excl_ival_type.excl_ival_type_sel") == "excl_ival_file"
+                #if $varExists($sect + "excl_ival_type.exclude_intervals")
+                    #if $getVar($sect + "excl_ival_type.exclude_intervals").is_of_type("gatk_interval")
+                        ln -s $getVar($sect + "excl_ival_type.exclude_intervals") excl_intervals.interval_list &&
+                    #end if
+                    #if $getVar($sect + "excl_ival_type.exclude_intervals").is_of_type("bed")
+                        ln -s $getVar($sect + "excl_ival_type.exclude_intervals") excl_intervals.bed &&
+                    #end if
+                    #if $getVar($sect + "excl_ival_type.exclude_intervals").is_of_type("vcf")
+                        ln -s $getVar($sect + "excl_ival_type.exclude_intervals") excl_intervals.vcf &&
+                    #end if
+                 #end if
+            #end if
+        #end if
+    #end for
+    ]]></template>
+
+<!--    For GATK resource files-->
+    <xml name="gatk_resource">
+        <repeat name="resource_rpt" title="Resource" help="A list of sites for which to apply a prior probability of being correct but which aren\u0027t used by the algorithm (training and truth sets are required to run). Any set of VCF files to use as lists of training, truth, or known sites.\n Training - The program builds the Gaussian mixture model using input variants that overlap with these training sites.\n Truth - The program uses these truth sites to determine where to set the cutoff in VQSLOD sensitivity.\n Known - The program only uses known sites for reporting purposes (to indicate whether variants are already known or\n novel). They are not used in any calculations by the algorithm itself.\n Bad - A database of known bad variants can be used to supplement the set of worst ranked variants (compared to the\n Gaussian mixture model) that the program selects from the data to model bad variants.">
+            <param name="label" type="text" label="Label" help="The type of resource you are providing, such as hapmap, omni, 1000G, dbsnp, etc."/>
+            <param name="known" type="boolean" label="Known?" checked="false" help="The program only uses known sites for reporting purposes (to indicate whether variants are already known or\n novel)."/>
+            <param name="training" type="boolean" label="Training?" checked="false" help="The program builds the Gaussian mixture model using input variants that overlap with these training sites."/>
+            <param name="truth" type="boolean" label="Truth?" checked="false" help="The program uses these truth sites to determine where to set the cutoff in VQSLOD sensitivity."/>
+            <param name="prior" type="float" label="Prior" value="2.0" help="Assigned prior."/>
+            <param name="filename" type="data" format="vcf,vcf_bgzip" label="Resource File" help="File to be used as resource selection."/>
+        </repeat>
+    </xml>
+
+    <template name="gatk_resource_chth">
+    #for $num, $txt in enumerate($resource_rpt)
+        #if $txt.filename.is_of_type("vcf")
+            #set $full_resource = ','.join([str($txt.label), "known=" + str($txt.known), "training=" + str($txt.training), "truth=" + str($txt.truth), "prior=" + str($txt.prior) + " resource" + str($num) + ".vcf"])
+        #end if
+        #if $txt.filename.is_of_type("vcf_bgzip")
+            #set $full_resource = ','.join([str($txt.label), "known=" + str($txt.known), "training=" + str($txt.training), "truth=" + str($txt.truth), "prior=" + str($txt.prior) + " resource" + str($num) + ".vcf.gz"])
+        #end if
+        --resource:$full_resource
+    #end for
+    </template>
+
+    <template name="gatk_resource_pre_chth"><![CDATA[
+    #for $num, $txt in enumerate($resource_rpt)
+        #if $txt.filename.is_of_type("vcf")
+            ln -s $txt.filename resource${num}.vcf &&
+            gatk IndexFeatureFile -I resource${num}.vcf &&
+        #end if
+        #if $txt.filename.is_of_type("vcf_bgzip")
+            ln -s $txt.filename resource${num}.vcf.gz &&
+            gatk IndexFeatureFile -I resource${num}.vcf.gz &&
+        #end if
+    #end for
+    ]]></template>
+
+    <!--Sequence dictionary selection options for Picard type tools-->
+    <template name="picard_seqdict_opts">
+    #for $sect in $sections
+        #if $varExists($sect + "seqdict_source.seqdict_source_selector")
+            #if $getVar($sect + "seqdict_source.seqdict_source_selector") != "no_seq_dict"
+                #if $getVar($sect + "seqdict_source.seqdict_source_selector") != "history"
+                    #set seq_dict_loc = ''.join($getVar($sect + seqdict_source.seqdict_sequence).fields.path.split('.')[:-1]) + '.dict'
+                    --SEQUENCE_DICTIONARY $seq_dict_loc
+                #else
+                    --SEQUENCE_DICTIONARY $getVar($sect + "seqdict_source.seqdict_sequence")
+                #end if
+            #end if
+        #end if
+    #end for
+    </template>
+
+    <template name="gatk_seqdict">
+    #for $sect in $sections
+        #if $varExists($sect + "seqdict_source.seqdict_source_selector")
+            #if $getVar($sect + "seqdict_source.seqdict_source_selector") != "no_seq_dict"
+                #if $getVar($sect + "seqdict_source.seqdict_source_selector") != "history"
+                    #set $seq_dict_loc = ''.join($getVar($sect + "seqdict_source.seqdict_sequence").fields.path.split('.')[:-1]) + '.dict'
+                    --sequence-dictionary $seq_dict_loc
+                #else
+                    --sequence-dictionary $getVar($sect + "seqdict_source.seqdict_sequence")
+                #end if
+            #end if
+        #end if
+    #end for
+    </template>
+
+    <xml name="seq_dict_sel">
+        <conditional name="seqdict_source">
+            <param name="seqdict_source_selector" type="select" label="Choose the source for the sequence dictionary">
+                <option value="cached">Locally cached</option>
+                <option value="history">History</option>
+                <option value="no_seq_dict" selected="true">Do not pass</option>
+            </param>
+            <when value="cached">
+                <param name="seqdict_sequence" type="select" label="Sequence Dictionary" help="Sequence dictionary file." >
+                    <options from_data_table="all_fasta" >
+                        <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file" />
+                    </options>
+                </param>
+            </when>
+            <when value="history">
+                <param name="seqdict_sequence" type="data" format="txt" label="Sequence Dictionary" help="Sequence dictionary file. Must be in dict format." />
+            </when>
+        </conditional>
+    </xml>
+
+    <!--BAM input-->
+    <template name="picard_bam_input">
+        #for $num, $file in enumerate($input)
+            #if $file.is_of_type("bam")
+                --INPUT input${num}.bam
+            #else
+                --INPUT input${num}.sam
+            #end if
+        #end for
+    </template>
+
+<!--    Can't get this to work using something like enumerate($getVar($sect + "input"))-->
+    <template name="gatk_bam_input">
+    #for $sect in $sections
+        #if $varExists($sect + "input")
+            #if $sect == 'common.'
+                #for $num, $file in enumerate($common.input)
+                    #if $common.input
+                        #if $file.is_of_type("bam")
+                            --input input${num}.bam
+                        #else
+                            --input input${num}.sam
+                        #end if
+                    #end if
+                #end for
+            #end if
+        #end if
+    #end for
+    </template>
+
+    <template name="bam_index_pre_chth"><![CDATA[
+    #for $sect in $sections
+        #if $varExists($sect + "input")
+            #if $sect == "common."
+                #for $num, $file in enumerate($common.input)
+                    #if $common.input
+                        #if $file.is_of_type("bam")
+                            ln -s $file input${num}.bam &&
+                            samtools index input${num}.bam &&
+                        #else
+                            ln -s $file input${num}.sam &&
+                            samtools view -bS input${num}.sam -o input${num}.bam &&
+                            samtools index input${num}.bam &&
+                        #end if
+                    #end if
+                #end for
+            #end if
+        #end if
+    #end for
+    ]]></template>
+
+<!--    These are for the inputs when they are in the required section.-->
+    <template name="gatk_bam_input_req">
+        #for $num, $file in enumerate($input)
+            #if $file.is_of_type("bam")
+                --input input${num}.bam
+            #else
+                --input input${num}.sam
+            #end if
+        #end for
+    </template>
+
+    <template name="bam_index_pre_chth_req"><![CDATA[
+        #for $num, $file in enumerate($input)
+            #if $file.is_of_type("bam")
+                ln -s $file input${num}.bam &&
+                samtools index input${num}.bam &&
+            #else
+                ln -s $file input${num}.sam &&
+                samtools view -bS input${num}.sam -o input${num}.bam &&
+                samtools index input${num}.bam &&
+            #end if
+        #end for
+    ]]></template>
+
+    <!-- When we try to index and unsorted SAM file, will get an error. -->
+    <template name="bam_index_pre_chth_no_index"><![CDATA[
+    #for $sect in $sections
+        #if $varExists($sect + "input")
+            #for $num, $file in enumerate($getVar($sect + "input"))
+                #if $file.is_of_type("bam")
+                    ln -s $file input${num}.bam &&
+                #else
+                    ln -s $file input${num}.sam &&
+                #end if
+            #end for
+        #end if
+    #end for
+    ]]></template>
+
+    <xml name="gatk_bam_req_params">
+        <param name="input" type="data" multiple="true" format="sam,bam" label="Input BAM/SAM/CRAM file" />
+    </xml>
+
+    <xml name="gatk_bam_req_params_opt">
+        <param name="input" type="data" multiple="true" optional="true" format="sam,bam" label="Input BAM/SAM/CRAM file" />
+    </xml>
+
+    <template name="picard_bam_index"><![CDATA[
+        #for $num, $file in enumerate($input)
+            #if $file.is_of_type("bam")
+                ln -s $INPUT input${num}.bam &&
+                samtools index input${num}.bam &&
+            #else
+                ln -s $INPUT input${num}.sam &&
+                samtools view -bS input${num}.sam -o input${num}.bam &&
+                samtools index input${num}.bam &&
+            #end if
+        #end for
+    ]]></template>
+
+
+    <!--Output goes to stdout, no output parameter exists.-->
+    <template name="stdout_to_output">
+        > output.txt
+    </template>
+
+    <xml name="stdout_to_output_params">
+        <data format="txt" name="output" label="${tool.name} on ${on_string}: txt" from_work_dir="output.txt" />
+    </xml>
+
+    <!--Multiple input files, true for List[File] types, and sometimes List[String] types    -->
+    <template name="gatk_input_multi">
+        #for $num, $file in enumerate($variant)
+            #if $file.is_of_type("vcf_bgzip")
+                --variant variant${num}.vcf.gz
+            #elif $file.is_of_type("vcf")
+                --variant variant${num}.vcf
+            #elif $file.is_of_type("txt")
+                --variant variant${num}.list
+            #else
+                --variant variant${num}.vcf
+            #end if
+        #end for
+    </template>
+
+    <template name="gatk_tabix_multi"><![CDATA[
+        #for $num, $file in enumerate($variant)
+            #if $file.is_of_type("vcf_bgzip")
+                ln -s $file variant${num}.vcf.gz &&
+                gatk IndexFeatureFile -I variant${num}.vcf.gz &&
+            #elif $file.is_of_type("vcf")
+                ln -s $file variant${num}.vcf &&
+                gatk IndexFeatureFile -I variant${num}.vcf &&
+            #elif $file.is_of_type("txt")
+                ln -s $file variant${num}.list &&
+            #else
+                ln -s $file variant${num}.vcf &&
+            #end if
+        #end for
+    ]]></template>
+
+    <xml name="vcf_input_params_multi">
+        <param name="variant" type="data" multiple="true" format="vcf,vcf_bgzip" label="Input VCF(s)" help="One or more VCF files containing variants  This argument must be specified at least once."/>
+    </xml>
+
+<!--    Provide created Mutect2 stats file from_work_dir-->
+    <xml name="mutect_stats">
+        <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: vcf" from_work_dir="output.vcf" >
+			<filter>not gzipped_output</filter>
+        </data>
+        <data format="txt" name="output_stats" label="${tool.name} on ${on_string}: stats txt" from_work_dir="output.vcf.stats" >
+			<filter>not gzipped_output</filter>
+        </data>
+		<data format="vcf_bgzip" name="output_vcf_bgzip" label="${tool.name} on ${on_string}: vcf_bgzip" from_work_dir="output.vcf.gz" >
+			<filter>gzipped_output</filter>
+		</data>
+        <data format="txt" name="output_stats_bgzip" label="${tool.name} on ${on_string}: stats txt" from_work_dir="output.vcf.gz.stats" >
+			<filter>gzipped_output</filter>
+        </data>
+    </xml>
+
+<!--    Provide DepthOfCoverage complex outputs from_work_dir-->
+    <xml name="doc_outputs">
+        <data format="tsv" name="output_tsv_main" label="${tool.name} on ${on_string}: counts tsv" from_work_dir="output" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_depth_output_at_each_base']</filter>
+        </data>
+
+        <data format="tsv" name="output_tsv_sccc" label="${tool.name} on ${on_string}: sample_cumulative_coverage_counts tsv" from_work_dir="output.sample_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_sccp" label="${tool.name} on ${on_string}: sample_cumulative_coverage_proportions tsv" from_work_dir="output.sample_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_sistats" label="${tool.name} on ${on_string}: sample_interval_statistics tsv" from_work_dir="output.sample_interval_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_sisumm" label="${tool.name} on ${on_string}: sample_interval_summary tsv" from_work_dir="output.sample_interval_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_sstats" label="${tool.name} on ${on_string}: sample_statistics tsv" from_work_dir="output.sample_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_ssumm" label="${tool.name} on ${on_string}: sample_summary tsv" from_work_dir="output.sample_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="tsv" name="output_tsv_rccc" label="${tool.name} on ${on_string}: readgroup_cumulative_coverage_counts tsv" from_work_dir="output.readgroup_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'readgroup' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_rccp" label="${tool.name} on ${on_string}: readgroup_cumulative_coverage_proportions tsv" from_work_dir="output.readgroup_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'readgroup' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_ristats" label="${tool.name} on ${on_string}: readgroup_interval_statistics tsv" from_work_dir="output.readgroup_interval_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'readgroup' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_risumm" label="${tool.name} on ${on_string}: readgroup_interval_summary tsv" from_work_dir="output.readgroup_interval_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'readgroup' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_rstats" label="${tool.name} on ${on_string}: readgroup_statistics tsv" from_work_dir="output.readgroup_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'readgroup' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_rsumm" label="${tool.name} on ${on_string}: readgroup_summary tsv" from_work_dir="output.readgroup_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'readgroup' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="tsv" name="output_tsv_lccc" label="${tool.name} on ${on_string}: library_cumulative_coverage_counts tsv" from_work_dir="output.library_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'library' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_lccp" label="${tool.name} on ${on_string}: library_cumulative_coverage_proportions tsv" from_work_dir="output.library_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'library' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_listats" label="${tool.name} on ${on_string}: library_interval_statistics tsv" from_work_dir="output.library_interval_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'library' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_lisumm" label="${tool.name} on ${on_string}: library_interval_summary tsv" from_work_dir="output.library_interval_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'library' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_lstats" label="${tool.name} on ${on_string}: library_statistics tsv" from_work_dir="output.library_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'library' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_lsumm" label="${tool.name} on ${on_string}: library_summary tsv" from_work_dir="output.library_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'library' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="tsv" name="output_tsv_pccc" label="${tool.name} on ${on_string}: platform_cumulative_coverage_counts tsv" from_work_dir="output.platform_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_pccp" label="${tool.name} on ${on_string}: platform_cumulative_coverage_proportions tsv" from_work_dir="output.platform_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_pistats" label="${tool.name} on ${on_string}: platform_interval_statistics tsv" from_work_dir="output.platform_interval_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_pisumm" label="${tool.name} on ${on_string}: platform_interval_summary tsv" from_work_dir="output.platform_interval_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_pstats" label="${tool.name} on ${on_string}: platform_statistics tsv" from_work_dir="output.platform_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_psumm" label="${tool.name} on ${on_string}: platform_summary tsv" from_work_dir="output.platform_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="tsv" name="output_tsv_cccc" label="${tool.name} on ${on_string}: center_cumulative_coverage_counts tsv" from_work_dir="output.center_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_cccp" label="${tool.name} on ${on_string}: center_cumulative_coverage_proportions tsv" from_work_dir="output.center_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_cistats" label="${tool.name} on ${on_string}: center_interval_statistics tsv" from_work_dir="output.center_interval_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_cisumm" label="${tool.name} on ${on_string}: center_interval_summary tsv" from_work_dir="output.center_interval_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_cstats" label="${tool.name} on ${on_string}: center_statistics tsv" from_work_dir="output.center_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_csumm" label="${tool.name} on ${on_string}: center_summary tsv" from_work_dir="output.center_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="tsv" name="output_tsv_spccc" label="${tool.name} on ${on_string}: sample_by_platform_cumulative_coverage_counts tsv" from_work_dir="output.sample_by_platform_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample_by_platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_spccp" label="${tool.name} on ${on_string}: sample_by_platform_cumulative_coverage_proportions tsv" from_work_dir="output.sample_by_platform_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample_by_platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_spistats" label="${tool.name} on ${on_string}: sample_by_platform_interval_statistics tsv" from_work_dir="output.sample_by_platform_interval_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample_by_platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_spisumm" label="${tool.name} on ${on_string}: sample_by_platform_interval_summary tsv" from_work_dir="output.sample_by_platform_interval_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample_by_platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_spstats" label="${tool.name} on ${on_string}: sample_by_platform_statistics tsv" from_work_dir="output.sample_by_platform_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample_by_platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_spsumm" label="${tool.name} on ${on_string}: sample_by_platform_summary tsv" from_work_dir="output.sample_by_platform_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample_by_platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="tsv" name="output_tsv_scccc" label="${tool.name} on ${on_string}: sample_by_center_cumulative_coverage_counts tsv" from_work_dir="output.sample_by_center_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_scccp" label="${tool.name} on ${on_string}: sample_by_center_cumulative_coverage_proportions tsv" from_work_dir="output.sample_by_center_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_scistats" label="${tool.name} on ${on_string}: sample_by_center_interval_statistics tsv" from_work_dir="output.sample_by_center_interval_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_scisumm" label="${tool.name} on ${on_string}: sample_by_center_interval_summary tsv" from_work_dir="output.sample_by_center_interval_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_scstats" label="${tool.name} on ${on_string}: sample_by_center_statistics tsv" from_work_dir="output.sample_by_center_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_scsumm" label="${tool.name} on ${on_string}: sample_by_center_summary tsv" from_work_dir="output.sample_by_center_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="tsv" name="output_tsv_spcccc" label="${tool.name} on ${on_string}: sample_by_platform_by_center_cumulative_coverage_counts tsv" from_work_dir="output.sample_by_platform_by_center_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample_by_platform_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_spcccp" label="${tool.name} on ${on_string}: sample_by_platform_by_center_cumulative_coverage_proportions tsv" from_work_dir="output.sample_by_platform_by_center_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample_by_platform_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_spcistats" label="${tool.name} on ${on_string}: sample_by_platform_by_center_interval_statistics tsv" from_work_dir="output.sample_by_platform_by_center_interval_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample_by_platform_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_spcisumm" label="${tool.name} on ${on_string}: sample_by_platform_by_center_interval_summary tsv" from_work_dir="output.sample_by_platform_by_center_interval_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample_by_platform_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_spcstats" label="${tool.name} on ${on_string}: sample_by_platform_by_center_statistics tsv" from_work_dir="output.sample_by_platform_by_center_statistics" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample_by_platform_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="tsv" name="output_tsv_spcsumm" label="${tool.name} on ${on_string}: sample_by_platform_by_center_summary tsv" from_work_dir="output.sample_by_platform_by_center_summary" >
+			<filter>optional['output_format'] == 'TABLE'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample_by_platform_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="csv" name="output_csv_main" label="${tool.name} on ${on_string}: counts csv" from_work_dir="output" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_depth_output_at_each_base']</filter>
+        </data>
+
+        <data format="csv" name="output_csv_sccc" label="${tool.name} on ${on_string}: sample_cumulative_coverage_counts csv" from_work_dir="output.sample_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_sccp" label="${tool.name} on ${on_string}: sample_cumulative_coverage_proportions csv" from_work_dir="output.sample_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_sistats" label="${tool.name} on ${on_string}: sample_interval_statistics csv" from_work_dir="output.sample_interval_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_sisumm" label="${tool.name} on ${on_string}: sample_interval_summary csv" from_work_dir="output.sample_interval_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_sstats" label="${tool.name} on ${on_string}: sample_statistics csv" from_work_dir="output.sample_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_ssumm" label="${tool.name} on ${on_string}: sample_summary csv" from_work_dir="output.sample_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="csv" name="output_csv_rccc" label="${tool.name} on ${on_string}: readgroup_cumulative_coverage_counts csv" from_work_dir="output.readgroup_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'readgroup' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_rccp" label="${tool.name} on ${on_string}: readgroup_cumulative_coverage_proportions csv" from_work_dir="output.readgroup_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'readgroup' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_ristats" label="${tool.name} on ${on_string}: readgroup_interval_statistics csv" from_work_dir="output.readgroup_interval_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'readgroup' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_risumm" label="${tool.name} on ${on_string}: readgroup_interval_summary csv" from_work_dir="output.readgroup_interval_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'readgroup' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_rstats" label="${tool.name} on ${on_string}: readgroup_statistics csv" from_work_dir="output.readgroup_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'readgroup' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_rsumm" label="${tool.name} on ${on_string}: readgroup_summary csv" from_work_dir="output.readgroup_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'readgroup' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="csv" name="output_csv_lccc" label="${tool.name} on ${on_string}: library_cumulative_coverage_counts csv" from_work_dir="output.library_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'library' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_lccp" label="${tool.name} on ${on_string}: library_cumulative_coverage_proportions csv" from_work_dir="output.library_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'library' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_listats" label="${tool.name} on ${on_string}: library_interval_statistics csv" from_work_dir="output.library_interval_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'library' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_lisumm" label="${tool.name} on ${on_string}: library_interval_summary csv" from_work_dir="output.library_interval_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'library' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_lstats" label="${tool.name} on ${on_string}: library_statistics csv" from_work_dir="output.library_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'library' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_lsumm" label="${tool.name} on ${on_string}: library_summary csv" from_work_dir="output.library_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'library' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="csv" name="output_csv_pccc" label="${tool.name} on ${on_string}: platform_cumulative_coverage_counts csv" from_work_dir="output.platform_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_pccp" label="${tool.name} on ${on_string}: platform_cumulative_coverage_proportions csv" from_work_dir="output.platform_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_pistats" label="${tool.name} on ${on_string}: platform_interval_statistics csv" from_work_dir="output.platform_interval_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_pisumm" label="${tool.name} on ${on_string}: platform_interval_summary csv" from_work_dir="output.platform_interval_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_pstats" label="${tool.name} on ${on_string}: platform_statistics csv" from_work_dir="output.platform_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_psumm" label="${tool.name} on ${on_string}: platform_summary csv" from_work_dir="output.platform_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="csv" name="output_csv_cccc" label="${tool.name} on ${on_string}: center_cumulative_coverage_counts csv" from_work_dir="output.center_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_cccp" label="${tool.name} on ${on_string}: center_cumulative_coverage_proportions csv" from_work_dir="output.center_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_cistats" label="${tool.name} on ${on_string}: center_interval_statistics csv" from_work_dir="output.center_interval_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_cisumm" label="${tool.name} on ${on_string}: center_interval_summary csv" from_work_dir="output.center_interval_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_cstats" label="${tool.name} on ${on_string}: center_statistics csv" from_work_dir="output.center_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_csumm" label="${tool.name} on ${on_string}: center_summary csv" from_work_dir="output.center_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="csv" name="output_csv_spccc" label="${tool.name} on ${on_string}: sample_by_platform_cumulative_coverage_counts csv" from_work_dir="output.sample_by_platform_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample_by_platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_spccp" label="${tool.name} on ${on_string}: sample_by_platform_cumulative_coverage_proportions csv" from_work_dir="output.sample_by_platform_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample_by_platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_spistats" label="${tool.name} on ${on_string}: sample_by_platform_interval_statistics csv" from_work_dir="output.sample_by_platform_interval_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample_by_platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_spisumm" label="${tool.name} on ${on_string}: sample_by_platform_interval_summary csv" from_work_dir="output.sample_by_platform_interval_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample_by_platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_spstats" label="${tool.name} on ${on_string}: sample_by_platform_statistics csv" from_work_dir="output.sample_by_platform_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample_by_platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_spsumm" label="${tool.name} on ${on_string}: sample_by_platform_summary csv" from_work_dir="output.sample_by_platform_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample_by_platform' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="csv" name="output_csv_scccc" label="${tool.name} on ${on_string}: sample_by_center_cumulative_coverage_counts csv" from_work_dir="output.sample_by_center_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_scccp" label="${tool.name} on ${on_string}: sample_by_center_cumulative_coverage_proportions csv" from_work_dir="output.sample_by_center_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_scistats" label="${tool.name} on ${on_string}: sample_by_center_interval_statistics csv" from_work_dir="output.sample_by_center_interval_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_scisumm" label="${tool.name} on ${on_string}: sample_by_center_interval_summary csv" from_work_dir="output.sample_by_center_interval_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_scstats" label="${tool.name} on ${on_string}: sample_by_center_statistics csv" from_work_dir="output.sample_by_center_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_scsumm" label="${tool.name} on ${on_string}: sample_by_center_summary csv" from_work_dir="output.sample_by_center_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+        <data format="csv" name="output_csv_spcccc" label="${tool.name} on ${on_string}: sample_by_platform_by_center_cumulative_coverage_counts csv" from_work_dir="output.sample_by_platform_by_center_cumulative_coverage_counts" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample_by_platform_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_spcccp" label="${tool.name} on ${on_string}: sample_by_platform_by_center_cumulative_coverage_proportions csv" from_work_dir="output.sample_by_platform_by_center_cumulative_coverage_proportions" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_locus_table']</filter>
+			<filter>'sample_by_platform_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_spcistats" label="${tool.name} on ${on_string}: sample_by_platform_by_center_interval_statistics csv" from_work_dir="output.sample_by_platform_by_center_interval_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample_by_platform_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_spcisumm" label="${tool.name} on ${on_string}: sample_by_platform_by_center_interval_summary csv" from_work_dir="output.sample_by_platform_by_center_interval_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_interval_statistics']</filter>
+			<filter>'sample_by_platform_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_spcstats" label="${tool.name} on ${on_string}: sample_by_platform_by_center_statistics csv" from_work_dir="output.sample_by_platform_by_center_statistics" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample_by_platform_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+        <data format="csv" name="output_csv_spcsumm" label="${tool.name} on ${on_string}: sample_by_platform_by_center_summary csv" from_work_dir="output.sample_by_platform_by_center_summary" >
+			<filter>optional['output_format'] == 'CSV'</filter>
+			<filter>not optional['omit_per_sample_statistics']</filter>
+			<filter>'sample_by_platform_by_center' in [x[1]['partition_type'] for x in list(enumerate(optional['partition_type_rpt']))]</filter>
+        </data>
+
+    </xml>
+
+    <template name="doc_output_chth">
+        --output output
+    </template>
+
+    <template name="vcf_output_opts">
+        #if $gzipped_output
+			--output output.vcf.gz
+		#else
+			--output output.vcf
+		#end if
+    </template>
+
+    <!--Provides option to create gzipped output for VCF files-->
+    <xml name="gzip_vcf_params">
+        <param name="gzipped_output" type="boolean" checked="true" label="GZIP Output?" help="If you would like gzipped output, check this box.  In general, it would be preferable to do this, unless your downstream tool does not support handling of gzipped files." />
+    </xml>
+
+    <!--Output related Picard options-->
+    <xml name="gzip_vcf_output_params">
+        <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: vcf" from_work_dir="output.vcf" >
+			<filter>not gzipped_output</filter>
+		</data>
+		<data format="vcf_bgzip" name="output_vcf_bgzip" label="${tool.name} on ${on_string}: vcf_bgzip" from_work_dir="output.vcf.gz" >
+			<filter>gzipped_output</filter>
+		</data>
+    </xml>
+
+    <!--Citations-->
+    <xml name="citations">
+        <citation type="doi">10.1101/gr.107524.110</citation>
+        <citation type="doi">10.1038/ng.806</citation>
+        <citation type="doi">10.1002/0471250953.bi1110s43</citation>
+        <citation type="doi">10.1101/201178</citation>
+        <yield />
+    </xml>
+
+</macros>
