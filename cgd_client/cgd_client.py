@@ -22,7 +22,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.9.1'
+VERSION = '1.2.9.2'
 
 
 def supply_args():
@@ -228,7 +228,13 @@ def main():
     outfile = logging.FileHandler('stdout_log')
     outfile.setLevel(logging.DEBUG)
     logger.addHandler(outfile)
-    # logging.basicConfig(filename=args.stdout_log, level=logging.DEBUG)
+
+    # Also capture on stdout.
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
     if args.endpoint == 'snpProfile':
         json_to_send = SnpProfile(args.pipeline_out).geno_items
