@@ -5,12 +5,12 @@
 # CODED BY: John Letaw
 
 from __future__ import print_function
-from file_types import bed
+import bed
 import argparse
 import pysam
 import re
 
-VERSION = '0.1.4'
+VERSION = '0.1.5'
 
 
 def supply_args():
@@ -354,8 +354,10 @@ def main():
                             outfile.write('\n')
                 else:
                     seqloc = (chrom, range(pos, (pnext - tlen) - sco))
-                    primer_choices = set(primer_coords[seqloc[0]][
-                                '0']).intersection(set(seqloc[1]))
+                    try:
+                        primer_choices = set(primer_coords[seqloc[0]]['0']).intersection(set(seqloc[1]))
+                    except KeyError:
+                        primer_choices = None
                     if primer_choices:
                          for coord in primer_choices:
                              check_remove = (pnext - tlen) - coord
