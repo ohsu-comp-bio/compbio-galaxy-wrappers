@@ -1,4 +1,4 @@
-<tool id="xhmm_discover" name="xhmm discover" version="1.1.0">
+<tool id="xhmm_discover" name="xhmm discover" version="1.1.1">
 
   <description>
     Discover CNVs from normalized read depth matrix
@@ -9,7 +9,7 @@
   </macros>
   <expand macro="requirements"/>
 
-  <command><![CDATA[
+  <command detect_errors="exit_code"><![CDATA[
     #if str( $send_sample.send_sample_sel ) == "send":
       echo ${send_sample.sample} > sample_file.txt &&
       xhmm --discover
