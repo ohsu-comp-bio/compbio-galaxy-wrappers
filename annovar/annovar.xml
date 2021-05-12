@@ -5,7 +5,7 @@
     perl 
 
     #if $mode.mode_type == "table":
-        table_annovar.pl $input $dbloc -buildver $buildver -protocol $mode.protocol -operation $mode.operation
+        ${annovar_loc}/table_annovar.pl $input $dbloc -buildver $buildver -protocol $mode.protocol -operation $mode.operation
 
         #if $mode.xref:
             -xref $mode.xref
@@ -33,19 +33,21 @@
 
         -out outfile &&
 
-        #if $input.is_of_type("vcf):
-        
+        #if $input.is_of_type("vcf"):
             cp outfile.${buildver}_multianno.vcf outfile.vcf &&
-        
         #end if
 
-        cp outfile.${buildver}_multianno.txt outfile.txt
+        #if $mode.csvout:
+            cp outfile.${buildver}_multianno.csv outfile.csv
+        #else
+            cp outfile.${buildver}_multianno.txt outfile.txt
+        #end if
 
     #end if
 
-    #if mode.mode_type == "variation":
+    #if $mode.mode_type == "variation":
         
-        annotate_variation.pl -$mode.annotation_type -dbtype $mode.dbtype -buildver $buildver -out outfile
+        ${annovar_loc}/annotate_variation.pl -$mode.annotation_type -dbtype $mode.dbtype -buildver $buildver -out outfile
 
         #if $mode.splicing_threshold:
             --splicing_threshold $mode.splicing_threshold
@@ -67,7 +69,7 @@
             --transcript_function
         #end if
 
-        #if $mode.aamtrixfile:
+        #if $mode.aamatrixfile:
             --aamatrixfile $mode.aamatrixfile
         #end if
 
@@ -141,16 +143,15 @@
 
         $input
 
-        $db_loc &&
+        $dbloc
 
         #if $mode.annotation_type == "regionanno":
-        
+            &&
             cp outfile.${buildver}_${mode.dbtype} outfile.txt
-
         #end if
 
         #if $mode.annotation_type == "filter":
-
+            &&
             cp outfile.${buildver}_${mode.dbtype}_filtered outfile_filtered.txt &&
 
             cp outfile.${buildver}_${mode.dbtype}_dropped outfile_dropped.txt
@@ -203,7 +204,7 @@
                 <param name="transcript_function" type="boolean" label="Transcript Function?" checked="false"/>
                 <param name="aamatrixfile" type="data" format="txt" label="Grantham Matrix File" optional="true"/>
                 <param name="hgvs" type="boolean" checked="false" label="HGVS?"/>
-                <param name="exonsort" type="boolean" checked="fasle" label="Exon Sort?"/>
+                <param name="exonsort" type="boolean" checked="false" label="Exon Sort?"/>
                 <param name="normscore_threshold" type="integer" label="Normscore Threshold" optional="true"/>
                 <param name="colsWanted" type="text" optional="true" label="Columns Wanted"/>
                 <param name="scorecolumn" type="integer" optional="true" label="Score Column"/>
@@ -223,28 +224,28 @@
         </conditional>
     </inputs>
     <outputs>
-        <data name="table_tsv_out" format="txt" name="${tool.name} on $on_string: txt" from_work_dir="outfile.txt">
-            <filter>mode['mode_type'] == "table" and not mode[csvout]</filter>
+        <data name="table_tsv_out" format="txt" label="${tool.name} on $on_string: txt" from_work_dir="outfile.txt">
+            <filter>mode['mode_type'] == "table" and not mode["csvout"]</filter>
         </data>
-        <data name="table_csv_out" format="csv" name="${tool.name} on $on_string: csv" from_work_dir="outfile.txt">
-            <filter>mode['mode_type'] == "table" and mode[csvout]</filter>
+        <data name="table_csv_out" format="csv" label="${tool.name} on $on_string: csv" from_work_dir="outfile.csv">
+            <filter>mode['mode_type'] == "table" and mode["csvout"]</filter>
         </data>
-        <data name="table_vcf_out" format="vcf" name="${tool.name} on $on_string: vcf" from_work_dir="outfile.vcf">
-            <filter>mode['mode_type'] == "table" and input.is_of_type("vcf")</filter>
+        <data name="table_vcf_out" format="vcf" label="${tool.name} on $on_string: vcf" from_work_dir="outfile.vcf">
+            <filter>mode['mode_type'] == "table" and input['format'] == "vcf"</filter>
         </data>
-        <data name="variation_function" format="txt" name="${tool.name} on $on_string: variant function" from_work_dir="outfile.variant_function">
+        <data name="variation_function" format="txt" label="${tool.name} on $on_string: variant function" from_work_dir="outfile.variant_function">
             <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "geneanno"</filter>
         </data>
-        <data name="exon_variation_function" format="txt" name="${tool.name} on $on_string: exonic variant function" from_work_dir="outfile.exonic_variant_function">
+        <data name="exon_variation_function" format="txt" label="${tool.name} on $on_string: exonic variant function" from_work_dir="outfile.exonic_variant_function">
             <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "geneanno"</filter>
         </data>
-        <data name="region_out" format="txt" name="${tool.name} on $on_string: ${mode.dbtype}" from_work_dir="outfile.txt">
+        <data name="region_out" format="txt" label="${tool.name} on $on_string: ${mode.dbtype}" from_work_dir="outfile.txt">
             <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "regionanno"</filter>
         </data>
-        <data name="filtered_output" format="txt" name="${tool.name} on $on_string: ${mode.dbtype} filtered" from_work_dir="outfile_filtered.txt">
+        <data name="filtered_output" format="txt" label="${tool.name} on $on_string: ${mode.dbtype} filtered" from_work_dir="outfile_filtered.txt">
             <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "filter"</filter>
         </data>
-        <data name="dropped" format="txt" name="${tool.name} on $on_string: ${mode.dbtype} dropped" from_work_dir="outfile_dropped.txt">
+        <data name="dropped" format="txt" label="${tool.name} on $on_string: ${mode.dbtype} dropped" from_work_dir="outfile_dropped.txt">
             <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "filter"</filter>
         </data>
     </outputs>
