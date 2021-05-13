@@ -10,3 +10,10 @@ repositories:
       - macros.xml
       - tool-data/*
       - tool_data_table_conf.xml.sample
+  gatk4_auto_depthofcoverage:
+    description: "Generate coverage summary information for reads data."
+    include:
+      - gatk4_auto_depthofcoverage.xml
+      - macros.xml
+      - tool-data/*
+      - tool_data_table_conf.xml.sample
