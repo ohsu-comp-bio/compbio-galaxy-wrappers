@@ -9,6 +9,8 @@ repositories:
     description: "Freebayes is a Bayesian genetic variant detector designed to find small polymorphisms."
     include:
       - freebayes.xml
+      - leftalign.xml
+      - macros.xml
       - tool_data_table_conf.xml.sample
       - tool-data/*
       - test-data/*
