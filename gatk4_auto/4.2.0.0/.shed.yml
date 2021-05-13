@@ -17,3 +17,17 @@ repositories:
       - macros.xml
       - tool-data/*
       - tool_data_table_conf.xml.sample
+  gatk4_auto_collectalignmentsummarymetrics:
+    description: "Produces a summary of alignment metrics from a SAM or BAM file."
+    include:
+      - gatk4_auto_collectalignmentsummarymetrics.xml
+      - macros.xml
+      - tool-data/*
+      - tool_data_table_conf.xml.sample
+  gatk4_auto_sortsam:
+    description: "This tool sorts the input SAM or BAM file by coordinate, queryname, or some other property of the SAM record."
+    include:
+      - gatk4_auto_sortsam.xml
+      - macros.xml
+      - tool-data/*
+      - tool_data_table_conf.xml.sample
