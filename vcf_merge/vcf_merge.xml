@@ -1,0 +1,52 @@
+<tool id="vcf_merge" name="Merge multiple VCFs" version="0.1.0" >
+    <description>Merge VCFs produced by various variant callers.</description>
+    <requirements>
+      <requirement type="package" version="1.2.3">pandas</requirement>
+      <requirement type="package" version="0.13.3">vcfpy</requirement>
+      <requirement type="package" version="7.1.1">natsort</requirement>
+      <requirement type="package" version="1.9">samtools</requirement>
+    </requirements>
+  <version_command>$__tool_directory__/vcf_merge.py --version</version_command>
+
+  <command><![CDATA[
+    #for $i, $input in enumerate( $inputs ):
+      #if $input.input_vcf.is_of_type("vcf_bgzip")
+        ln -f -s $input.input_vcf input${i}.vcf.gz &&
+        bgzip -d input${i}.vcf.gz &&
+      #else
+        ln -f -s $input.input_vcf input${i}.vcf &&
+      #end if
+    #end for
+
+    python $__tool_directory__/vcf_merge.py
+    --input_vcfs
+    #for $i, $input in enumerate( $inputs ):
+      input${i}.vcf
+    #end for
+    --caller_labels
+    #for $i, input in enumerate( $inputs ):
+      "${input.caller_label}"
+    #end for
+    --output_vcf "${output_vcf}"
+  ]]></command>
+
+  <inputs>
+    <repeat name="inputs" title="Input VCF file and labels" help="Input VCF files and their labels.">
+      <param name="input_vcf" type="data" format="vcf,vcf_bgzip" label="Input VCF" />
+      <param name="caller_label" type="text" label="Caller label" />
+    </repeat>
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" />
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+    Merge VCFs produced by various variant callers.
+  </help>
+
+  <citations></citations>
+
+</tool>
