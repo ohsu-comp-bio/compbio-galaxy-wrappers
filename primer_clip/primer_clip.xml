@@ -1,4 +1,4 @@
-<tool id="primer_clip" name="Primer Clipper" version="0.1.4" >
+<tool id="primer_clip" name="Primer Clipper" version="0.1.5" >
     <description>Clip primer sequences from a BAM file based on locations of these sequences at defined in an extended BED file.</description>
 
     <requirements>

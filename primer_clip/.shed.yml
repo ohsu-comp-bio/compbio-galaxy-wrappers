@@ -9,3 +9,5 @@ repositories:
     include:
       - primer_clip.xml
       - primer_clip.py
+      - bed.py
+      - __init__.py

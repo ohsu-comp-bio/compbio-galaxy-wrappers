@@ -1,0 +1,33 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/gatk4_auto"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  gatk4_auto_mutect2:
+    description: "Call somatic SNVs and indels via local assembly of haplotypes."
+    include:
+      - gatk4_auto_mutect2.xml
+      - macros.xml
+      - tool-data/*
+      - tool_data_table_conf.xml.sample
+  gatk4_auto_depthofcoverage:
+    description: "Generate coverage summary information for reads data."
+    include:
+      - gatk4_auto_depthofcoverage.xml
+      - macros.xml
+      - tool-data/*
+      - tool_data_table_conf.xml.sample
+  gatk4_auto_collectalignmentsummarymetrics:
+    description: "Produces a summary of alignment metrics from a SAM or BAM file."
+    include:
+      - gatk4_auto_collectalignmentsummarymetrics.xml
+      - macros.xml
+      - tool-data/*
+      - tool_data_table_conf.xml.sample
+  gatk4_auto_sortsam:
+    description: "This tool sorts the input SAM or BAM file by coordinate, queryname, or some other property of the SAM record."
+    include:
+      - gatk4_auto_sortsam.xml
+      - macros.xml
+      - tool-data/*
+      - tool_data_table_conf.xml.sample

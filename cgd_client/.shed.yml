@@ -9,3 +9,5 @@ repositories:
     include:
       - cgd_client.py
       - cgd_client.xml
+      - snp_profile.py
+      - __init__.py
