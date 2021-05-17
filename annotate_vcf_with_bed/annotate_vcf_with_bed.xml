@@ -1,22 +1,44 @@
-<tool id="annotate_vcf_with_bed" name="Annotate VCF With BED" version="0.1.0" >
+<tool id="annotate_vcf_with_bed" name="Annotate VCF With BED" version="0.2.0" >
   <description>Use regions defined in a BED file to annotate a VCF FILTER column.</description>
 
-  <version_command></version_command>
+  <requirements>
+    <requirement type="package" version="0.13.3">vcfpy</requirement>
+  </requirements>
 
-  <command><![CDATA[
-  python $__tool_directory__/annotate_vcf_with_bed.py "${input_bed}" "${input_vcf}" "${output}" "${anno}"
+  <version_command><![CDATA[
+    python $__tool_directory__/annotate_vcf_with_bed.py --version
+  ]]></version_command>
+
+  <command detect_errors="exit_code"><![CDATA[
+    python $__tool_directory__/annotate_vcf_with_bed.py "${input_bed}" "${input_vcf}" "${output}" "${anno}" "${desc}"
   ]]></command>
 
   <inputs>
     <param name="input_bed" type="data" format="bed" label="Input BED" help="BED file containing a list of regions you would annotate aganist." />
     <param name="input_vcf" type="data" format="vcf" label="Input VCF" help="VCF file to be annotated." />
     <param name="anno" type="text" label="Annotation" help="Annotation string to be included in the output VCF." />
+    <param name="desc" type="text" label="Annotation Description" help="Annotation description string to be included in the output VCF FILTER header entry." />
   </inputs>
 
   <outputs>
-    <data format="vcf" name="output" label="${tool.name} on ${on_string}: Annotated VCF" />
+    <data format="vcf" name="output" label="${tool.name} on ${on_string}: VCF" />
   </outputs>
 
-  <help>Use regions defined in a BED file to annotate a VCF FILTER column.</help>
+  <help><![CDATA[
+  usage: annotate_vcf_with_bed.py [-h] [--version] bed vcf outfile anno desc
+
+  positional arguments:
+    bed         Input BED
+    vcf         Input VCF
+    outfile     Output VCF
+    anno        Annotation to be added to FILTER column.
+    desc        Description of the annotation to be added to FILTER header
+                entry.
+
+  optional arguments:
+    -h, --help  show this help message and exit
+    --version   show program's version number and exit
+  Use regions defined in a BED file to annotate a VCF FILTER column.
+  ]]></help>
 
 </tool>
