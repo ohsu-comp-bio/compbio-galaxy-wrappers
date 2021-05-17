@@ -23,7 +23,7 @@
     </xml>
     <xml name="validation">
         <validator type="unspecified_build" />
-        <validator type="dataset_metadata_in_data_table" table_name="fasta_indexes" metadata_name="dbkey" metadata_column="1" message="Sequences are not currently available for the specified build." />
+        <validator type="dataset_metadata_in_data_table" table_name="all_fasta" metadata_name="dbkey" metadata_column="1" message="Sequences are not currently available for the specified build." />
     </xml>
     <xml name="input_bam">
         <conditional name="batchmode">
