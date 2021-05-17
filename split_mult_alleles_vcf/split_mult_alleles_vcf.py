@@ -12,7 +12,7 @@ import vcfreader
 import vcfwriter
 import argparse
 
-VERSION = '0.7.0'
+VERSION = '0.7.1'
 
 
 def supply_args():
@@ -154,7 +154,10 @@ class VcfRecDecomp(object):
                         split[alt][entry] = self._decomp_geno(samp[entry], idx + 1)
 
             for alta, splits in split.items():
-                split[alta]['GT'] = self._decomp_gt(samp['GT'], splits['PL'])
+                try:
+                    split[alta]['GT'] = self._decomp_gt(samp['GT'], splits['PL'])
+                except KeyError:
+                    split[alta]['GT'] = "0/1"
             samp_changes.append(split)
 
         return samp_changes
