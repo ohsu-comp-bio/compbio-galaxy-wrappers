@@ -15,7 +15,7 @@ import vcfpy
 from operator import attrgetter
 from natsort import natsorted
 
-VERSION = '0.0.1'
+VERSION = '0.1.0'
 
 
 def supply_args():
@@ -84,19 +84,22 @@ class Merger(object):
     def merge_filter_header(self):
         exclude = ['PASS']
         exclude.extend(self.callers)
+        seen = []
         for reader, caller in zip(self.readers, self.callers):
             for filter in reader.header.get_lines('FILTER'):
-                if filter.id not in exclude:
-                    self.merge_header.add_filter_line(
-                        vcfpy.OrderedDict(
-                            [('ID', '{}_{}'.format(caller, filter.id)),
-                             ('Description', '{} {}'.format(caller, filter.description))]
+                if filter.id not in seen:
+                    seen.append(filter.id)
+                    if filter.id not in exclude:
+                        self.merge_header.add_filter_line(
+                            vcfpy.OrderedDict(
+                                [('ID', '{}_{}'.format(caller, filter.id)),
+                                 ('Description', '{} {}'.format(caller, filter.description))]
+                            )
                         )
-                    )
-                else:
-                    self.merge_header.add_filter_line(
-                        vcfpy.OrderedDict([('ID', filter.id), ('Description', filter.description)])
-                    )
+                    else:
+                        self.merge_header.add_filter_line(
+                            vcfpy.OrderedDict([('ID', filter.id), ('Description', filter.description)])
+                        )
 
 
     def merge_info_header(self):
