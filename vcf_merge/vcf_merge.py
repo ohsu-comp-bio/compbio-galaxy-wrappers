@@ -82,23 +82,17 @@ class Merger(object):
             )
 
     def merge_filter_header(self):
-        exclude = ['PASS']
-        exclude.extend(self.callers)
         seen = []
         for reader, caller in zip(self.readers, self.callers):
             for filter in reader.header.get_lines('FILTER'):
                 if filter.id not in seen:
                     seen.append(filter.id)
-                    if filter.id not in exclude:
+                    if filter.id not in ['.', 'PASS']:
                         self.merge_header.add_filter_line(
                             vcfpy.OrderedDict(
-                                [('ID', '{}_{}'.format(caller, filter.id)),
-                                 ('Description', '{} {}'.format(caller, filter.description))]
+                                [('ID', filter.id),
+                                 ('Description', filter.description)]
                             )
-                        )
-                    else:
-                        self.merge_header.add_filter_line(
-                            vcfpy.OrderedDict([('ID', filter.id), ('Description', filter.description)])
                         )
 
 
