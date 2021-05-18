@@ -1,0 +1,11 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/blob/annovar/annovar"
+homepage_url: "https://annovar.openbioinformatics.org/en/latest/"
+categories:
+  - "KDL Tools"
+repositories:
+  annovar:
+    description: "Functionally annotates genetic variants"
+    include:
+      - annovar.xml
+

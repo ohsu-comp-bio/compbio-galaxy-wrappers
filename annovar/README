@@ -1,0 +1,10 @@
+Steps to get ANNOVAR working on Galaxy.
+
+First register and download ANNOVAR to the machine, somewhere galaxy will be able to see an access it. 
+Run the download commands for each of your desired databases. Example: "annotate_variation.pl -buildver hg19 -downdb -webfrom annovar refGene humandb/"
+Recomend following the first few steps outlined at https://annovar.openbioinformatics.org/en/latest/user-guide/startup/
+Basically if the command you need to run involves the -downdb option, it needs to happen on the command line.
+Note where you put the ANNOVAR program and the database files. 
+
+Now install the ANNOVAR tool from the tool_shed.
+To run the tool you will need to tell it where the ANNOVAR program lives and where the database files are. 
