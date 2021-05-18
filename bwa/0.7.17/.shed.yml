@@ -7,6 +7,6 @@ repositories:
   bwa_mem:
     description: "Map low-divergent sequences against a large reference genome."
     include:
-      - bwa_mem2.xml
+      - bwa_mem.xml
       - tool-data/*
       - tool_data_table_conf.xml.sample
