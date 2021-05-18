@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/seattleseq_format"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  seattleseq_format:
+    description: "Perform any needed pre-formatting operations so that SeattleSeq doesn't complain."
+    include:
+      - seattleseq_format.xml
+      - seattleseq_format.py
