@@ -514,7 +514,9 @@ def main():
         for k, v in chain.from_iterable(dict_items):
             comb[k].append(v)
         to_write[coord] = comb
-
+        # Look for any instances where the number of TFX fields do not match.
+        num_vals = len(set([len(x) for x in comb.values()]))
+        assert num_vals == 1 or not num_vals, "%s" % comb
     writer = VcfWriter(args.outfile, myvcf.vcf_reader)
     writer.write_metrics(vrnts, to_write)
 
