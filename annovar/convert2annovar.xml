@@ -1,0 +1,102 @@
+<tool id='convert2annovar' name="Convert 2 ANNOVAR" version='20191024.0.0'>
+    <description>Functionally annotates genetic variants</description>
+    <command detect_errors="exit_code"><![CDATA[
+
+    perl ${annovar_loc}/convert2annovar.pl -format vcf4
+    
+    #if $includeinfo:
+        --includeinfo
+    #end if
+
+    #if $chrmt:
+        --chrmt $chrmt
+    #end if
+
+    #if $filter:
+        --filter $filter
+    #end if
+
+    #if $withzyg:
+        --withzyg
+    #end if
+    
+    #if $comment:
+        --comment
+    #end if
+
+    #if $allsample:
+        --allsample
+    #end if
+
+    #if $genoqual:
+        --genoqual $genoqual
+    #end if
+
+    #if $varqual:
+        --varqual $varqual
+    #end if
+
+    #if $withfreq:
+        --withfreq
+    #end if
+
+    #if $withfilter:
+        --withfilter
+    #end if
+
+    #if $keepindelref:
+        --keepindelref
+    #end if
+
+    $input --outfile out.avinput
+
+
+
+]]>
+    </command>
+    <inputs>
+        <param name="annovar_loc" type="text" label="ANNOVAR Program Location"/>
+        <param name="input" type="data" format="vcf" label="Variant File" help="VCF Input File"/>
+        <param name="includeinfo" type="boolean" checked="false" label="Include Info"/>
+        <param name="chrmt" type="text" label="Mitochondrial Chromosome" help="chr identifier for mitochondria (default: M)" optional='true'/>
+        <param name="filter" type="text" label="Filter" help="output variants with this filter (case insensitive)" optional='true'/>
+        <param name="withzyg" type="boolean" checked="false" label="Print Zygosity"/>
+        <param name="comment" type="boolean" checked="false" label="Keep Comment Line"/>
+        <param name="allsample" type="boolean" checked="false" label="All Sample"/>
+        <param name="genoqual" type="integer" label="Genotype Quality Threshold" optional="true"/>
+        <param name="varqual" type="integer" label="Variant Quality Threshold" optional="true"/>
+        <param name="withfreq" type="boolean" checked="false" label="With Frequency" help="for --allsample, print frequency information instead"/>
+        <param name="withfilter" type="boolean" checked="false" label="With Filter"/>
+        <param name="keepindelref" type="boolean" checked="false" label="Keep Indel Ref" help="keep Ref/Alt alleles for indels"/>
+    </inputs>
+    <outputs>
+        <data format="txt" name="outfiles">
+            <discover_datasets pattern="out\.avinput\.(?P&lt;designation&gt;.+)\.avinput" visible="true"/>
+            <filter>allsample and not withfreq</filter>
+        </data>
+        <data format="txt" name="outfile" from_work_dir="out.avinput" label="${tool.name} on $on_string">
+            <filter>allsample and withfreq</filter>
+        </data>
+        <data format="txt" name="outfile" from_work_dir="out.avinput" label="${tool.name} on $on_string">
+            <filter>not allsample or withfreq</filter>
+        </data>
+    </outputs>
+    <help>
+    ANNOVAR is an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes (including human genome hg18, hg19, hg38, as well as mouse, worm, fly, yeast and many others). Given a list of variants with chromosome, start position, end position, reference nucleotide and observed nucleotides, ANNOVAR can perform:
+
+        Gene-based annotation: identify whether SNPs or CNVs cause protein coding changes and the amino acids that are affected. Users can flexibly use RefSeq genes, UCSC genes, ENSEMBL genes, GENCODE genes, AceView genes, or many other gene definition systems.
+        
+        Region-based annotation: identify variants in specific genomic regions, for example, conserved regions among 44 species, predicted transcription factor binding sites, segmental duplication regions, GWAS hits, database of genomic variants, DNAse I hypersensitivity sites, ENCODE H3K4Me1/H3K4Me3/H3K27Ac/CTCF sites, ChIP-Seq peaks, RNA-Seq peaks, or many other annotations on genomic intervals.
+        
+        Filter-based annotation: identify variants that are documented in specific databases, for example, whether a variant is reported in dbSNP, what is the allele frequency in the 1000 Genome Project, NHLBI-ESP 6500 exomes or Exome Aggregation Consortium (ExAC) or Genome Aggregation Database (gnomAD), calculate the SIFT/PolyPhen/LRT/MutationTaster/MutationAssessor/FATHMM/MetaSVM/MetaLR scores, find intergenic variants with GERP++ score less than 2 or CADD over 10, or many other annotations on specific mutations.
+        
+    Acknowledgements
+
+        The ANNOVAR software is originally designed by Dr. Kai Wang. Other developers and significant contributors include Dr. German Gaston Leparc, Paul Leo and Jamie Teer. The index-based filter operation were designed by Allen Day, Marine Huang and Stephen Weinberg at Ion Flux. Mehdi Pirooznia from Johnas Hopkins provided 1000g2012apr population-specific allele frequency files, Magali Olivier from International Agency for Research on Cancer and the COSMIC teamprovided COSMIC61 database and instructions on generating COSMIC63 database, Jun Ding from NIH/National Institute of Aging compiled human mitochondria gene annotation file on 1000 Genomes Project reference (GRCh37), Konrad Herbst from German Cancer Research Center compiled human mitochondria gene annotation file on UCSC hg19 coordiante (AF347015.1 or NC001807), Nancy F. Hansen from NIH/NHGRI provided patches to handle gzipped files. Numerous other ANNOVAR users have provided feedbacks, bug reports, code snipets and suggestions to improve the functionality of ANNOVAR and I am indebted to them for their invaluable help.
+
+
+    </help>
+    <citations>
+        <citation type="doi">10.1093/nar/gkq603</citation>
+    </citations>
+</tool>

@@ -137,6 +137,10 @@
             -otherinfo
         #end if
 
+        #if $mode.exonicsplicing:
+            -exonicsplicing
+        #end if
+
         #if $mode.genericdbfile:
             -genericdbfile $mode.genericdbfile
         #end if
@@ -184,6 +188,7 @@
             <when value="table">
                 <param name="protocol" type="text" label="Protocols" help="Comma seperated list of databases to use. Example: refGene,cytoBand,exac03,avsnp147,dbnsfp30a"/>
                 <param name="operation" type="text" label="Operations" help="Comma separated list of operations to perform on each database in protocol. Options: g (gene-based),gx (gene-based with cross reference),r (region-based),f (filter-based) Example: g,r,f,f,f"/>
+                <param name="vcfinput" type="boolean" checked="true" label="VCF Input?"/>
                 <param name="xref" type="data" format="txt" label="Gene Cross Reference File" optional="true"/>
                 <param name="nastring" type="text" label="NA String" help="String to represent missing data."/>
                 <param name="csvout" type="boolean" checked="false" label="Output as CSV?"/>
@@ -198,6 +203,7 @@
                 </param>
                 <param name="dbtype" type="text" label="Database Type"/>
                 <param name="splicing_threshold" type="integer" label="Splicing threshold" help="Defaults to 2bp" optional="true"/>
+                <param name="exonicsplicing" type="boolean" label="Exonic Splicing" checked="false"/>
                 <param name="neargene" type="integer" label="Near gene threshold" optional="true" help="Defaults to 1kb"/>
                 <param name="separate" type="boolean" checked="false" label="Seperate?"/>
                 <param name="precedence" type="text" label="Precedence" optional="true"/>
@@ -231,7 +237,7 @@
             <filter>mode['mode_type'] == "table" and mode["csvout"]</filter>
         </data>
         <data name="table_vcf_out" format="vcf" label="${tool.name} on $on_string: vcf" from_work_dir="outfile.vcf">
-            <filter>mode['mode_type'] == "table" and input['format'] == "vcf"</filter>
+            <filter>mode['mode_type'] == "table" and mode['vcfinput']</filter>
         </data>
         <data name="variation_function" format="txt" label="${tool.name} on $on_string: variant function" from_work_dir="outfile.variant_function">
             <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "geneanno"</filter>
