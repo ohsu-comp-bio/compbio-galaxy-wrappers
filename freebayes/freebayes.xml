@@ -278,11 +278,9 @@
                 <option value="history">History</option>
             </param>
             <when value="cached">
-                <expand macro="input_bam">
-                    <expand macro="validation" />
-                </expand>
+                <expand macro="input_bam" />
                 <param name="ref_file" type="select" label="Using reference genome">
-                  <options from_data_table="fasta_indexes" />
+                  <options from_data_table="all_fasta" />
                   <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input dataset"/>
                 </param>
             </when>

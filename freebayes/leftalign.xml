@@ -32,11 +32,11 @@
             <when value="cached">
                 <param name="input_bam" type="data" format="bam" label="Select alignment file in BAM format">
                     <validator type="unspecified_build" />
-                    <validator type="dataset_metadata_in_data_table" table_name="fasta_indexes" metadata_name="dbkey"
+                    <validator type="dataset_metadata_in_data_table" table_name="all_fasta" metadata_name="dbkey"
                                metadata_column="1" message="Sequences are not currently available for the specified build." />
                 </param>
                 <param name="ref_file" type="select" label="Using reference genome" argument="--fasta-reference">
-                    <options from_data_table="fasta_indexes"></options>
+                    <options from_data_table="all_fasta"></options>
                     <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file"/>
                 </param>
             </when>

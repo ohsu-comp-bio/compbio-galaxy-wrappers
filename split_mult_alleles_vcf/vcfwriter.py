@@ -54,14 +54,12 @@ class VcfHeader:
         return None
 
     def _find_entry_idx(self, htype):
+        idx = None
         for entry in self.raw_header:
             search_for = '##' + htype
             if entry.startswith(search_for):
                 idx = self.raw_header.index(entry)
-        if idx:
-            return idx
-        else:
-            return None
+        return idx
 
     def add_header_line(self, htype, header_dict):
         """

@@ -31,3 +31,12 @@ repositories:
       - macros.xml
       - tool-data/*
       - tool_data_table_conf.xml.sample
+  gatk4_auto_variantfiltration:
+    description: "Filter variant calls based on INFO and/or FORMAT annotations."
+    include:
+      - gatk4_auto_variantfiltration.xml
+      - macros.xml
+      - tool-data/*
+      - tool_data_table_conf.xml.sample
+
+

@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
-# DESCRIPTION:
-# USAGE:
-# CODED BY: John Letaw
+# DESCRIPTION: Based on a BED file, annotate VCFs in the FILTER column with a phrase of choice.
 
-from __future__ import print_function
 from bed import BedReader
+from collections import OrderedDict
 import argparse
+import vcfpy
 
-VERSION = '0.1.0'
+
+VERSION = '0.2.0'
+
 
 def supply_args():
     """
@@ -19,49 +20,34 @@ def supply_args():
     parser.add_argument('bed', help='Input BED')
     parser.add_argument('vcf', help='Input VCF')
     parser.add_argument('outfile', help='Output VCF')
-    parser.add_argument('anno', help='Annotation to be added to FILTER '
-                                       'column.')
+    parser.add_argument('anno', help='Annotation to be added to FILTER column.')
+    parser.add_argument('desc', help='Description of the annotation to be added to FILTER header entry.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
 
 
-def replace_filter(filt, anno):
-    """
-    Remove the dot if it's there, otherwise just append something with a
-    semicolon.
-    :return:
-    """
-    if filt == '.' or filt == 'PASS':
-        return anno
-    else:
-        return ';'.join([filt, anno])
-
-
 def main():
 
     args = supply_args()
-    handle_out = open(args.outfile, 'w')
+    vcf = vcfpy.Reader.from_path(args.vcf)
+    # Add the header entry for the new FILTER.
+    header_line = OrderedDict({"ID": args.anno,
+                               "Description": args.desc})
+    vcf.header.add_filter_line(header_line)
+    writer = vcfpy.Writer.from_path(args.outfile, vcf.header)
     my_bed = BedReader(args.bed).split_coords()
 
-    with open(args.vcf, 'rU') as vcf:
-        for line in vcf:
-            if not line.startswith('#'):
-                nline = line.rstrip('\n').split('\t')
-                chrom = nline[0]
-                pos = int(nline[1])
-                filter = nline[6]
+    for rec in vcf:
+        chrom = rec.CHROM
+        pos = rec.POS
+        if pos in my_bed[chrom]:
+            rec.add_filter(args.anno)
+        writer.write_record(rec)
 
-                if pos in my_bed[chrom]:
-                    nline[6] = replace_filter(filter, args.anno)
+    vcf.close()
+    writer.close()
 
-                handle_out.write('\t'.join(nline))
-                handle_out.write('\n')
-
-            else:
-                handle_out.write(line)
-
-    handle_out.close()
 
 if __name__ == "__main__":
     main()
