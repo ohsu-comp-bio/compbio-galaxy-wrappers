@@ -1,4 +1,4 @@
-<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.4.1">
+<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.5.0">
   <description>Create annotated fusion output, based off of STAR-Fusion output.</description>
   <requirements>
     <requirement type="package" version="0.15.3">pysam</requirement>
@@ -12,6 +12,7 @@
     python $__tool_directory__/fusion_annotation.py
     --starfusion '${starfusion}'
     '${filter}'
+    '${cr_rem}'
     --json_sample_metrics '${json_sample_metrics}'
     #if $ensembl_mapping
         --ensembl_mapping '${ensembl_mapping}'
@@ -36,6 +37,7 @@
        <option value="--filt">Yes</option>
        <option value=''>No</option>
      </param>
+     <param name="cr_rem" checked="false" type="boolean" truevalue="--cr_rem" falsevalue="" label="Remove ctrlM" help="this is a v1.10.0 star-fusion output, get rid of the crs" />
      <conditional name="refGenomeSource">
           <param name="genomeSource" type="select" label="Will you select a reference genome from your history or use a built-in index?" help="Built-ins were indexed using default options">
               <option value="indexed">Use a built-in index</option>

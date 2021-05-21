@@ -9,7 +9,7 @@ from collections import OrderedDict
 from ensembldb import EnsemblDbImport
 from gtf import Gtf
 
-VERSION = '0.4.1'
+VERSION = '0.5.0'
 
 
 def supply_args():
@@ -24,6 +24,7 @@ def supply_args():
     parser.add_argument('--path_to_fasta', help='Full path to fasta.fa file, with index file')
     parser.add_argument('--gencode_gtf', help='GENCODE GTF, as used in CTAT resource package.')
     parser.add_argument('--filt', action='store_true', help='filter out specific ribosomal and mitochondrial fusions')
+    parser.add_argument('--cr_rem', action='store_true', help='this is a v1.10.0 star-fusion output, get rid of the crs')
     parser.add_argument('--output', default='starfusion_output.bedpe', help='output file')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
@@ -31,9 +32,12 @@ def supply_args():
 
 
 class StarFusionOutput:
-    def __init__(self, filename):
+    def __init__(self, filename, cr_rem=False):
         self.filename = filename
-        self.header, self.fusions = self.out_create()
+        if cr_rem:
+            self.header, self.fusions = self.out_create_cr_rm(self.remove_cr())
+        else:
+            self.header, self.fusions = self.out_create()
         self.cds_left = self._get_tx_list(left=True)
         self.cds_right = self._get_tx_list(left=False)
 
@@ -49,6 +53,38 @@ class StarFusionOutput:
             else:
                 tx_list.append(fuse.cds_right_id)
         return tx_list
+
+    def remove_cr(self):
+        """
+        In v1.10.0 ^Ms are being added all over the file.
+        :return:
+        """
+        no_crs = []
+        first = True
+        with open(self.filename, 'r') as my_sf:
+            for line in my_sf:
+                if first:
+                    temp = line.replace('\r', '').rstrip()
+                    first = False
+                else:
+                    temp += line
+                    first = True
+                    no_crs.append(temp)
+        return no_crs
+
+    def out_create_cr_rm(self, my_sf):
+        """
+        If we have to use remove_cr, use this function.
+        :return:
+        """
+        fusions = []
+        header = []
+        for fusion in my_sf:
+            if fusion.startswith('#'):
+                header = fusion.rstrip('\n').lstrip('#').split('\t')
+            else:
+                fusions.append(StarFusionOutputLine(fusion, header))
+        return header, fusions
 
     def out_create(self):
         fusions = []
@@ -348,7 +384,7 @@ def main():
         hard_filter = None
         regex_filt = None
 
-    sf = StarFusionOutput(args.starfusion)
+    sf = StarFusionOutput(args.starfusion, args.cr_rem)
     my_sf = sf.fusions
 
     # Get the transcript list from the star-fusion file, so we can then create exon-coord mappings from gencode.
