@@ -1,0 +1,11 @@
+owner: "campbena"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/homozygosity"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/homozygosity"
+categories:
+  - "KDL Tools"
+repositories:
+  rna_chart:
+    description: "Creates a plot of the number of genes to TPM in the sample compared to the validation averages."
+    include:
+      - chart.R
+      - rna_chart.xml
