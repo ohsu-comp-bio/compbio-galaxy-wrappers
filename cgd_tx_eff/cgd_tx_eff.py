@@ -200,11 +200,17 @@ class AnnovarRecExonVrntFunc(AnnovarRec):
             hgvs_parser = Hgvs(full_c)
 
             hgvs_basep = hgvs_parser.start
-            hgvs_p = metrics.split(':')[4]
-            full_p = ':'.join([tx, hgvs_p])
-            hgvs_parser = Hgvs(full_p)
-            hgvs_three = hgvs_parser.threep
-            hgvs_aap = hgvs_parser.start[3:]
+            try:
+                hgvs_p = metrics.split(':')[4]
+                full_p = ':'.join([tx, hgvs_p])
+                hgvs_parser = Hgvs(full_p)
+                hgvs_three = hgvs_parser.threep
+                hgvs_aap = hgvs_parser.start[3:]
+            except IndexError:
+                hgvs_p = None
+                full_p = None
+                hgvs_three = None
+                hgvs_aap = None
 
         return {
                 'AAP': hgvs_aap,
