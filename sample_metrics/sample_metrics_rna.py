@@ -80,7 +80,7 @@ class KallistoMetrics(KallistoCounts):
         Return Kallisto records that intersect with hk_genes.
         :return:
         """
-        return {x.hgnc_tx: [x.hgnc_tx, x.enst, x.raw, x.tpm] for x in self.recs.values() if x.hgnc in self.hk}
+        return {x.hgnc_tx: [x.hgnc_tx, x.enst, x.raw, x.tpm] for x in self.recs.values() if x.hgnc_tx in self.hk}
 
     def _summ_tpm(self):
         """
@@ -173,20 +173,20 @@ class MetricsWriter:
         """
         with open(outfile, 'w') as out:
             # COUNTS section
-            out.write('COUNTS_greaterorequalto_Limit\tnumber_of_genes\n')
+            out.write('COUNTS_greaterorequalto_Limit\tnumber_of_transcripts\n')
             for k in sorted(sumrz_cnts):
                 out.write('%s\t%s\n' % (k, sumrz_cnts[k]))
             out.write('\n')
 
             # TPM section
-            out.write('TPM_greaterorequalto_Limit\tnumber_of_genes\n')
+            out.write('TPM_greaterorequalto_Limit\tnumber_of_transcripts\n')
             for k in sorted(sumrz_tpm):
                 out.write('%s\t%s\n' % (k, sumrz_tpm[k]))
             out.write('\n')
 
             # HOUSEKEEPING section
             out.write('HOUSEKEEPING GENES\n')
-            out.write('hgvs_gene_id\tensembl_id\tcounts\ttpm\n')
+            out.write('hgvs_tx_id\tensembl_id\tcounts\ttpm\n')
             # sort by HUGO gene name, because life is hard
             for val in sorted(hk_counts.values()):
                 out.write('%s\t%s\t%s\t%s\n' % (val[0], val[1], val[2], val[3]))
