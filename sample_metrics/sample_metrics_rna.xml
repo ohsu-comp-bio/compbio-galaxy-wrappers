@@ -1,30 +1,20 @@
-<tool id="sample_metrics_rna" name="Sample Level Metrics RNA" version="0.3.0" >
+<tool id="sample_metrics_rna" name="Sample Level Metrics RNA" version="1.0.0" >
   <description>Metrics calculated at the sample RNA metrics, for use in CGD and for additional QC.</description>
   <version_command>python $__tool_directory__/sample_metrics_rna.py --version</version_command>
 
   <requirements>
-    <requirement type="package" version="1.11">numpy</requirement>
-    <requirement type="package" version="0.7.10">pybedtools</requirement>
-    <requirement type="package" version="0.15.3">pysam</requirement>
+    <requirement type="package" version="1.20.3">numpy</requirement>
+    <requirement type="package" version="0.16.0.1">pysam</requirement>
   </requirements>
 
   <command><![CDATA[
     $__tool_directory__/sample_metrics_rna.py
-    --counts '${counts}'
-    --tpm '${tpm}'
-    --filtered_gtf '${gtf}'
-    --hk_file '${hk_file}'
-    --out '${output_txt}'
-    --outjson '${output_json}'
-
-]]></command>
+    '${counts}' '${hk_file}' '${output_json}' '${output_txt}'
+    ]]></command>
 
   <inputs>
-      <param name="counts" type="data" format="tabular" optional="false" label="Counts from STAR" help="This is the tabular count output from RNA STAR reads_per_gene.tab" />
-      <param name="tpm" type="data" format="txt" label="TPM from Counts using a filtered GTF" help="TPM converted from htseq-count with the gtf, which is Homo_sapiens.GRCh37.75_filt_truseq-rna-exome-targets.gtf. ref_GRCh37.p13.truseq-rna-exome-targets.gtf. This gtf is the ref_GRCh37.p13_top_level.gff3, filtered by common chromosomes converted to a gtf, and bedtools intersected with truseq-rna-exome-targeted-regions-manifest-v1-2. Can also be a common gtf." />
-      <param name="gtf" type="data" format="gtf" label="GTF" help="Homo_sapiens.GRCh37.75.gtf" />
-      <param name="hk_file" type="data" format="txt" label="Housekeeping Gene List" help="List of house keeping genes to include" />
-
+      <param name="counts" type="data" format="tabular" optional="false" label="Kallisto Abundances" help="Kallisto counts matrix." />
+      <param name="hk_file" type="data" format="txt" optional="false" label="Housekeeping Gene List" help="List of housekeeping genes to output metrics for." />
   </inputs>
 
   <outputs>
@@ -32,12 +22,18 @@
     <data format="txt" name="output_txt" label="${tool.name} on ${on_string}: txt" />
   </outputs>
 
-  <tests></tests>
+  <help><![CDATA[
+    usage: sample_metrics_rna.py [-h] [--version] counts hk_file outjson out
 
-  <help>
-      Metrics calculated at the sample level metrics for RNA, for use in CGD and for additional QC.
-  </help>
+    positional arguments:
+      counts      Kallisto counts matrix.
+      hk_file     List of housekeeping genes to output
+      outjson     json output for CGD
+      out         Output file in human readable text format.
 
-  <citations></citations>
+    optional arguments:
+      -h, --help  show this help message and exit
+      --version   show program's version number and exit
+  ]]></help>
 
 </tool>

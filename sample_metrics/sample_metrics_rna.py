@@ -1,161 +1,205 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # DESCRIPTION: Create sample level metrics to be passed to the CGD for RNA.  Metrics
 #  are passed as a json dump.
 # usage: sample_metrics.py -h
-#
-#   DO: optional arguments when tpm is empty.
 
-
-from __future__ import print_function
 
 import argparse
 import json
 import numpy
-from pybedtools import BedTool
-
-VERSION = '0.3.0'
 
 
-def main():
-    args = supply_args()
-    target_genes = targetbed_gtf(args.filtered_gtf)
-    sumrz_cnts, hk_counts = summarize_starcounts(args.counts, target_genes, args.hk_file)
-
-    if args.tpm:
-        sumrz_tpm, hk_tpm = summarize_tpm(args.tpm, target_genes, args.hk_file)
-
-    write_output(sumrz_cnts, sumrz_tpm, hk_counts, hk_tpm, args.out, args.outjson)
+VERSION = '1.0.0'
 
 
 def supply_args():
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--counts', help='STAR_output_reads_per_gene')
-    parser.add_argument('--tpm', help="tpmfile converted from counts, ENSG ids only")
-    parser.add_argument('--filtered_gtf', help='ref_GRCh37.p13.truseq-rna-exome-targets.gtf')
-    parser.add_argument('--hk_file', help='List of housekeeping genes to output')
-    parser.add_argument('--out', help='Output file in human readable text format.')
-    parser.add_argument('--outjson', help='json output for CGD')
+    parser.add_argument('counts', help='Kallisto counts matrix.')
+    parser.add_argument('hk_file', help='List of housekeeping genes to output')
+    parser.add_argument('outjson', help='json output for CGD')
+    parser.add_argument('out', help='Output file in human readable text format.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
 
 
-def targetbed_gtf(filtered_gtf):
+class KallistoCounts:
     """
-    :return list of HGVS for genes only in the target file
+    header:
+    target_id	length	eff_length	est_counts	tpm
     """
-    gtf = BedTool(filtered_gtf)
-    targetgenes = set()
-    for feature in gtf:
-        attrib = str(feature[8].strip().split(';')[2])
-        targetgenes.add(attrib.split('"')[1])
-    return targetgenes
+    def __init__(self, filename):
+        self.filename = filename
+        self.header = self._get_header()
+        self.recs = self._gather_recs()
+
+    def _get_header(self):
+        """
+        Grab the header from the first line of the file.
+        :return:
+        """
+        with open(self.filename, 'r') as myfile:
+            return myfile.readline().rstrip().split('\t')
+
+    def _gather_recs(self):
+        """
+        Put all the records in a structure.
+        :return:
+        """
+        recs = {}
+        with open(self.filename, 'r') as myfile:
+            next(myfile)
+            for line in myfile:
+                sline = line.rstrip().split('\t')
+                target_id = sline[0]
+                hgnc_tx = target_id.split('|')[4]
+                if target_id not in recs:
+                    recs[hgnc_tx] = KallistoRec(sline)
+                else:
+                    raise Exception("DUP")
+        return recs
 
 
-def get_hkgenes(filename_hk, target_genes, dict_of_abundance):
+class KallistoMetrics(KallistoCounts):
     """
-    Housekeeping genes, filter for those genes are in the target file
+    Metrics based on Kallisto counts structures.
     """
-    hk_genes = {}
+    def __init__(self, filename, hk):
+        super(KallistoMetrics, self).__init__(filename)
+        self.tpms = [x.tpm for x in self.recs.values()]
+        self.raws = [x.raw for x in self.recs.values()]
+        self.summ_tpms = self._summ_tpm()
+        self.summ_raw = self._summ_raw()
+        # For housekeeping gene stats.
+        self.hk = hk
+        self.hk_counts = self._hk_filt()
 
-    with open(filename_hk, 'rU') as fh_hk:
-        for lines in fh_hk:
-            geneid = lines.rstrip('\n').split('\t')
-            if geneid[0] in target_genes:
-                hk_genes[geneid[0]] = [geneid[0], dict_of_abundance[geneid[0]]]
-            else:
-                print(geneid[0] + ": ", "Check gene id format (Hugo/ENSG) or gene is not in target intervals.")
-    return hk_genes
+    def _hk_filt(self):
+        """
+        Return Kallisto records that intersect with hk_genes.
+        :return:
+        """
+        return {x.hgnc_tx: [x.hgnc_tx, x.enst, x.raw, x.tpm] for x in self.recs.values() if x.hgnc_tx in self.hk}
+
+    def _summ_tpm(self):
+        """
+        Put TPM values in to bins, as such:
+        {'TPM_0': 198909, 'TPM_0.01': 100329, 'TPM_0.1': 67443, 'TPM_1': 25875, 'TPM_10': 3840, 'TPM_100': 468,
+        'TPM_1000': 61}
+        :return:
+        """
+        sumrz_tpm = {}
+        np_tpm = numpy.asarray(self.tpms, dtype=numpy.float64)
+        sumrz_tpm["TPM_0"] = len(np_tpm[np_tpm >= 0])
+        for i in range(-2, 4):
+            idx = pow(10, i)
+            sumrz_tpm["TPM_" + str(idx)] = len(np_tpm[np_tpm >= idx])
+        return sumrz_tpm
+
+    def _summ_raw(self):
+        """
+        Similar to _summ_tpm but for raw COUNTS instead.
+        :return:
+        """
+        sumrz_counts = {}
+        np_counts = numpy.asarray(self.raws, dtype=numpy.float64)
+        sumrz_counts["COUNT_0"] = len(np_counts[np_counts >= 0])
+        for i in range(0, 6):
+            idx = pow(10, i)
+            sumrz_counts["COUNT_" + str(idx)] = len(np_counts[np_counts >= idx])
+        return sumrz_counts
 
 
-def summarize_starcounts(infile, target_genes, filename_hk):
+class KallistoRec:
     """
-    Summarize the reads.per.gene from STAR to TPM for table
+    Gather information related to a single Kallisto record.
+    ENST00000456328.2|ENSG00000223972.5|OTTHUMG00000000961.2|OTTHUMT00000362751.1|DDX11L1-002|DDX11L1|
+    1657|processed_transcript|	1657	1389.41	105.16	0.143597
     """
-    rev_counts = {}
-    other = {}
-    sumrz_counts = {}
-    with open(infile, 'rU') as star_counts:
-        for lines in star_counts:
-            line = lines.rstrip('\n').split('\t')
-            if '_' not in line[0]:
-                rev_counts[line[0]] = line[3]
-            else:
-                other[line[0]] = line[3]
-    target_counts = [rev_counts[item] for item in rev_counts.keys() if item in target_genes]
-
-    np_counts = numpy.asarray(target_counts, dtype=numpy.float64)
-    sumrz_counts["COUNT_0"] = len(np_counts[np_counts >= 0])
-    for i in range(0, 6):
-        idx = pow(10, i)
-        sumrz_counts["COUNT_" + str(idx)] = len(np_counts[np_counts >= idx])
-
-    hk_counts = get_hkgenes(filename_hk, target_genes, rev_counts)
-    return sumrz_counts, hk_counts
+    def __init__(self, rec):
+        self.rec = rec
+        self.enst = self.rec[0].split('|')[0]
+        self.hgnc_tx = self.rec[0].split('|')[4]
+        self.hgnc = self.rec[0].split('|')[5]
+        self.tpm = self.rec[4]
+        self.raw = self.rec[3]
 
 
-def summarize_tpm(filename_tpm, target_genes, filename_hk):
+class HousekeepingGenes:
     """
-    Summarize the converted TPM (calc_norm.py) reads.per.gene from STAR to TPM for table
-    :param filename_tpm (string) filename of tpm translated output
-    :param target_genes (list)  target HUGO gene ids
-    :param filename_hk (string) filename of housekeeping gene list
-    :return sumrz_tpm (dict)
-    :return hk_genes (list of list)
+    Load housekeeping genes from a file.
     """
-    tpm = {}
-    # tuple, ordered
-    sumrz_tpm = {}
-    with open(filename_tpm, 'rU') as fh_tpm:
-        for lines in fh_tpm:
-            line = lines.rstrip('\n').split('\t')
-            if line[0] in target_genes:
-                tpm[line[0]] = line[1]
+    def __init__(self, filename):
+        self.filename = filename
+        self.hk_genes = self._get_hkgenes()
 
-    # Summarize TPM
-    np_tpm = numpy.asarray(list(tpm.values()), dtype=numpy.float64)
-    sumrz_tpm["TPM_0"] = len(np_tpm[np_tpm >= 0])
-    for i in range(-2, 4):
-        idx = pow(10, i)
-        sumrz_tpm["TPM_" + str(idx)] = len(np_tpm[np_tpm >= idx])
-
-    hk_tpm = get_hkgenes(filename_hk, target_genes, tpm)
-
-    return sumrz_tpm, hk_tpm
+    def _get_hkgenes(self):
+        """
+        Housekeeping genes, filter for those genes are in the target file
+        """
+        hk_genes = []
+        with open(self.filename, 'r') as fh_hk:
+            for lines in fh_hk:
+                geneid = lines.rstrip('\n').split('\t')
+                hk_genes.append(geneid[0])
+        return hk_genes
 
 
-def write_output(sumrz_cnts, sumrz_tpm, hk_counts, hk_tpm, outfile, outjson):
+class MetricsWriter:
     """
-    Write metrics to a text file, mainly to be viewed in Galaxy.
-    json output for CGD, works for now, <<shrug>>.
-    :return:
+    Write the KallistoMetrics to json/tsv outputs.
     """
+    @staticmethod
+    def write_json(filename, *args):
+        """
+        Write metrics to json.
+        :param filename:
+        :return:
+        """
+        with open(filename, 'w') as jsonout:
+            to_dump = {k: v for d in args for k, v in d.items()}
+            jsonout.write(json.dumps(to_dump))
 
-    with open(outfile, 'w') as out:
-        out.write('COUNTS_greaterorequalto_Limit\tnumber_of_genes\n')
-        for k in sorted(sumrz_cnts):
-            out.write('%s\t%s\n' % (k, sumrz_cnts[k]))
+    @staticmethod
+    def write_txt(outfile, sumrz_cnts, sumrz_tpm, hk_counts):
+        """
+        Put in to human-readable format.
+        :param outfile:
+        :param sumrz_cnts:
+        :param sumrz_tpm:
+        :param hk_counts:
+        :return:
+        """
+        with open(outfile, 'w') as out:
+            # COUNTS section
+            out.write('COUNTS_greaterorequalto_Limit\tnumber_of_transcripts\n')
+            for k in sorted(sumrz_cnts):
+                out.write('%s\t%s\n' % (k, sumrz_cnts[k]))
+            out.write('\n')
 
-        out.write('\n')
-        out.write('TPM_greaterorequalto_Limit\tnumber_of_genes\n')
+            # TPM section
+            out.write('TPM_greaterorequalto_Limit\tnumber_of_transcripts\n')
+            for k in sorted(sumrz_tpm):
+                out.write('%s\t%s\n' % (k, sumrz_tpm[k]))
+            out.write('\n')
 
-        for k in sorted(sumrz_tpm):
-            out.write('%s\t%s\n' % (k, sumrz_tpm[k]))
+            # HOUSEKEEPING section
+            out.write('HOUSEKEEPING GENES\n')
+            out.write('hgvs_tx_id\tensembl_id\tcounts\ttpm\n')
+            # sort by HUGO gene name, because life is hard
+            for val in sorted(hk_counts.values()):
+                out.write('%s\t%s\t%s\t%s\n' % (val[0], val[1], val[2], val[3]))
+            out.write('\n')
 
-        out.write('\n')
-        out.write('HOUSEKEEPING GENES\n')
-        out.write('hgvs_gene_id\tensembl_id\tcounts\ttpm\n')
 
-        # sort by HUGO gene name, because life is hard
-        for key, value in sorted(hk_counts.items()):
-            out.write('%s\t%s\t%s\t%s\n' % (value[0], key, str(value[1]), hk_tpm[key][1]))
-
-        out.write('\n')
-
-    with open(outjson, 'w') as jsonout:
-        json_dict = {**sumrz_cnts, **sumrz_tpm}
-        jsonout.write(json.dumps(json_dict))
+def main():
+    args = supply_args()
+    hk = HousekeepingGenes(args.hk_file).hk_genes
+    metrics = KallistoMetrics(args.counts, hk)
+    writer = MetricsWriter()
+    writer.write_json(args.outjson, metrics.summ_tpms, metrics.summ_raw)
+    writer.write_txt(args.out, metrics.summ_raw, metrics.summ_tpms, metrics.hk_counts)
 
 
 if __name__ == "__main__":
