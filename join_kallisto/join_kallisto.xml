@@ -1,4 +1,4 @@
-<tool id="join_kallisto" name="Join Kallisto Matrix" version="0.1.0">
+<tool id="join_kallisto" name="Join Kallisto Matrix" version="0.2.1">
     <requirements>
         <requirement type="package" version="3.6">python</requirement>
         <requirement type="package" version="0.23.4">pandas</requirement>
@@ -6,10 +6,8 @@
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
         #for $f in $files:
-            ln -s $f ${f.name}
+            ln -s $f ${f.name} &&
         #end for
-
-        &&
 
         python "$script"
     ]]></command>
