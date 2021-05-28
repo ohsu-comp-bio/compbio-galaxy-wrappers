@@ -1,4 +1,4 @@
-<tool id="join_kallisto" name="Join Kallisto Matrix" version="0.2.1">
+<tool id="join_kallisto" name="Join Kallisto Matrix" version="0.2.2">
     <requirements>
         <requirement type="package" version="3.6">python</requirement>
         <requirement type="package" version="0.23.4">pandas</requirement>
@@ -6,7 +6,7 @@
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
         #for $f in $files:
-            ln -s $f ${f.name} &&
+            ln -s "$f" "${f.name}" &&
         #end for
 
         python "$script"
@@ -34,11 +34,14 @@ fns.append("${f.name}")
 
 dfs = []
 for f in fns:
+    #if $sampleid:
+    sample = "$sampleid"
+    #else:
     sample = os.path.splitext(os.path.basename(f))[0]
+    #end if
     df = pd.read_csv(f,sep="\t")
     df = format_df(df,sample, "$ids", "$unit")
     dfs.append(df)
-
     exp_df = reduce(lambda  left,right: pd.merge(left,right, left_index=True, right_index=True, how='outer'), dfs)
 
 #if $matrix:
@@ -53,6 +56,7 @@ exp_df.to_csv("expression_matrix.tsv", sep="\t")
     <inputs>
         <param name="files" format="tsv,txt,tabular" type="data" multiple="true" label=""/>
         <param name="matrix" format="tsv,txt,tabular" type="data" optional="true" label="Matrix of Gene expression to combine"/>
+        <param name="sampleid" optional="true" type="text" label="Sample ID"/>
         <param name="ids" type="select" label="Identifiers to use: ">
             <option value="ensembl_gene" selected="true">ensembl_gene</option>
             <option value="otthum_gene">otthum_gene</option>
