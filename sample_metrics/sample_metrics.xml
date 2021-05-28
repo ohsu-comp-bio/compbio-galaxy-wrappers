@@ -1,6 +1,6 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.6.7" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.6.8" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
-  
+
   <requirements>
     <requirement type="package" version="1.9">samtools</requirement>
   </requirements>

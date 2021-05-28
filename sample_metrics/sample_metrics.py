@@ -11,7 +11,7 @@ import json
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
 
-VERSION = '0.6.7'
+VERSION = '0.6.8'
 
 
 def supply_args():
@@ -459,6 +459,8 @@ class MetricPrep(SampleMetrics):
                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
                 'QIAseq_V3_HEME2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                     'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
+                'QIAseq_V3_HEME_mini': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
+                                        'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'QIAseq_V3_STP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                    'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'TruSeq_RNA_Exome_V1-2': ['qthirty'],
@@ -480,6 +482,7 @@ class MetricPrep(SampleMetrics):
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
                                   'gc_pct_r1', 'gc_pct_r2', 'gender_check', 'homozygosity_flag'],
                 'QIAseq_V3_HEME2': [],
+                'QIAseq_V3_HEME_mini': [],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
                                           'gatk_pct_correct_strand_reads', 'rna_count_zero', 'rna_count_one',
