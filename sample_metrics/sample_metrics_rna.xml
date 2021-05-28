@@ -9,12 +9,13 @@
 
   <command><![CDATA[
     $__tool_directory__/sample_metrics_rna.py
-    '${counts}' '${hk_file}' '${output_json}' '${output_txt}'
+    '${counts}' '${hk_file}' '${output_json}' '${output_txt}' '${by_gene}'
     ]]></command>
 
   <inputs>
       <param name="counts" type="data" format="tabular" optional="false" label="Kallisto Abundances" help="Kallisto counts matrix." />
       <param name="hk_file" type="data" format="txt" optional="false" label="Housekeeping Gene List" help="List of housekeeping genes to output metrics for." />
+      <param name="by_gene" type="boolean" truevalue="--by_gene" falsevalue="" checked="false" label="Gene Metrics" help="Aggregate by gene instead of transcript." />
   </inputs>
 
   <outputs>

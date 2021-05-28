@@ -19,6 +19,7 @@ def supply_args():
     parser.add_argument('hk_file', help='List of housekeeping genes to output')
     parser.add_argument('outjson', help='json output for CGD')
     parser.add_argument('out', help='Output file in human readable text format.')
+    parser.add_argument('--by_gene', action="store_true", help='Collect metrics by gene.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
@@ -33,6 +34,7 @@ class KallistoCounts:
         self.filename = filename
         self.header = self._get_header()
         self.recs = self._gather_recs()
+        self.agg_recs = self._agg_recs()
 
     def _get_header(self):
         """
@@ -60,13 +62,44 @@ class KallistoCounts:
                     raise Exception("DUP")
         return recs
 
+    def _agg_recs(self):
+        """
+        Collect TPM and raw metrics together per-gene.
+        :return:
+        """
+        agg_recs = {}
+        for val in self.recs.values():
+            if val.hgnc not in agg_recs:
+                agg_recs[val.hgnc] = KallistoGeneCounts(val.hgnc)
+            agg_recs[val.hgnc].incr(float(val.raw), float(val.tpm))
+        return agg_recs
+
+
+class KallistoGeneCounts:
+    def __init__(self, hgnc):
+        self.hgnc = hgnc
+        self.tpm = 0.0
+        self.raw = 0.0
+
+    def incr(self, raw, tpm):
+        """
+        Increment tpm and raw when values come in.
+        This can probably use __add__ or something like that.
+        :return:
+        """
+        self.raw += raw
+        self.tpm += tpm
+
 
 class KallistoMetrics(KallistoCounts):
     """
     Metrics based on Kallisto counts structures.
     """
-    def __init__(self, filename, hk):
+    def __init__(self, filename, hk, agg=False):
         super(KallistoMetrics, self).__init__(filename)
+        self.agg = agg
+        if agg:
+            self.recs = self.agg_recs
         self.tpms = [x.tpm for x in self.recs.values()]
         self.raws = [x.raw for x in self.recs.values()]
         self.summ_tpms = self._summ_tpm()
@@ -80,7 +113,10 @@ class KallistoMetrics(KallistoCounts):
         Return Kallisto records that intersect with hk_genes.
         :return:
         """
-        return {x.hgnc_tx: [x.hgnc_tx, x.enst, x.raw, x.tpm] for x in self.recs.values() if x.hgnc_tx in self.hk}
+        if self.agg:
+            return {x.hgnc: [x.hgnc, x.raw, x.tpm] for x in self.recs.values() if x.hgnc in self.hk}
+        else:
+            return {x.hgnc_tx: [x.hgnc_tx, x.enst, x.raw, x.tpm] for x in self.recs.values() if x.hgnc_tx in self.hk}
 
     def _summ_tpm(self):
         """
@@ -150,6 +186,9 @@ class MetricsWriter:
     """
     Write the KallistoMetrics to json/tsv outputs.
     """
+    def __init__(self, metrics):
+        self.metrics = metrics
+
     @staticmethod
     def write_json(filename, *args):
         """
@@ -161,45 +200,51 @@ class MetricsWriter:
             to_dump = {k: v for d in args for k, v in d.items()}
             jsonout.write(json.dumps(to_dump))
 
-    @staticmethod
-    def write_txt(outfile, sumrz_cnts, sumrz_tpm, hk_counts):
+    def write_txt(self, outfile):
         """
         Put in to human-readable format.
         :param outfile:
-        :param sumrz_cnts:
-        :param sumrz_tpm:
-        :param hk_counts:
         :return:
         """
         with open(outfile, 'w') as out:
             # COUNTS section
             out.write('COUNTS_greaterorequalto_Limit\tnumber_of_transcripts\n')
-            for k in sorted(sumrz_cnts):
-                out.write('%s\t%s\n' % (k, sumrz_cnts[k]))
+            for k in sorted(self.metrics.summ_raw):
+                out.write('%s\t%s\n' % (k, self.metrics.summ_raw[k]))
             out.write('\n')
 
             # TPM section
             out.write('TPM_greaterorequalto_Limit\tnumber_of_transcripts\n')
-            for k in sorted(sumrz_tpm):
-                out.write('%s\t%s\n' % (k, sumrz_tpm[k]))
+            for k in sorted(self.metrics.summ_tpms):
+                out.write('%s\t%s\n' % (k, self.metrics.summ_tpms[k]))
             out.write('\n')
 
             # HOUSEKEEPING section
             out.write('HOUSEKEEPING GENES\n')
-            out.write('hgvs_tx_id\tensembl_id\tcounts\ttpm\n')
-            # sort by HUGO gene name, because life is hard
-            for val in sorted(hk_counts.values()):
-                out.write('%s\t%s\t%s\t%s\n' % (val[0], val[1], val[2], val[3]))
-            out.write('\n')
+            if self.metrics.agg:
+                out.write('hgvs_id\tcounts\ttpm\n')
+                # sort by HUGO gene name, because life is hard
+                for val in sorted(self.metrics.hk_counts.values()):
+                    out.write('%s\t%s\t%s\n' % (val[0], val[1], val[2]))
+                out.write('\n')
+            else:
+                out.write('hgvs_tx_id\tensembl_id\tcounts\ttpm\n')
+                # sort by HUGO gene name, because life is hard
+                for val in sorted(self.metrics.hk_counts.values()):
+                    out.write('%s\t%s\t%s\t%s\n' % (val[0], val[1], val[2], val[3]))
+                out.write('\n')
 
 
 def main():
     args = supply_args()
     hk = HousekeepingGenes(args.hk_file).hk_genes
-    metrics = KallistoMetrics(args.counts, hk)
-    writer = MetricsWriter()
+    if args.by_gene:
+        metrics = KallistoMetrics(args.counts, hk, agg=True)
+    else:
+        metrics = KallistoMetrics(args.counts, hk, agg=False)
+    writer = MetricsWriter(metrics)
     writer.write_json(args.outjson, metrics.summ_tpms, metrics.summ_raw)
-    writer.write_txt(args.out, metrics.summ_raw, metrics.summ_tpms, metrics.hk_counts)
+    writer.write_txt(args.out)
 
 
 if __name__ == "__main__":
