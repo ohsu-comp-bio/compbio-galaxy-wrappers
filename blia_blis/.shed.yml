@@ -1,0 +1,10 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/blia_blis"
+categories:
+  - "CompBio Galaxy Wrappers"
+description: "Perform TNBC subtyping using RUVg."
+repositories:
+  blia_blis:
+    include: 
+      - blia_blis.xml
+      - blia_blis.R
