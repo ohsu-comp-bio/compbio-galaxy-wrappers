@@ -11,7 +11,7 @@ import json
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
 
-VERSION = '0.6.8'
+VERSION = '0.6.9'
 
 
 def supply_args():
@@ -21,9 +21,9 @@ def supply_args():
     """
     parser = argparse.ArgumentParser(description='')
     # Input files that will be parsed for data.
-    parser.add_argument('--probeqc_after', type=ProbeQcRead,
+    parser.add_argument('--probeqc_after', required=False, type=ProbeQcRead,
                         help='Probe coverage QC after UMI deduplication metrics.')
-    parser.add_argument('--probeqc_before', type=ProbeQcRead,
+    parser.add_argument('--probeqc_before', required=False, type=ProbeQcRead,
                         help='Probe coverage QC before UMI deduplication metrics.')
     parser.add_argument('--fastqc_r1', type=FastQcRead, help='FastQC stats for read 1.')
     parser.add_argument('--fastqc_r2', type=FastQcRead, help='FastQC stats for read 2.')
@@ -38,6 +38,9 @@ def supply_args():
 
     parser.add_argument('--primers_bam', help='BAM file to calculate primer reads on target.')
     parser.add_argument('--primers_bed', help='BED file containing primer coordinates only.')
+
+    parser.add_argument('--blia_pre', help='JSON from Ding correlation subtyping, pre-normalization.')
+    parser.add_argument('--blia_post', help='JSON from Ding correlation subtyping, post-normalization.')
 
     # These just get attached to the final json output as-is.
     parser.add_argument('--json_in', nargs='*',
@@ -133,25 +136,39 @@ class RawMetricCollector:
         else:
             self.primers_bam = None
 
+        if args.blia_pre:
+            self.blia_pre = self._json_in([args.blia_pre])
+        else:
+            self.blia_pre = None
+
+        if args.blia_post:
+            self.blia_post = self._json_in([args.blia_post])
+        else:
+            self.blia_post = None
+
         if args.json_in:
-            self.json_in = args.json_in
-            self.json_mets = self._json_in()
+            self.json_mets = self._json_in(args.json_in)
         else:
             self.json_mets = None
 
         # self._params_stdout()
 
-    def _json_in(self):
+    @staticmethod
+    def _json_in(json_in):
         """
-
+        Get all of the incoming JSON metrics.
         :return:
         """
         json_mets = {}
-        for filename in self.json_in:
+        for filename in json_in:
             with open(filename, 'r') as myfile:
                 for line in myfile:
-                    for k, v in json.loads(line).items():
-                        json_mets[str(k)] = v
+                    try:
+                        for k, v in json.loads(line).items():
+                            json_mets[str(k)] = v
+                    except AttributeError:
+                        for k, v in json.loads(line)[0].items():
+                            json_mets[str(k)] = v
         return json_mets
 
     def _params_stdout(self):
@@ -227,6 +244,54 @@ class SampleMetrics:
         except:
             self.gatk_pct_mrna_bases = None
             self.gatk_pct_correct_strand_reads = None
+
+        try:
+            self.blia_pre_mets = self._top_two_diff(self.raw_mets.blia_pre)
+            self.blia_post_mets = self._top_two_diff(self.raw_mets.blia_post)
+            self.assess_blia = self._assess_blia()
+        except:
+            self.blia_pre_mets = None
+            self.blia_post_mets = None
+            self.assess_blia = None
+
+    def _blia_blis_map(self, name):
+        """
+        Map between numbers and strings.
+        :return:
+        """
+        mapping = {'blia': '0',
+                   'blis': '1',
+                   'lar': '2',
+                   'mes': '3'}
+        return mapping[name]
+
+    def _assess_blia(self, thresh=0.1):
+        """
+        If the difference between the top two scores is >=0.1 for both pre and post, and the two
+        top types are the same, this is a reportable subtyping.
+        :return:
+        """
+        if (self.blia_pre_mets['diff'] >= thresh
+                and self.blia_post_mets['diff'] >= thresh
+                and self.blia_pre_mets['best'] == self.blia_post_mets['best']
+                and self.blia_pre_mets['second'] == self.blia_post_mets['second']
+                and (self.blia_post_mets['best'] == '0' or self.blia_post_mets['best']) == '1'):
+            return '1'
+        return '0'
+
+    def _top_two_diff(self, scores):
+        """
+        Get the difference between the top two correlation scores.
+        :return:
+        """
+        sort_scores = dict(sorted((val, key) for (key, val) in scores.items()))
+        diff = list(sort_scores.keys())[-1] - list(sort_scores.keys())[-2]
+        best = list(sort_scores.values())[-1]
+        second = list(sort_scores.values())[-2]
+        return {'diff': diff,
+                'best': self._blia_blis_map(best),
+                'second': self._blia_blis_map(second)
+                }
 
     def _gatk_cr_on_target(self):
         """
@@ -393,7 +458,21 @@ class MetricPrep(SampleMetrics):
                 'msi_pct': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_pct'),
                 'msi_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='total_sites'),
                 'msi_somatic_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_sites'),
-
+                'blia_pre_best': self.blia_pre_mets['best'],
+                'blia_pre_second': self.blia_pre_mets['second'],
+                'blia_pre_diff': self._reduce_sig(self.blia_pre_mets['diff']),
+                'blia_post_best': self.blia_post_mets['best'],
+                'blia_post_second': self.blia_post_mets['second'],
+                'blia_post_diff': self._reduce_sig(self.blia_post_mets['diff']),
+                'blia_reportable': self.assess_blia,
+                'blia_raw_pre': self.raw_mets.blia_pre['blia'],
+                'blis_raw_pre': self.raw_mets.blia_pre['blis'],
+                'lar_raw_pre': self.raw_mets.blia_pre['lar'],
+                'mes_raw_pre': self.raw_mets.blia_pre['mes'],
+                'blia_raw_post': self.raw_mets.blia_pre['blia'],
+                'blis_raw_post': self.raw_mets.blia_pre['blis'],
+                'lar_raw_post': self.raw_mets.blia_pre['lar'],
+                'mes_raw_post': self.raw_mets.blia_pre['mes'],
                 'total_on_target_transcripts': self.on_primer_frag_count,
                 'total_on_target_transcripts_pct': self.on_primer_frag_count_pct
                 }
@@ -489,16 +568,17 @@ class MetricPrep(SampleMetrics):
                                           'rna_count_ten', 'rna_count_onehundred', 'rna_count_onethousand',
                                           'rna_count_tenthousand', 'rna_count_hundredthousand', 'rna_tpm_zero',
                                           'rna_tpm_hundredth', 'rna_tpm_tenth', 'rna_tpm_one', 'rna_tpm_ten',
-                                          'rna_tpm_onehundred', 'rna_tpm_onethousand'],
+                                          'rna_tpm_onehundred', 'rna_tpm_onethousand', 'blia_pre_best',
+                                          'blia_pre_second', 'blia_pre_diff', 'blia_post_best', 'blia_post_second',
+                                          'blia_post_diff', 'blia_reportable', 'blia_raw_pre', 'blis_raw_pre',
+                                          'lar_raw_pre', 'mes_raw_pre', 'blia_raw_post', 'blis_raw_post',
+                                          'lar_raw_post', 'mes_raw_post'],
                 'QIAseq_V3_HOP': ['allele_balance', 'allele_balance_het_count'],
                 'QIAseq_V3_HOP2': ['allele_balance', 'allele_balance_het_count']
                 }
 
 
 class Writer:
-    """
-
-    """
     def __init__(self, mets):
         self.mets = mets
         self.wf = self.mets.raw_mets.wf
