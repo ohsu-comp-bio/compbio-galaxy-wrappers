@@ -469,10 +469,10 @@ class MetricPrep(SampleMetrics):
                 'blis_raw_pre': self.raw_mets.blia_pre['blis'],
                 'lar_raw_pre': self.raw_mets.blia_pre['lar'],
                 'mes_raw_pre': self.raw_mets.blia_pre['mes'],
-                'blia_raw_post': self.raw_mets.blia_pre['blia'],
-                'blis_raw_post': self.raw_mets.blia_pre['blis'],
-                'lar_raw_post': self.raw_mets.blia_pre['lar'],
-                'mes_raw_post': self.raw_mets.blia_pre['mes'],
+                'blia_raw_post': self.raw_mets.blia_post['blia'],
+                'blis_raw_post': self.raw_mets.blia_post['blis'],
+                'lar_raw_post': self.raw_mets.blia_post['lar'],
+                'mes_raw_post': self.raw_mets.blia_post['mes'],
                 'total_on_target_transcripts': self.on_primer_frag_count,
                 'total_on_target_transcripts_pct': self.on_primer_frag_count_pct
                 }
