@@ -95,10 +95,22 @@ au2_un <- au_un[filter,]
 # plot_batch_tpm(au2, batch)
 
 # This stuff is going to Rplots since I don't know how to write them to file
-plotRLE(matx, outline=FALSE, ylim=c(-4,4), las=2, main="Pre RUV: Relative Log Expression Plot")
-plotPCA(matx, cex=1.2, main="Pre RUV: PCA Plot")
-plotRLE(ruv$normalizedCounts, outline=FALSE, ylim=c(-4,4), las=2, main="Post RUV: Relative Log Expression Plot")
-plotPCA(ruv$normalizedCounts, cex=1.2, main="Post RUV: PCA Plot")
+par(mar=c(7,4,4,2)+.1)
+plotRLE(matx, outline=FALSE, cex.axis=0.9, ylim=c(-4,4), xaxt="n", main="Pre RUV: Relative Log Expression Plot")
+labs <- colnames(matx)
+axiscolors <- c(rep("black", 33), "blue")
+Map(axis, side=1, at=1:34, cex.axis=0.6, font=2, col.axis=axiscolors, labels=labs, lwd=0, las=2)
+axis(1, at=1:34, labels=FALSE)
+
+plotRLE(ruv$normalizedCounts, outline=FALSE, cex.axis=0.9, ylim=c(-4,4), xaxt="n", main="Pre RUV: Relative Log Expression Plot")
+labs <- colnames(ruv$normalizedCounts)
+axiscolors <- c(rep("black", 33), "blue")
+Map(axis, side=1, at=1:34, cex.axis=0.6, font=2, col.axis=axiscolors, labels=labs, lwd=0, las=2)
+axis(1, at=1:34, labels=FALSE)
+
+par(mar=c(5,5,4,2)+.1)
+plotPCA(matx, cex=0.6, main="Pre RUV: PCA Plot")
+plotPCA(ruv$normalizedCounts, cex=0.6, main="Post RUV: PCA Plot")
 
 # Text output.
 write.table(ruv$normalizedCounts, "normalized.tsv", sep="\t", row.names=TRUE, col.names=NA, quote=F)
