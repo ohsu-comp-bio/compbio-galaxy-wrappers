@@ -1,4 +1,4 @@
-<tool id="sample_metrics_rna" name="Sample Level Metrics RNA" version="1.0.0" >
+<tool id="sample_metrics_rna" name="Sample Level Metrics RNA" version="1.0.1" >
   <description>Metrics calculated at the sample RNA metrics, for use in CGD and for additional QC.</description>
   <version_command>python $__tool_directory__/sample_metrics_rna.py --version</version_command>
 
@@ -10,12 +10,16 @@
   <command><![CDATA[
     $__tool_directory__/sample_metrics_rna.py
     '${counts}' '${hk_file}' '${output_json}' '${output_txt}' '${by_gene}'
+    #if $gene_filt
+      --gene_filt '${gene_filt}'
+    #end if
     ]]></command>
 
   <inputs>
       <param name="counts" type="data" format="tabular" optional="false" label="Kallisto Abundances" help="Kallisto counts matrix." />
       <param name="hk_file" type="data" format="txt" optional="false" label="Housekeeping Gene List" help="List of housekeeping genes to output metrics for." />
       <param name="by_gene" type="boolean" truevalue="--by_gene" falsevalue="" checked="false" label="Gene Metrics" help="Aggregate by gene instead of transcript." />
+      <param name="gene_filt" type="data" format="txt" optional="true" label="Output Filtering Gene List" help="List of genes to output Kallisto counts metrics for." />
   </inputs>
 
   <outputs>
@@ -24,17 +28,22 @@
   </outputs>
 
   <help><![CDATA[
-    usage: sample_metrics_rna.py [-h] [--version] counts hk_file outjson out
+    usage: sample_metrics_rna.py [-h] [--gene_filt GENE_FILT] [--by_gene]
+                                 [--version]
+                                 counts hk_file outjson out
 
     positional arguments:
-      counts      Kallisto counts matrix.
-      hk_file     List of housekeeping genes to output
-      outjson     json output for CGD
-      out         Output file in human readable text format.
+      counts                Kallisto counts matrix.
+      hk_file               List of housekeeping genes to output
+      outjson               json output for CGD
+      out                   Output file in human readable text format.
 
     optional arguments:
-      -h, --help  show this help message and exit
-      --version   show program's version number and exit
+      -h, --help            show this help message and exit
+      --gene_filt GENE_FILT
+                            Further filter the output Kall metrics by a gene list.
+      --by_gene             Collect metrics by gene.
+      --version             show program's version number and exit
   ]]></help>
 
 </tool>

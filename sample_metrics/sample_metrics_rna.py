@@ -10,7 +10,7 @@ import json
 import numpy
 
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 
 
 def supply_args():
@@ -19,7 +19,9 @@ def supply_args():
     parser.add_argument('hk_file', help='List of housekeeping genes to output')
     parser.add_argument('outjson', help='json output for CGD')
     parser.add_argument('out', help='Output file in human readable text format.')
+    parser.add_argument('--gene_filt', required=False, help='Further filter the output Kall metrics by a gene list.')
     parser.add_argument('--by_gene', action="store_true", help='Collect metrics by gene.')
+
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
@@ -30,11 +32,27 @@ class KallistoCounts:
     header:
     target_id	length	eff_length	est_counts	tpm
     """
-    def __init__(self, filename):
+    def __init__(self, filename, gene_filt=None):
         self.filename = filename
+        self.gene_filt = gene_filt
         self.header = self._get_header()
         self.recs = self._gather_recs()
         self.agg_recs = self._agg_recs()
+        if gene_filt:
+            self.recs = self._gene_filt(self.recs, gene_filt)
+            self.agg_recs = self._gene_filt(self.agg_recs, gene_filt)
+
+    @staticmethod
+    def _gene_filt(recs, genes):
+        """
+        Based on an input list of gene ids, filter the counts down further.
+        :return:
+        """
+        new_recs = {}
+        for entry in recs:
+            if entry in genes:
+                new_recs[entry] = recs[entry]
+        return new_recs
 
     def _get_header(self):
         """
@@ -95,8 +113,8 @@ class KallistoMetrics(KallistoCounts):
     """
     Metrics based on Kallisto counts structures.
     """
-    def __init__(self, filename, hk, agg=False):
-        super(KallistoMetrics, self).__init__(filename)
+    def __init__(self, filename, hk, gene_filt=None, agg=False):
+        super(KallistoMetrics, self).__init__(filename, gene_filt)
         self.agg = agg
         if agg:
             self.recs = self.agg_recs
@@ -162,24 +180,24 @@ class KallistoRec:
         self.raw = self.rec[3]
 
 
-class HousekeepingGenes:
+class Genes:
     """
-    Load housekeeping genes from a file.
+    Load genes from a single-column file.
     """
     def __init__(self, filename):
         self.filename = filename
-        self.hk_genes = self._get_hkgenes()
+        self.genes = self._get_genes()
 
-    def _get_hkgenes(self):
+    def _get_genes(self):
         """
-        Housekeeping genes, filter for those genes are in the target file
+        Put the list of genes from file in to a list.
         """
-        hk_genes = []
-        with open(self.filename, 'r') as fh_hk:
-            for lines in fh_hk:
+        genes = []
+        with open(self.filename, 'r') as fh:
+            for lines in fh:
                 geneid = lines.rstrip('\n').split('\t')
-                hk_genes.append(geneid[0])
-        return hk_genes
+                genes.append(geneid[0])
+        return genes
 
 
 class MetricsWriter:
@@ -237,11 +255,15 @@ class MetricsWriter:
 
 def main():
     args = supply_args()
-    hk = HousekeepingGenes(args.hk_file).hk_genes
-    if args.by_gene:
-        metrics = KallistoMetrics(args.counts, hk, agg=True)
+    hk = Genes(args.hk_file).genes
+    if args.gene_filt:
+        fgenes = Genes(args.gene_filt).genes
     else:
-        metrics = KallistoMetrics(args.counts, hk, agg=False)
+        fgenes = None
+    if args.by_gene:
+        metrics = KallistoMetrics(args.counts, hk, fgenes, agg=True)
+    else:
+        metrics = KallistoMetrics(args.counts, hk, fgenes, agg=False)
     writer = MetricsWriter(metrics)
     writer.write_json(args.outjson, metrics.summ_tpms, metrics.summ_raw)
     writer.write_txt(args.out)
