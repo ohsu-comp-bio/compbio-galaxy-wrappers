@@ -16,7 +16,7 @@ sample_data <- fromJSON(file)
 
 print(sample_data)
 
-validation_data <- data.frame("TPM" = c(0.01, 0.1, 1, 10, 100, 1000), "Num_genes" = c(17357, 15688, 12357, 6249, 725, 58), "sdev" = c(1067, 1142, 1246, 1333, 258, 13))
+validation_data <- data.frame("TPM" = c(0.01, 0.1, 1, 10, 100, 1000), "Num_genes" = c(17334, 15798, 12580, 6521, 745, 57), "sdev" = c(613, 641, 657, 1115, 245, 10))
 
 chart_data <- validation_data
 
