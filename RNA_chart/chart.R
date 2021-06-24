@@ -1,4 +1,4 @@
-
+# VERSION = 2.0.0
 
 jsonExists <- require("jsonlite")
 
@@ -16,7 +16,7 @@ sample_data <- fromJSON(file)
 
 print(sample_data)
 
-validation_data <- data.frame("TPM" = c(0.01, 0.1, 1, 10, 100, 1000), "Num_genes" = c(18678, 17443, 14370, 8873, 1419, 101), "sdev" = c(1963, 1958, 1800, 1115, 187, 24))
+validation_data <- data.frame("TPM" = c(0.01, 0.1, 1, 10, 100, 1000), "Num_genes" = c(17357, 15688, 12357, 6249, 725, 58), "sdev" = c(1067, 1142, 1246, 1333, 258, 13))
 
 chart_data <- validation_data
 

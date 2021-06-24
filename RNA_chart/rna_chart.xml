@@ -1,4 +1,4 @@
-<tool id="rna_chart" name="TPM Threshold Chart" version="1.1">
+<tool id="rna_chart" name="TPM Threshold Chart" version="2.0.0">
   <description>Creates a plot of the number of genes to TPM in the sample compared to the validation averages.</description>
   <requirements>
     <requirement type="package" version="1.6">r-jsonlite</requirement>
