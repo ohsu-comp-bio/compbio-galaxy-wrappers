@@ -11,12 +11,13 @@ args <- commandArgs(TRUE)
 
 file <- args[1]
 sample_name <- args[2]
+cohort <- args[3]
 
 sample_data <- fromJSON(file)
 
 print(sample_data)
 
-validation_data <- data.frame("TPM" = c(0.01, 0.1, 1, 10, 100, 1000), "Num_genes" = c(17354, 15828, 12618, 6528, 741, 58), "sdev" = c(608, 647, 673, 1093, 241, 10))
+validation_data <- read.table(cohort, sep=',', header=TRUE)
 
 chart_data <- validation_data
 
@@ -50,7 +51,7 @@ axis(1, at=c(0.01, 0.1, 1, 10, 100, 1000), labels=c("0.01", "0.1", "1", "10", "1
 
 
 lines(chart_data$TPM, chart_data$Num_genes, type="b", pch=15, lty=3, col="blue", lwd=2)
-arrows(chart_data$TPM, (chart_data$Num_genes - chart_data$sdev), chart_data$TPM, (chart_data$Num_genes + chart_data$sdev), length=0.05, angle=90, code=3, lwd=1.5)
+arrows(chart_data$TPM, (chart_data$Num_genes - 2*chart_data$sdev), chart_data$TPM, (chart_data$Num_genes + 2*chart_data$sdev), length=0.05, angle=90, code=3, lwd=1.5)
 lines(chart_data$TPM, chart_data$sample_tpm, type="b", pch=19, lty=1, col="orange", lwd=2)
 
 
