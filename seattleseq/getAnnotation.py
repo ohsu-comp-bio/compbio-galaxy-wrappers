@@ -7,7 +7,7 @@ A wrapper script for running the SeattleSeq getAnnotation jarfile
 
 import sys, optparse, os, tempfile, subprocess, shutil
 
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 
 CHUNK_SIZE = 2**20 #1mb
 
@@ -41,18 +41,18 @@ def __main__():
         cmd = ''
     
     assert None not in [ options.input_file, options.output_file, options.input_database_info ], 'You must specify both input and output files, plus database login info'
-    print "Pass-through options:"
-    print options.pass_through_options
-    print "Input file:"
-    print options.input_file
-    print "Output file:"
-    print options.output_file
-    print "Database login file:"
-    print options.input_database_info
+    print("Pass-through options:")
+    print(options.pass_through_options)
+    print("Input file:")
+    print(options.input_file)
+    print("Output file:")
+    print(options.output_file)
+    print("Database login file:")
+    print(options.input_database_info)
 
     cmd = '%s -i %s -o %s -d %s' % ( options.pass_through_options, options.input_file, options.output_file, options.input_database_info )
-    print "Command:"
-    print cmd
+    print("Command:")
+    print(cmd)
     
     #set up stdout and stderr output options
     stdout = open_file_from_option( options.stdout, mode = 'wb' )
