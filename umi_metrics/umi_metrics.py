@@ -12,7 +12,7 @@ from vcf import VcfWriter
 import argparse
 import sys
 
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 
 
 def supply_args():
