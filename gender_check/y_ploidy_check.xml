@@ -1,40 +1,40 @@
-<tool id="y_ploidy_check" name="Gender Check- Y ploidy" version="1.1.2">
-  <description>Checks the gender of a sample based on the ploidy of the y chromosome from DetermineGermlineContigPloidy</description>
-  <command detect_errors="exit_code"><![CDATA[
+<tool id="y_check_sex_gatk" name="Biological Sex Check- Y ploidy" version="1.2.0">
+	<description>Checks the biological sex of a sample based on the ploidy of the y chromosome from DetermineGermlineContigPloidy</description>
+	<command detect_errors="exit_code"><![CDATA[
         grep "^Y" $input > $output &&
-	grep "SM:" $input > email.txt &&
+	echo "ATTENTION - THE BIOLOGICAL SEX OF THIS SAMPLE IS DIFFERENT FROM WHAT WAS SPECIFIED ON THE SAMPLESHEET" > email.txt &&
+	grep "SM:" $input >> email.txt &&
 	grep "Y" $input >> email.txt &&
         GENDER_NUM=\$(grep -P "^Y\t1" $input | wc -l) &&
         echo \$GENDER_NUM &&
         echo $gender &&
         if [ \$GENDER_NUM -eq $gender ]; then 
-	   echo "{\"gender_check\": 1}" > $json_output;
+	   echo "{\"bio_sex_check\": 1}" > $json_output;
 	   exit 0; else 
 	   if [ -z ${5} ]; then
-              echo "Gender does not match Samplesheet";
+              echo "Biological sex does not match Samplesheet";
 	   else
-              cat email.txt | mailx -s "\$(hostname) Gender Check Tool Error" "${email}"; 
+              cat email.txt | mailx -s "\$(hostname) Biological Sex Check Tool Error" "${email}"; 
 	   fi;
-	   echo "{\"gender_check\": 0}" > $json_output;
+	   echo "{\"bio_sex_check\": 0}" > $json_output;
            exit 1; fi
-        ]]>
-  </command>
-
-  <inputs>
-    <param name="gender" type="select" label="Reported Gender">
-      <option value="0">Female</option>
-      <option value="1">Male</option>
-      <option value="2">Unspecified</option>
-    </param>
-    <param name="input" type="data" format="tsv" label="DetermineGermlineContigPloidy"/>
-    <param name="email" type="text" label="Admin Email" help="Send failure reports to this email address">
-      <sanitizer sanitize='False'/>
-    </param>
-  </inputs>
-
-  <outputs>
-    <data format="vcf" name="output" label="${tool.name} on ${on_string}"/>
-    <data format="json" name="json_output" label="${tool.name} on ${on_string}:JSON"/>
-  </outputs>	
-
+        
+]]>	</command>
+	<inputs>
+	<param name="gender" type="select" label="Reported Gender">
+            <option value="0">Female</option>
+            <option value="1">Male</option>
+	    <option value="2">Unspecified</option>
+        </param>
+        <param name="input" type="data" format="tsv" label="DetermineGermlineContigPloidy"/>
+	<param name="email" type="text" label="Admin Email" help="Send failure reports to this email address">
+	  <sanitizer sanitize='False'/>
+	</param>
+	</inputs>
+	<outputs>
+		<data format="vcf" name="output" label="${tool.name} on ${on_string}"/>
+		<data format="json" name="json_output" label="${tool.name} on ${on_string}:JSON"/>
+	</outputs>
+	
+	
 </tool>
