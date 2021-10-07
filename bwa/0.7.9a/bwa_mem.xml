@@ -1,11 +1,11 @@
-<tool id="bwa_mem" name="BWA-MEM" version="0.7.9a">
+<tool id="bwa_mem" name="BWA-MEM" version="0.7.9.3">
   <requirements>
     <requirement type="package" version="0.7.9a">bwa</requirement>
   </requirements>
   <description>Map low-divergent sequences against a large reference genome.</description>
-  <version_command>bwa 2&gt;&amp;1 | grep "Version: " | sed -e 's/Version: //'</version_command>
-  <command interpreter="python">
-    bwa_mem.py
+  <version_command><![CDATA[bwa 2>&1 | grep "Version: " | sed -e 's/Version: //']]></version_command>
+  <command><![CDATA[
+    python $__tool_directory__/bwa_mem.py
       --threads="\${GALAXY_SLOTS:-16}"
       --fileSource="${genomeSource.refGenomeSource}"
       #if $genomeSource.refGenomeSource == "history"
@@ -103,7 +103,7 @@
       #if $suppressHeader
         --suppressHeader
       #end if
-  </command>
+  ]]></command>
 
   <inputs>
     <conditional name="genomeSource">
@@ -120,7 +120,7 @@
         </param>
       </when>
       <when value="history">
-        <param name="ownFile" type="data" format="fasta" metadata_name="dbkey" label="Select a reference from history" />
+        <param name="ownFile" type="data" format="fasta" label="Select a reference from history" />
       </when>
     </conditional>
     <conditional name="paired">
@@ -129,12 +129,12 @@
         <option value="paired">Paired-end</option>
       </param>
       <when value="single">
-        <param name="fastq" type="data" format="fastq,fastqsanger,fastqillumina" label="Select Forward FASTQ file" help="FASTQ with either Sanger-scaled quality values (fastqsanger) or Illumina-scaled quality values (fastqillumina)" />
+        <param name="fastq" type="data" format="fastq,fastqsanger,fastqillumina,fastqsanger.gz" label="Select Forward FASTQ file" help="FASTQ with either Sanger-scaled quality values (fastqsanger) or Illumina-scaled quality values (fastqillumina)" />
         <param name="interPairEnd" type="boolean" checked="false" label="FASTQ file consists of interleaved paired-end sequences (-p)" />
       </when>
       <when value="paired">
-        <param name="fastq" type="data" format="fastq,fastqsanger,fastqillumina" label="Select Forward FASTQ file" help="FASTQ with either Sanger-scaled quality values (fastqsanger) or Illumina-scaled quality values (fastqillumina)" />
-        <param name="rfastq" type="data" format="fastq,fastqsanger,fastqillumina" label="Select Reverse FASTQ file" help="FASTQ with either Sanger-scaled quality values (fastqsanger) or Illumina-scaled quality values (fastqillumina)" />
+        <param name="fastq" type="data" format="fastq,fastqsanger,fastqillumina,fastqsanger.gz" label="Select Forward FASTQ file" help="FASTQ with either Sanger-scaled quality values (fastqsanger) or Illumina-scaled quality values (fastqillumina)" />
+        <param name="rfastq" type="data" format="fastq,fastqsanger,fastqillumina,fastqsanger.gz" label="Select Reverse FASTQ file" help="FASTQ with either Sanger-scaled quality values (fastqsanger) or Illumina-scaled quality values (fastqillumina)" />
       </when>
     </conditional>
     <conditional name="params">
