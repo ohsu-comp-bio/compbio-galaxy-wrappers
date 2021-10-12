@@ -9,7 +9,7 @@
 import argparse
 import gzip
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 
 def supply_args():
@@ -30,7 +30,7 @@ def supply_args():
 class ClinVar(object):
     def __init__(self, filename, annot=None, prefix=None):
         try:
-            self.clinvar = gzip.open(filename, 'rb')
+            self.clinvar = gzip.open(filename, 'rt')
         except:
             self.clinvar = open(filename, 'rU')
         self.annot = annot
