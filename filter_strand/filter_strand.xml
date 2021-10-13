@@ -1,4 +1,4 @@
-<tool id="filter_strand" name="FreeBayes Strand Bias Filter" version="0.4.2" >
+<tool id="filter_strand" name="FreeBayes Strand Bias Filter" version="0.4.3" >
     <description>Filter based on bias in alternate and reference read direction.</description>
 
     <command><![CDATA[

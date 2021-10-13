@@ -7,17 +7,17 @@ def file_type(filename):
     """
 
     magic_dict = {
-        "\x1f\x8b\x08": "gz",
-        "\x42\x5a\x68": "bz2",
-        "\x50\x4b\x03\x04": "zip"
+        b"\x1f\x8b\x08": "gz",
+        b"\x42\x5a\x68": "bz2",
+        b"\x50\x4b\x03\x04": "zip"
         }
 
     max_len = max(len(x) for x in magic_dict)
 
-    with open(filename) as f:
-	file_start = f.read(max_len)
+    with open(filename, 'rb') as f:
+        file_start = f.read(max_len)
     for magic, filetype in magic_dict.items():
-	if file_start.startswith(magic):
+        if file_start.startswith(magic):
             return filetype
     return None
 
@@ -28,8 +28,8 @@ def handle_return(filename):
     file_t = file_type(filename)
     print(file_t)
     if file_t == 'gz':
-	return gzip.open(filename, 'rb')
+        return gzip.open(filename, 'rt')
     elif not file_t:
-	return open(filename, 'rU')
+        return open(filename, 'rU')
     else:
         raise Exception("Compressed file type " + file_t + " not implemented.")

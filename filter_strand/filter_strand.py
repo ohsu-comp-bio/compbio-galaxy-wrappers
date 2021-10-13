@@ -9,7 +9,7 @@ from __future__ import print_function
 from file_handle_ops import handle_return
 import argparse
 
-VERSION = '0.4.2'
+VERSION = '0.4.3'
 
 def supply_args():
     """
