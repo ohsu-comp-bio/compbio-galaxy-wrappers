@@ -13,7 +13,7 @@ class PerLocusRead(object):
         self.headers = self.infile.fieldnames
         self.perlocus = self._perlocus_fill()
 
-    def __div__(self, other):
+    def __truediv__(self, other):
 
         div_perlocus = {}
         for coord in self.perlocus:
