@@ -73,13 +73,14 @@ def __main__():
         returncode = proc.wait()
         stdout = None
         for line in open( tmp_stdout.name, 'rb' ):
+            line = line.decode()
             if line.lower().find( 'version' ) >= 0:
                 stdout = line.strip()
                 break
         if stdout:
             sys.stdout.write( 'BWA %s\n' % stdout )
         else:
-            raise Exception
+            raise Exception('')
     except:
         sys.stdout.write( 'Could not determine BWA version\n' )
 
@@ -127,14 +128,14 @@ def __main__():
                 pass
             tmp_stderr.close()
             if returncode != 0:
-                raise Exception, stderr
-        except Exception, e:
+                raise Exception(stderr)
+        except Exception as e:
             # clean up temp dirs
             if os.path.exists( tmp_index_dir ):
                 shutil.rmtree( tmp_index_dir )
             if os.path.exists( tmp_dir ):
                 shutil.rmtree( tmp_dir )
-            raise Exception, 'Error indexing reference sequence. ' + str( e )
+            raise Exception('Error indexing reference sequence. ' + str( e ))
     else:
         ref_file_name = options.ref
     # if options.illumina13qual:
@@ -148,34 +149,34 @@ def __main__():
     if options.interPairEnd:
         start_cmds += ' -p'
     if options.params != 'pre_set':
-	if options.minSeedLength is not None:
-	    start_cmds += " -k %d" % options.minSeedLength
-	if options.bandWidth is not None:
-	    start_cmds += " -w %d" % options.bandWidth
-	if options.offDiagonal is not None:
-	    start_cmds += " -d %d" % options.offDiagonal
-	if options.internalSeeds is not None:
-	    start_cmds += " -r %s" % options.internalSeeds
-	if options.seedsOccurrence is not None:
-	    start_cmds += " -c %d" % options.seedsOccurrence
-	if options.mateRescue:
-	    start_cmds += ' -S'
-	if options.skipPairing:
-	    start_cmds += ' -P'
-	if options.seqMatch is not None:
-	    start_cmds += " -A %d" % options.seqMatch
-	if options.mismatch is not None:
-	    start_cmds += " -B %d" % options.mismatch
-	if options.gapOpen is not None:
-	    start_cmds += " -O %d" % options.gapOpen
-	if options.gapExtension is not None:
-	    start_cmds += " -E %d" % options.gapExtension
-	if options.clipping:
-	    start_cmds += " -L %s" % options.clipping
-	if options.unpairedReadpair is not None:
-	    start_cmds += " -U %d" % options.unpairedReadpair
-	if options.minScore is not None:
-	    start_cmds += " -T %d" % options.minScore
+        if options.minSeedLength is not None:
+            start_cmds += " -k %d" % options.minSeedLength
+        if options.bandWidth is not None:
+            start_cmds += " -w %d" % options.bandWidth
+        if options.offDiagonal is not None:
+            start_cmds += " -d %d" % options.offDiagonal
+        if options.internalSeeds is not None:
+            start_cmds += " -r %s" % options.internalSeeds
+        if options.seedsOccurrence is not None:
+            start_cmds += " -c %d" % options.seedsOccurrence
+        if options.mateRescue:
+            start_cmds += ' -S'
+        if options.skipPairing:
+            start_cmds += ' -P'
+        if options.seqMatch is not None:
+            start_cmds += " -A %d" % options.seqMatch
+        if options.mismatch is not None:
+            start_cmds += " -B %d" % options.mismatch
+        if options.gapOpen is not None:
+            start_cmds += " -O %d" % options.gapOpen
+        if options.gapExtension is not None:
+            start_cmds += " -E %d" % options.gapExtension
+        if options.clipping:
+            start_cmds += " -L %s" % options.clipping
+        if options.unpairedReadpair is not None:
+            start_cmds += " -U %d" % options.unpairedReadpair
+        if options.minScore is not None:
+            start_cmds += " -T %d" % options.minScore
         if options.outputAll:
             start_cmds += ' -a'
         if options.mark:
@@ -224,7 +225,7 @@ def __main__():
             tmp_stderr.close()
             # get stderr, allowing for case where it's very large
             tmp_stderr = open( tmp, 'rb' )
-            stderr = ''
+            stderr = ''.encode()
             try:
                 while True:
                     stderr += tmp_stderr.read( buffsize )
@@ -234,9 +235,9 @@ def __main__():
                 pass
             tmp_stderr.close()
             if returncode != 0:
-                raise Exception, stderr
-        except Exception, e:
-            raise Exception, 'Error generating alignments. ' + str( e )
+                raise Exception(stderr)
+        except Exception as e:
+            raise Exception('Error generating alignments. ' + str( e ))
         # remove header if necessary
         if options.suppressHeader:
             tmp_out = tempfile.NamedTemporaryFile( dir=tmp_dir)
@@ -244,8 +245,8 @@ def __main__():
             tmp_out.close()
             try:
                 shutil.move( options.output, tmp_out_name )
-            except Exception, e:
-                raise Exception, 'Error moving output file before removing headers. ' + str( e )
+            except Exception as e:
+                raise Exception('Error moving output file before removing headers. ' + str( e ))
             fout = file( options.output, 'w' )
             for line in file( tmp_out.name, 'r' ):
                 if not ( line.startswith( '@HD' ) or line.startswith( '@SQ' ) or line.startswith( '@RG' ) or line.startswith( '@PG' ) or line.startswith( '@CO' ) ):
@@ -255,7 +256,7 @@ def __main__():
         if os.path.getsize( options.output ) > 0:
             sys.stdout.write( 'BWA run on %s-end data' % options.genAlignType )
         else:
-            raise Exception, 'The output file is empty. You may simply have no matches, or there may be an error with your input file or settings.'
+            raise Exception('The output file is empty. You may simply have no matches, or there may be an error with your input file or settings.')
     finally:
         # clean up temp dir
         if os.path.exists( tmp_index_dir ):
