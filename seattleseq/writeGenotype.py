@@ -5,7 +5,7 @@
 A wrapper script for running the SeattleSeq writeGenotype jarfile
 """
 
-VERISON = '1.0.0'
+VERISON = '1.1.0'
 
 import sys, optparse, os, tempfile, subprocess, shutil
 
@@ -67,30 +67,30 @@ def __main__():
         options.input_incidentalGenes,  \
         options.input_pharmGenes,
         options.input_SIFTBins], 'Missing parameter(s)'
-    print "Pass-through options:"
-    print options.pass_through_options
-    print "Input vcf:"
-    print options.input_vcf
-    print "Input getAnnotation:"
-    print options.input_getAnnotation
-    print "Input coverage:"
-    print options.input_coverage
-    print "Output:"
-    print options.output
-    print "Output tsv:"
-    print options.output_tsv
-    print "Temporary output:"
-    print tmp_output_name
-    print "Input databaseInfo:"
-    print options.input_database_info
-    print "Input actionableCarrierGenes:"
-    print options.input_actionableCarrierGenes
-    print "Input incidentalGenes:"
-    print options.input_incidentalGenes
-    print "Input pharmGenes:"
-    print options.input_pharmGenes
-    print "Input SIFTBins:"
-    print options.input_SIFTBins
+    print("Pass-through options:")
+    print(options.pass_through_options)
+    print("Input vcf:")
+    print(options.input_vcf)
+    print("Input getAnnotation:")
+    print(options.input_getAnnotation)
+    print("Input coverage:")
+    print(options.input_coverage)
+    print("Output:")
+    print(options.output)
+    print("Output tsv:")
+    print(options.output_tsv)
+    print("Temporary output:")
+    print(tmp_output_name)
+    print("Input databaseInfo:")
+    print(options.input_database_info)
+    print("Input actionableCarrierGenes:")
+    print(options.input_actionableCarrierGenes)
+    print("Input incidentalGenes:")
+    print(options.input_incidentalGenes)
+    print("Input pharmGenes:")
+    print(options.input_pharmGenes)
+    print("Input SIFTBins:")
+    print(options.input_SIFTBins)
 
     #   Note that tmp_output_name is our temporary file:  see above and below for details
     cmd = '%s %s %s %s %s %s %s %s %s %s' % ( options.pass_through_options, \
@@ -103,8 +103,8 @@ def __main__():
         options.input_incidentalGenes, \
         options.input_pharmGenes,
         options.input_SIFTBins)
-    print "Command:"
-    print cmd
+    print("Command:")
+    print(cmd)
     
     #set up stdout and stderr output options
     stdout = open_file_from_option( options.stdout, mode = 'wb' )
@@ -120,9 +120,9 @@ def __main__():
     return_code = proc.wait()
 
     if return_code:
-        stderr_target = sys.stderr
+        stderr_target = sys.stderr.buffer
     else:
-        stderr_target = sys.stdout
+        stderr_target = sys.stdout.buffer
     stderr.flush()
     stderr.seek(0)
     while True:
