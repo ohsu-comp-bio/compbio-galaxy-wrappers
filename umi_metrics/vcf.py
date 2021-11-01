@@ -77,7 +77,7 @@ class VcfWriter(object):
     def _write_me(self):
         for entry in self.vcffile.header:
             self.outfile.write(entry)
-        for entry in self.vcffile.vcf.itervalues():
+        for entry in self.vcffile.vcf.values():
             self.outfile.write('\t'.join(entry))
             self.outfile.write('\n')
 
