@@ -67,9 +67,9 @@ def __main__():
     proc = subprocess.Popen( args=cmd, stdout=stdout, stderr=stderr, shell=True, cwd=tmp_dir )
     return_code = proc.wait()
     if return_code:
-        stderr_target = sys.stderr
+        stderr_target = sys.stderr.buffer
     else:
-        stderr_target = sys.stdout
+        stderr_target = sys.stdout.buffer
     stderr.flush()
     stderr.seek(0)
     while True:
