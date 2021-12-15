@@ -41,12 +41,16 @@
     <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" />
   </outputs>
 
-  <tests></tests>
+  <tests>
+
+  </tests>
 
   <help>
     Merge VCFs produced by various variant callers.
   </help>
 
-  <citations></citations>
+  <citations>
+
+  </citations>
 
 </tool>

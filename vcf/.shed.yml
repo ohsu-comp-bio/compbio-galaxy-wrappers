@@ -1,0 +1,14 @@
+owner: "onwuzu"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/vcf"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  var_label:
+    description: "Label variants in a VCF."
+    include:
+      - var_label.xml
+  var_select:
+    description: "Label variants in a VCF."
+    include:
+      - var_select.xml

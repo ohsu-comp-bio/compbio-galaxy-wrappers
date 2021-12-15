@@ -21,23 +21,27 @@
 
   <inputs>
     <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
-    <repeat name="caller_priority" title="Variant caller priority" help="Set the priority of variant callers used in the input VCF.">
+    <repeat name="caller_priority" title="Variant caller priority" help="Set the priority for variant callers used in the input VCF.">
       <param name="caller_label" type="text" label="Caller label" />
     </repeat>
     <param name="info_fields" type="text" label="Select INFO fields" />
-    <param name="sample_fields" type="text" label="Select sample fields" />
+    <param name="sample_fields" type="text" label="Select FORMAT fields" />
   </inputs>
 
   <outputs>
     <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" />
   </outputs>
 
-  <tests></tests>
+  <tests>
+
+  </tests>
 
   <help>
     Select fields of interest from a merged VCF.
   </help>
 
-  <citations></citations>
+  <citations>
+
+  </citations>
 
 </tool>
