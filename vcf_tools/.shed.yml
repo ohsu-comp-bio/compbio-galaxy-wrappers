@@ -9,18 +9,22 @@ repositories:
     include:
       - var_label.py
       - var_label.xml
+      - vcf_tools_macro.xml
   var_select:
     description: "Select variants in a VCF."
     include:
       - var_select.py
       - var_select.xml
+      - vcf_tools_macro.xml
   vcf_merge:
     description: "Merge multiple VCFs."
       include:
         - vcf_merge.py
         - vcf_merge.xml
+        - vcf_tools_macro.xml
   vcf_select:
     description: "Select VCF fields."
       include:
         - vcf_select.py
         - vcf_select.xml
+        - vcf_tools_macro.xml
