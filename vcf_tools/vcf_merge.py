@@ -9,9 +9,9 @@ will contain those of all callers that made the call.
 """
 
 import argparse
-import vcf
+import vcf_tools
 
-VERSION = vcf.VERSION+'.0'
+VERSION = vcf_tools.VERSION+'.0'
 
 
 def main():
@@ -19,19 +19,16 @@ def main():
         description="vcf_merge.py --input_vcfs 'file1.vcf' 'file2.vcf' 'fileN.vcf' "
                     "--caller_labels label1 label2 labelN "
                     "--output_vcf 'output.vcf'")
-    parser.add_argument('--input_vcfs', nargs="+",
-                        help="vcf files from multiple variant callers")
-    parser.add_argument('--caller_labels', nargs="+",
-                        help="Labels for each input vcf.")
+    parser.add_argument('--input_vcfs', nargs="+", help="Input VCFs")
+    parser.add_argument('--caller_labels', nargs="+", help="Labels for each input vcf")
     parser.add_argument('--output_vcf', help="Output VCF.")
     parser.add_argument('-v', '--version', action='version', version="%(prog)s " + VERSION)
     args = parser.parse_args()
 
-    header = vcf.VcfMerger(args.input_vcfs, args.caller_labels).merge_headers()
-
-    records = vcf.VcfMerger(args.input_vcfs, args.caller_labels).merge_records()
-
-    vcf.RecordsWriter(records).as_vcf(args.output_vcf, header)
+    merge = vcf_tools.VcfMerger(args.input_vcfs, args.caller_labels)
+    header = merge.merge_headers()
+    records = merge.merge_records()
+    vcf_tools.VarWriter(records).as_vcf(args.output_vcf, header)
 
 
 if __name__ == "__main__":

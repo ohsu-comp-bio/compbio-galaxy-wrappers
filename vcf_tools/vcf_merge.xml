@@ -1,12 +1,11 @@
-<tool id="vcf_merge" name="Merge multiple VCFs" version="0.1.0" >
-    <description>Merge VCFs produced by various variant callers.</description>
-    <requirements>
-      <requirement type="package" version="1.2.3">pandas</requirement>
-      <requirement type="package" version="0.13.3">vcfpy</requirement>
-      <requirement type="package" version="7.1.1">natsort</requirement>
-      <requirement type="package" version="1.9">samtools</requirement>
-    </requirements>
-  <version_command>$__tool_directory__/vcf_merge.py --version</version_command>
+<tool id="vcf_merge" name="Merge multiple VCFs" version="@VERSION@.0" >
+  <description>Merge VCFs produced by various variant callers</description>
+
+  <macros>
+    <import>vcf_tools_macros.xml</import>
+  </macros>
+  <expand macro="requirements" />
+  <expand macro="version_command" />
 
   <command><![CDATA[
     #for $i, $input in enumerate( $inputs ):
@@ -33,7 +32,7 @@
   <inputs>
     <repeat name="inputs" title="Input VCF file and labels" help="Input VCF files and their labels.">
       <param name="input_vcf" type="data" format="vcf,vcf_bgzip" label="Input VCF" />
-      <param name="caller_label" type="text" label="Caller label" />
+      <param name="caller_label" type="text" label="Labels for each input vcf" />
     </repeat>
   </inputs>
 
@@ -41,16 +40,12 @@
     <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" />
   </outputs>
 
-  <tests>
-
-  </tests>
-
   <help>
-    Merge VCFs produced by various variant callers.
+    Merge VCFs produced by various variant callers
   </help>
 
-  <citations>
+  <tests> </tests>
 
-  </citations>
+  <citations> </citations>
 
 </tool>

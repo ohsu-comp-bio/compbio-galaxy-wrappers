@@ -1,0 +1,22 @@
+<macros>
+    <xml name="requirements">
+        <requirements>
+            <requirement type="package" version="0.13.3">vcfpy</requirement>
+            <requirement type="package" version="7.1.1">natsort</requirement>
+              <yield />
+        </requirements></xml>
+
+    <xml name="version_command">
+        <version_command><![CDATA[python '$__tool_directory__/vcf_tools.py 2>&1']]></version_command>
+    </xml>
+
+    <token name="@VERSION@">0.0.1</token>
+
+    <xml name="citations">
+        <citations>
+
+            <yield />
+        </citations>
+    </xml>
+
+</macros>

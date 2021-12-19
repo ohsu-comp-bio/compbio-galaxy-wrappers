@@ -3,53 +3,67 @@ import vcfpy
 from operator import attrgetter
 from natsort import natsorted
 import json
+import sys
+import os
 
 VERSION = '0.0.1'
+print(os.path.basename(sys.argv[0]), VERSION, sep=' ')
+
+# TODO: m2 vcf INFO ',' are converted to %2C; no ',' in fb INFO values
 
 
-class Records:
-    def __init__(self, input_vcf):
+class VarLabel:
+    def __init__(self, input_vcf, label):
         self.reader = vcfpy.Reader.from_path(input_vcf)
+        self.label = label
 
     @staticmethod
     def _get_dict_records(reader):
         records = {}
         for record in reader:
-            rec_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
-            if rec_id not in records:
-                records[rec_id] = record
+            var_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
+            if var_id not in records:
+                records[var_id] = record
         return records
 
-    def get_filter_records(self, filt, exclusive):
+    def get_filter_records(self, exclusive):
         records = []
         for record in self.reader:
             if exclusive:
-                if set(filt) == set(record.FILTER):
+                if set(self.label) == set(record.FILTER):
                     records.append(record)
             else:
-                for f in filt:
-                    if f in record.FILTER:
+                for lab in self.label:
+                    if lab in record.FILTER:
                         records.append(record)
-            return records
+        return records
 
-    def label_records(self, resource, label, description):
+    def get_filter_metrics(self, exclusive, metric):
+        records = self.get_filter_records(exclusive)
+        count_rec = len(records)
+        # {metric: count_rec}
+        return count_rec
+
+    def add_label_info(self, description):
+        self.reader.header.add_filter_line(vcfpy.OrderedDict([('ID', self.label), ('Description', description)]))
+
+    def label_records(self, resource):
         """
         Label records based on resource VCF
         """
-        self.reader.header.add_filter_line(vcfpy.OrderedDict([('ID', label), ('Description', description)]))
-
-        records = {}
+        records = []
+        resource = self._get_dict_records(vcfpy.Reader.from_path(resource))
         for record in self.reader:
-            rec_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
-            if rec_id in self._get_dict_records(vcfpy.Reader.from_path(resource)):
-                record.add_filter(label)
-                records[rec_id] = record
+            var_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
+            if var_id in resource:
+                record.add_filter(self.label)
+                records.append(record)
             else:
-                records[rec_id] = record
+                records.append(record)
         return records
 
 
-class RecordsWriter:
+class VarWriter:
     def __init__(self, records):
         self.records = records
 
@@ -70,8 +84,12 @@ class VcfMerger:
         self.readers = [vcfpy.Reader.from_path(vcf) for vcf in input_vcfs]
         self.callers = callers
         self.samples = list(set([name for reader in self.readers for name in reader.header.samples.names]))
-        self.header = vcfpy.Header(samples=[reader.header.samples for reader in self.readers][0])
+        self.filters = list(set(['{}_{}'.format(caller, flt) for reader, caller in zip(self.readers, self.callers) for flt in reader.header.filter_ids()]))
+        self.infos = list(set(['{}_{}'.format(caller, info) for reader, caller in zip(self.readers, self.callers) for info in reader.header.info_ids()]))
+        self.formats = list(set(['{}_{}'.format(caller, fmt) for reader, caller in zip(self.readers, self.callers) for fmt in reader.header.format_ids()]))
+        self.header = vcfpy.Header(samples=[reader.header.samples for reader in self.readers][0])  #
         self.header.add_line(vcfpy.HeaderLine('fileformat', vcf_format))
+        print(self.samples)
 
     def merge_headers(self):
         # using contig header from first sample only
@@ -83,12 +101,12 @@ class VcfMerger:
         # add FILTER field info from each vcf to new header
         seen = []
         for reader, caller in zip(self.readers, self.callers):
-            for filt in reader.header.get_lines('FILTER'):
-                if filt.id not in seen:
-                    seen.append(filt.id)
-                    if filt.id not in ['.', 'PASS']:
-                        self.header.add_filter_line(vcfpy.OrderedDict([('ID', filt.id),
-                                                                       ('Description', filt.description)]))
+            for flt in reader.header.get_lines('FILTER'):
+                if flt.id not in seen:
+                    seen.append(flt.id)
+                    if flt.id not in ['.', 'PASS']:
+                        self.header.add_filter_line(vcfpy.OrderedDict([('ID', flt.id),
+                                                                       ('Description', flt.description)]))
         # add INFO field info from each vcf to new header
         for reader, caller in zip(self.readers, self.callers):
             for info in reader.header.get_lines('INFO'):
@@ -104,52 +122,56 @@ class VcfMerger:
         return self.header
 
     def merge_records(self):
-        header = self.merge_headers()
         records = {}
         for reader, caller in zip(self.readers, self.callers):
             for record in reader:
-                rec_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
+                var_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
                 record.add_filter(caller)
-                for info in header.info_ids():
-                    record.INFO[info] = None
-                    prefix, old_key = info.split('_', 1)
-                    if prefix == caller:
-                        record.INFO[info] = record.INFO.get(old_key, None)
-                        record.INFO.pop(old_key, None)
                 # for INFO and FORMAT ids, add caller as prefix, e.g m2_AD, fb_AD
-                for sample in reader.header.samples.names:
-                    for fmt in header.format_ids():
+                for info in self.infos:
+                    record.INFO[info] = None
+                    c, k = info.split('_', 1)
+                    if c == caller:
+                        record.INFO[info] = record.INFO.get(k, None)
+                        record.INFO.pop(k, None)
+                # for each sample, add new key of e.g m2_AD and set new key value as old key value
+                for sample in self.samples:
+                    for fmt in self.formats:
                         record.add_format(key=fmt, value=None)
-                        prefix, old_key = fmt.split('_', 1)
-                        if prefix == caller:
-                            record.call_for_sample[sample].data[fmt] = record.call_for_sample[sample].data.get(old_key, None)
-                            if old_key in record.FORMAT:
-                                record.FORMAT.remove(old_key)
-                                record.call_for_sample[sample].data.pop(old_key, None)
-                # Uniquify records and for records called by multiple callers, append all callers to FILTER column
-                if rec_id not in records:
-                    records[rec_id] = record
+                        record.call_for_sample[sample].data[fmt] = None
+                        c, k = fmt.split('_', 1)
+                        if c == caller:
+                            record.call_for_sample[sample].data[fmt] = record.call_for_sample[sample].data.get(k, None)
+                            # remove old entry of e.g AD
+                            if k in record.FORMAT:
+                                record.FORMAT.remove(k)
+                                record.call_for_sample[sample].data.pop(k, None)
+                if var_id not in records:
+                    records[var_id] = record
                 else:
-                    seen = records[rec_id]
+                    # Uniquify for variants called by multiple callers
+                    seen = records[var_id]
+                    # add current record's filter to previously seen record's filter list
                     # typeError might occur if
-                    for filt in record.FILTER:
+                    for flt in record.FILTER:
                         try:
-                            seen.add_filter(filt)
+                            seen.add_filter(flt)
                         except TypeError:
                             pass
-                    # for INFO and FORMAT ids, add caller as prefix, e.g m2_AD, fb_AD
-                    for info in record.INFO.items():
-                        prefix, old_key = info[0].split('_', 1)
-                        if prefix == caller:
-                            seen.INFO[info[0]] = info[1]
-                    for sample in reader.header.samples.names:
-                        for key in record.call_for_sample[sample].data.items():
-                            prefix, old_key = key[0].split('_', 1)
-                            if prefix == caller:
-                                seen.call_for_sample[sample].data[key[0]] = key[1]
-                    records[rec_id] = seen
+                    # for INFO and FORMAT ids, change values of seen var_ids to value
+                        # from current record
+                    for info in record.INFO:
+                        c, k = info.split('_', 1)
+                        if c == caller:
+                            seen.INFO[info] = record.INFO[info]
+                    for sample in self.samples:
+                        for fmt in record.call_for_sample[sample].data:
+                            c, k = fmt.split('_', 1)
+                            if c == caller:
+                                seen.call_for_sample[sample].data[fmt] = record.call_for_sample[sample].data[fmt]
+                    records[var_id] = seen
             reader.close()
-        return records
+        return list(records.values())
 
 
 class VcfSelecter:
@@ -158,15 +180,15 @@ class VcfSelecter:
         self.info_fields = info_fields
         self.format_fields = format_fields
         self.caller_priority = caller_priority
-        self.samples = self.reader.header.samples.names
-        self.header = vcfpy.Header(samples=[self.samples])
+        self.samples = self.reader.header.samples
+        self.header = vcfpy.Header(samples=self.samples)
         self.header.add_line(vcfpy.HeaderLine('fileformat', vcf_format))
 
     def select_headers(self):
         for contig in self.reader.header.get_lines('contig'):
             self.header.add_contig_line(vcfpy.OrderedDict([('ID', contig.id), ('length', contig.length)]))
-        for filt in self.reader.header.get_lines('FILTER'):
-            self.header.add_filter_line(vcfpy.OrderedDict([('ID', filt.id), ('Description', filt.description)]))
+        for flt in self.reader.header.get_lines('FILTER'):
+            self.header.add_filter_line(vcfpy.OrderedDict([('ID', flt.id), ('Description', flt.description)]))
         for info_field in self.info_fields:
             for caller in self.caller_priority:
                 info_id = '{}_{}'.format(caller, info_field)
@@ -200,38 +222,36 @@ class VcfSelecter:
         return self.header
 
     def select_records(self):
-        # TODO: dup?
-        header = self.select_headers()
         records = {}
         for record in self.reader:
-            rec_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
+            var_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
             for info in self.info_fields:
                 for caller in self.caller_priority:
-                    value = record.INFO.get('{}_{}'.format(caller, info), None)
-                    if value is not None:
-                        record.INFO[info] = value
-                        break
-            # TODO:
-            # will come up if an INFO field on interest was not in any of the callers
+                    caller_key = '{}_{}'.format(caller, info)
+                    if caller_key in record.INFO:
+                        value = record.INFO.get(caller_key, None)
+                        if value is not None:
+                            record.INFO[info] = value
+                            break
             for info in list(record.INFO):
-                if info not in header.info_ids():
+                if info not in self.info_fields:
                     record.INFO.pop(info, None)
-            for sample in self.samples:
-                for fmt in self.format_fields():
-                    record.add_format(key=fmt, value=None)
+
+            for sample in self.samples.names:
+                for fmt in self.format_fields:
                     for caller in self.caller_priority:
                         caller_key = '{}_{}'.format(caller, fmt)
-                        value = record.call_for_sample[sample].data.get(caller_key, None)
-                        if value is not None:
-                            record.call_for_sample[sample].data[fmt] = value
-                            break
-                # TODO:
-                # will come up if an INFO field on interest was not in any of the callers
-                for call in record.calls:
-                    for key in list(call.data):
-                        if key not in header.format_ids():
-                            call.data.pop(key, None)
-                            if key in record.FORMAT:
-                                record.FORMAT.remove(key)
-            records[rec_id] = record
-        return records
+                        if caller_key in record.call_for_sample[sample].data:
+                            value = record.call_for_sample[sample].data.get(caller_key, None)
+                            if value is not None:
+                                record.call_for_sample[sample].data[fmt] = value
+                                record.FORMAT.append(fmt)
+                                break
+            for call in record.calls:
+                for fmt in list(call.data):
+                    if fmt not in self.format_fields:
+                        call.data.pop(fmt, None)
+                        if fmt in record.FORMAT:
+                            record.FORMAT.remove(fmt)
+            records[var_id] = record
+        return list(records.values())
