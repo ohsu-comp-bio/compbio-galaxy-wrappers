@@ -28,7 +28,6 @@ def main():
     parser.add_argument('--output_vcf', help="Output VCF.")
     parser.add_argument('-v', '--version', action='version', version="%(prog)s " + VERSION)
     args = parser.parse_args()
-    print(args)
 
     select = vcf_tools.VcfSelecter(args.input_vcf, args.info_fields, args.format_fields, args.caller_priority)
     header = select.select_headers()

@@ -15,7 +15,7 @@
       "${caller.caller_label}"
     #end for
     --info_fields $info_fields
-    --sample_fields $sample_fields
+    --format_fields $format_fields
     --output_vcf $output_vcf
   ]]></command>
 
@@ -25,7 +25,7 @@
       <param name="caller_label" type="text" label="Caller label" />
     </repeat>
     <param name="info_fields" type="text" label="Info fields of interest" />
-    <param name="sample_fields" type="text" label="Format fields of interest" />
+    <param name="format_fields" type="text" label="Format fields of interest" />
   </inputs>
 
   <outputs>

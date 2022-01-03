@@ -10,7 +10,7 @@ repositories:
       - readme.rst
       - test-data/*
       - tool_data_table_conf.xml.sample
-      - fasta_indexes.loc.sample
+      - tool-data/fasta_indexes.loc.sample
       - vt_decompose.xml
       - vt_macros.xml
       - vt_normalize.xml

@@ -26,23 +26,32 @@ class VarLabel:
                 records[var_id] = record
         return records
 
-    def get_filter_records(self, exclusive):
-        records = []
+    def get_filter_records(self, exclusive, remove):
+        """
+        filter records with exclusively or inclusively a filter or a set of filters
+        """
+        selected = []
+        removed = []
         for record in self.reader:
             if exclusive:
                 if set(self.label) == set(record.FILTER):
-                    records.append(record)
+                    selected.append(record)
+                else:
+                    removed.append(record)
             else:
                 for lab in self.label:
                     if lab in record.FILTER:
-                        records.append(record)
-        return records
+                        selected.append(record)
+                    else:
+                        removed.append(record)
+        if remove:
+            selected = removed
+            removed = selected
+        return selected, removed
 
-    def get_filter_metrics(self, exclusive, metric):
-        records = self.get_filter_records(exclusive)
+    def get_record_count(self, records, metric):
         count_rec = len(records)
-        # {metric: count_rec}
-        return count_rec
+        return {metric: count_rec}
 
     def add_label_info(self, description):
         self.reader.header.add_filter_line(vcfpy.OrderedDict([('ID', self.label), ('Description', description)]))

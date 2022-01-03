@@ -8,17 +8,26 @@
   <expand macro="version_command" />
 
   <command><![CDATA[
-    python $__tool_directory__/var_select.py "${input_vcf}" "${filter}" --exclusive "${exclusive}" "${output_vcf}"
+    python $__tool_directory__/var_select.py "${input_vcf}" "${filter}" "${output_vcf}"
+    #if $exclusive
+      --exclusive '${exclusive}'
+    #end if
+    #if $remove
+      --remove '${remove}'
+    #end if
+    && cat filtered_out.vcf > $output2_vcf
   ]]></command>
 
   <inputs>
     <param name="input_vcf" type="data" format="vcf,vcf_bgzip" label="Input VCF" />
     <param name="filter" type="text" label="Filter(s) of interest" />
-    <param name="exclusive" type="boolean" label="Select variants with ONLY filter(s) of interest" />
+    <param name="exclusive" type="boolean" truevalue="--exclusive" falsevalue="" label="Select variants with ONLY filter(s) of interest" />
+    <param name="remove" type="boolean" truevalue="--remove" falsevalue="" label="Remove variants with selected filter(s) of interest" />
   </inputs>
 
   <outputs>
     <data name="output_vcf" format="vcf" label="${tool.name} on ${on_string}: VCF" />
+    <data name="output2_vcf" format="vcf" label="${tool.name} on ${on_string}: Filtered out VCF" />
   </outputs>
 
   <help>

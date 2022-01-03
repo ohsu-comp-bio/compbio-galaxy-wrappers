@@ -17,14 +17,16 @@ def main():
     parser = argparse.ArgumentParser(description="var_select.py 'file.vcf' 'fc' --exclusive 'output.vcf'")
     parser.add_argument('input_vcf',  help="Input VCF")
     parser.add_argument('filter', nargs="+", help="Filter(s) of interest")
-    parser.add_argument('--exclusive', action='store_true', help="Select variants with ONLY filter(s) of interest")
     parser.add_argument('output_vcf', help="Output VCF.")
+    parser.add_argument('--exclusive', action='store_true', help="Select variants with ONLY filter(s) of interest")
+    parser.add_argument('--remove', action='store_true', help="Remove variants with selected filter(s) of interest")
     parser.add_argument('-v', '--version', action='version', version="%(prog)s " + VERSION)
     args = parser.parse_args()
 
     var = vcf_tools.VarLabel(args.input_vcf, args.filter)
-    records = var.get_filter_records(args.exclusive)
-    vcf_tools.VarWriter(records).as_vcf(args.output_vcf, var.reader.header)
+    selected, removed = var.get_filter_records(args.exclusive, args.remove)
+    vcf_tools.VarWriter(selected).as_vcf(args.output_vcf, var.reader.header)
+    vcf_tools.VarWriter(removed).as_vcf("filtered_out.vcf", var.reader.header)
 
 
 if __name__ == "__main__":
