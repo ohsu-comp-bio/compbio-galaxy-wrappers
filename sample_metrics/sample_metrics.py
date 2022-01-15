@@ -10,8 +10,9 @@ import json
 # User libraries
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
+from inputs import VcfRead
 
-VERSION = '0.6.9'
+VERSION = '0.6.10'
 
 
 def supply_args():
@@ -41,6 +42,8 @@ def supply_args():
 
     parser.add_argument('--blia_pre', help='JSON from Ding correlation subtyping, pre-normalization.')
     parser.add_argument('--blia_post', help='JSON from Ding correlation subtyping, post-normalization.')
+
+    parser.add_argument('--calls_forced', type=VcfRead, help='VCF with forced calls only.')
 
     # These just get attached to the final json output as-is.
     parser.add_argument('--json_in', nargs='*',
@@ -145,6 +148,11 @@ class RawMetricCollector:
             self.blia_post = self._json_in([args.blia_post])
         else:
             self.blia_post = None
+
+        if args.calls_forced:
+            self.fc_count = args.calls_forced.count
+        else:
+            self.fc_count = None
 
         if args.json_in:
             self.json_mets = self._json_in(args.json_in)
@@ -474,7 +482,8 @@ class MetricPrep(SampleMetrics):
                 'lar_raw_post': self.raw_mets.blia_post['lar'],
                 'mes_raw_post': self.raw_mets.blia_post['mes'],
                 'total_on_target_transcripts': self.on_primer_frag_count,
-                'total_on_target_transcripts_pct': self.on_primer_frag_count_pct
+                'total_on_target_transcripts_pct': self.on_primer_frag_count_pct,
+                'forced_calls_only': self.raw_mets.fc_count
                 }
 
         return mets
@@ -539,7 +548,8 @@ class MetricPrep(SampleMetrics):
                 'QIAseq_V3_HEME2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                     'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'QIAseq_V3_HEME_mini': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
-                                        'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
+                                        'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi',
+                                        'forced_calls'],
                 'QIAseq_V3_STP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                    'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'TruSeq_RNA_Exome_V1-2': ['qthirty'],

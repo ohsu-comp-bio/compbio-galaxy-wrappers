@@ -1,14 +1,15 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.6.9" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.6.10" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
 
   <requirements>
     <requirement type="package" version="1.9">samtools</requirement>
+    <requirement type="package" version="0.13.3">vcfpy</requirement>
   </requirements>
 
-  <version_command>$__tool_directory__/sample_metrics.py --version</version_command>
+  <version_command>python $__tool_directory__/sample_metrics.py --version</version_command>
 
   <command><![CDATA[
-    $__tool_directory__/sample_metrics.py
+    python $__tool_directory__/sample_metrics.py
     #if $probeqc
       --probeqc_after '${probeqc}'
     #end if
@@ -51,6 +52,9 @@
     #if $blia_post
         --blia_post '${blia_post}'
     #end if
+    #if $calls_forced
+        --calls_forced '${calls_forced}'
+    #end if
     #if $json_in:
         --json_in
         #for $input in $json_in:
@@ -78,6 +82,7 @@
       <param name="msi" type="data" format="tabular" optional="true" label="MSIsensor TSV" help="TSV file with MSI results." />
       <param name="blia_pre" type="data" format="txt" optional="true" label="BLIA BLIS Pre" help="JSON metrics from BLIA BLIA subtyping pre-normalization." />
       <param name="blia_post" type="data" format="txt" optional="true" label="BLIA BLIS Post" help="JSON metrics from BLIA BLIA subtyping post-normalization." />
+      <param name="calls_forced" type="data" format="txt" optional="true" label="Forced calls VCF" help="VCF with forced calls only." />
       <param name="json_in" type="data" format="txt" optional="true" multiple="true" label="JSON Formatted Metrics File" help="Some arbitrary number of input files containing json formatted metrics." />
       <conditional name="umi">
           <param label="Assess UMI deduplication" name="umi_sel" type="select">

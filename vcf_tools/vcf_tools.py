@@ -45,9 +45,9 @@ class VarLabel:
                     else:
                         removed.append(record)
         if remove:
-            selected = removed
-            removed = selected
-        return selected, removed
+            return removed, selected
+        else:
+            return selected, removed
 
     def get_record_count(self, records, metric):
         count_rec = len(records)
