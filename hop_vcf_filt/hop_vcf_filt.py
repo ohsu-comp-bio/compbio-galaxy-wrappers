@@ -9,7 +9,7 @@ import numpy
 import re
 import vcf
 
-VERSION = '0.3.1'
+VERSION = '0.3.2'
 
 def supply_args():
     """
@@ -35,7 +35,7 @@ class VcfRec(object):
         self.chrom = str(rec.CHROM)
         self.coord = str(rec.POS)
         self.ref = str(rec.REF)
-        self.alt = str(rec.ALT)
+        self.alt = str(rec.ALT[0])
         self.uniq_key = (self.chrom, self.coord, self.ref, self.alt)
 
         try:
