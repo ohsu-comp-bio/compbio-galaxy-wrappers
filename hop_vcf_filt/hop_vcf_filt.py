@@ -9,7 +9,7 @@ import numpy
 import re
 import vcf
 
-VERSION = '0.3.1'
+VERSION = '0.3.2'
 
 def supply_args():
     """
@@ -19,7 +19,7 @@ def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--infile', help='Input VCF')
     parser.add_argument('--infile_genes', help='Input HGNC Gene List')
-    parser.add_argument('--blacklist', help='Additional variant blacklist to apply.')
+    parser.add_argument('--denylist', help='Additional variant denylist to apply.')
     parser.add_argument('--outfile', help='Output VCF')
     parser.add_argument('--outfile_bad', help='Filtered Sites Output')
     parser.add_argument('--chrom', help='Output filtering details for coordinate.')
@@ -35,7 +35,7 @@ class VcfRec(object):
         self.chrom = str(rec.CHROM)
         self.coord = str(rec.POS)
         self.ref = str(rec.REF)
-        self.alt = str(rec.ALT)
+        self.alt = str(rec.ALT[0])
         self.uniq_key = (self.chrom, self.coord, self.ref, self.alt)
 
         try:
@@ -190,17 +190,17 @@ class VcfRec(object):
                 print(entry)
 
 
-class BlacklistVariants():
+class DenylistVariants():
     """
     TSV containing list of variant we would like to filter out of the call set.
     """
     def __init__(self, filename):
-        self.blacklist = open(filename, 'rU')
-        self.bl_vrnts = self._create_blacklist()
+        self.denylist = open(filename, 'rU')
+        self.bl_vrnts = self._create_denylist()
 
-    def _create_blacklist(self):
+    def _create_denylist(self):
         bl_vrnts = []
-        for line in self.blacklist:
+        for line in self.denylist:
             line = tuple(line.rstrip('\n').split('\t'))
             bl_vrnts.append(line)
         return bl_vrnts
@@ -223,17 +223,17 @@ def main():
     vcf_writer = vcf.Writer(open(args.outfile, 'w'), vcf_reader)
     vcf_writer_bad = vcf.Writer(open(args.outfile_bad, 'w'), vcf_reader)
     ingenes = process_genes(args.infile_genes)
-    if args.blacklist:
-        blacklist = BlacklistVariants(args.blacklist).bl_vrnts
+    if args.denylist:
+        denylist = DenylistVariants(args.denylist).bl_vrnts
     else:
-        blacklist = []
+        denylist = []
 
     for record in vcf_reader:
         entry = VcfRec(record)
         # If you are just sending a chrom and a coordinate, print out the info.
         if args.chrom and args.coord:
             entry.var_req(args.chrom, args.coord)
-        if entry.uniq_key in blacklist:
+        if entry.uniq_key in denylist:
             vcf_writer_bad.write_record(record)
         elif (entry.snpeff_gene) not in ingenes:
             vcf_writer_bad.write_record(record)
