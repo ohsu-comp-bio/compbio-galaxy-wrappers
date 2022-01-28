@@ -10,9 +10,9 @@ import json
 # User libraries
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
+from inputs import VcfRead
 
-VERSION = '0.6.11'
-
+VERSION = '0.6.12'
 
 def supply_args():
     """
@@ -41,6 +41,8 @@ def supply_args():
 
     parser.add_argument('--blia_pre', help='JSON from Ding correlation subtyping, pre-normalization.')
     parser.add_argument('--blia_post', help='JSON from Ding correlation subtyping, post-normalization.')
+
+    parser.add_argument('--calls_forced', type=VcfRead, help='VCF with forced calls only.')
 
     # These just get attached to the final json output as-is.
     parser.add_argument('--json_in', nargs='*',
@@ -145,6 +147,11 @@ class RawMetricCollector:
             self.blia_post = self._json_in([args.blia_post])
         else:
             self.blia_post = {'blia': None, 'blis': None, 'lar': None, 'mes': None}
+
+        if args.calls_forced:
+            self.fc_count = args.calls_forced.count
+        else:
+            self.fc_count = None
 
         if args.json_in:
             self.json_mets = self._json_in(args.json_in)
@@ -474,7 +481,8 @@ class MetricPrep(SampleMetrics):
                 'lar_raw_post': self.raw_mets.blia_post['lar'],
                 'mes_raw_post': self.raw_mets.blia_post['mes'],
                 'total_on_target_transcripts': self.on_primer_frag_count,
-                'total_on_target_transcripts_pct': self.on_primer_frag_count_pct
+                'total_on_target_transcripts_pct': self.on_primer_frag_count_pct,
+                'forced_calls_only': self.raw_mets.fc_count
                 }
 
         return mets
@@ -563,7 +571,7 @@ class MetricPrep(SampleMetrics):
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
                                   'gc_pct_r1', 'gc_pct_r2', 'gender_check', 'homozygosity_flag'],
                 'QIAseq_V3_HEME2': [],
-                'QIAseq_V3_HEME_mini': [],
+                'QIAseq_V3_HEME_mini': ['forced_calls_only'],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
                                           'gatk_pct_correct_strand_reads'],

@@ -1,4 +1,4 @@
-<tool id="vt_@BINARY@" name="VT @BINARY@" version="@VERSION@.1">
+<tool id="vt_@BINARY@" name="VT @BINARY@" version="@VERSION@.2">
     <description>normalizes variants in a VCF file</description>
     <macros>
         <import>vt_macros.xml</import>
@@ -9,6 +9,9 @@
     <expand macro="version_command" />
     <command>
 <![CDATA[
+        #if $infile.is_of_type("vcf_bgzip")
+            zcat $infile > infile.vcf &&
+        #end if
         vt @BINARY@
             #if str($output_format) == 'bcf':
                 -o normalised.bcf
@@ -30,7 +33,12 @@
                 -r "${reference_source.reference_genome}"
             #end if
 
-            "${ infile }"
+            #if $infile.is_of_type("vcf_bgzip")
+                "infile.vcf"
+            #else
+                "${infile}"
+            #end if
+
 
         &&
         ## For some reason, the file move will randomly produce empty files.
@@ -47,7 +55,7 @@
 ]]>
     </command>
     <inputs>
-        <param name="infile" type="data" format="vcf" label="VCF file to be normalised" />
+        <param name="infile" type="data" format="vcf, vcf_bgzip" label="VCF file to be normalised" />
 
         <conditional name="reference_source">
             <param name="reference_source_selector" type="select" label="Choose the source for the reference list">
