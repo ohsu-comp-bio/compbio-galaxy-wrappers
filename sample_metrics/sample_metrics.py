@@ -12,7 +12,7 @@ from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, 
 from inputs import FastQcRead
 from inputs import VcfRead
 
-VERSION = '0.6.11'
+VERSION = '0.6.12'
 
 def supply_args():
     """
