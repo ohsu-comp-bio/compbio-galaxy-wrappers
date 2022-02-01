@@ -1,6 +1,7 @@
 import csv
 import os
 import pysam
+import vcfpy
 import sys
 if os.name == 'posix' and sys.version_info[0] < 3:
     import subprocess32 as subprocess
@@ -272,3 +273,18 @@ class FastQcRead:
                 if line.startswith('%GC'):
                     gc_pct = line.rstrip('\n').split('\t')[1]
                     return gc_pct
+
+class VcfRead:
+    """
+    """
+    def __init__(self, infile):
+        self.reader = vcfpy.Reader.from_path(infile)
+        self.count = self._get_count()
+
+    def _get_count(self):
+        records = {}
+        for record in self.reader:
+            var_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
+            if var_id not in records:
+                records[var_id] = record
+        return len(records)

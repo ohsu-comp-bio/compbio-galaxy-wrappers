@@ -10,9 +10,9 @@ import json
 # User libraries
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
+from inputs import VcfRead
 
-VERSION = '0.6.9'
-
+VERSION = '0.6.12'
 
 def supply_args():
     """
@@ -41,6 +41,8 @@ def supply_args():
 
     parser.add_argument('--blia_pre', help='JSON from Ding correlation subtyping, pre-normalization.')
     parser.add_argument('--blia_post', help='JSON from Ding correlation subtyping, post-normalization.')
+
+    parser.add_argument('--calls_forced', type=VcfRead, help='VCF with forced calls only.')
 
     # These just get attached to the final json output as-is.
     parser.add_argument('--json_in', nargs='*',
@@ -139,12 +141,17 @@ class RawMetricCollector:
         if args.blia_pre:
             self.blia_pre = self._json_in([args.blia_pre])
         else:
-            self.blia_pre = None
+            self.blia_pre = {'blia': None, 'blis': None, 'lar': None, 'mes': None}
 
         if args.blia_post:
             self.blia_post = self._json_in([args.blia_post])
         else:
-            self.blia_post = None
+            self.blia_post = {'blia': None, 'blis': None, 'lar': None, 'mes': None}
+
+        if args.calls_forced:
+            self.fc_count = args.calls_forced.count
+        else:
+            self.fc_count = None
 
         if args.json_in:
             self.json_mets = self._json_in(args.json_in)
@@ -250,8 +257,8 @@ class SampleMetrics:
             self.blia_post_mets = self._top_two_diff(self.raw_mets.blia_post)
             self.assess_blia = self._assess_blia()
         except:
-            self.blia_pre_mets = None
-            self.blia_post_mets = None
+            self.blia_pre_mets = {'best': None, 'second': None, 'diff': None}
+            self.blia_post_mets = {'best': None, 'second': None, 'diff': None}
             self.assess_blia = None
 
     def _blia_blis_map(self, name):
@@ -474,7 +481,8 @@ class MetricPrep(SampleMetrics):
                 'lar_raw_post': self.raw_mets.blia_post['lar'],
                 'mes_raw_post': self.raw_mets.blia_post['mes'],
                 'total_on_target_transcripts': self.on_primer_frag_count,
-                'total_on_target_transcripts_pct': self.on_primer_frag_count_pct
+                'total_on_target_transcripts_pct': self.on_primer_frag_count_pct,
+                'forced_calls_only': self.raw_mets.fc_count
                 }
 
         return mets
@@ -546,6 +554,8 @@ class MetricPrep(SampleMetrics):
                 'QIAseq_V3_HOP': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi'],
                 'QIAseq_V3_HOP2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
+                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi'],
+                'QIAseq_V3_HOP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
                                    'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi']
                 }
 
@@ -561,20 +571,23 @@ class MetricPrep(SampleMetrics):
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
                                   'gc_pct_r1', 'gc_pct_r2', 'gender_check', 'homozygosity_flag'],
                 'QIAseq_V3_HEME2': [],
-                'QIAseq_V3_HEME_mini': [],
+                'QIAseq_V3_HEME_mini': ['forced_calls_only'],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
-                                          'gatk_pct_correct_strand_reads', 'rna_count_zero', 'rna_count_one',
-                                          'rna_count_ten', 'rna_count_onehundred', 'rna_count_onethousand',
-                                          'rna_count_tenthousand', 'rna_count_hundredthousand', 'rna_tpm_zero',
-                                          'rna_tpm_hundredth', 'rna_tpm_tenth', 'rna_tpm_one', 'rna_tpm_ten',
-                                          'rna_tpm_onehundred', 'rna_tpm_onethousand', 'blia_pre_best',
-                                          'blia_pre_second', 'blia_pre_diff', 'blia_post_best', 'blia_post_second',
-                                          'blia_post_diff', 'blia_reportable', 'blia_raw_pre', 'blis_raw_pre',
-                                          'lar_raw_pre', 'mes_raw_pre', 'blia_raw_post', 'blis_raw_post',
-                                          'lar_raw_post', 'mes_raw_post'],
+                                          'gatk_pct_correct_strand_reads'],
+                # 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
+                #                           'gatk_pct_correct_strand_reads', 'rna_count_zero', 'rna_count_one',
+                #                           'rna_count_ten', 'rna_count_onehundred', 'rna_count_onethousand',
+                #                           'rna_count_tenthousand', 'rna_count_hundredthousand', 'rna_tpm_zero',
+                #                           'rna_tpm_hundredth', 'rna_tpm_tenth', 'rna_tpm_one', 'rna_tpm_ten',
+                #                           'rna_tpm_onehundred', 'rna_tpm_onethousand', 'blia_pre_best',
+                #                           'blia_pre_second', 'blia_pre_diff', 'blia_post_best', 'blia_post_second',
+                #                           'blia_post_diff', 'blia_reportable', 'blia_raw_pre', 'blis_raw_pre',
+                #                           'lar_raw_pre', 'mes_raw_pre', 'blia_raw_post', 'blis_raw_post',
+                #                           'lar_raw_post', 'mes_raw_post'],
                 'QIAseq_V3_HOP': ['allele_balance', 'allele_balance_het_count'],
-                'QIAseq_V3_HOP2': ['allele_balance', 'allele_balance_het_count']
+                'QIAseq_V3_HOP2': ['allele_balance', 'allele_balance_het_count'],
+                'QIAseq_V3_HOP3': ['allele_balance', 'allele_balance_het_count']
                 }
 
 
