@@ -1,14 +1,14 @@
-<tool id="getAnnotation" name="SeattleSeq getAnnotation" version="1.1.0" >
+<tool id="getAnnotation" name="SeattleSeq getAnnotation" version="1.1.1" >
   <description>Provides annotations for the VCF file from annotationCacheWG138 database</description>
     <!-- Adapted from Dan Blankenberg -->
-  <command interpreter="python">getAnnotation.py
-    -p '
-    java -jar \${SEATTLESEQ_GETANNOTATION_JAR_PATH}/getAnnotationSeattleSeq138QC.jar  <!-- SEATTLESEQ_GETANNOTATION_JAR_PATH defined in Galaxy's run.sh  -->
-    '
+  <command detect_errors="exit_code"><![CDATA[
+  python3 $__tool_directory__/getAnnotation.py
+    -p
+    'java -jar \${SEATTLESEQ_GETANNOTATION_JAR_PATH}/getAnnotationSeattleSeq138QC.jar'
     -i $infile
     -o $outfile    
     -d $database_info
-  </command>
+  ]]></command>
   <inputs>
     <param name="infile" type="data" format="vcf" label="VCF file generated from GATK HaplotypeCaller" />
     <param name="database_info" type="data" format="txt" label="Login information for annotationCache database"/>

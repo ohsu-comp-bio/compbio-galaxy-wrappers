@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #Adapted from Dan Blankenberg
 
 """
 A wrapper script for running the SeattleSeq writeGenotype jarfile
 """
 
-VERISON = '1.1.0'
+VERISON = '1.1.1'
 
 import sys, optparse, os, tempfile, subprocess, shutil
 
