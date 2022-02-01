@@ -4,7 +4,7 @@ from file_types import vcfreader
 import argparse
 import json
 
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 
 
 def supply_args():
