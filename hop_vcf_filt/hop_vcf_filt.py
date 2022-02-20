@@ -9,7 +9,8 @@ import numpy
 import re
 import vcf
 
-VERSION = '0.3.2'
+VERSION = '0.3.3'
+
 
 def supply_args():
     """
@@ -27,6 +28,7 @@ def supply_args():
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
+
 
 class VcfRec(object):
     def __init__(self, rec):
@@ -58,7 +60,9 @@ class VcfRec(object):
         except:
             self.hgmd = None
 
-        self.snpeff_filt = ["3_prime_UTR_variant", "5_prime_UTR_variant", "downstream_gene_variant", "intron_variant", "intergenic_region", "synonymous_variant", "upstream_gene_variant", "non_coding_transcript_exon_variant"]
+        self.snpeff_filt = ["3_prime_UTR_variant", "5_prime_UTR_variant", "downstream_gene_variant",
+                            "intron_variant", "intergenic_region", "synonymous_variant",
+                            "upstream_gene_variant", "non_coding_transcript_exon_variant"]
 
         try:
             self.snpeff_terms = set([x.split('|')[1] for x in rec.INFO['ANN']])
@@ -124,7 +128,6 @@ class VcfRec(object):
         except:
             self.canon_splice = True
 
-
     def _is_splice(self):
         """
         If the phrase 'splice_region_variant' is in the snpeff term, then return a True.
@@ -136,7 +139,6 @@ class VcfRec(object):
                 if 'splice_region_variant' in entry:
                     return True
         return False
-
 
     def _calc_ab(self):
         """
@@ -164,12 +166,15 @@ class VcfRec(object):
     def var_req(self, schrom, scoord):
         """
         Print out the current value of each variable.
-        :param self:
+        :param schrom:
+        :param scoord:
         :return:
         """
         if schrom == self.chrom and scoord == self.coord:
             print("Chromosome: {0}".format(self.chrom))
             print("Position: {0}".format(self.coord))
+            print("Ref: {0}".format(self.ref))
+            print("Alt: {0}".format(self.alt))
             print("CLNSIG: {0}".format(self.clnsig))
             print("CLNSIGCONF: {0}".format(self.clnsigconf))
             print("GNOMAD: {0}".format(self.gnomad))
@@ -190,12 +195,12 @@ class VcfRec(object):
                 print(entry)
 
 
-class DenylistVariants():
+class DenylistVariants:
     """
     TSV containing list of variant we would like to filter out of the call set.
     """
     def __init__(self, filename):
-        self.denylist = open(filename, 'rU')
+        self.denylist = open(filename, 'r')
         self.bl_vrnts = self._create_denylist()
 
     def _create_denylist(self):
@@ -212,10 +217,11 @@ def process_genes(filename):
     :return:
     """
     genes = []
-    with open(filename, 'rU') as myfile:
+    with open(filename, 'r') as myfile:
         for line in myfile:
             genes.append(line.rstrip('\n'))
     return genes
+
 
 def main():
     args = supply_args()
@@ -235,11 +241,12 @@ def main():
             entry.var_req(args.chrom, args.coord)
         if entry.uniq_key in denylist:
             vcf_writer_bad.write_record(record)
-        elif (entry.snpeff_gene) not in ingenes:
+        elif entry.snpeff_gene not in ingenes:
             vcf_writer_bad.write_record(record)
         elif entry.bad_ab:
             vcf_writer_bad.write_record(record)
-        elif 'missense_variant' in entry.snpeff_terms and len(entry.snpeff_terms) == 1 and not entry.is_path_clinvar and not entry.hgmd:
+        elif ('missense_variant' in entry.snpeff_terms and len(entry.snpeff_terms) == 1
+              and not entry.is_path_clinvar and not entry.hgmd):
             vcf_writer_bad.write_record(record)
         elif entry.is_splice and not entry.canon_splice and not entry.is_path_clinvar and not entry.hgmd:
             vcf_writer_bad.write_record(record)
