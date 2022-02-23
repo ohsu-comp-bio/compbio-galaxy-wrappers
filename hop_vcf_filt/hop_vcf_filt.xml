@@ -1,4 +1,4 @@
-<tool id="hop_vcf_filt" name="HOP Filter" version="0.3.2" >
+<tool id="hop_vcf_filt" name="HOP Filter" version="0.3.3" >
   <description>Filter a HOP multi-sample VCF.</description>
 
   <requirements>
