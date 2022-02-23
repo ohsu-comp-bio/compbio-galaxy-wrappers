@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #Adapted from Dan Blankenberg
 
 """
@@ -7,7 +7,7 @@ A wrapper script for running the SeattleSeq getAnnotation jarfile
 
 import sys, optparse, os, tempfile, subprocess, shutil
 
-VERSION = '1.1.0'
+VERSION = '1.1.1'
 
 CHUNK_SIZE = 2**20 #1mb
 

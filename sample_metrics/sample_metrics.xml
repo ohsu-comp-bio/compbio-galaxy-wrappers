@@ -9,7 +9,7 @@
   <version_command>python $__tool_directory__/sample_metrics.py --version</version_command>
 
   <command><![CDATA[
-    python $__tool_directory__/sample_metrics.py
+    python3 $__tool_directory__/sample_metrics.py
     #if $probeqc
       --probeqc_after '${probeqc}'
     #end if
