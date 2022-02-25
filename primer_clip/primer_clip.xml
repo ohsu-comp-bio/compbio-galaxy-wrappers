@@ -1,4 +1,4 @@
-<tool id="primer_clip" name="Primer Clipper" version="0.1.5" >
+<tool id="primer_clip" name="Primer Clipper" version="0.1.6" >
     <description>Clip primer sequences from a BAM file based on locations of these sequences at defined in an extended BED file.</description>
 
     <requirements>
@@ -16,11 +16,13 @@
     --bed "${input_bed}"
     --bamfile input_sorted_uniq.sam
     --outfile "${outfile}"
+    "${new_qiaseq}"
     ]]></command>
 
     <inputs>
         <param name="input_bed" type="data" format="bed" label="Input BED" help="Contains primer definitions file." />
         <param name="bamfile" type="data" format="bam" label="Input BAM" help="BAM file that will lose the primer sequences." />
+        <param name="new_qiaseq" truevalue="--v4" falsevalue="" type="boolean" checked="false" label="QIAseq V4?" help="Check if input BED is of QIAseq V4 style." />
     </inputs>
 
     <outputs>

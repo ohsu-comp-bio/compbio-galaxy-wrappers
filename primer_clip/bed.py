@@ -57,13 +57,15 @@ class ExtBedReader(object):
 
     """
     def __init__(self, filename, header=False, hgnc=False, strand=False,
-                 phase=False):
+                 phase=False, pstart=False, pstop=False):
 #        super(ExtBedReader, self).__init__(*args, **kwargs)
         self.filename = open(filename, 'rU')
         self.header = header
         self.hgnc = hgnc
         self.strand = strand
         self.phase = phase
+        self.pstart = pstart
+        self.pstop = pstop
         self.bed_ints = self._ext_bed_parse()
 
     def _ext_bed_parse(self):
@@ -101,11 +103,13 @@ class ExtBedReader(object):
                         interval[self.strand] = 0
                     elif interval[self.strand] == '+':
                         interval[self.strand] = 1
-                    ext_bed_ints[chrom][new_key]['strand'] = interval[
-                            self.strand]
+                    ext_bed_ints[chrom][new_key]['strand'] = interval[self.strand]
                 if self.phase:
-                    ext_bed_ints[chrom][new_key]['phase'] = interval[
-                        self.phase]
+                    ext_bed_ints[chrom][new_key]['phase'] = interval[self.phase]
+                if self.pstart:
+                    ext_bed_ints[chrom][new_key]['pstart'] = int(interval[self.pstart])
+                if self.pstop:
+                    ext_bed_ints[chrom][new_key]['pstop'] = int(interval[self.pstop])
 
         return ext_bed_ints
 
@@ -156,6 +160,34 @@ class ExtBedReader(object):
                     pstop = coord['stop'] + 1
                 elif coord['strand'] == 1:
                     pstop = coord['start'] - 1
+                else:
+                    raise ValueError("The strand should either be 0 or 1.")
+
+                primer_coords[chrom][strand].append(pstop)
+
+        return primer_coords
+
+
+    def get_v4_primer_ends(self):
+        """
+        This is an extended version of find_primer_coords, where we pull
+        down just the coordinates that are near the ends.
+        {CHROM: {STRAND: (a, b, c, ...)}}
+        This will utilize pre-created values in final two columns of v4 BED.
+        :return:
+        """
+        primer_coords = {}
+        for chrom in self.bed_ints.keys():
+            primer_coords[chrom] = {}
+            for coord in self.bed_ints[chrom].values():
+                strand = str(coord['strand'])
+                if strand not in primer_coords[chrom]:
+                    primer_coords[chrom][strand] = []
+
+                if coord['strand'] == 0:
+                    pstop = coord['pstop'] + 1
+                elif coord['strand'] == 1:
+                    pstop = coord['pstart'] - 1
                 else:
                     raise ValueError("The strand should either be 0 or 1.")
 

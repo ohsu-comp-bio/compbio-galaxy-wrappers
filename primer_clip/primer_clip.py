@@ -10,7 +10,7 @@ import argparse
 import pysam
 import re
 
-VERSION = '0.1.5'
+VERSION = '0.1.6'
 
 
 def supply_args():
@@ -22,6 +22,7 @@ def supply_args():
     parser.add_argument('--bed', help='Input BED file.')
     parser.add_argument('--bamfile', help='Input SAM file.')
     parser.add_argument('--outfile', help='Output SAM file.')
+    parser.add_argument('--v4', action='store_true', default=False, help='Use qiaseq v4 type bed input.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
@@ -269,7 +270,11 @@ def main():
     args = supply_args()
     samfile = open(args.bamfile, 'r')
     outfile = open(args.outfile, 'w')
-    primer_coords = bed.ExtBedReader(args.bed, header=True, strand=5).get_primer_ends()
+    if args.v4:
+        primer_coords = bed.ExtBedReader(args.bed, header=True, strand=5, pstart=6, pstop=7).get_v4_primer_ends()
+    else:
+        primer_coords = bed.ExtBedReader(args.bed, header=True, strand=5).get_primer_ends()
+
     mismatch = False
 
     i = 0
