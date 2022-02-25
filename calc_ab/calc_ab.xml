@@ -1,14 +1,21 @@
-<tool id="calc_ab" name="Calculate Allele Balance" version="0.1.1" >
+<tool id="calc_ab" name="Calculate Allele Balance" version="0.1.2" >
     <description>Calculate allele balance from variant calls.</description>
 
     <command detect_errors="exit_code"><![CDATA[
+        #if $infile.is_of_type("vcf_bgzip")
+            zcat $infile > input.vcf &&
+        #end if
         python $__tool_directory__/calc_ab.py
-        --infile '${infile}'
-        --outfile '${outfile}'
+        #if $infile.is_of_type("vcf_bgzip")
+            --infile input.vcf
+        #else
+            --infile "${infile}"
+        #end if
+        --outfile "${outfile}"
     ]]></command>
 
     <inputs>
-        <param name="infile" type="data" format="vcf" label="Input VCF(s)" help="Input VCF(s)" />
+        <param name="infile" type="data" format="vcf,vcf_bgzip" label="Input VCF(s)" help="Input VCF(s)" />
     </inputs>
 
     <outputs>
