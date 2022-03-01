@@ -1,4 +1,4 @@
-<tool id="split_mult_alleles_vcf" name="Split Multiple Alterate Alleles VCF" version="0.7.2" >
+<tool id="split_mult_alleles_vcf" name="Split Multiple Alterate Alleles VCF" version="0.8.0" >
   <description>Where multiple alleles are listed by commas in a VCF, make each a separate entry.</description>
   <command detect_errors="exit_code"><![CDATA[
   #if $input.is_of_type("vcf_bgzip")
@@ -10,13 +10,15 @@
   #else
     "${input}"
   #end if
-
   $output
-
+  #if $unphase
+    "${unphase}"
+  #end if
   ]]></command>
 
   <inputs>   
     <param name="input" format="vcf,vcf_bgzip" type="data" label="Input VCF" />
+    <param name="unphase" truevalue="--unphase" falsevalue="" type="boolean" label="Replace pipe symbol in phased genotypes with slash?" />
   </inputs>
 
   <outputs>
@@ -26,5 +28,16 @@
   </tests>
   <help>
     Where multiple alleles are listed by commas in a VCF, make each a separate entry.  Place separate entries in new file.
+
+    usage: split_mult_alleles_vcf.py [-h] [--version] input output
+
+    positional arguments:
+      input
+      output
+      --unphase   Remove pipe symbol from genotypes before writing.
+
+    optional arguments:
+      -h, --help  show this help message and exit
+      --version   show program's version number and exit
   </help>
 </tool>

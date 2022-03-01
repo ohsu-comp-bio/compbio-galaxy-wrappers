@@ -12,7 +12,7 @@ import vcfreader
 import vcfwriter
 import argparse
 
-VERSION = '0.7.2'
+VERSION = '0.8.0'
 
 
 def supply_args():
@@ -23,6 +23,7 @@ def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument(dest='input', help='')
     parser.add_argument(dest='output', help='')
+    parser.add_argument('--unphase', action='store_true', help='Remove pipe symbol from genotypes before writing.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
@@ -271,6 +272,24 @@ class VcfRecDecomp(object):
         return int(((ref * (ref + 1) / 2) + alt))
 
 
+def unphase(rec):
+    """
+    Remove the pipe symbol from a genotype, which helps avoid downstream issues.
+    :param rec:
+    :return:
+    """
+    samp = rec[9].split(':')
+    new_rec = rec
+    gt = samp[0]
+    if '|' in gt:
+        gt = gt.replace('|', '/')
+        if '0' in gt and '1' in gt:
+            gt = '0/1'
+        samp[0] = gt
+    new_rec[9] = ':'.join(samp)
+    return new_rec
+
+
 def main():
     """
     # 1
@@ -333,6 +352,10 @@ def main():
 
     new_header = vcfwriter.VcfHeader(myvcf.raw_header)
     new_header.add_header_line('FILTER', header_dict)
+    # If unphase option is set, remove all the pipe symbols.
+    if args.unphase:
+        for entry in out_vcf_recs:
+            unphase(entry)
     vcfwriter.VcfWriter(args.output, out_vcf_recs, new_header.raw_header).write_me()
 
 
