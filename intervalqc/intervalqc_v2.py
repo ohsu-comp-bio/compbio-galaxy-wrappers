@@ -4,7 +4,7 @@ import sys
 from natsort import natsorted
 import argparse
 
-VERSION = '1.0.4'
+VERSION = '1.0.5'
 
 CHROMS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "X", "Y", "MT"]
 
@@ -66,7 +66,8 @@ def parseGff3(handle):
 
                 if chrom in all_cds:
 
-                    if entry_type == "mRNA" or entry_type == "transcript" or entry_type == "primary_transcript":
+                    if (entry_type == "mRNA" or entry_type == "transcript"
+                            or entry_type == "primary_transcript" or entry_type == "ncRNA"):
                         for annot in info:
                             gff_id = annot.split('=')[0]
                             gff_info = annot.split('=')[1]
@@ -122,6 +123,8 @@ def parseGff3(handle):
                         else:
                             print(curr_gff_parent + " does not have an associated mRNA entry in the GFF.")
 #                            pass
+
+
     return all_cds, refseq_gene, refseq_coords
 
 

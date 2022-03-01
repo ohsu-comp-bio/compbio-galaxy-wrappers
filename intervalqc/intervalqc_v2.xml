@@ -1,4 +1,4 @@
-<tool id="intervalqc_v2" name="QC Coverage Metrics" version="1.0.4" >
+<tool id="intervalqc_v2" name="QC Coverage Metrics" version="1.0.5" >
   <description> Create QC metrics from GATK DepthOfCoverage per locus output.</description>
   <requirements>
     <requirement type="package" version="6.0.0">natsort</requirement>
