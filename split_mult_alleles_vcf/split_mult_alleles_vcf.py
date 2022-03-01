@@ -12,7 +12,7 @@ import vcfreader
 import vcfwriter
 import argparse
 
-VERSION = '0.7.1'
+VERSION = '0.7.2'
 
 
 def supply_args():
@@ -121,7 +121,6 @@ class VcfRecDecomp(object):
             if not has_zero_depth:
                 vrnt_updt.append(new_vrnt)
             else:
-                # print(new_vrnt.rec)
                 has_zero_depth = False
 
         return vrnt_updt
@@ -324,7 +323,8 @@ def main():
             split_vrnt = VcfRecDecomp(vrnt, info_number, samples_number).decomp_vrnts
             for svrnt in split_vrnt:
                 if svrnt.samples:
-                    if svrnt.samples[0]['GT'] != './.':
+                    uniq_gts = set([x['GT'] for x in svrnt.samples])
+                    if uniq_gts != {'./.'}:
                         out_vcf_recs.append(svrnt.print_rec())
                 else:
                     out_vcf_recs.append(svrnt.print_rec())
