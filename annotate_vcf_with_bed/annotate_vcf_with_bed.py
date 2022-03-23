@@ -8,7 +8,7 @@ import argparse
 import vcfpy
 
 
-VERSION = '0.2.0'
+VERSION = '0.3.0'
 
 
 def supply_args():
@@ -41,8 +41,9 @@ def main():
     for rec in vcf:
         chrom = rec.CHROM
         pos = rec.POS
-        if pos in my_bed[chrom]:
-            rec.add_filter(args.anno)
+        if chrom in my_bed:
+            if pos in my_bed[chrom]:
+                rec.add_filter(args.anno)
         writer.write_record(rec)
 
     vcf.close()
