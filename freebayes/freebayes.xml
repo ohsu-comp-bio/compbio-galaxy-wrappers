@@ -1,4 +1,4 @@
-<tool id="freebayes" name="FreeBayes" version="@DEPENDENCY_VERSION@">
+<tool id="freebayes" name="FreeBayes" version="@DEPENDENCY_VERSION@+galaxy1">
     <description>bayesian genetic variant detector</description>
     <macros>
         <import>macros.xml</import>

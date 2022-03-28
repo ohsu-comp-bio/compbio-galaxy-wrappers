@@ -53,7 +53,26 @@
     #end for
     -o output.bam
   </template>
-  
+
+  <xml name="fastq_and_read_structures_input">
+    <repeat name="inputs" title="FASTQ Input Files and Read Structures">
+      <param name="input" label="FASTQ Input File" type="data" format="fastq" argument="-i" />
+      <param name="read_structure" type="text" label="Read Structure" argument="-r" help="Read structures, one for each of the FASTQs."/>
+    </repeat>
+  </xml>
+
+  <template name="fastq_and_read_structures_cmd">
+    --input
+    #for $num, $fastq in enumerate($inputs)
+      $fastq.input
+    #end for
+    -r
+    #for $num, $structure in enumerate($inputs)
+      $structure.read_structure
+    #end for
+    -o output.bam
+  </template>
+
   <xml name="fastq_input">
     <param name="input" label="FASTQ Input File" type="data" format="fastq" argument="-i"/>
   </xml>
