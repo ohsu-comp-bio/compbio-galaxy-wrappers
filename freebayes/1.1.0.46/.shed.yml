@@ -1,0 +1,15 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/freebayes"
+homepage_url: "https://github.com/ekg/freebayes"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  freebayes:
+    description: "Freebayes is a Bayesian genetic variant detector designed to find small polymorphisms."
+    include:
+      - freebayes.xml
+      - tool_data_table_conf.xml.sample
+      - tool-data/*
+      - test-data/*
+
