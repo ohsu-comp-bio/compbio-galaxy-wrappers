@@ -1,4 +1,4 @@
-<tool id="cgd_client" name="CGD Import Client" version="1.2.9.2" profile="16.01">
+<tool id="cgd_client" name="CGD Import Client" version="1.2.9.3" profile="16.01">
 
     <description>Send a pipeline output file to the CGD via cgd_client.jar.</description>
 
@@ -7,6 +7,7 @@
         <requirement type="package" version="0.13.3">vcfpy</requirement>
         <requirement type="package" version="2.25.1">requests</requirement>
         <requirement type="package" version="0.2.6">tabix</requirement>
+        <requirement type="package" version="8.0.112">java-jdk</requirement>
     </requirements>
 
     <version_command>python '$__tool_directory__/cgd_client.py' --version</version_command>

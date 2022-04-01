@@ -1,4 +1,4 @@
-<tool id="fg_FastqToBam" name="Fastq To Bam" version="@WRAPPER_VERSION@0">
+<tool id="fg_FastqToBam" name="Fastq To Bam" version="@WRAPPER_VERSION@">
   <description>Generates an unmapped BAM (or SAM or CRAM) file from fastq files.</description>
   <macros>
     <import>macros.xml</import>
@@ -6,8 +6,7 @@
   <expand macro="requirements"/>
   <command detect_errors="exit_code"><![CDATA[
     @CMD_BEGIN@ FastqToBam
-    #include source=$multi_input_cmd#
-    #include source=$read_structures_cmd#
+    #include source=$fastq_and_read_structures_cmd#
     #include source=$sample_cmd#
     #include source=$library_cmd#
     #include source=$sort_boolean_cmd#
@@ -21,12 +20,12 @@
     #include source=$description_cmd#
     #include source=$comment_cmd#
     #include source=$run_date_cmd#
-    #include source=$log_cmd#
+    #include source=$log_cmd# &&
+    rm input*.fastq
     ]]>
   </command>
   <inputs>
-    <expand macro="multi_fastq_input"/>
-    <expand macro="read_structures_input"/>
+    <expand macro="fastq_and_read_structures_input"/>
     <expand macro="sample_input"/>
     <expand macro="library_input"/>
     <expand macro="sort_boolean_input"/>

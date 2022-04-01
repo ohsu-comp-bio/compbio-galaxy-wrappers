@@ -17,7 +17,7 @@ def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('mrd_vcf', help="MRD VCF to be sent to CGD")
     parser.add_argument('output_vcf', help="Output corrected VCF")
-    parser.add_argument('input_vcfs', type=file, nargs="+", help="Input VCFs to be compared against to look for dups")
+    parser.add_argument('input_vcfs', type=argparse.FileType('r'), nargs="+", help="Input VCFs to be compared against to look for dups")
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
@@ -95,7 +95,7 @@ def main():
 
     for line in header:
         handle_out.write(line)
-    for entry in mrd_dict.itervalues():
+    for entry in mrd_dict.items():
         handle_out.write(entry)
 
     handle_out.close()
