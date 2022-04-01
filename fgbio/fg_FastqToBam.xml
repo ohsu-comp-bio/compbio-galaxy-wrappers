@@ -1,4 +1,4 @@
-<tool id="fg_FastqToBam" name="Fastq To Bam" version="@WRAPPER_VERSION@1">
+<tool id="fg_FastqToBam" name="Fastq To Bam" version="@WRAPPER_VERSION@">
   <description>Generates an unmapped BAM (or SAM or CRAM) file from fastq files.</description>
   <macros>
     <import>macros.xml</import>
@@ -20,7 +20,8 @@
     #include source=$description_cmd#
     #include source=$comment_cmd#
     #include source=$run_date_cmd#
-    #include source=$log_cmd#
+    #include source=$log_cmd# &&
+    rm input*.fastq
     ]]>
   </command>
   <inputs>

@@ -2,13 +2,13 @@
 
   <token name="@CMD_BEGIN@">fgbio -Xmx8g</token>
   <token name="@VERSION@">1.2.0</token>
-  <token name="@WRAPPER_VERSION@">@VERSION@+galaxy</token>
+  <token name="@WRAPPER_VERSION@">@VERSION@+galaxy1</token>
 
-  <xml name="requirements">
-    <requirements>
-        <requirement type="package" version="@VERSION@">fgbio</requirement>
-    </requirements>
-  </xml>
+<!--  <xml name="requirements">-->
+<!--    <requirements>-->
+<!--        <requirement type="package" version="@VERSION@">fgbio</requirement>-->
+<!--    </requirements>-->
+<!--  </xml>-->
 
   <!--Required Input and Output for SAM BAM-->
   <template name="sorted_input_output_cmd"><![CDATA[
@@ -62,12 +62,20 @@
   </xml>
 
   <template name="fastq_and_read_structures_cmd">
+    #for $num, $fastq in enumerate( $inputs ):
+      #if $fastq.input.is_of_type("fastqsanger.gz")
+        zcat -d $fastq.input > input${num}.fastq
+      #else
+        ln -f -s $fastq.input input${num}.fastq
+      #end if
+    #end for
+
     --input
-    #for $num, $fastq in enumerate($inputs)
-      $fastq.input
+    #for $num, $fastq in enumerate( $inputs )
+      input${num}.fastq
     #end for
     -r
-    #for $num, $structure in enumerate($inputs)
+    #for $num, $structure in enumerate( $inputs )
       $structure.read_structure
     #end for
     -o output.bam
