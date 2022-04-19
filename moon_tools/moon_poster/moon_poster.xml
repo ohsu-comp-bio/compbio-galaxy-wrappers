@@ -1,24 +1,27 @@
-<tool id="moon_poster" name="Moon Poster" version="2.0">
+<tool id="moon_poster" name="Moon Poster" version="3.0">
   <description>Uploads a sample to Moon.</description>
   <command detect_errors="exit_code"><![CDATA[
     ln -s $new_vcf ${sample_name}.vcf &&
     ln -s $cnv_vcf cnv_vcf.vcf &&
     #if $repost.is_repost:
-      ln -s $__tool_directory__/moon_api.py moon_api.py &&
-      $__tool_directory__/mito_merge.sh $repost.moon_id ${sample_name}.vcf cnv_vcf.vcf $user $token > $log
+      python $__tool_directory__/moon_api.py -snp ${sample_name}.vcf -cnv cnv_vcf.vcf -mode repost -user $user -token $token -server $moon_server -old_server $repost.moon_server_old -id $repost.moon_id -old_token $repost.old_token > $log     
+      
     #else:
-      python $__tool_directory__/moon_api.py -snp ${sample_name}.vcf -cnv cnv_vcf.vcf -mode post -gender $repost.gender -user $user -token $token> $log
+      python $__tool_directory__/moon_api.py -snp ${sample_name}.vcf -cnv cnv_vcf.vcf -mode post -gender $repost.gender -user $user -token $token -server $moon_server > $log
     #end if
   ]]></command>
 
   <inputs>
     <param name="sample_name" type="text" label="New Sample Name" help="Name for the new sample in Moon. Example 15-5380-WM"/>
+    <param name="moon_server" type="text" label="Moon Server" help="Moon server url."/>
     <param name="new_vcf" type="data" format="vcf" label="New VCF"/>
     <param name="cnv_vcf" type="data" format="vcf" label="CNV VCF"/>
     <conditional name="repost">
       <param name="is_repost" type="boolean" label="Repost a previously uploaded sample?"/>
       <when value="true">
         <param name="moon_id" type="integer" value="0" label="Current Moon ID" help="To find the Moon ID go to the Moon page for the sample in question and look in the url. example: https://oregon.moon.diploid.com/samples/7079/analysis the Moon ID is 7079."/>
+        <param name="moon_server_old" type="text" label="Old Moon Server" help="Old Moon server url that you are reposting from."/>
+        <param name="old_token" type="text" label="User token on Old Moon"/>
       </when>
       <when value="false">
         <param name="gender" type="select" label="Gender">
