@@ -45,10 +45,7 @@ class AnnovarVariantFunction(object):
         self.reference = ref
         self.alt = alt
         
-        # jDebug: Need to make sure you are getting these correct. This and variant_type are row[0] in the two formats  
         self.variant_effect = None
-        
-        # jDebug: Need to make sure you are getting these correct. This and variant_effect are row[0] in the two formats 
         self.variant_type = None
 
         self.hgvs_amino_acid_position = None 
@@ -61,10 +58,11 @@ class AnnovarVariantFunction(object):
         self.splicing = None 
         self.refseq_transcript = None
 
-        # jDebug: I don't think this are being set yet            
-        # self.vfx = None  <--, self.veff;i think this is your "variant_type"
     def __str__(self):
-        return f'[AnnovarVariantFunction: genotype={self.chromosome}-{self.position}-{self.reference}-{self.alt}, transcript={self.refseq_transcript}, variant_effect={self.variant_effect}, variant_type={self.variant_type}, aap={self.hgvs_amino_acid_position}, bpos={self.hgvs_base_position}, exon={self.exon}, gene={self.hgnc_gene}, c.={self.hgvs_c_dot}, p1.={self.hgvs_p_dot_one}, p3.={self.hgvs_p_dot_three}, splice={self.splicing}]'
+        '''
+        String representation of the AnnovarVariantFunction object
+        '''
+        return f'[AnnovarVariantFunction: genotype={self.chromosome}-{self.position}-{self.reference}-{self.alt}, transcript={self.refseq_transcript}, variant_effect={self.variant_effect}, variant_type={self.variant_type}, aap={self.hgvs_amino_acid_position}, bpos={self.hgvs_base_position}, exon={self.exon}, gene={self.hgnc_gene}, c.={self.hgvs_c_dot}, p1.={self.hgvs_p_dot_one}, p3.={self.hgvs_p_dot_three}, spliceing={self.splicing}]'
             
 class AnnovarParser(object):    
     '''
@@ -110,9 +108,10 @@ class AnnovarParser(object):
             
             # jDebug: modify these two lines so that you only call hgvs_parser.parse(full_p) once.
             hgvs_three = 'p.' + str(self.hgvs_parser.parse(full_p).posedit)
-            hgvs_app = self.hgvs_parser.parse(full_p).posedit.pos.start
+            
+            amino_acid_position = self.hgvs_parser.parse(full_p).posedit.pos.start.pos
 
-        return hgvs_app, hgvs_basep, exon, hgnc_gene, hgvs_c_dot, hgvs_p, hgvs_three, refseq_transcript
+        return amino_acid_position, hgvs_basep, exon, hgnc_gene, hgvs_c_dot, hgvs_p, hgvs_three, refseq_transcript
 
     def _unpack_vf_transcript_tuple(self, delimited_transcript: str):
         '''
@@ -196,7 +195,7 @@ class AnnovarParser(object):
         return annovar_recs
         
 
-    def _parse_variant_function_row(self, record_type: AnnovarFileType, annovar_row: list):
+    def _parse_variant_function_row(self, annovar_row: list):
         '''
         Takes a single row from an Annovar variant_function file and returns one or more AnnovarVariantFunction objects.
         '''  
@@ -209,22 +208,29 @@ class AnnovarParser(object):
         
         logger.debug(f"Parsing variant {chrom}-{pos}-{ref}-{alt}")
         
-        # Handle special cases for 'UNKNOWN' and 'splicing' variants
-        if record_type == AnnovarFileType.VariantFunction and (annovar_row[0] == 'splicing' or annovar_row[0] == 'ncRNA_splicing'):
-            avf = AnnovarVariantFunction(chrom, pos, ref, alt)
-            avf.variant_type = None
-            avf.splicing = annovar_row[0]
-        
-        variant_type = annovar_row[0]
-        variant_effect = None
+        # Handle special cases of splicing variants
+        if annovar_row[0] == 'splicing' or annovar_row[0] == 'ncRNA_splicing':            
+            variant_type = None
+            variant_splicing = annovar_row[0]
+        else:
+            variant_type = annovar_row[0]
+            variant_splicing = None
            
         transcript_tuples = annovar_row[1].split(',')
+        
+        if(len(transcript_tuples) == 0):
+            raise Exception(f"Variant does not have any transcript tuples: {chrom}-{pos}-{ref}-{alt}")
+            
         logger.debug(f"row has {len(transcript_tuples)} transcript tuples")
         
         for transcript_tuple in transcript_tuples:
             avf = AnnovarVariantFunction(chrom, pos, ref, alt)
-            avf.variant_effect = variant_effect
+            
+            # Variant effect is not present in variant_function files 
+            avf.variant_effect = None
+            
             avf.variant_type = variant_type
+            avf.splicing = variant_splicing
             
             avf.hgvs_base_position, \
             avf.exon,               \
@@ -259,7 +265,7 @@ class AnnovarParser(object):
                     assert len(row) == 10
                     
                     # Parse a row in a variant_function file
-                    annovar_recs.extend(self._parse_variant_function_row(annovar_file_type, row))
+                    annovar_recs.extend(self._parse_variant_function_row(row))
                 else: 
                     raise Exception("Unknown Annovar file type")
 
@@ -273,21 +279,29 @@ class AnnovarParser(object):
         # Collect annovar records into a map keyed by genotype and transcript 
         annovar_dict = defaultdict(list)
         
-        key_maker = lambda x: "-".join([x.chromosome, x.position, x.reference, x.alt, x.refseq_transcript])
+        key_maker = lambda x: "-".join([x.chromosome, x.position, x.reference, x.alt, x.refseq_transcript, (x.splicing or '')])
         for annovar_rec in annovar_records:
-            if annovar_rec.refseq_transcript == 'NM_198435.3':
-                logger.error(f'JDebug: NM_198435.3 variant_effect={annovar_rec.variant_effect}, variant_type={annovar_rec.variant_type}')
             annovar_dict[key_maker(annovar_rec)].append(annovar_rec)
 
         # Merge the records that come from different files but refer to the same transcript.
         annovar_records = list()
         
-        # Each value in teh dictionary is list of Annovar records with the same genotype and transcript
+        # Each value in the dictionary is list of Annovar records with the same genotype and transcript
         for matching_genotypes in annovar_dict.values():
             left_rec = matching_genotypes[0]
-            if len(matching_genotypes) > 1:
-                for right_rec in matching_genotypes[1:]:
-                    self._merge(left_rec, right_rec)
+            
+            if left_rec.splicing == 'splicing':
+                # Splicing variants don't get merged 
+                pass
+            elif len(matching_genotypes) > 2:
+                # jDebug: Our current workflow only involves two annovar input files so there will only be a maximum of two matching transcripts; this exception ensures
+                # that is the case. Once we are through development and testing, this condition can be removed.  
+                # This function can only merge two records. If you need to merge more than two than two then the code needs to be updated.                  
+                raise Exception(f"This transcript has more than 2 instances, which is not supported; see code comment. rec={left_rec}")
+            elif len(matching_genotypes) == 2:
+                right_rec = matching_genotypes[1]
+                logger.debug(f"Merging left={left_rec} and right={right_rec}")
+                self._merge(left_rec, right_rec)
             
             annovar_records.append(left_rec)
         
@@ -297,8 +311,14 @@ class AnnovarParser(object):
         '''
         Merge the right AnnovarVariantFunction record into the left one in order to fill in missing values 
         '''
-        if left_rec.variant_effect == None and right_rec.variant_effect != None:
-            left_rec.variant_effect = right_rec.variant_effect
-        
-        if left_rec.variant_type == None and right_rec.variant_type != None:
-            left_rec.variant_type = right_rec.variant_type
+        left_rec.variant_effect = (left_rec.variant_effect or right_rec.variant_effect)
+        left_rec.variant_type = (left_rec.variant_type or right_rec.variant_type)
+        left_rec.hgvs_amino_acid_position = (left_rec.hgvs_amino_acid_position or right_rec.hgvs_amino_acid_position) 
+        left_rec.hgvs_base_position = (left_rec.hgvs_base_position or right_rec.hgvs_base_position) 
+        left_rec.exon = (left_rec.exon or right_rec.exon) 
+        left_rec.hgnc_gene = (left_rec.hgnc_gene or right_rec.hgnc_gene) 
+        left_rec.hgvs_c_dot = (left_rec.hgvs_c_dot or right_rec.hgvs_c_dot) 
+        left_rec.hgvs_p_dot_one = (left_rec.hgvs_p_dot_one or right_rec.hgvs_p_dot_one) 
+        left_rec.hgvs_p_dot_three = (left_rec.hgvs_p_dot_three or right_rec.hgvs_p_dot_three) 
+        left_rec.splicing = (left_rec.splicing or right_rec.splicing) 
+        left_rec.refseq_transcript = (left_rec.refseq_transcript or right_rec.refseq_transcript)        
