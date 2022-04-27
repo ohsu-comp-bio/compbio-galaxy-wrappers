@@ -1,4 +1,4 @@
-<tool id="mrd_dedup" name="MRD Deduplicate" version="0.1.1" >
+<tool id="mrd_dedup" name="MRD Deduplicate" version="0.2.0" >
     <description>Deduplicate entries within a forced MRD VCF, and make sure duplicate variants haven't been called elsewhere in the workflow.</description>
 
     <version_command></version_command>

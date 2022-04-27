@@ -7,7 +7,7 @@
 
 import argparse
 
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 
 def supply_args():
     """
@@ -52,7 +52,7 @@ def mrd_parse(invcf):
     """
     header = []
     var_dict = {}
-    with open(invcf, 'rU') as myvcf:
+    with open(invcf, 'r') as myvcf:
         for line in myvcf:
             if not line.startswith('#'):
                 nline = line.rstrip('\n').split('\t')
@@ -95,7 +95,7 @@ def main():
 
     for line in header:
         handle_out.write(line)
-    for entry in mrd_dict.items():
+    for entry in mrd_dict.values():
         handle_out.write(entry)
 
     handle_out.close()
