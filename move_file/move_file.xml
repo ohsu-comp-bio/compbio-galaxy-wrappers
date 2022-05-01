@@ -1,4 +1,4 @@
-<tool id="move_file" name="Move Galaxy Dataset" version="0.4.2" >
+<tool id="move_file" name="Move Galaxy Dataset" version="0.4.3" >
   <description>Move a file (Galaxy dataset) to some location on the file system.</description>
 
   <requirements>
@@ -147,7 +147,17 @@
 	            <param name="set_ext" type="text" label="File Extension" help="File extension to use for destination file. Include the dot." />
 	        </when>
 	    </conditional>
-        <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." />
+        <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." >
+            <sanitizer>
+            <valid initial="string.ascii_letters,string.digits">
+              <add value="/"/>
+              <add value="_"/>
+              <add value="-"/>
+              <add value="."/>
+              <add value="$"/>
+            </valid>
+            </sanitizer>
+        </param>
         <param name="test_name" type="text" label="Test Name" help="Test name, will be used to create dest directory." />
         <param name="runid" type="text" label="Run ID" help="Run identifier to create subdirectory from." />
       </when>
@@ -163,7 +173,17 @@
 	        </when>
 	    </conditional>
 	    <param name="add_date" type="boolean" label="Include Year?" help="Answering yes will include the year as part of the directory structure.  This will be inserted right after the TEST NAME." />
-	    <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." />
+        <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." >
+            <sanitizer>
+            <valid initial="string.ascii_letters,string.digits">
+              <add value="/"/>
+              <add value="_"/>
+              <add value="-"/>
+              <add value="."/>
+              <add value="$"/>
+            </valid>
+            </sanitizer>
+        </param>
         <param name="test_name" type="text" label="Test Name" help="Test name, will be used to create dest directory." />
         <param name="runid" type="text" label="Run ID" help="Run identifier to create subdirectory from." />
         <param name="sampleid" type="text" label="Sample ID" help="Run identifier to create subdirectory from." />
@@ -189,7 +209,17 @@
 	            <param name="month" type="text" label="Month" help="Month to be used in directory structure.  Two digits preferred." />
 	        </when>
 	    </conditional>
-	    <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." />
+        <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." >
+            <sanitizer>
+            <valid initial="string.ascii_letters,string.digits">
+              <add value="/"/>
+              <add value="_"/>
+              <add value="-"/>
+              <add value="."/>
+              <add value="$"/>
+            </valid>
+            </sanitizer>
+        </param>
         <param name="runid" type="text" label="Run ID" help="Run identifier to create subdirectory from." />
         <param name="sampleid" type="text" label="Sample ID" help="Run identifier to create subdirectory from." />
       </when>
@@ -204,7 +234,17 @@
 	            <param name="set_ext" type="text" label="File Extension" help="File extension to use for destination file." />
 	        </when>
         </conditional>
-	    <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." />
+        <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." >
+            <sanitizer>
+            <valid initial="string.ascii_letters,string.digits">
+              <add value="/"/>
+              <add value="_"/>
+              <add value="-"/>
+              <add value="."/>
+              <add value="$"/>
+            </valid>
+            </sanitizer>
+        </param>
         <param name="test_name" type="text" label="Test Name" help="Test name, will be used to create dest directory." />
         <param name="gender" type="select" label="Gender" help="Gender to be used in destination directory tree." >
 	        <option value="UNSPECIFIED" selected="true">UNSPECIFIED</option>
