@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 
-# DESCRIPTION:
-# USAGE:
-# CODED BY: John Letaw
-
 from __future__ import print_function
 import argparse
 from collections import OrderedDict
 
-VERSION = '0.0.1'
+VERSION = '0.1.0'
+
 
 def supply_args():
     """
@@ -34,7 +31,7 @@ def find_sample_index(header, sample_id):
     """
     try:
         return header.index(sample_id)
-    except:
+    except IndexError:
         raise ValueError("Sample ID does not exist in input VCF.")
 
 
@@ -42,6 +39,7 @@ def split_line(line, idx):
     """
     Split apart the line based on index.
     :param line:
+    :param idx:
     :return:
     """
     nline = line[:9]
@@ -67,12 +65,13 @@ def trans_call(value):
 def parse_probeqc(filename):
     """
     Parse the ProbeQC.
-    1	1634904	1635073	NM_024011.2;NM_033529.2;XM_005244780.1;XM_005244781.1;XM_005244782.1;XM_005244783.1;XM_005244784.1;XM_005244785.1;XM_005244786.1;XM_005244787.1;XM_005244788.1;XM_005244789.1;XM_005244790.1
+    1	1634904	1635073	NM_024011.2;NM_033529.2;XM_005244780.1;XM_005244781.1;XM_005244782.1;XM_005244783.1;
+    XM_005244784.1;XM_005244785.1;XM_005244786.1;XM_005244787.1;XM_005244788.1;XM_005244789.1;XM_005244790.1
     CDK11A	30.0	86.7	0.0	0.0	0.0	80.0	100.0
     :return:
     """
     pqc = OrderedDict()
-    with open(filename, 'rU') as probeqc:
+    with open(filename, 'r') as probeqc:
         for line in probeqc:
             line = line.rstrip('\n').split('\t')
             uniq_key = (line[0], line[1])
@@ -85,6 +84,7 @@ def find_genes(coord, numt, pqc):
     """
     Find all gene names that overlap the regions.
     :param coord:
+    :param numt:
     :param pqc:
     :return:
     """
@@ -93,10 +93,10 @@ def find_genes(coord, numt, pqc):
     to_find = (chrom, start)
     genes = []
 
-    idx = pqc.keys().index(to_find)
+    idx = list(pqc.keys()).index(to_find)
 
     for i in range(idx, idx+numt):
-        this_gene = pqc.values()[i]
+        this_gene = list(pqc.values())[i]
         if this_gene not in genes:
             genes.append(this_gene)
 
@@ -106,8 +106,10 @@ def find_genes(coord, numt, pqc):
 def manip_line(nline):
     """
     Take the information from a VCF line and adjust it to be more useful.
-    1	1634904	1:1634904-1639033	<DIP>	<DEL>,<DUP>	.	.	AC=7,3;AF=0.12,0.05;AN=59;END=1639033;IMPRECISE;SVLEN=4130;SVTYPE=CNV;TPOS=16
-    34904;TEND=1639033;NUMT=8;GQT=17;PREVTARGSTART=1268875;PREVTARGEND=1269851;POSTTARGSTART=1639608;POSTTARGEND=1639694	GT:NDQ:DQ:EQ:SQ:NQ:LQ:RQ:PL:RD:ORD:DS
+    1	1634904	1:1634904-1639033	<DIP>	<DEL>,<DUP>	.	.
+    AC=7,3;AF=0.12,0.05;AN=59;END=1639033;IMPRECISE;SVLEN=4130;SVTYPE=CNV;TPOS=16
+    34904;TEND=1639033;NUMT=8;GQT=17;PREVTARGSTART=1268875;PREVTARGEND=1269851;POSTTARGSTART=1639608;POSTTARGEND=1639694
+    GT:NDQ:DQ:EQ:SQ:NQ:LQ:RQ:PL:RD:ORD:DS
     CVR	1:99:0:17,0:99,0:0,99:17,0:6,0:104,0,255:-3.38:30.08:Y
     :return:
     """
@@ -123,7 +125,8 @@ def manip_line(nline):
     avg_depth = nline[9].split(':')[10]
     numt = nline[7].split(';')[9].split('=')[1]
     allele_count = nline[7].split(';')[2].split('=')[1]
-    new_info = [region, cnv_call, svlen, zscore, avg_depth, numt, allele_count, pop_dels, pop_dels_af, pop_dups, pop_dups_af]
+    new_info = [region, cnv_call, svlen, zscore, avg_depth, numt, allele_count, pop_dels, pop_dels_af,
+                pop_dups, pop_dups_af]
     return new_info
 
 
@@ -146,7 +149,7 @@ def main():
     handle_out_tbl.write('\t'.join(tbl_header()))
     handle_out_tbl.write('\n')
 
-    with open(args.in_vcf, 'rU') as myvcf:
+    with open(args.in_vcf, 'r') as myvcf:
         for line in myvcf:
             if line.startswith('#CHROM'):
                 line = line.rstrip('\n').split('\t')
