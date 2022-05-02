@@ -10,7 +10,6 @@ from vcf import VcfReader
 from vcf import VcfWriter
 
 import argparse
-import sys
 
 VERSION = '0.1.2'
 

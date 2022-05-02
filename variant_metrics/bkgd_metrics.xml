@@ -1,0 +1,34 @@
+<tool id="bkgd_metrics" name="Variant Level Metrics Background Depth" version="0.0.1" >
+  <description>
+      Metrics calculated at the variant level to access depth of background alleles.
+  </description>
+
+  <version_command>
+      python $__tool_directory__/bkgd_metrics.py --version
+  </version_command>
+
+  <command><![CDATA[
+    python $__tool_directory__/bkgd_metrics.py
+    --panel_roi_bkgd '${panel_roi_bkgd}'
+    '${invcf}'
+    '${outvcf}'
+]]></command>
+
+  <inputs>
+      <param name="panel_roi_bkgd" type="data" format="tsv,tabular" label="Text file containing depth stats of loci in panel" help="Text file containing depth stats of loci in panel." />
+      <param name="invcf" type="data" format="vcf" label="Input VCF" help="This VCF file will have the PUMI tag added to the sample section." />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="outvcf" label="${tool.name} on ${on_string}: VCF" />
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+      Metrics calculated at the variant level to access depth of background alleles.
+  </help>
+
+  <citations></citations>
+
+</tool>
