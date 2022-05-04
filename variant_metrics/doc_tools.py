@@ -3,6 +3,11 @@
 VERSION = '0.0.1'
 
 
+def calc_bkgd_est(base_depth, total_depth):
+    bkgd = int(base_depth) / int(total_depth)
+    return float(bkgd)
+
+
 class DepthOfCoverageReader:
     """
     Ingest a GATK Depth of Coverage tsv file (with base counts)

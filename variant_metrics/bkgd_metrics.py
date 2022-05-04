@@ -12,9 +12,8 @@ python variant_metrics/bkgd_metrics.py "input_vcf.vcf" "input_doc.tsv" "bkgd_est
 import argparse
 import vcfpy
 
-from bkgd_est_pon import calc_bkgd_est
 from vcf_tools import VarWriter
-from doc_tools import DepthOfCoverageReader
+from doc_tools import DepthOfCoverageReader, calc_bkgd_est
 
 
 VERSION = '0.0.1'

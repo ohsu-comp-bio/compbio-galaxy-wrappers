@@ -13,8 +13,9 @@ repositories:
       - umi_metrics.py
       - vcf.py
   bkgd_metrics:
-    description: "Metrics calculated at the variant level to access depth of background alleles."
+    description: "Metrics calculated at the variant level to estimate background allele frequencies."
     include:
       - bkgd_metrics.xml
       - bkgd_metrics.py
-      - vcf.py
+      - doc_tools.py
+      - vcf_tools.py

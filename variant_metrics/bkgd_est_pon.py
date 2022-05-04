@@ -12,7 +12,7 @@ python variant_metrics/bkgd_est_pon.py "/Users/onwuzu/Downloads/PON" "/Users/onw
 import argparse
 import os
 import numpy as np
-from doc_tools import DepthOfCoverageReader
+from doc_tools import DepthOfCoverageReader, calc_bkgd_est
 
 VERSION = '0.0.1'
 
@@ -32,11 +32,6 @@ def supply_args():
                         version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
-
-
-def calc_bkgd_est(base_depth, total_depth):
-    bkgd = int(base_depth) / int(total_depth)
-    return float(bkgd)
 
 
 def calc_threshold(bkgd_list):
