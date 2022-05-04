@@ -1,0 +1,36 @@
+<tool id="bkgd_metrics" name="Variant Level Metrics Background Depth" version="0.0.1" >
+  <description>
+      Metrics calculated at the variant level to estimate background allele frequencies.
+  </description>
+
+  <version_command>
+      python $__tool_directory__/bkgd_metrics.py --version
+  </version_command>
+
+  <command><![CDATA[
+    python $__tool_directory__/bkgd_metrics.py
+    input_vcf '${input_vcf}'
+    input_cov '${input_cov}'
+    bkgd_est_file '${bkgd_est_file}'
+    output_vcf '${output_vcf}'
+]]></command>
+
+  <inputs>
+      <param name="input_vcf" type="data" format="tsv,tabular" label="Input VCF" />
+      <param name="input_cov" type="data" format="vcf" label="Input Depth of Coverage file" />
+      <param name="bkgd_est_file" type="data" format="tsv,tabular" label="Background estimates file" help="Text file containing depth stats of loci in panel." />
+  </inputs>
+
+  <outputs>
+    <data name="output_vcf" format="vcf" label="${tool.name} on ${on_string}: VCF" />
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+      Metrics calculated at the variant level to estimate background allele frequencies.
+  </help>
+
+  <citations></citations>
+
+</tool>
