@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<macros>
+    <xml name="requirements">
+        <requirements>
+            <requirement type="package" version="0.0.0.2016_01_04.cc14e52">xhmm</requirement>
+            <yield />
+        </requirements>
+    </xml>
+</macros>

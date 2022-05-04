@@ -24,7 +24,7 @@
     </xml>
 
     <!--Command token, java options should not be hard coded here.-->
-    <token name="@CMD_BEGIN@">gatk --java-options "-Xmx24g -Xms2g"</token>
+    <token name="@CMD_BEGIN@">gatk</token>
 
     <!--Define sections that parameters could exist within.-->
     <template name="set_sections">

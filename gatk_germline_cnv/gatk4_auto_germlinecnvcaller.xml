@@ -237,8 +237,28 @@
       <param name="input" argument="--input" type="data" optional="false" multiple="true" format="h5,tsv" label="Input" help="Input read-count files containing integer read counts in genomic intervals for all samples.  All intervals specified via -L must be contained; if none are specified, then intervals must be identical and in the same order for all samples."/>
     </repeat>
     <param name="dummy_contig_ploidy_calls" argument="--contig-ploidy-calls" type="data" optional="false" multiple="false" format="txt" label="Dummy Contig Ploidy Calls" help="Input contig-ploidy calls directory (output of DetermineGermlineContigPloidy)."/>
-    <param name="contig_ploidy_calls" arguments="--contig-ploidy-calls" type="text" optional="false" label="Contig Ploidy Calls"/>
-    <param name="output" argument="--output" type="text" optional="false" value="" label="Output" help="Output directory.  This will be created if it does not exist."/>
+    <param name="contig_ploidy_calls" argument="--contig-ploidy-calls" type="text" optional="false" label="Contig Ploidy Calls" >
+      <sanitizer>
+        <valid initial="string.ascii_letters,string.digits">
+          <add value="/"/>
+          <add value="_"/>
+          <add value="-"/>
+          <add value="."/>
+          <add value="$"/>
+        </valid>
+      </sanitizer>
+    </param>
+    <param name="output" argument="--output" type="text" optional="false" value="" label="Output" help="Output directory.  This will be created if it does not exist." >
+      <sanitizer>
+        <valid initial="string.ascii_letters,string.digits">
+          <add value="/"/>
+          <add value="_"/>
+          <add value="-"/>
+          <add value="."/>
+          <add value="$"/>
+        </valid>
+      </sanitizer>
+    </param>
     <param name="output_prefix" argument="--output-prefix" type="text" optional="false" value="" label="Output Prefix" help="Prefix for output filenames."/>
     <param name="run_mode" argument="--run-mode" type="select" optional="false" label="Run Mode" help="Tool run-mode.">
       <option selected="false" value="COHORT">COHORT</option>
@@ -292,7 +312,17 @@
       <param name="max_copy_number" argument="--max-copy-number" type="integer" optional="true" value="5" min="0" label="Max Copy Number" help="Highest allowed copy-number state."/>
       <param name="max_training_epochs" argument="--max-training-epochs" type="integer" optional="true" value="50" min="0" label="Max Training Epochs" help="Maximum number of training epochs."/>
       <param name="min_training_epochs" argument="--min-training-epochs" type="integer" optional="true" value="10" min="0" label="Min Training Epochs" help="Minimum number of training epochs."/>
-      <param name="model" argument="--model" type="text" optional="true" value="" label="Model" help="Input denoising-model directory. In COHORT mode, this argument is optional; if provided,a new model will be built using this input model to initialize. In CASE mode, this argument is required and the denoising model parameters are set to this input model."/>
+      <param name="model" argument="--model" type="text" optional="true" value="" label="Model" help="Input denoising-model directory. In COHORT mode, this argument is optional; if provided,a new model will be built using this input model to initialize. In CASE mode, this argument is required and the denoising model parameters are set to this input model." >
+	<sanitizer>
+          <valid initial="string.ascii_letters,string.digits">
+            <add value="/"/>
+            <add value="_"/>
+            <add value="-"/>
+            <add value="."/>
+            <add value="$"/>
+          </valid>
+        </sanitizer>
+      </param>
       <param name="num_gc_bins" argument="--num-gc-bins" type="integer" optional="true" value="20" min="2" label="Num Gc Bins" help="Number of bins used to represent the GC-bias curves."/>
       <param name="num_thermal_advi_iters" argument="--num-thermal-advi-iters" type="integer" optional="true" value="2500" min="0" label="Num Thermal Advi Iters" help="Number of thermal ADVI iterations (for DA-ADVI)."/>
       <param name="p_active" argument="--p-active" type="float" optional="true" value="0.01" min="0" max="1" label="P Active" help="Prior probability of treating an interval as CNV-active (in a CNV-active domains, all copy-number states are equally likely to be called)."/>

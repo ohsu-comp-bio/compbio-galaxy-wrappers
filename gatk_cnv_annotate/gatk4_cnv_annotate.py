@@ -1,7 +1,7 @@
 import argparse
 import gffutils
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
 def supply_args():
     """

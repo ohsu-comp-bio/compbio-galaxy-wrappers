@@ -264,15 +264,17 @@ class FastQcRead:
     >>END_MODULE
     """
     def __init__(self, infile):
-        self.filename = open(infile, 'r')
-        self.gc_pct = self._get_gc_pct()
+        self.infile = infile
+        self.gc_pct = self._get_header_val(metric='%GC')
+        self.seq_cnt = self._get_header_val(metric='Total Sequences')
 
-    def _get_gc_pct(self):
-        with self.filename as myfile:
+    def _get_header_val(self, metric):
+        with open(self.infile, 'r') as myfile:
             for line in myfile:
-                if line.startswith('%GC'):
-                    gc_pct = line.rstrip('\n').split('\t')[1]
-                    return gc_pct
+                if line.startswith(metric):
+                    val = line.rstrip('\n').split('\t')[1]
+                    return val
+
 
 class VcfRead:
     """

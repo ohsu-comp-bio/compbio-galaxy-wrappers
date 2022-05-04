@@ -2,8 +2,8 @@
 
 # DESCRIPTION: Create sample level metrics to be passed to the CGD.  Metrics
 #  are passed as a json dump.
-# USAGE: sample_metrics.py -h
-# CODED BY: John Letaw
+# VERSION HISTORY
+# 0.7.0 - Now calculate percentOnTarget from FastQC tatal sequences and collectalignmentmetrics on sorted bwa bam
 
 import argparse
 import json
@@ -12,7 +12,7 @@ from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, 
 from inputs import FastQcRead
 from inputs import VcfRead
 
-VERSION = '0.6.12'
+VERSION = '0.7.0'
 
 def supply_args():
     """
@@ -28,6 +28,8 @@ def supply_args():
     parser.add_argument('--fastqc_r1', type=FastQcRead, help='FastQC stats for read 1.')
     parser.add_argument('--fastqc_r2', type=FastQcRead, help='FastQC stats for read 2.')
     parser.add_argument('--picard_summary', type=AlignSummaryMetrics, help='Picard alignment summary metrics file.')
+    parser.add_argument('--picard_summary_umi', type=AlignSummaryMetrics,
+                        help='Picard alignment summary metrics file taken after umi deduplication.')
     parser.add_argument('--gatk_coll_rnaseq_mets', type=GatkCollectRnaSeqMetrics,
                         help='GATK CollectRnaSeqMetrics file.')
     parser.add_argument('--gatk_count_reads_total', type=GatkCountReads,
@@ -99,6 +101,11 @@ class RawMetricCollector:
         else:
             self.picard_summary = None
 
+        if args.picard_summary_umi:
+            self.picard_summary_umi = args.picard_summary_umi.metrics
+        else:
+            self.picard_summary_umi = None
+
         if args.gatk_coll_rnaseq_mets:
             self.gatk_coll_rnaseq_mets = args.gatk_coll_rnaseq_mets.metrics
         else:
@@ -106,8 +113,10 @@ class RawMetricCollector:
 
         if args.fastqc_r1:
             self.gc_pct_1 = args.fastqc_r1.gc_pct
+            self.fastqc_seq_count = args.fastqc_r1.seq_cnt
         else:
             self.gc_pct_1 = None
+            self.fastqc_seq_count = None
 
         if args.fastqc_r2:
             self.gc_pct_2 = args.fastqc_r2.gc_pct
@@ -227,7 +236,8 @@ class SampleMetrics:
         except:
             self.pumi = None
         try:
-            self.on_target = self._add_on_target(self.raw_mets.picard_summary, self.total_cov_after)
+            self.on_target = self._add_on_target(self.raw_mets.picard_summary, self.raw_mets.fastqc_seq_count,
+                                                 total_lbl='PF_READS_ALIGNED')
         except:
             self.on_target = None
         try:
@@ -313,8 +323,10 @@ class SampleMetrics:
         Create the PUMI metric, if applicable.
         :return:
         """
-        if self.probeqc_before and self.probeqc_after:
-            return self._calc_metric(self.total_cov_before, (self.total_cov_after * 100))
+        if self.raw_mets.picard_summary and self.raw_mets.picard_summary_umi:
+            before = int(self.raw_mets.picard_summary['FIRST_OF_PAIR']['PF_ALIGNED_BASES'])
+            after = int(self.raw_mets.picard_summary_umi['FIRST_OF_PAIR']['PF_ALIGNED_BASES'])
+            return self._calc_metric(before, (after * 100))
 
     def _metrics_from_probeqc_header(self, headers, probeqc, total_bp):
         """
@@ -381,15 +393,15 @@ class SampleMetrics:
         Also include the on primer frag count percentage.  Rename variables...
         :return:
         """
-        if 'PAIR' in picard:
-            pf_bases_aligned = int(picard['PAIR'][total_lbl])
+        if 'FIRST_OF_PAIR' in picard:
+            pf_bases_aligned = int(picard['FIRST_OF_PAIR'][total_lbl])
         elif 'UNPAIRED' in picard:
             pf_bases_aligned = int(picard['UNPAIRED'][total_lbl])
         else:
             pf_bases_aligned = None
 
         if pf_bases_aligned and total_cov:
-            on_target = str("{:.4}".format((total_cov * 100.0) / pf_bases_aligned))
+            on_target = str("{:.4}".format(pf_bases_aligned / (int(total_cov)) * 100.0))
         else:
             on_target = None
 

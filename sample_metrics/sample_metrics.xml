@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.6.12" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.7.0" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
 
   <requirements>
@@ -18,6 +18,9 @@
     #end if
     #if $picard_metrics
       --picard_summary '${picard_metrics}'
+    #end if
+    #if $picard_metrics_umi
+      --picard_summary_umi '${picard_metrics_umi}'
     #end if
     --outfile '${output}'
     --outfile_new '${output_new}'
@@ -91,6 +94,7 @@
           </param>
           <when value="umi_yes">
               <param name="probeqc_before_umi" type="data" format="txt" label="ProbeQC Metrics Pre-UMI" truevalue="--probeqc_before" help="ProbeQC metrics file produced before any UMI deduplication takes place.  Optional." />
+              <param name="picard_metrics_umi" type="data" format="txt" label="Picard Alignment Summary Metrics Post UMI Dedup" help="Alignment summary metrics produced by the Picard CollectAlignmentSummaryMetrics tool taken after UMI deduplication." />
           </when>
       </conditional>
       <param name="workflow" type="text" label="Workflow Name" optional="true" help="Name of the workflow that is being run." />

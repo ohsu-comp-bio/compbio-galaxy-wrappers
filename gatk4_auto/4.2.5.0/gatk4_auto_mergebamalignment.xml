@@ -1,0 +1,351 @@
+<tool id="gatk4_auto_mergebamalignment" name="GATK4 AUTO MergeBamAlignment (Picard)" version="@WRAPPER_VERSION@0" profile="18.01">
+  <description>- Merge alignment data from a SAM or BAM with data in an unmapped BAM file.</description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <expand macro="version_cmd"/>
+  <command detect_errors="exit_code"><![CDATA[#include source=$set_sections#
+@CMD_BEGIN@ MergeBamAlignment
+#if $optional.ADD_MATE_CIGAR
+  --ADD_MATE_CIGAR $optional.ADD_MATE_CIGAR
+#end if
+
+#if $common.ADD_PG_TAG_TO_READS
+  $common.ADD_PG_TAG_TO_READS
+#end if
+
+#if $optional.ALIGNED_BAM
+  --ALIGNED_BAM $optional.ALIGNED_BAM
+#end if
+
+#if $optional.ALIGNED_READS_ONLY
+  $optional.ALIGNED_READS_ONLY
+#end if
+
+#if $optional.ALIGNER_PROPER_PAIR_FLAGS
+  $optional.ALIGNER_PROPER_PAIR_FLAGS
+#end if
+
+#if $optional.arguments_file
+  --arguments_file $optional.arguments_file
+#end if
+
+#for $num, $txt in enumerate($optional.ATTRIBUTES_TO_REMOVE_rpt)
+#if $txt.ATTRIBUTES_TO_REMOVE
+--ATTRIBUTES_TO_REMOVE '$txt.ATTRIBUTES_TO_REMOVE'
+#end if
+#end for
+#for $num, $txt in enumerate($optional.ATTRIBUTES_TO_RETAIN_rpt)
+#if $txt.ATTRIBUTES_TO_RETAIN
+--ATTRIBUTES_TO_RETAIN '$txt.ATTRIBUTES_TO_RETAIN'
+#end if
+#end for
+#for $num, $txt in enumerate($optional.ATTRIBUTES_TO_REVERSE_rpt)
+#if $txt.ATTRIBUTES_TO_REVERSE
+--ATTRIBUTES_TO_REVERSE '$txt.ATTRIBUTES_TO_REVERSE'
+#end if
+#end for
+#for $num, $txt in enumerate($optional.ATTRIBUTES_TO_REVERSE_COMPLEMENT_rpt)
+#if $txt.ATTRIBUTES_TO_REVERSE_COMPLEMENT
+--ATTRIBUTES_TO_REVERSE_COMPLEMENT '$txt.ATTRIBUTES_TO_REVERSE_COMPLEMENT'
+#end if
+#end for
+#if $optional.CLIP_ADAPTERS
+  $optional.CLIP_ADAPTERS
+#end if
+
+#if $optional.CLIP_OVERLAPPING_READS
+  $optional.CLIP_OVERLAPPING_READS
+#end if
+
+#if $common.COMPRESSION_LEVEL
+  --COMPRESSION_LEVEL $common.COMPRESSION_LEVEL
+#end if
+
+#if $common.CREATE_INDEX
+  --CREATE_INDEX $common.CREATE_INDEX
+#end if
+
+#if $common.CREATE_MD5_FILE
+  $common.CREATE_MD5_FILE
+#end if
+
+#for $num, $txt in enumerate($optional.EXPECTED_ORIENTATIONS_rpt)
+#if $txt.EXPECTED_ORIENTATIONS
+--EXPECTED_ORIENTATIONS '$txt.EXPECTED_ORIENTATIONS'
+#end if
+#end for
+#if $common.GA4GH_CLIENT_SECRETS
+  --GA4GH_CLIENT_SECRETS $common.GA4GH_CLIENT_SECRETS
+#end if
+
+#if $optional.HARD_CLIP_OVERLAPPING_READS
+  $optional.HARD_CLIP_OVERLAPPING_READS
+#end if
+
+#if $optional.INCLUDE_SECONDARY_ALIGNMENTS
+  $optional.INCLUDE_SECONDARY_ALIGNMENTS
+#end if
+
+#if $optional.IS_BISULFITE_SEQUENCE
+  $optional.IS_BISULFITE_SEQUENCE
+#end if
+
+#if $deprecated.JUMP_SIZE
+  --JUMP_SIZE $deprecated.JUMP_SIZE
+#end if
+
+#for $num, $txt in enumerate($optional.MATCHING_DICTIONARY_TAGS_rpt)
+#if $txt.MATCHING_DICTIONARY_TAGS
+--MATCHING_DICTIONARY_TAGS '$txt.MATCHING_DICTIONARY_TAGS'
+#end if
+#end for
+#if $optional.MAX_INSERTIONS_OR_DELETIONS
+  --MAX_INSERTIONS_OR_DELETIONS $optional.MAX_INSERTIONS_OR_DELETIONS
+#end if
+
+#if $common.MAX_RECORDS_IN_RAM
+  --MAX_RECORDS_IN_RAM $common.MAX_RECORDS_IN_RAM
+#end if
+
+#if $optional.MIN_UNCLIPPED_BASES
+  --MIN_UNCLIPPED_BASES $optional.MIN_UNCLIPPED_BASES
+#end if
+
+--OUTPUT $OUTPUT
+#if $deprecated.PAIRED_RUN
+  --PAIRED_RUN $deprecated.PAIRED_RUN
+#end if
+
+#if $optional.PRIMARY_ALIGNMENT_STRATEGY
+  --PRIMARY_ALIGNMENT_STRATEGY $optional.PRIMARY_ALIGNMENT_STRATEGY
+#end if
+
+#if $optional.PROGRAM_GROUP_COMMAND_LINE
+  --PROGRAM_GROUP_COMMAND_LINE $optional.PROGRAM_GROUP_COMMAND_LINE
+#end if
+
+#if $optional.PROGRAM_GROUP_NAME
+  --PROGRAM_GROUP_NAME $optional.PROGRAM_GROUP_NAME
+#end if
+
+#if $optional.PROGRAM_GROUP_VERSION
+  --PROGRAM_GROUP_VERSION $optional.PROGRAM_GROUP_VERSION
+#end if
+
+#if $optional.PROGRAM_RECORD_ID
+  --PROGRAM_RECORD_ID $optional.PROGRAM_RECORD_ID
+#end if
+
+#if $common.QUIET
+  --QUIET $common.QUIET
+#end if
+
+#if $optional.READ1_ALIGNED_BAM
+  --READ1_ALIGNED_BAM $optional.READ1_ALIGNED_BAM
+#end if
+
+#if $optional.READ1_TRIM
+  --READ1_TRIM $optional.READ1_TRIM
+#end if
+
+#if $optional.READ2_ALIGNED_BAM
+  --READ2_ALIGNED_BAM $optional.READ2_ALIGNED_BAM
+#end if
+
+#if $optional.READ2_TRIM
+  --READ2_TRIM $optional.READ2_TRIM
+#end if
+
+#include source=$picard_ref_opts#
+#if $optional.SORT_ORDER
+  --SORT_ORDER $optional.SORT_ORDER
+#end if
+
+#if $optional.UNMAP_CONTAMINANT_READS
+  $optional.UNMAP_CONTAMINANT_READS
+#end if
+
+--UNMAPPED_BAM $UNMAPPED_BAM
+#if $optional.UNMAPPED_READ_STRATEGY
+  --UNMAPPED_READ_STRATEGY $optional.UNMAPPED_READ_STRATEGY
+#end if
+
+#if $common.USE_JDK_DEFLATER
+  --USE_JDK_DEFLATER $common.USE_JDK_DEFLATER
+#end if
+
+#if $common.USE_JDK_INFLATER
+  --USE_JDK_INFLATER $common.USE_JDK_INFLATER
+#end if
+
+#if $common.VALIDATION_STRINGENCY
+  --VALIDATION_STRINGENCY $common.VALIDATION_STRINGENCY
+#end if
+
+#if $common.VERBOSITY
+  --VERBOSITY $common.VERBOSITY
+#end if
+]]></command>
+  <inputs>
+    <param name="UNMAPPED_BAM" argument="--UNMAPPED_BAM" type="data" optional="false" format="sam,bam" label="Unmapped_Bam" help="Original SAM or BAM file of unmapped reads, which must be in queryname order.  Reads MUST be unmapped. "/>
+    <expand macro="ref_sel"/>
+    <section name="optional" title="Optional Parameters" expanded="False">
+      <param name="ADD_MATE_CIGAR" argument="--ADD_MATE_CIGAR" type="boolean" truevalue="--ADD_MATE_CIGAR" falsevalue="" optional="true" checked="true" label="Add_Mate_Cigar" help="Adds the mate CIGAR tag (MC) if true, does not if false. "/>
+      <param name="ALIGNED_BAM" argument="--ALIGNED_BAM" type="data" optional="true" format="sam,bam" label="Aligned_Bam" help="SAM or BAM file(s) with alignment data. "/>
+      <param name="ALIGNED_READS_ONLY" argument="--ALIGNED_READS_ONLY" type="boolean" truevalue="--ALIGNED_READS_ONLY" falsevalue="" optional="true" checked="false" label="Aligned_Reads_Only" help="Whether to output only aligned reads.  . "/>
+      <param name="ALIGNER_PROPER_PAIR_FLAGS" argument="--ALIGNER_PROPER_PAIR_FLAGS" type="boolean" truevalue="--ALIGNER_PROPER_PAIR_FLAGS" falsevalue="" optional="true" checked="false" label="Aligner_Proper_Pair_Flags" help="Use the aligner&amp;apos;s idea of what a proper pair is rather than computing in this program. "/>
+      <param name="arguments_file" argument="--arguments_file" type="data" optional="true" format="txt" label="Arguments_File" help="read one or more arguments files and add them to the command line. "/>
+      <repeat name="ATTRIBUTES_TO_REMOVE_rpt" default="1" title="Attributes_To_Remove">
+        <param name="ATTRIBUTES_TO_REMOVE" argument="--ATTRIBUTES_TO_REMOVE" type="text" optional="true" value="" label="Attributes_To_Remove" help="Attributes from the alignment record that should be removed when merging.  This overrides ATTRIBUTES_TO_RETAIN if they share common tags. "/>
+      </repeat>
+      <repeat name="ATTRIBUTES_TO_RETAIN_rpt" default="1" title="Attributes_To_Retain">
+        <param name="ATTRIBUTES_TO_RETAIN" argument="--ATTRIBUTES_TO_RETAIN" type="text" optional="true" value="" label="Attributes_To_Retain" help="Reserved alignment attributes (tags starting with X, Y, or Z) that should be brought over from the alignment data when merging. "/>
+      </repeat>
+      <repeat name="ATTRIBUTES_TO_REVERSE_rpt" default="1" title="Attributes_To_Reverse">
+        <param name="ATTRIBUTES_TO_REVERSE" argument="--ATTRIBUTES_TO_REVERSE" type="text" optional="true" value="" label="Attributes_To_Reverse" help="Attributes on negative strand reads that need to be reversed. "/>
+      </repeat>
+      <repeat name="ATTRIBUTES_TO_REVERSE_COMPLEMENT_rpt" default="1" title="Attributes_To_Reverse_Complement">
+        <param name="ATTRIBUTES_TO_REVERSE_COMPLEMENT" argument="--ATTRIBUTES_TO_REVERSE_COMPLEMENT" type="text" optional="true" value="" label="Attributes_To_Reverse_Complement" help="Attributes on negative strand reads that need to be reverse complemented. "/>
+      </repeat>
+      <param name="CLIP_ADAPTERS" argument="--CLIP_ADAPTERS" type="boolean" truevalue="--CLIP_ADAPTERS" falsevalue="" optional="true" checked="true" label="Clip_Adapters" help="Whether to clip adapters where identified. "/>
+      <param name="CLIP_OVERLAPPING_READS" argument="--CLIP_OVERLAPPING_READS" type="boolean" truevalue="--CLIP_OVERLAPPING_READS" falsevalue="" optional="true" checked="true" label="Clip_Overlapping_Reads" help="For paired reads, clip the 3&amp;apos; end of each read if necessary so that it does not extend past the 5&amp;apos; end of its mate.  Reads are first soft clipped so that the 3&amp;apos; aligned end of each read does not extend past the 5&amp;apos; aligned end of its mate.  If HARD_CLIP_OVERLAPPING_READS is also true, then reads are additionally hard clipped so that the 3&amp;apos; unclipped end of each read does not extend past the 5&amp;apos; unclipped end of its mate.  Hard clipped bases and their qualities are stored in the XB and XQ tags, respectively. "/>
+      <repeat name="EXPECTED_ORIENTATIONS_rpt" default="1" title="Expected_Orientations">
+        <param name="EXPECTED_ORIENTATIONS" argument="--EXPECTED_ORIENTATIONS" type="text" optional="true" value="" label="Expected_Orientations" help="The expected orientation of proper read pairs. Replaces JUMP_SIZE. ">
+          <option value="FR">FR</option>
+          <option value="RF">RF</option>
+          <option value="TANDEM">TANDEM</option>
+        </param>
+      </repeat>
+      <param name="HARD_CLIP_OVERLAPPING_READS" argument="--HARD_CLIP_OVERLAPPING_READS" type="boolean" truevalue="--HARD_CLIP_OVERLAPPING_READS" falsevalue="" optional="true" checked="false" label="Hard_Clip_Overlapping_Reads" help="If true, hard clipping will be applied to overlapping reads.  By default, soft clipping is used. "/>
+      <param name="INCLUDE_SECONDARY_ALIGNMENTS" argument="--INCLUDE_SECONDARY_ALIGNMENTS" type="boolean" truevalue="--INCLUDE_SECONDARY_ALIGNMENTS" falsevalue="" optional="true" checked="true" label="Include_Secondary_Alignments" help="If false, do not write secondary alignments to output. "/>
+      <param name="IS_BISULFITE_SEQUENCE" argument="--IS_BISULFITE_SEQUENCE" type="boolean" truevalue="--IS_BISULFITE_SEQUENCE" falsevalue="" optional="true" checked="false" label="Is_Bisulfite_Sequence" help="Whether the lane is bisulfite sequence (used when calculating the NM tag). "/>
+      <repeat name="MATCHING_DICTIONARY_TAGS_rpt" default="1" title="Matching_Dictionary_Tags">
+        <param name="MATCHING_DICTIONARY_TAGS" argument="--MATCHING_DICTIONARY_TAGS" type="text" optional="true" value="" label="Matching_Dictionary_Tags" help="List of Sequence Records tags that must be equal (if present) in the reference dictionary and in the aligned file. Mismatching tags will cause an error if in this list, and a warning otherwise. "/>
+      </repeat>
+      <param name="MAX_INSERTIONS_OR_DELETIONS" argument="--MAX_INSERTIONS_OR_DELETIONS" type="integer" optional="true" value="1" label="Max_Insertions_Or_Deletions" help="The maximum number of insertions or deletions permitted for an alignment to be included. Alignments with more than this many insertions or deletions will be ignored. Set to -1 to allow any number of insertions or deletions. "/>
+      <param name="MIN_UNCLIPPED_BASES" argument="--MIN_UNCLIPPED_BASES" type="integer" optional="true" value="32" label="Min_Unclipped_Bases" help="If UNMAP_CONTAMINANT_READS is set, require this many unclipped bases or else the read will be marked as contaminant. "/>
+      <param name="PRIMARY_ALIGNMENT_STRATEGY" argument="--PRIMARY_ALIGNMENT_STRATEGY" type="select" optional="true" label="Primary_Alignment_Strategy" help="Strategy for selecting primary alignment when the aligner has provided more than one alignment for a pair or fragment, and none are marked as primary, more than one is marked as primary, or the primary alignment is filtered out for some reason. For all strategies, ties are resolved arbitrarily. ">
+        <option selected="true" value="BestMapq">BestMapq</option>
+        <option value="EarliestFragment">EarliestFragment</option>
+        <option value="BestEndMapq">BestEndMapq</option>
+        <option value="MostDistant">MostDistant</option>
+      </param>
+      <param name="PROGRAM_GROUP_COMMAND_LINE" argument="--PROGRAM_GROUP_COMMAND_LINE" type="text" optional="true" value="" label="Program_Group_Command_Line" help="The command line of the program group (if not supplied by the aligned file). "/>
+      <param name="PROGRAM_GROUP_NAME" argument="--PROGRAM_GROUP_NAME" type="text" optional="true" value="" label="Program_Group_Name" help="The name of the program group (if not supplied by the aligned file). "/>
+      <param name="PROGRAM_GROUP_VERSION" argument="--PROGRAM_GROUP_VERSION" type="text" optional="true" value="" label="Program_Group_Version" help="The version of the program group (if not supplied by the aligned file). "/>
+      <param name="PROGRAM_RECORD_ID" argument="--PROGRAM_RECORD_ID" type="text" optional="true" value="" label="Program_Record_Id" help="The program group ID of the aligner (if not supplied by the aligned file). "/>
+      <param name="READ1_ALIGNED_BAM" argument="--READ1_ALIGNED_BAM" type="data" optional="true" format="txt" label="Read1_Aligned_Bam" help="SAM or BAM file(s) with alignment data from the first read of a pair. "/>
+      <param name="READ1_TRIM" argument="--READ1_TRIM" type="integer" optional="true" value="0" label="Read1_Trim" help="The number of bases trimmed from the beginning of read 1 prior to alignment. "/>
+      <param name="READ2_ALIGNED_BAM" argument="--READ2_ALIGNED_BAM" type="data" optional="true" format="txt" label="Read2_Aligned_Bam" help="SAM or BAM file(s) with alignment data from the second read of a pair. "/>
+      <param name="READ2_TRIM" argument="--READ2_TRIM" type="integer" optional="true" value="0" label="Read2_Trim" help="The number of bases trimmed from the beginning of read 2 prior to alignment. "/>
+      <param name="SORT_ORDER" argument="--SORT_ORDER" type="select" optional="true" label="Sort_Order" help="The order in which the merged reads should be output. ">
+        <option value="unsorted">unsorted</option>
+        <option value="queryname">queryname</option>
+        <option selected="true" value="coordinate">coordinate</option>
+        <option value="duplicate">duplicate</option>
+        <option value="unknown">unknown</option>
+      </param>
+      <param name="UNMAP_CONTAMINANT_READS" argument="--UNMAP_CONTAMINANT_READS" type="boolean" truevalue="--UNMAP_CONTAMINANT_READS" falsevalue="" optional="true" checked="false" label="Unmap_Contaminant_Reads" help="Detect reads originating from foreign organisms (e.g. bacterial DNA in a non-bacterial sample),and unmap + label those reads accordingly. "/>
+      <param name="UNMAPPED_READ_STRATEGY" argument="--UNMAPPED_READ_STRATEGY" type="select" optional="true" label="Unmapped_Read_Strategy" help="How to deal with alignment information in reads that are being unmapped (e.g. due to cross-species contamination.) Currently ignored unless UNMAP_CONTAMINANT_READS = true. Note that the DO_NOT_CHANGE strategy will actually reset the cigar and set the mapping quality on unmapped reads since otherwisethe result will be an invalid record. To force no change use the DO_NOT_CHANGE_INVALID strategy. ">
+        <option value="COPY_TO_TAG">COPY_TO_TAG</option>
+        <option selected="true" value="DO_NOT_CHANGE">DO_NOT_CHANGE</option>
+        <option value="DO_NOT_CHANGE_INVALID">DO_NOT_CHANGE_INVALID</option>
+        <option value="MOVE_TO_TAG">MOVE_TO_TAG</option>
+      </param>
+    </section>
+    <section name="common" title="Common Parameters" expanded="False">
+      <param name="ADD_PG_TAG_TO_READS" argument="--ADD_PG_TAG_TO_READS" type="boolean" truevalue="--ADD_PG_TAG_TO_READS" falsevalue="" optional="true" checked="true" label="Add_Pg_Tag_To_Reads" help="Add PG tag to each read in a SAM or BAM. "/>
+      <param name="COMPRESSION_LEVEL" argument="--COMPRESSION_LEVEL" type="integer" optional="true" value="5" label="Compression_Level" help="Compression level for all compressed files created (e.g. BAM and VCF). "/>
+      <param name="CREATE_INDEX" argument="--CREATE_INDEX" type="boolean" truevalue="--CREATE_INDEX" falsevalue="" optional="true" checked="false" label="Create_Index" help="Whether to create an index when writing VCF or coordinate sorted BAM output. "/>
+      <param name="CREATE_MD5_FILE" argument="--CREATE_MD5_FILE" type="boolean" truevalue="--CREATE_MD5_FILE" falsevalue="" optional="true" checked="false" label="Create_Md5_File" help="Whether to create an MD5 digest for any BAM or FASTQ files created.  . "/>
+      <param name="GA4GH_CLIENT_SECRETS" argument="--GA4GH_CLIENT_SECRETS" type="text" optional="true" value="client_secrets.json" label="Ga4Gh_Client_Secrets" help="Google Genomics API client_secrets.json file path. "/>
+      <param name="MAX_RECORDS_IN_RAM" argument="--MAX_RECORDS_IN_RAM" type="integer" optional="true" value="500000" label="Max_Records_In_Ram" help="When writing files that need to be sorted, this will specify the number of records stored in RAM before spilling to disk. Increasing this number reduces the number of file handles needed to sort the file, and increases the amount of RAM needed. "/>
+      <param name="QUIET" argument="--QUIET" type="boolean" truevalue="--QUIET" falsevalue="" optional="true" checked="false" label="Quiet" help="Whether to suppress job-summary info on System.err. "/>
+      <param name="USE_JDK_DEFLATER" argument="--USE_JDK_DEFLATER" type="boolean" truevalue="--USE_JDK_DEFLATER" falsevalue="" optional="true" checked="false" label="Use_Jdk_Deflater" help="Use the JDK Deflater instead of the Intel Deflater for writing compressed output. "/>
+      <param name="USE_JDK_INFLATER" argument="--USE_JDK_INFLATER" type="boolean" truevalue="--USE_JDK_INFLATER" falsevalue="" optional="true" checked="false" label="Use_Jdk_Inflater" help="Use the JDK Inflater instead of the Intel Inflater for reading compressed input. "/>
+      <param name="VALIDATION_STRINGENCY" argument="--VALIDATION_STRINGENCY" type="select" optional="true" label="Validation_Stringency" help="Validation stringency for all SAM files read by this program.  Setting stringency to SILENT can improve performance when processing a BAM file in which variable-length data (read, qualities, tags) do not otherwise need to be decoded. ">
+        <option selected="true" value="STRICT">STRICT</option>
+        <option value="LENIENT">LENIENT</option>
+        <option value="SILENT">SILENT</option>
+      </param>
+      <param name="VERBOSITY" argument="--VERBOSITY" type="select" optional="true" label="Verbosity" help="Control verbosity of logging. ">
+        <option value="ERROR">ERROR</option>
+        <option value="WARNING">WARNING</option>
+        <option selected="true" value="INFO">INFO</option>
+        <option value="DEBUG">DEBUG</option>
+      </param>
+    </section>
+    <section name="deprecated" title="Deprecated Parameters" expanded="False">
+      <param name="JUMP_SIZE" argument="--JUMP_SIZE" type="integer" optional="true" value="" label="Jump_Size" help="The expected jump size (required if this is a jumping library). Deprecated. Use EXPECTED_ORIENTATIONS instead. "/>
+      <param name="PAIRED_RUN" argument="--PAIRED_RUN" type="boolean" truevalue="--PAIRED_RUN" falsevalue="" optional="true" checked="true" label="Paired_Run" help="DEPRECATED. This argument is ignored and will be removed. "/>
+    </section>
+  </inputs>
+  <outputs>
+    <data format="bam" name="OUTPUT" label="${tool.name} on ${on_string}: OUTPUT bam"/>
+  </outputs>
+  <tests/>
+  <help><![CDATA[Summary
+~~~~~~~
+
+A command-line tool for merging BAM/SAM alignment info from a
+third-party aligner with the data in an unmapped BAM file, producing a
+third BAM file that has alignment data (from the aligner) and all the
+remaining data from the unmapped BAM. Quick note: this is **not** a tool
+for taking multiple sam files and creating a bigger file by merging
+them. For that use-case, see MergeSamFiles.
+
+Details
+~~~~~~~
+
+Many alignment tools (still!) require fastq format input. The unmapped
+bam may contain useful information that will be lost in the conversion
+to fastq (meta-data like sample alias, library, barcodes, etc., and
+read-level tags.) This tool takes an unaligned bam with meta-data, and
+the aligned bam produced by calling SamToFastq and then passing the
+result to an aligner/mapper. It produces a new SAM file that includes
+all aligned and unaligned reads and also carries forward additional read
+attributes from the unmapped BAM (attributes that are otherwise lost in
+the process of converting to fastq). The resulting file will be valid
+for use by Picard and GATK tools. The output may be coordinate-sorted,
+in which case the tags, NM, MD, and UQ will be calculated and populated,
+or query-name sorted, in which case the tags will not be calculated or
+populated.
+
+Usage example:
+~~~~~~~~~~~~~~
+
+::
+
+    java -jar picard.jar MergeBamAlignment \\
+         ALIGNED=aligned.bam \\
+         UNMAPPED=unmapped.bam \\
+         O=merge_alignments.bam \\
+         R=reference_sequence.fasta
+    
+
+Caveats
+~~~~~~~
+
+This tool has been developing for a while and many arguments have been
+added to it over the years. You may be particularly interested in the
+following (partial) list:
+
+-  CLIP_ADAPTERS -- Whether to (soft-)clip the ends of the reads that
+   are identified as belonging to adapters
+-  IS_BISULFITE_SEQUENCE -- Whether the sequencing originated from
+   bisulfite sequencing, in which case NM will be calculated differently
+-  ALIGNER_PROPER_PAIR_FLAGS -- Use if the aligner that was used cannot
+   be trusted to set the "Proper pair" flag and then the tool will set
+   this flag based on orientation and distance between pairs.
+-  ADD_MATE_CIGAR -- Whether to use this opportunity to add the MC tag
+   to each read.
+-  UNMAP_CONTAMINANT_READS (and MIN_UNCLIPPED_BASES) -- Whether to
+   identify extremely short alignments (with clipping on both sides) as
+   cross-species contamination and unmap the reads.
+]]></help>
+  <citations>
+    <expand macro="citations"/>
+  </citations>
+</tool>

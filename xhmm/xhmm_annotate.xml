@@ -1,4 +1,4 @@
-<tool id="xhmm_annotate" name="Annotate XHMM Output" version="0.0.1">
+<tool id="xhmm_annotate" name="Annotate XHMM Output" version="0.1.0">
 
   <description>
     Isolate sample data from xhmm genotype matrix and grab entries that look interesting.  Annotate these with whatever we want.
