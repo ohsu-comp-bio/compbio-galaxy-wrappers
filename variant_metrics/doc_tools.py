@@ -17,19 +17,21 @@ class DepthOfCoverageReader:
 
     def read(self):
         doc_dict = {}
-        with open(self.doc_file, 'r') as infile:
-            i = 0
-            for line in infile:
-                i += 1
-                if i > 1:
-                    lsplit = line.split('\t')
-                    if lsplit[0] not in doc_dict:
-                        base_counts = lsplit[4]
-                        base_dict = {'depth': lsplit[1],
-                                     'A': base_counts.split(' ')[0].split(':')[1],
-                                     'C': base_counts.split(' ')[1].split(':')[1],
-                                     'G': base_counts.split(' ')[2].split(':')[1],
-                                     'T': base_counts.split(' ')[3].split(':')[1],
-                                     'N': base_counts.split(' ')[4].split(':')[1]}
-                        doc_dict[lsplit[0]] = base_dict
+        with open(self.doc_file, 'r') as f:
+            header_line = next(f)
+            for line in f:
+                lsplit = line.strip().split('\t')
+                if lsplit[0] not in doc_dict:
+                    base_counts_col = lsplit[4]
+                    base_depth_list = []
+                    for val in base_counts_col.split(' '):
+                        base_depth_list.append(int(val.split(':')[1]))
+                    base_dict = {'total_depth': int(lsplit[1]),
+                                 'off_target': int(lsplit[1]) - max(base_depth_list),
+                                 'A': base_depth_list[0],
+                                 'C': base_depth_list[1],
+                                 'G': base_depth_list[2],
+                                 'T': base_depth_list[3],
+                                 'N': base_depth_list[4]}
+                    doc_dict[lsplit[0]] = base_dict
         return doc_dict

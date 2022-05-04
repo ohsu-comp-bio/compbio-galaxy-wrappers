@@ -6,14 +6,13 @@ and annotate on the sample VCF INFO field, the estimated bkgd threshold from a c
 and on the FORMAT field, the calculated bkgd (base depth/total depth)
 
 Example:
-python variant_metrics/bkgd_metrics.py "/Users/onwuzu/Downloads/Galaxy115-[Sort_VCF_on_data_114__Sorted_VCF].vcf"
-"/Users/onwuzu/Downloads/input_doc.tsv" --bkgd_est_file "/Users/onwuzu/Downloads/bkgd_est_output.txt" "/Users/onwuzu/Downloads/output_bkgd_metrics.vcf"
+python variant_metrics/bkgd_metrics.py "input_vcf.vcf" "input_doc.tsv" "bkgd_est_file.txt" "output_bkgd_metrics.vcf"
 """
 
 import argparse
 import vcfpy
 
-from pon_bkgd_est import calc_bkgd_est
+from bkgd_est_pon import calc_bkgd_est
 from vcf_tools import VarWriter
 from doc_tools import DepthOfCoverageReader
 
@@ -31,7 +30,7 @@ def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('input_vcf', help='Input VCF')
     parser.add_argument('input_cov', type=DepthOfCoverageReader, help='Input Depth of Coverage file')
-    parser.add_argument('--bkgd_est_file', help='Text file containing depth stats of loci in panel.')
+    parser.add_argument('bkgd_est_file', help='Text file containing depth stats of loci in panel.')
     parser.add_argument('output_vcf', help='Output VCF')
     parser.add_argument('--version', action='version',
                         version='%(prog)s ' + VERSION)
@@ -42,68 +41,70 @@ def supply_args():
 def get_est_dict(bkgd_est_file):
     bkgd_threshold_dict = {}
     with open(bkgd_est_file) as f:
-        i = 0
+        header_line = next(f)
         for line in f:
-            print(line)
-            i += 1
-            if i > 1:
-                lsplit = line.strip().split('\t')
-                bkgd_threshold_dict.setdefault(lsplit[0], {})
-                for i, base in enumerate(BASES):
-                    print(i)
-                    print(lsplit)
-                    bkgd_threshold_dict[lsplit[0]].setdefault(base, {})
-                    bkgd_threshold_dict[lsplit[0]][base] = {
-                        'lower': float(lsplit[i+1].split(',')[0]),
-                        'upper': float(lsplit[i+1].split(',')[1])
-                    }
+            lsplit = line.strip().split('\t')
+            bkgd_threshold_dict.setdefault(lsplit[0], {})
+            for i, base in enumerate(BASES):
+                bkgd_threshold_dict[lsplit[0]].setdefault(base, {})
+                bkgd_threshold_dict[lsplit[0]][base] = {'upper': float(lsplit[i+1])}
+            bkgd_threshold_dict[lsplit[0]]['general'] = {'upper': float(lsplit[-1])}
     return bkgd_threshold_dict
 
 
 def main():
     args = supply_args()
 
-    hid = 'BE'
-    htype = 'Float'
-    hdesc = 'Background estimate lower and upper threshold'
-
     reader = vcfpy.Reader.from_path(args.input_vcf)
-
     header = reader.header
+    sample = reader.header.samples.names[0]
 
     doc_reader = args.input_cov.doc
 
     res_est = get_est_dict(args.bkgd_est_file)
 
+    info_id = 'BET'
+    fmt_id = 'BE'
+
     # add header info
+    header.add_info_line(vcfpy.OrderedDict([('ID', info_id),
+                                            ('Number', 1), ('Type', 'Float'),
+                                            ('Description', 'Background estimate threshold from cohort of normals (general)')]))
+    header.add_format_line(vcfpy.OrderedDict([('ID', fmt_id),
+                                              ('Number', 1), ('Type', 'Float'),
+                                              ('Description', 'Background estimate')]))
     for base in BASES:
-        base_hid = '{}_{}'.format(hid, base)
-        header.add_info_line(vcfpy.OrderedDict([('ID', base_hid),
-                                                ('Number', 2), ('Type', htype),
-                                                ('Description', '{} for base {}'.format(hdesc, base))]))
-        header.add_format_line(vcfpy.OrderedDict([('ID', base_hid),
-                                                  ('Number', 1), ('Type', htype),
-                                                  ('Description', '{} for base {}'.format(hdesc, base))]))
+        header.add_info_line(vcfpy.OrderedDict([('ID', '{}_{}'.format(info_id, base)),
+                                                ('Number', 1), ('Type', 'Float'),
+                                                ('Description', 'Background estimate threshold from cohort of normals for base {}'.format(base))]))
+        header.add_format_line(vcfpy.OrderedDict([('ID', '{}_{}'.format(fmt_id, base)),
+                                                  ('Number', 1), ('Type', 'Float'),
+                                                  ('Description', 'Background estimate for base {}'.format(base))]))
 
     records = {}
+    # add info to VCF records
     for record in reader:
-
-        var_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
-
         pos = str(record.CHROM) + ':' + str(record.POS)
         if pos in res_est:
+            record.INFO[info_id] = res_est[pos]['general']['upper']
+            record.add_format(key=fmt_id, value=None)
+            bkgd_est = calc_bkgd_est(doc_reader[pos]['off_target'], doc_reader[pos]['total_depth'])
+            record.call_for_sample[sample].data[fmt_id] = float('{:0.3f}'.format(bkgd_est))
             for base in BASES:
-                pos_base_est = res_est[pos][base]
-                base_hid = '{}_{}'.format(hid, base)
 
-                record.INFO[base_hid] = [pos_base_est['lower'], pos_base_est['upper']]
+                # add cohort bkgd estimates info VCF INFO field
+                base_hid = '{}_{}'.format(info_id, base)
+                record.INFO[base_hid] = res_est[pos][base]['upper']
 
+                # add calculated AF/background estimates of variant to VCF SAMPLE field
+                base_hid = '{}_{}'.format(fmt_id, base)
                 record.add_format(key=base_hid, value=None)
-                record.call_for_sample[reader.header.samples.names[0]].data[base_hid] = calc_bkgd_est(doc_reader[pos][base],
-                                                                                                      doc_reader[pos]['depth'])
+                bkgd_est = calc_bkgd_est(doc_reader[pos][base], doc_reader[pos]['total_depth'])
+                record.call_for_sample[sample].data[base_hid] = float('{:0.3f}'.format(bkgd_est))
         else:
-            raise KeyError('{} not found in PON background estimates file'.format(pos))
+            print('{} not found in PON background estimates file'.format(pos))
 
+        var_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
         records[var_id] = record
 
     VarWriter(list(records.values())).as_vcf(args.output_vcf, header)

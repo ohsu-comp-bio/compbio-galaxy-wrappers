@@ -78,7 +78,6 @@ class VarWriter:
     def as_vcf(self, output_vcf, header):
         writer = vcfpy.Writer.from_path(output_vcf, header=header)
         for record in natsorted(self.records, key=attrgetter('CHROM', 'POS')):
-            print(record.INFO)
             writer.write_record(record)
 
     def as_json(self, output_json):
