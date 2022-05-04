@@ -93,7 +93,8 @@ def _main():
         logger.debug(f'Read {len(file_transcripts)} transcripts from {file_name.name}')    
         annovar_records.extend(file_transcripts)
 
-    logger.debug(f'Read {len(annovar_records)} transcripts from {len(args.annovar_file)} files')
+    disinct_variant_count = len({f'{x.chromosome}-{x.position}-{x.reference}-{x.alt}' for x in annovar_records})
+    logger.debug(f'Read {disinct_variant_count} distinct variants and {len(annovar_records)} transcripts from {len(args.annovar_file)} files')
 
     # Merge like transcripts into a single annovar record 
     initial_size = len(annovar_records)

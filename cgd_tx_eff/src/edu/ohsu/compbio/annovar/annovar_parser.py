@@ -41,7 +41,7 @@ class AnnovarVariantFunction(object):
         assert alt.find(',') == -1, 'ALT may only have one value'
         
         self.chromosome = chromosome
-        self.position = position
+        self.position = int(position)
         self.reference = ref
         self.alt = alt
         
@@ -279,7 +279,7 @@ class AnnovarParser(object):
         # Collect annovar records into a map keyed by genotype and transcript 
         annovar_dict = defaultdict(list)
         
-        key_maker = lambda x: "-".join([x.chromosome, x.position, x.reference, x.alt, x.refseq_transcript, (x.splicing or '')])
+        key_maker = lambda x: "-".join([x.chromosome, str(x.position), x.reference, x.alt, x.refseq_transcript, (x.splicing or '')])
         for annovar_rec in annovar_records:
             annovar_dict[key_maker(annovar_rec)].append(annovar_rec)
 
