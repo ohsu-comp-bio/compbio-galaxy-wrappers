@@ -218,12 +218,10 @@ def __get_unmatched_annovar_transcripts(annovar_dict: defaultdict(list), hgvs_di
     transcripts = list()
     
     for (transcript_key, annovar_transcript_list) in annovar_dict.items():
-        assert len(annovar_transcript_list) == 1, f'Annovar transcript map has more than one transcript matching {transcript_key}'
-        
         # Check the HGVS dictionary for a key matching the annovar key. If there is a match, then the annovar transcript has already  
         # been processed. If HGVS does not have the key then the annovar transcript has not been looked at.
         if hgvs_dict.get(transcript_key) == None:
-            logger.debug(f"Adding unmatched Annovar transcript {transcript_key}")
+            logger.debug(f"Adding unmatched Annovar transcript(s) {transcript_key}")
             transcripts.extend(annovar_transcript_list)
     
     return transcripts

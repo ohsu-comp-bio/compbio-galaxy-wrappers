@@ -24,7 +24,6 @@ stream_handler.setFormatter(stream_format)
 stream_handler.setLevel(logging.DEBUG)
 logger.addHandler(stream_handler)
 
-
 VERSION = '0.0.1'
 
 def _parse_args():
