@@ -4,7 +4,10 @@ VERSION = '0.0.1'
 
 
 def calc_bkgd_est(base_depth, total_depth):
-    bkgd = int(base_depth) / int(total_depth)
+    try:
+        bkgd = int(base_depth) / int(total_depth)
+    except ZeroDivisionError:
+        bkgd = 0.0
     return float(bkgd)
 
 
