@@ -17,7 +17,6 @@ class VarLabel:
         self.reader = vcfpy.Reader.from_path(input_vcf)
         self.label = label
 
-    @staticmethod
     def _get_dict_records(reader):
         records = {}
         for record in reader:
@@ -64,6 +63,30 @@ class VarLabel:
                 record.add_filter(self.label)
                 records.append(record)
             else:
+                records.append(record)
+        return records
+
+
+class VarFilter:
+    """
+    Filter records in a VCF based from an INFO field column and on a FORMAT field column
+    """
+    def __init__(self, input_vcf):
+        self.reader = vcfpy.Reader.from_path(input_vcf)
+        self.header = self.reader.header
+        self.samples = self.reader.header.samples.names
+
+    def filter_records(self, filter_from, filter_on, alt_allele):
+        records = []
+        for record in self.reader:
+            alt_type = record.ALT[0].type
+            if alt_allele and alt_type == 'SNV':
+                alt = record.ALT[0].value
+            else:
+                alt = ''
+            f_on = filter_on + '_' + alt
+            f_from = filter_from + '_' + alt
+            if record.INFO[f_from] > record.call_for_sample[self.samples[0]].data[f_on]:
                 records.append(record)
         return records
 
