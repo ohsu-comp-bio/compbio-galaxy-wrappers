@@ -1,0 +1,68 @@
+<tool id="fgbio_trim_fastq" name="fgbio TrimFastq" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" python_template_version="3.5">
+    <description>Sorts the records in a FASTQ file based on the lexicographic ordering of their read names</description>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+    <expand macro="requirements" />
+    <version_command>fgbio --version</version_command>
+    <command detect_errors="exit_code"><![CDATA[
+        fgbio TrimFastq
+        --input '$input'
+        #if $fastq_input.fastq_input_selector == 'single':
+            '$fastq_input.input_single'
+        #elif $fastq_input.fastq_input_selector == 'paired':
+            '$fastq_input.input_read1'
+            '$fastq_input.input_read2'
+        #elif $fastq_input.fastq_input_selector == 'paired_collection':
+            '$fastq_input.input_readpair.forward'
+            '$fastq_input.input_readpair.reverse'
+        #end if
+        --length=$length
+        --exclude=$exclude
+    ]]></command>
+    <inputs>
+        <conditional name="fastq_input">
+            <param name="fastq_input_selector" type="select" label="Single or Paired-end reads" help="Select between paired and single end fastq files">
+                <option value="paired">Paired</option>
+                <option value="single">Single</option>
+                <option value="paired_collection">Paired Collection</option>
+            </param>
+            <when value="paired">
+                <param name="fastq_input1" type="data" format="fastqsanger,fastqsanger.gz,fasta" label="Select first set of reads" help="Specify dataset with forward reads"/>
+                <param name="fastq_input2" type="data" format="fastqsanger,fastqsanger.gz,fasta" label="Select second set of reads" help="Specify dataset with reverse reads"/>
+            </when>
+            <when value="single">
+                <param name="fastq_input1" type="data" format="fastqsanger,fastqsanger.gz,fasta" label="Select fastq dataset" help="Specify dataset with single reads"/>
+            </when>
+            <when value="paired_collection">
+                <param name="fastq_input1" format="fastqsanger,fastqsanger.gz,fasta" type="data_collection" collection_type="paired" label="Select a paired collection" help="See help section for an explanation of dataset collections"/>
+            </when>
+        </conditional>
+        <param argument="--length" type="integer" value="50" min="1" label="Length to trim reads to"/>
+        <param argument="--exclude" type="boolean" truevalue="true" falsevalue="false" checked="false" label="Exclude reads below the trim length"/>
+    </inputs>
+    <outputs>
+        <data name="output1" format_source="input" label="Trimed ${input.name}"/>
+        <data name="output2" format_source="input" label="Trimed ${input.name}"/>
+        <data name="out1" format="fastqsanger" metadata_source="input_1" from_work_dir="out1*" label="${tool.name} on ${on_string}: Read 1 Output">
+            <filter>(output_options['multiple_output'] is False)</filter>
+            <expand macro="inherit_format_1" />
+        </data>
+        <data name="out2" format="fastqsanger" metadata_source="input_2" from_work_dir="out2*" label="${tool.name} on ${on_string}: Read 2 Output" >
+            <filter>(library['type'] == 'paired' or library['type'] == 'paired_collection')</filter>
+            <expand macro="inherit_format_2" />
+        </data>
+    </outputs>
+    <help><![CDATA[
+**fgbio TrimFastq**
+
+Trims reads in one or more line-matched fastq files to a specific read length. The individual fastq files are expected to have the same set of reads, as would be the case with an r1.fastq and r2.fastq file for the same sample.
+
+Optionally supports dropping of reads across all files when one or more reads is already shorter than the desired trim length.
+
+
+
+http://fulcrumgenomics.github.io/fgbio/tools/latest/TrimFastq.html
+    ]]></help>
+    <expand macro="citations" />
+</tool>
