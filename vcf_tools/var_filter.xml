@@ -16,6 +16,7 @@
     #if $alt_allele
       --alt_allele '${alt_allele}'
     #end if
+    && cat filtered_out.vcf > $output2_vcf
   ]]></command>
 
   <inputs>
@@ -27,6 +28,7 @@
 
   <outputs>
     <data name="output_vcf" format="vcf" label="${tool.name} on ${on_string}: VCF" />
+    <data name="output2_vcf" format="vcf" label="${tool.name} on ${on_string}: Below threshold VCF" />
   </outputs>
 
   <help>

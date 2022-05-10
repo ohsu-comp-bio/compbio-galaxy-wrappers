@@ -77,18 +77,21 @@ class VarFilter:
         self.samples = self.reader.header.samples.names
 
     def filter_records(self, filter_from, filter_on, alt_allele):
-        records = []
+        records_abovebkgd = []
+        records_belowbkgd = []
         for record in self.reader:
             alt_type = record.ALT[0].type
             if alt_allele and alt_type == 'SNV':
-                alt = record.ALT[0].value
+                alt_str = '_' + record.ALT[0].value
             else:
-                alt = ''
-            f_on = filter_on + '_' + alt
-            f_from = filter_from + '_' + alt
-            if record.INFO[f_from] > record.call_for_sample[self.samples[0]].data[f_on]:
-                records.append(record)
-        return records
+                alt_str = ''
+            f_on = filter_on + alt_str
+            f_from = filter_from + alt_str
+            if record.call_for_sample[self.samples[0]].data[f_on] > record.INFO[f_from]:
+                records_abovebkgd.append(record)
+            else:
+                records_belowbkgd.append(record)
+        return records_abovebkgd, records_belowbkgd
 
 
 class VarWriter:
@@ -268,13 +271,17 @@ class VcfSelecter:
             var_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
             if var_id not in records:
                 # get the first caller in the priority
+                first_caller = None
                 for filt in record.FILTER:
                     if filt in self.caller_priority:
                         first_caller = filt
                         break
                 # get only info values from first caller
                 for info in self.info_fields:
-                    caller_key = '{}_{}'.format(first_caller, info)
+                    if first_caller:
+                        caller_key = '{}_{}'.format(first_caller, info)
+                    else:
+                        raise Exception('No caller in given caller priority list in record: {}'.format(var_id))
                     if caller_key in record.INFO:
                         value = record.INFO.get(caller_key, None)
                         # if None or empty

@@ -30,9 +30,10 @@ def main():
 
     to_filter = vcf_tools.VarFilter(args.input_vcf)
     header = to_filter.header
-    records = to_filter.filter_records(args.filter_from, args.filter_on, args.alt_allele)
+    above, below = to_filter.filter_records(args.filter_from, args.filter_on, args.alt_allele)
 
-    vcf_tools.VarWriter(records).as_vcf(args.output_vcf, header)
+    vcf_tools.VarWriter(above).as_vcf(args.output_vcf, header)
+    vcf_tools.VarWriter(below).as_vcf("filtered_out.vcf", header)
 
 
 if __name__ == "__main__":
