@@ -210,7 +210,8 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
     
     return hgvs_transcripts
 
-def __get_unmatched_annovar_transcripts(annovar_dict: defaultdict(list), hgvs_dict: defaultdict(list)):
+
+def _get_unmatched_annovar_transcripts(annovar_dict: defaultdict(list), hgvs_dict: defaultdict(list)):
     '''
     After HGVS and Annovar transcripts have been merged, this function can be called to find Annovar transcripts that were not paired 
     with an HGVS trancsript. 
@@ -221,9 +222,14 @@ def __get_unmatched_annovar_transcripts(annovar_dict: defaultdict(list), hgvs_di
         # Check the HGVS dictionary for a key matching the annovar key. If there is a match, then the annovar transcript has already  
         # been processed. If HGVS does not have the key then the annovar transcript has not been looked at.
         if hgvs_dict.get(transcript_key) == None:
-            logger.debug(f"Adding unmatched Annovar transcript(s) {transcript_key}")
+            logger.debug(f"Adding unmatched Annovar transcript(s) for {transcript_key}")
             transcripts.extend(annovar_transcript_list)
     
+    for (transcript_key, hgvs_transcript_list) in hgvs_dict.items():
+        if annovar_dict.get(transcript_key) == None:
+            logger.debug(f"Adding unmatched HGVS transcript(s) for {transcript_key}")
+            transcripts.extend(hgvs_transcript_list)
+
     return transcripts
 
     
@@ -231,13 +237,13 @@ def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list, 
     '''
     Given a list of transcripts from Annovar and HGVS, find those with the same genotype and transcript, and merge them into a single record.
     
-    The optional ``require_match`` parameter can be used indicate that only transcripts which are found in both the Annovar 
+    The optional ``require_match`` parameter can be used to indicate that only transcripts which are found in both the Annovar 
     and HGVS lists, are returned.       
     '''
     transcripts = list()
     
     # Collect annovar records into a map keyed by genotype and transcript 
-    annovar_dict = defaultdict(list)    
+    annovar_dict = defaultdict(list)
     key_maker = lambda x: "-".join([x.chromosome, str(x.position), x.reference, x.alt, x.refseq_transcript])
     for annovar_rec in annovar_transcripts:
         annovar_dict[key_maker(annovar_rec)].append(annovar_rec)
@@ -256,15 +262,13 @@ def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list, 
         annovar_matches = annovar_dict.get(transcript_key)
         if not annovar_matches:
             logger.debug(f"HGVS {transcript_key} does not match any Annovar transcripts")
-            if require_match == False:
-                transcripts.append(hgvs_transcript)
         else:
             logger.debug(f"Merging HGVS transcript with {len(annovar_matches)} Annovar transcripts having key {transcript_key}")
             transcripts.append(_merge(transcript_key, hgvs_transcript, annovar_matches))
 
     # If matching is not required, then add unmatched Annovar transcripts to the final list
     if require_match == False:
-        transcripts.extend(__get_unmatched_annovar_transcripts(annovar_dict, hgvs_dict))
+        transcripts.extend(_get_unmatched_annovar_transcripts(annovar_dict, hgvs_dict))
 
     return transcripts
 
@@ -276,12 +280,12 @@ def _merge(transcript_key: str, hgvs_transcript: VariantTranscript, annovar_tran
     new_transcript = VariantTranscript(hgvs_transcript.chromosome, hgvs_transcript.position, hgvs_transcript.reference, hgvs_transcript.alt)
 
     for annovar_transcript in annovar_transcripts:
-        __merge(transcript_key, new_transcript, hgvs_transcript, annovar_transcript)
+        _merge_into(transcript_key, new_transcript, hgvs_transcript, annovar_transcript)
         
     return new_transcript
 
 
-def __merge(transcript_key: str, new_transcript: VariantTranscript, hgvs_transcript: VariantTranscript, annovar_transcript: VariantTranscript):
+def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_transcript: VariantTranscript, annovar_transcript: VariantTranscript):
     '''
     Take the best parts of the hgvs_transcript and the annovar_transcript, and place them in the new_transcript 
     '''

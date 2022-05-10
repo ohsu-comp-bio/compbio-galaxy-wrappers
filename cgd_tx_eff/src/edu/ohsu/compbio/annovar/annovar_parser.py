@@ -64,6 +64,25 @@ class AnnovarVariantFunction(object):
         '''
         return f'[AnnovarVariantFunction: genotype={self.chromosome}-{self.position}-{self.reference}-{self.alt}, transcript={self.refseq_transcript}, variant_effect={self.variant_effect}, variant_type={self.variant_type}, aap={self.hgvs_amino_acid_position}, bpos={self.hgvs_base_position}, exon={self.exon}, gene={self.hgnc_gene}, c.={self.hgvs_c_dot}, p1.={self.hgvs_p_dot_one}, p3.={self.hgvs_p_dot_three}, splicing={self.splicing}]'
             
+    def __eq__(self, obj):
+        return self.chromosome == obj.chromosome \
+            and self.position == obj.position \
+            and self.reference == obj.reference \
+            and self.alt == obj.alt \
+            and self.variant_effect == obj.variant_effect \
+            and self.variant_type == obj.variant_type \
+            and self.hgvs_amino_acid_position == obj.hgvs_amino_acid_position \
+            and self.hgvs_base_position == obj.hgvs_base_position \
+            and self.exon == obj.exon \
+            and self.hgnc_gene == obj.hgnc_gene \
+            and self.hgvs_c_dot == obj.hgvs_c_dot \
+            and self.hgvs_p_dot_one == obj.hgvs_p_dot_one \
+            and self.hgvs_p_dot_three == obj.hgvs_p_dot_three \
+            and self.splicing == obj.splicing \
+            and self.refseq_transcript == obj.refseq_transcript
+            
+    
+    
 class AnnovarParser(object):    
     '''
     Parses Annovar output
