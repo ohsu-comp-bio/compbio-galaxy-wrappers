@@ -6,7 +6,7 @@ and annotate on the sample VCF INFO field, the estimated bkgd threshold from a c
 and on the FORMAT field, the calculated bkgd (base depth/total depth)
 
 Example:
-python variant_metrics/bkgd_metrics.py "input_vcf.vcf" "input_doc.tsv" "bkgd_est_file.txt" "output_bkgd_metrics.vcf"
+python variant_metrics_umi/bkgd_metrics.py "input_vcf.vcf" "input_doc.tsv" "bkgd_est_file.txt" "output_bkgd_metrics.vcf"
 """
 
 import argparse
