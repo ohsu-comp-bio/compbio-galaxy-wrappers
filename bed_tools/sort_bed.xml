@@ -1,0 +1,21 @@
+<tool id="sort_bed" name="Sort BED" version="0.0.1" >
+  <description>Sort a Bed by natural order.</description>
+  <command interpreter="python">sort_bed.py
+    $input $output
+  </command>
+
+  <inputs>
+    <param name="input" type="data" format="bed" label="Unsorted BED" />
+  </inputs>
+
+  <outputs>
+    <data name="output" format="bed" label="${tool.name} on ${on_string}: Sorted BED" />
+  </outputs>
+
+  <tests>
+
+  </tests>
+  <help>
+
+  </help>
+</tool>
