@@ -1,0 +1,33 @@
+<tool id="fgbio_sort_fastq" name="fgbio SortFastq" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" python_template_version="3.5">
+    <description>Sorts the records in a FASTQ file based on the lexicographic ordering of their read names</description>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+    <expand macro="requirements" />
+    <version_command>fgbio --version</version_command>
+    <command detect_errors="exit_code"><![CDATA[
+        fgbio SortFastq
+        --input '$input'
+        #if $input.is_of_type("fastq.gz", "fastqsanger.gz")
+            --output output.fastq.gz
+            && cp output.fastq.gz '$output'
+        #else
+            --output output.fastq
+            && cp output.fastq '$output'
+        #end if
+    ]]></command>
+    <inputs>
+        <param name="input" type="data" format="fastq,fastq.gz" label="fastq file to be sorted"/>
+    </inputs>
+    <outputs>
+        <data name="output" format_source="input" label="Sorted ${input.name}"/>
+    </outputs>
+    <help><![CDATA[
+**fgbio SortFastq**
+
+Sorts a FASTQ file. Sorts the records in a FASTQ file based on the lexicographic ordering of their read names. Input and output files can be either uncompressed or gzip-compressed.
+
+http://fulcrumgenomics.github.io/fgbio/tools/latest/SortFastq.html
+    ]]></help>
+    <expand macro="citations" />
+</tool>

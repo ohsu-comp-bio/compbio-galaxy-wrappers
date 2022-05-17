@@ -1,0 +1,40 @@
+<tool id="fgbio_sort_bam" name="fgbio SortBam" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" python_template_version="3.5">
+    <description>Sorts a SAM or BAM file</description>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+    <expand macro="requirements" />
+    <version_command>fgbio --version</version_command>
+    <command detect_errors="exit_code"><![CDATA[
+        fgbio SortBam 
+        --input '$input'
+        #if $sort_order
+            --sort-order=$sort_order
+        #end if
+        --output '$output'
+    ]]></command>
+    <inputs>
+        <param name="input" type="data" format="unsorted.bam,bam,sam" label="SAM/BAM to sort"/>
+        <expand macro="sam_sort_order" />
+    </inputs>
+    <outputs>
+        <data name="output" format="unsorted.bam" >
+            <!--
+            <expand macro="sort_order_change_format" />
+            -->
+        </data>
+    </outputs>
+    <help><![CDATA[
+**fgbio SortBam**
+
+Sorts a SAM or BAM file. Several sort orders are available:
+
+    - Coordinate: sorts reads by their reference sequence and left-most aligned coordinate
+    - Queryname: sort the reads by their query (i.e. read) name
+    - Random: sorts the reads into a random order. The output is deterministic for any given input. and several
+    - RandomQuery: sorts the reads into a random order but keeps reads with the same queryname together. The ordering is deterministic for any given input.
+
+http://fulcrumgenomics.github.io/fgbio/tools/latest/SortBam.html
+    ]]></help>
+    <expand macro="citations" />
+</tool>

@@ -1,0 +1,30 @@
+<tool id="fg_SetMateInformation" name="Set Mate Information" version="@WRAPPER_VERSION@0">
+  <description>Adds and/or fixes mate information on paired-end reads. </description>
+  <macros>
+    <import>macros.xml</import>
+  </macros>
+  <expand macro="requirements"/>
+  <command detect_errors="exit_code"><![CDATA[
+    @CMD_BEGIN@ SetMateInformation
+    #include source=$input_output_cmd#
+    #include source=$allow_missing_mates_cmd#
+    #include source=$log_cmd#
+    ]]>
+  </command>
+  <inputs>
+    <expand macro="sam_input"/>
+    <expand macro="allow_missing_mates_input"/>
+  </inputs>
+  <outputs>
+    <expand macro="sam_output"/>
+    <expand macro="log_output"/>
+  </outputs>
+  
+  <help>
+  <![CDATA[Adds and/or fixes mate information on paired-end reads. Sets the MQ (mate mapping quality), MC (mate cigar string), ensures all mate-related flag fields are set correctly, and that the mate reference and mate start position are correct.
+
+Supplementary records are handled correctly (updated with their mate’s non-supplemental attributes). Secondary alignments are passed through but are not updated.
+
+The input file must be query-name sorted or query-name grouped (i.e. all records from the same query sequence must be adjacent in the file, though the ordering between queries is unspecified).]]>
+  </help>
+</tool>

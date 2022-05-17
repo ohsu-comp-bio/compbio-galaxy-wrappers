@@ -4,6 +4,7 @@
 #  are passed as a json dump.
 # VERSION HISTORY
 # 0.7.0 - Now calculate percentOnTarget from FastQC tatal sequences and collectalignmentmetrics on sorted bwa bam
+# 0.8.0 - Pass forced calls above and below background metric
 
 import argparse
 import json
@@ -12,7 +13,7 @@ from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, 
 from inputs import FastQcRead
 from inputs import VcfRead
 
-VERSION = '0.7.0'
+VERSION = '0.8.2'
 
 def supply_args():
     """
@@ -44,7 +45,8 @@ def supply_args():
     parser.add_argument('--blia_pre', help='JSON from Ding correlation subtyping, pre-normalization.')
     parser.add_argument('--blia_post', help='JSON from Ding correlation subtyping, post-normalization.')
 
-    parser.add_argument('--calls_forced', type=VcfRead, help='VCF with forced calls only.')
+    parser.add_argument('--calls_forced_above', type=VcfRead, help='VCF with forced calls that are above background.')
+    parser.add_argument('--calls_forced_below', type=VcfRead, help='VCF with forced calls that are below background.')
 
     # These just get attached to the final json output as-is.
     parser.add_argument('--json_in', nargs='*',
@@ -157,10 +159,15 @@ class RawMetricCollector:
         else:
             self.blia_post = {'blia': None, 'blis': None, 'lar': None, 'mes': None}
 
-        if args.calls_forced:
-            self.fc_count = args.calls_forced.count
+        if args.calls_forced_above:
+            self.fc_above_count = args.calls_forced_above.count
         else:
-            self.fc_count = None
+            self.fc_above_count = None
+
+        if args.calls_forced_below:
+            self.fc_below_count = args.calls_forced_below.count
+        else:
+            self.fc_below_count = None
 
         if args.json_in:
             self.json_mets = self._json_in(args.json_in)
@@ -494,7 +501,8 @@ class MetricPrep(SampleMetrics):
                 'mes_raw_post': self.raw_mets.blia_post['mes'],
                 'total_on_target_transcripts': self.on_primer_frag_count,
                 'total_on_target_transcripts_pct': self.on_primer_frag_count_pct,
-                'forced_calls_only': self.raw_mets.fc_count
+                'forced_calls_above': self.raw_mets.fc_above_count,
+                'forced_calls_below': self.raw_mets.fc_below_count
                 }
 
         return mets
@@ -559,7 +567,8 @@ class MetricPrep(SampleMetrics):
                 'QIAseq_V3_HEME2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                     'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'QIAseq_V4_MINI': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
-                                        'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
+                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi',
+                                   'forced_calls_above', 'forced_calls_below'],
                 'QIAseq_V3_STP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                    'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'TruSeq_RNA_Exome_V1-2': ['qthirty'],
@@ -583,7 +592,7 @@ class MetricPrep(SampleMetrics):
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
                                   'gc_pct_r1', 'gc_pct_r2', 'gender_check', 'homozygosity_flag'],
                 'QIAseq_V3_HEME2': [],
-                'QIAseq_V4_MINI': ['forced_calls_only'],
+                'QIAseq_V4_MINI': [],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
                                           'gatk_pct_correct_strand_reads'],

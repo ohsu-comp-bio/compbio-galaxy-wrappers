@@ -16,6 +16,12 @@ repositories:
       - var_select.py
       - var_select.xml
       - vcf_tools_macros.xml
+  var_filter:
+    description: "Filter variants in a VCF based on INFO field."
+    include:
+      - var_filter.py
+      - var_filter.xml
+      - vcf_tools_macros.xml
   vcf_merge:
     description: "Merge multiple VCFs."
     include:
