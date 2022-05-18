@@ -404,7 +404,7 @@ def _allow_merge(existing_value, new_value, variant_id, field_name):
         return True
 
 
-def get_summary(args, annovar_transcripts, annovar_variants, hgvs_transcripts, merged_transcripts):
+def get_summary(args, annovar_transcripts: list, annovar_variants: set, hgvs_transcripts: list, merged_transcripts: list):
     '''
     Return a collection of summary statistics after processing completes. 
     '''
@@ -422,11 +422,12 @@ def get_summary(args, annovar_transcripts, annovar_variants, hgvs_transcripts, m
      
     annovar_splice_variant_transcript_count = 0
     
+    # Collect annovar records into a map keyed by genotype and transcript
     for annovar_rec in annovar_transcripts:
         if annovar_rec.splicing == 'splicing':
             annovar_splice_variant_transcript_count += 1
-        else:
-            annovar_dict[key_maker(annovar_rec)].append(annovar_rec)
+
+        annovar_dict[key_maker(annovar_rec)].append(annovar_rec)
     
     results['annovar_splice_variant_transcript_count'] = annovar_splice_variant_transcript_count
     
@@ -434,14 +435,23 @@ def get_summary(args, annovar_transcripts, annovar_variants, hgvs_transcripts, m
     hgvs_dict = defaultdict(list)
     for hgvs_rec in hgvs_transcripts:
         hgvs_dict[key_maker(hgvs_rec)].append(hgvs_rec)
-        
+    
+    # Collect merged hgvs and annovar recoreds into a map keyed by genotype and transcript
+    merged_dict = defaultdict(list)
+    for merged_rec in merged_transcripts:
+        merged_dict[key_maker(merged_rec)].append(merged_rec)
+    
     matched_annovar_and_hgvs_transcript_count = 0
     unmatched_annovar_transcript_count = 0
     unmatched_hgvs_transcript_count = 0
-    
-    for transcript in merged_transcripts:
-        transcript_key = key_maker(transcript)
+
+    all_transcript_keys = set()
+    all_transcript_keys.update(annovar_dict.keys())
+    all_transcript_keys.update(hgvs_dict.keys())
+     
+    for transcript_key in all_transcript_keys:
         if annovar_dict.get(transcript_key) and hgvs_dict.get(transcript_key):
+            assert merged_dict.get(transcript_key)
             matched_annovar_and_hgvs_transcript_count += 1
         elif annovar_dict.get(transcript_key) and not hgvs_dict.get(transcript_key):
             unmatched_annovar_transcript_count += 1
@@ -449,26 +459,34 @@ def get_summary(args, annovar_transcripts, annovar_variants, hgvs_transcripts, m
             unmatched_hgvs_transcript_count += 1
         else:
             raise Exception("Unexpected summary condition")
-        
+    
     results['matched_annovar_and_hgvs_transcript_count'] = matched_annovar_and_hgvs_transcript_count
     results['unmatched_annovar_transcript_count'] = unmatched_annovar_transcript_count
-    results['unmatched_hgvs_transcript_count'] = unmatched_hgvs_transcript_count
-    
+    results['unmatched_hgvs_transcript_count'] = unmatched_hgvs_transcript_count    
     results['merged_transcript_count'] = len(merged_transcripts)
+    
     
     merged_distinct_variant_count = len(set(map(lambda x: Variant(x.chromosome, x.position, x.reference, x.alt), merged_transcripts)))
     results['merged_distinct_variant_count'] = merged_distinct_variant_count 
     
-    # Essential sanity check - make sure counts add up
-    sanity_check_total_transcripts = results['merged_transcript_count'] == results['matched_annovar_and_hgvs_transcript_count'] + results['unmatched_annovar_transcript_count'] + results['unmatched_hgvs_transcript_count']
-    assert sanity_check_total_transcripts, 'Sanity check failed: Total number of transcripts does not equal sum of matched, and unmatched.'
+
+    # Sanity check: The number of HGVS transcripts minus the count of merged HGVS transcripts is equal to the number of merged HGVS and annovar transcripts.    
+    sanity_check_hgvs = (len(hgvs_transcripts) - unmatched_hgvs_transcript_count) == matched_annovar_and_hgvs_transcript_count
+    
+    # Sanity check: The number of annovar transcripts minus the count of merged annovar transcripts, minus the number of 
+    # splice variants is equal to the number of merged HGVS and annovar transcripts. Splice variants must be subtradcted because 
+    # they get counted twice - once as a splice variant and once as an exonic or intronic variant. 
+    santity_check_annovar = (len(annovar_transcripts) - unmatched_annovar_transcript_count - annovar_splice_variant_transcript_count) == matched_annovar_and_hgvs_transcript_count    
+
+    # Essential sanity check:  
+    assert sanity_check_hgvs and santity_check_annovar, f'Sanity check failed: Total number of transcripts does not equal sum of matched, and unmatched ({sanity_check_hgvs} and {santity_check_annovar}).'
          
-    # Non-critical sanity check: all variants from annovar have at least one transcript in the final output
+    # Non-essential sanity check: all variants from annovar have at least one transcript in the final output
     sanity_check_variant_coverage = merged_distinct_variant_count == results['annovar_distinct_variant_count']
     if not sanity_check_variant_coverage:
         logger.warning(f"Not all of the Annovar variants made it into the list of variant-transcripts ({merged_distinct_variant_count}/{results['annovar_distinct_variant_count']})")
 
-    sanity_check = sanity_check_total_transcripts and sanity_check_variant_coverage
+    sanity_check = sanity_check_hgvs and santity_check_annovar and sanity_check_variant_coverage
     results['sanity_check'] = sanity_check
 
     return results
@@ -556,8 +574,6 @@ def _main():
     annovar_transcripts = _read_annovar_transcripts(args.in_file.name)
     logger.debug(f'Read {len(annovar_transcripts)} Annovar transcripts from {args.in_file.name}')
     
-    # variants = set(map(lambda x: Variant(x.chromosome, x.position, x.reference, x.alt), annovar_transcripts))
-    # disinct_variants = {f'{x.chromosome}-{x.position}-{x.reference}-{x.alt}' for x in annovar_transcripts}
     disinct_variants = {Variant(x.chromosome, x.position, x.reference, x.alt) for x in annovar_transcripts}
     
     logger.debug(f'{len(disinct_variants)} distinct variants')

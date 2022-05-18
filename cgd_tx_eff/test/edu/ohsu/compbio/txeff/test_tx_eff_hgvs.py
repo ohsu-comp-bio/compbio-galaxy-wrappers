@@ -9,9 +9,9 @@ class TxEffHgvsTest(unittest.TestCase):
         Merge two lists of transcripts where one matches and the other doesn't; keep all three. 
         '''
         annovar_a = self._create_variant('1', 1, 'A', 'T', 'aaa.1', gene='gene_a', variant_effect='stoploss', variant_type='exonic')
-        annovar_b = self._create_variant('1', 1, 'A', 'T', 'bbb.1', gene='gene_b', variant_effect='nonsynonymous SNV', variant_type='intronic')
+        annovar_b = self._create_variant('2', 2, 'A', 'T', 'bbb.1', gene='gene_b', variant_effect='nonsynonymous SNV', variant_type='intronic')
         
-        hgvs_b = self._create_variant('1', 1, 'A', 'T', 'bbb.1', c_dot='c.1A>T', p_dot_one='p.L1P', p_dot_three='p.Leu1Pro', protein_transcript='NP_001')
+        hgvs_b = self._create_variant('2', 2, 'A', 'T', 'bbb.1', c_dot='c.1A>T', p_dot_one='p.L1P', p_dot_three='p.Leu1Pro', protein_transcript='NP_001')
         hgvs_c = self._create_variant('3', 3, 'A', 'T', 'ccc.1', c_dot='c.3A>T', p_dot_one='p.L3P', p_dot_three='p.Leu3Pro', protein_transcript='NP_003')
     
         merged_transcripts = tx_eff_hgvs._merge_annovar_with_hgvs([annovar_a, annovar_b], [hgvs_b,hgvs_c], False)
@@ -23,9 +23,9 @@ class TxEffHgvsTest(unittest.TestCase):
         Merge two lists of transcripts and get only those that are common to both lists
         '''
         annovar_a = self._create_variant('1', 1, 'A', 'T', 'aaa.1', gene='gene_a', variant_effect='stoploss', variant_type='exonic')
-        annovar_b = self._create_variant('1', 1, 'A', 'T', 'bbb.1', gene='gene_b', variant_effect='nonsynonymous SNV', variant_type='intronic')
+        annovar_b = self._create_variant('2', 2, 'A', 'T', 'bbb.1', gene='gene_b', variant_effect='nonsynonymous SNV', variant_type='intronic')
 
-        hgvs_b = self._create_variant('1', 1, 'A', 'T', 'bbb.1', c_dot='c.1A>T', p_dot_one='p.L1P', p_dot_three='p.Leu1Pro', protein_transcript='NP_001')
+        hgvs_b = self._create_variant('2', 2, 'A', 'T', 'bbb.1', c_dot='c.1A>T', p_dot_one='p.L1P', p_dot_three='p.Leu1Pro', protein_transcript='NP_001')
         hgvs_c = self._create_variant('3', 3, 'A', 'T', 'ccc.1', c_dot='c.3A>T', p_dot_one='p.L3P', p_dot_three='p.Leu3Pro', protein_transcript='NP_003')
 
         merged_transcripts = tx_eff_hgvs._merge_annovar_with_hgvs([annovar_a, annovar_b], [hgvs_b,hgvs_c], True)

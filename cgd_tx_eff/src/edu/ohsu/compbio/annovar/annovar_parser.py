@@ -126,9 +126,17 @@ class AnnovarParser(object):
             full_p = ':'.join([refseq_transcript, hgvs_p])
             
             # jDebug: modify these two lines so that you only call hgvs_parser.parse(full_p) once.
-            hgvs_three = 'p.' + str(self.hgvs_parser.parse(full_p).posedit)
+            if full_p == 'NM_001289397.2:p.223_223del':
+                logger.error("Found it")
             
-            amino_acid_position = self.hgvs_parser.parse(full_p).posedit.pos.start.pos
+            try:    
+                hgvs_three = 'p.' + str(self.hgvs_parser.parse(full_p).posedit)
+                amino_acid_position = self.hgvs_parser.parse(full_p).posedit.pos.start.pos
+            except hgvs.exceptions.HGVSParseError as e:
+                logger.warning(f"Unable to parse {full_p}: {e}")
+                hgvs_three = None
+                amino_acid_position = None
+            
 
         return amino_acid_position, hgvs_basep, exon, hgnc_gene, hgvs_c_dot, hgvs_p, hgvs_three, refseq_transcript
 
@@ -174,10 +182,12 @@ class AnnovarParser(object):
         ''' 
         annovar_recs = list()
         
-        chrom = str(annovar_row[3]).replace('chr','')
-        pos = annovar_row[4]
-        ref = annovar_row[6]
-        alt = annovar_row[7]
+        # genotype fields are in positions 3,4,6,7 and 8,9,11,12 and we want the second group because the first group
+        # may have been altered by the convert2annovar.pl script.   
+        chrom = str(annovar_row[8]).replace('chr','')
+        pos = annovar_row[9]
+        ref = annovar_row[11]
+        alt = annovar_row[12]
         
         logger.debug(f"Parsing variant {chrom}-{pos}-{ref}-{alt}")
         
@@ -220,10 +230,12 @@ class AnnovarParser(object):
         '''  
         annovar_recs = list()
         
-        chrom = str(annovar_row[2]).replace('chr','')
-        pos = annovar_row[3]
-        ref = annovar_row[5]
-        alt = annovar_row[6]
+        # genotype fields are in positions 2,3,5,6 and 7,8,10,11 and we want the second group because the first group
+        # may have been altered by the convert2annovar.pl script.
+        chrom = str(annovar_row[7]).replace('chr','')
+        pos = annovar_row[8]
+        ref = annovar_row[10]
+        alt = annovar_row[11]
         
         logger.debug(f"Parsing variant {chrom}-{pos}-{ref}-{alt}")
         
@@ -275,13 +287,13 @@ class AnnovarParser(object):
             reader = csv.reader(annovar_file, delimiter = delimiter)
             for row in reader:
                 if annovar_file_type == AnnovarFileType.ExonicVariantFunction:
-                    assert len(row) == 11
+                    assert len(row) == 19, "Exonic variant function file must have 19 columns. Make sure you run annovar with the parameter to include other information from the original VCF"
                     assert row[0].startswith('line')
 
                     # Parse a row in an exonic_variant_function file
                     annovar_recs.extend(self._parse_exonic_variant_function_row(row))
                 elif annovar_file_type == AnnovarFileType.VariantFunction:
-                    assert len(row) == 10
+                    assert len(row) == 18, "Variant function file must have 18 columns. Make sure you run annovar with the parameter to include other information from the original VCF"
                     
                     # Parse a row in a variant_function file
                     annovar_recs.extend(self._parse_variant_function_row(row))
