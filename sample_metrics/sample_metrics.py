@@ -5,6 +5,7 @@
 # VERSION HISTORY
 # 0.7.0 - Now calculate percentOnTarget from FastQC tatal sequences and collectalignmentmetrics on sorted bwa bam
 # 0.8.0 - Pass forced calls above and below background metric
+# 0.8.3 - Add entry for json metric bio_sex_check
 
 import argparse
 import json
@@ -13,7 +14,7 @@ from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, 
 from inputs import FastQcRead
 from inputs import VcfRead
 
-VERSION = '0.8.2'
+VERSION = '0.8.3'
 
 def supply_args():
     """
@@ -502,7 +503,8 @@ class MetricPrep(SampleMetrics):
                 'total_on_target_transcripts': self.on_primer_frag_count,
                 'total_on_target_transcripts_pct': self.on_primer_frag_count_pct,
                 'forced_calls_above': self.raw_mets.fc_above_count,
-                'forced_calls_below': self.raw_mets.fc_below_count
+                'forced_calls_below': self.raw_mets.fc_below_count,
+                'bio_sex_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='bio_sex_check')
                 }
 
         return mets
@@ -567,8 +569,7 @@ class MetricPrep(SampleMetrics):
                 'QIAseq_V3_HEME2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                     'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'QIAseq_V4_MINI': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi',
-                                   'forced_calls_above', 'forced_calls_below'],
+                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'QIAseq_V3_STP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                    'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'TruSeq_RNA_Exome_V1-2': ['qthirty'],
@@ -592,7 +593,7 @@ class MetricPrep(SampleMetrics):
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
                                   'gc_pct_r1', 'gc_pct_r2', 'gender_check', 'homozygosity_flag'],
                 'QIAseq_V3_HEME2': [],
-                'QIAseq_V4_MINI': [],
+                'QIAseq_V4_MINI': ['forced_calls_above', 'forced_calls_below', 'bio_sex_check'],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
                                           'gatk_pct_correct_strand_reads'],
