@@ -1,11 +1,11 @@
-<tool id="mrd_dedup" name="MRD Deduplicate" version="0.2.0" >
+<tool id="mrd_dedup" name="MRD Deduplicate" version="0.3.0" >
     <description>Deduplicate entries within a forced MRD VCF, and make sure duplicate variants haven't been called elsewhere in the workflow.</description>
 
     <version_command></version_command>
 
     <command><![CDATA[
     python $__tool_directory__/mrd_dedup.py
-    "${infile}" "${outfile}"
+    "${infile}" "${outfile}" "${outfile_rm}"
 
     #for $i, $this_in in enumerate( $input_repeat ):
     "${this_in.compare_vcf}"
@@ -22,12 +22,9 @@
 
     <outputs>
         <data format="vcf" name="outfile" label="${tool.name} on ${on_string}" />
+        <data format="vcf" name="outfile_rm" label="${tool.name} on ${on_string}: Removed" />
     </outputs>
 
-    <tests></tests>
-
     <help>Deduplicate entries within a forced MRD VCF, and make sure duplicate variants haven't been called elsewhere in the workflow.</help>
-
-    <citations></citations>
 
 </tool>
