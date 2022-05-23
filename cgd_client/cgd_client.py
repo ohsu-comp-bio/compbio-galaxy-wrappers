@@ -22,7 +22,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.9.2'
+VERSION = '1.2.9.4'
 
 
 def supply_args():
@@ -41,6 +41,7 @@ def supply_args():
     parser.add_argument("--cgd_url", help='CGD URL to send data to.')
     parser.add_argument("--runid", help='Run ID associated with import.')
     parser.add_argument("--barcodeid", help='Barcode ID associated with import')
+    parser.add_argument("--sampleid", help='Sample ID associated with import')
     parser.add_argument("--qcversion", help='Attached QC version, only useful for SeattleSeq.')
     parser.add_argument("--cnvcalls", help='CNV calls to be sent.')
     parser.add_argument("--cnvpdf", help='CNV PDF to be sent.')
@@ -86,7 +87,7 @@ def split_url(url, n):
     return url.split('/')[-n:]
 
 
-def run_cmd(cmd):
+def run_cmd(cmd, rdm):
     """
     Run the command via subprocess.
     """
@@ -98,7 +99,10 @@ def run_cmd(cmd):
         pass
     elif 'errors' in json.loads(stdout):
         if json.loads(stdout)['errors']:
-            raise Exception(json.loads(stdout)['errors'])
+            if json.loads(stdout)['errors'][0] == 'Could not find patient to provide previously reported variants' and rdm:
+                return stdout
+            else:
+                raise Exception(json.loads(stdout)['errors'])
     elif 'message' in json.loads(stdout):
         if json.loads(stdout)['message'] == 'error_patient_not_found':
             return None
@@ -177,7 +181,7 @@ def prepare_reported(outfile, regions, stdout, inc_chr=False):
     """
     empty = '.'
     for entry in json.loads(stdout):
-        if json.loads(stdout):
+        if json.loads(stdout) and entry != 'message' and entry != 'errors':
             if inc_chr:
                 chrom = entry['chromosome']
             else:
@@ -203,6 +207,19 @@ def prepare_reported(outfile, regions, stdout, inc_chr=False):
             regions.write('\t'.join(['1', '1', '2']))
             regions.write('\n')
 
+    if 'errors' in json.loads(stdout):
+        if json.loads(stdout)['errors'][0] == 'Could not find patient to provide previously reported variants':
+            if inc_chr:
+                outfile.write('\t'.join(['chr1', '3', empty, 'T', 'C', empty, empty, empty]))
+                outfile.write('\n')
+                regions.write('\t'.join(['chr1', '1', '2']))
+                regions.write('\n')
+            else:
+                outfile.write('\t'.join(['1', '3', empty, 'T', 'C', empty, empty, empty]))
+                outfile.write('\n')
+                regions.write('\t'.join(['1', '1', '2']))
+                regions.write('\n')
+
     outfile.close()
     regions.close()
 
@@ -217,6 +234,15 @@ def check_conn(url, timeout=3):
         return True
     except (requests.ConnectionError, requests.Timeout) as exception:
         raise ConnectionError(exception)
+
+
+def check_sample(samp):
+    """
+    Check to see if the sample is prefixed with RDM.
+    :param samp:
+    :return:
+    """
+    return samp.startswith('RDM-')
 
 
 def main():
@@ -236,6 +262,11 @@ def main():
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
+    # If the sample_id is passed, check to see if it starts with RDM.
+    rdm = False
+    if args.sampleid:
+        rdm = check_sample(args.sampleid)
+
     if args.endpoint == 'snpProfile':
         json_to_send = SnpProfile(args.pipeline_out).geno_items
         with open(args.json_out, 'w') as to_cgd:
@@ -247,7 +278,7 @@ def main():
     logger.info("Running the following command:")
     logger.info('\t'.join(cmd))
     if check_conn(args.servicebase):
-        stdout = run_cmd(cmd)
+        stdout = run_cmd(cmd, rdm)
 
     # Write CGD return json to log.
     logger.info("From CGD:")
