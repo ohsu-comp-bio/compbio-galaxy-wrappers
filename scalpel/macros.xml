@@ -5,6 +5,8 @@
     <xml name="requirements">
         <requirements>
             <requirement type="package" version="@VERSION@">scalpel</requirement>
+            <requirement type="package" version="2.5.1">bamtools</requirement>
+            <requirement type="package" version="1.0.2u">openssl</requirement>
         </requirements>
     </xml>
 
