@@ -1,8 +1,8 @@
 #!/bin/bash
 
-VERSION='1.1.1'
+VERSION='2.0.0'
 
-gatk CollectReadCounts -I $2 -L Y -O output.tsv -imr OVERLAPPING_ONLY -format TSV
+gatk CollectReadCounts -I $1 -L Y -O output.tsv -imr OVERLAPPING_ONLY -format TSV
 
 COUNT=$(
 python << END
@@ -16,27 +16,16 @@ with open("output.tsv", "r") as count_file:
             print(count)
 END
 )
-echo $COUNT
-echo $COUNT > "output.txt"
+echo $COUNT > "log.txt"
 
-if [ $COUNT -lt $3 ]; then
+if [ $COUNT -lt $2 ]; then
+    echo "{\"bio_sex_check\": 0}" > "output.txt";
     GENDER="FEMALE"
-elif [ $COUNT -gt $4 ]; then
+elif [ $COUNT -gt $3 ]; then
+    echo "{\"bio_sex_check\": 1}" > "output.txt";
     GENDER="MALE"
 else
+    echo "{\"bio_sex_check\": 999}" > "output.txt";
     GENDER="UNSPECIFIED"
 fi
-echo $GENDER
-echo $GENDER >> "output.txt"
-
-if [ $GENDER = $1 ]; then
-    echo "Gender matches Sample sheet"
-else
-    if [ -z ${5} ]; then
-        echo "Gender does not match Samplesheet"
-    else
-        cat output.txt | mailx -s "$(hostname) Gender Check Tool Error" "${5}"
-    fi
-    echo "Gender does not match Samplesheet" >&2
-    exit 1
-fi
+echo $GENDER >> "log.txt"

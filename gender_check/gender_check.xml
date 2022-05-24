@@ -1,5 +1,5 @@
-<tool id='gender_check' name="Gender Check" version='1.1.1'>
-    <description>Check the gender of a sample against the gender given in the samplesheet.</description>
+<tool id='gender_check' name="Gender Check" version='2.0.0'>
+    <description>Predict biological sex based on existence of Y chromosome marker counts.</description>
     <requirements>
         <requirement type="package" version="4.0.5.1">gatk4</requirement>
         <requirement type="package" version="1.9">samtools</requirement>
@@ -7,24 +7,17 @@
     <command detect_errors="exit_code"><![CDATA[
         ln -s $input input.bam &&
         samtools index input.bam &&
-        $__tool_directory__/gender_check.sh $gender input.bam $fem_max $male_min "$admin_email"
-]]>
+        bash $__tool_directory__/gender_check.sh input.bam $fem_max $male_min
+    ]]>
     </command>
     <inputs>
         <param type="data" name="input" label="BAM Input File" format="bam"/>
-        <param type="select" name="gender" label="Gender">
-            <option value="FEMALE">FEMALE</option>
-            <option value="MALE">MALE</option>
-            <option value="UNSPECIFIED" selected="True">UNSPECIFIED</option>
-        </param> 
         <param type="integer" name="fem_max" label="Female Max Counts" value="40000"/>
         <param type="integer" name="male_min" label="Male Minimum Counts" value="80000"/>
-        <param type="text" name="admin_email" label="Admin Email" help="Send failure reports to this email address.">
-            <sanitizer sanitize='False' />
-        </param>
     </inputs>
     <outputs>
-        <data format="txt" name="output" label="Dummy Gender Check Output" from_work_dir="output.txt"/>
+        <data format="txt" name="output" label="Biological Sex Metric: JSON" from_work_dir="output.txt"/>
+        <data format="txt" name="output_log" label="Biological Sex Metric: Log" from_work_dir="log.txt"/>
     </outputs>
 
 </tool>
