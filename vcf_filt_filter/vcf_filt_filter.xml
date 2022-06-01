@@ -1,4 +1,4 @@
-<tool id="vcf_filt_filter" name="VCF FILTER Filter" version="0.0.2" >
+<tool id="vcf_filt_filter" name="VCF FILTER Filter" version="0.0.3" >
     <description>Perform basic filtering based on annotations in the VCF FILTER column.</description>
 
     <requirements>
@@ -22,6 +22,9 @@
     #if $only_sing
       --only_sing '${only_sing}'
     #end if
+    #if $filt_rm
+      --filt_rm '${filt_rm}'
+    #end if
     ]]></command>
 
     <inputs>
@@ -30,6 +33,7 @@
         <param name="sing_rm" type="text" label="Removed variants with only one of these annotations" help="Separate these labels by spaces." />
         <param name="sing_vaf" type="float" optional="true" value="0.1" min="0" max="1.0" label="VAF threshold to allow FILTER filtering" />
         <param name="only_sing" type="text" optional="true" label="These annotations must be listed by themselves to be in the VCF" help="Separate these labels by spaces." />
+        <param name="filt_rm" type="text" optional="true" label="Records will be removed if they contain this FILTER annotation" help="Separate these labels by spaces." />
     </inputs>
 
     <outputs>
