@@ -24,20 +24,11 @@ class Variant(object):
     
     def __eq__(self, other):
         
-        # if self.reference == '-':
-        #     ref = '.'
-        # else:
-        #     ref = self.reference    
-            
         return self.chromosome == other.chromosome  and \
             self.position == other.position and         \
             self.reference == other.reference and                  \
             self.alt == other.alt
     
     def __hash__(self):
-        # if self.reference == '-':
-        #     ref = '.'
-        # else:
-        #     ref = self.reference    
   
         return hash((self.chromosome, self.position, self.reference, self.alt))

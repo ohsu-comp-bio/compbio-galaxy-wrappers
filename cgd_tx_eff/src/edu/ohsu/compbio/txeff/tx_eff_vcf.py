@@ -8,6 +8,7 @@ Update a VCF with the variant-transcript details.
 import argparse
 import csv
 from collections import defaultdict
+from enum import Enum, auto
 import logging
 import vcfpy
 from edu.ohsu.compbio.txeff.variant import Variant
@@ -26,6 +27,23 @@ logger.addHandler(stream_handler)
 
 VERSION = '0.0.1'
 
+class TranscriptEffect(Enum):
+    '''
+    The transcript effects that are added to VCF file
+    ''' 
+    TFX_GENE = 'TFX_GENE'
+    TFX_TRANSCRIPT = 'TFX_TRANSCRIPT'
+    TFX_HGVSC = 'TFX_HGVSC'
+    TFX_HGVSP1 = 'TFX_HGVSP1'
+    TFX_HGVSP3 = 'TFX_HGVSP3'
+    TFX_SPLICE = 'TFX_SPLICE'
+    TFX_VARIANT_EFFECT = 'TFX_VARIANT_EFFECT'
+    TFX_VARIANT_TYPE = 'TFX_VARIANT_TYPE'
+    TFX_BASE_POSITION = 'TFX_BASE_POSITION'
+    TFX_PROTEIN_TRANSCRIPT = 'TFX_PROTEIN_TRANSCRIPT'
+    TFX_EXON = 'TFX_EXON'
+    TFX_AMINO_ACID_POSITION = 'TFX_AMINO_ACID_POSITION'
+     
 def _parse_args():
     '''
     Validate and return command line arguments.
@@ -68,13 +86,14 @@ def _read_vcf(vcf_filename: str):
             raise Exception(f'VCF variants must have just one ALT allel: {vcf_record.CHROM}-{vcf_record.POS}-{vcf_record.REF}-{vcf_record.ALT}')
         
         variant = Variant(vcf_record.CHROM, vcf_record.POS, vcf_record.REF, vcf_record.ALT[0].value)
-        
+
         if variant_dict.get(variant):
             raise Exception(f"Duplicate variant in {vcf_filename}: {variant}")
         else:
             variant_dict[variant] = vcf_record
         
     vcf_reader.close()
+    
     return variant_dict, vcf_reader.header
 
 
@@ -86,18 +105,31 @@ def _noneIfEmpty(value: str):
         return None
     return value
 
-
-def _read_hgvs_transcripts(csv_file_name):
+def _get_transcripts_dict(transcripts: list):
     '''
-    Read the transcripts that have been written to a CSV file by the ``tx_eff_hgvs.py`` script, and return a dictionary where 
-    the key is a variant and the value is a list of transcripts 
-    '''
+    Return a dictionary where the key is a variant and the value is a list of transcripts 
+    ''' 
     transcript_dict = defaultdict(list)
+    
+    for transcript in transcripts:        
+        variant = Variant(transcript.chromosome, transcript.position, transcript.reference, transcript.alt)
+        transcript_dict[variant].append(transcript)
+        logger.debug(f"{variant} has {len(transcript_dict[variant])} transcripts")
+
+    return transcript_dict
+
+
+def _read_hgvs_transcripts_from_file(csv_file_name):
+    '''
+    Read the transcripts that have been written to a CSV file by the ``tx_eff_hgvs.py`` script, 
+    '''
+    transcripts = list()
     
     with open(csv_file_name) as csv_file:
         reader = csv.DictReader(csv_file)
         for row in reader:
             transcript = VariantTranscript(row['chromosome'], row['position'], row['reference'], row['alt'])
+            transcript.hgvs_amino_acid_position = row['hgvs_amino_acid_position']
             transcript.variant_effect = row['variant_effect']
             transcript.variant_type = row['variant_type']
             transcript.hgvs_amino_acid_position = _noneIfEmpty(row['hgvs_amino_acid_position'])
@@ -111,14 +143,15 @@ def _read_hgvs_transcripts(csv_file_name):
             transcript.refseq_transcript = row['refseq_transcript']
             transcript.protein_transcript = row['protein_transcript']
             
-            variant = Variant(row['chromosome'], row['position'], row['reference'], row['alt'])
-            
-            transcript_dict[variant].append(transcript)
-            
-            logger.debug(f"{variant} has {len(transcript_dict[variant])} transcripts")
-    
-    return transcript_dict
-    
+            transcripts.append(transcript)
+   
+    return transcripts
+
+def _replaceNoneWithEmpty(x):
+    '''
+    Return the empty string if x is None, otherwise return x
+    '''
+    return "" if x is None else str(x)
 
 def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
     '''
@@ -126,15 +159,14 @@ def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
     '''
     vcf_records = list()
         
-    for (variant, transcripts) in transcript_dict.items():
-        vcf_record = vcf_variant_dict.get(variant)
+    for (variant, vcf_record) in vcf_variant_dict.items():
+        transcripts = transcript_dict.get(variant)
         
-        if not vcf_record:
-            # raise Exception(f"VCF does not have {variant}")
-            # jDebug: It is possible that annovar will change the genotype from what is in the VCF. I'll need to figure out how to deal with that.  Later... 
-            logger.error(f"jDebug: Unable to find variant in VCF: {variant}")
+        if not transcripts:
+            logger.warning(f"No transcripts found for VCF variant {variant}")
+            vcf_records.append(vcf_record)
             continue
-        
+            
         tfx_base_positions = list()
         tfx_exons = list()
         tfx_genes = list()
@@ -146,6 +178,7 @@ def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
         tfx_variant_effects = list()
         tfx_variant_types = list()
         tfx_protein_transcripts = list()
+        tfx_amino_acid_positions = list()
         
         for transcript in transcripts:
             tfx_base_positions.append(transcript.hgvs_base_position)
@@ -159,21 +192,22 @@ def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
             tfx_variant_effects.append(transcript.variant_effect)
             tfx_variant_types.append(transcript.variant_type)
             tfx_protein_transcripts.append(transcript.protein_transcript)
+            tfx_amino_acid_positions.append(transcript.hgvs_amino_acid_position)
             
-        vcf_record.INFO['TFX_BASEP'] = [':'.join([str(x) for x in tfx_base_positions])]
-        vcf_record.INFO['TFX_EXON'] = [':'.join([str(x) for x in tfx_exons])]
-        vcf_record.INFO['TFX_HGNC'] = [':'.join([str(x) for x in tfx_genes])]
-        vcf_record.INFO['TFX_HGVSC'] = [':'.join([str(x) for x in tfx_c_dots])]
-        vcf_record.INFO['TFX_HGVSP1'] = [':'.join([str(x) for x in tfx_p1])]
-        vcf_record.INFO['TFX_HGVSP3'] = [':'.join([str(x) for x in tfx_p3])]
-        vcf_record.INFO['TFX_SPLICE'] = [':'.join([str(x) for x in tfx_splice])]
+        vcf_record.INFO[TranscriptEffect.TFX_BASE_POSITION.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_base_positions])]
+        vcf_record.INFO[TranscriptEffect.TFX_EXON.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_exons])]
+        vcf_record.INFO[TranscriptEffect.TFX_GENE.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_genes])]        
+        vcf_record.INFO[TranscriptEffect.TFX_HGVSC.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_c_dots])]
+        vcf_record.INFO[TranscriptEffect.TFX_HGVSP1.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_p1])]
+        vcf_record.INFO[TranscriptEffect.TFX_HGVSP3.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_p3])]
+        vcf_record.INFO[TranscriptEffect.TFX_SPLICE.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_splice])]
+        vcf_record.INFO[TranscriptEffect.TFX_AMINO_ACID_POSITION.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_amino_acid_positions])]
+        vcf_record.INFO[TranscriptEffect.TFX_TRANSCRIPT.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_refseq_transcripts])]        
+        vcf_record.INFO[TranscriptEffect.TFX_VARIANT_TYPE.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_variant_types])]        
+        vcf_record.INFO[TranscriptEffect.TFX_PROTEIN_TRANSCRIPT.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_protein_transcripts])]
         
-        # jDebug: Rename these three
-        vcf_record.INFO['TFX_TXC'] = [':'.join([str(x) for x in tfx_refseq_transcripts])]
-        vcf_record.INFO['TFX_VFX'] = [':'.join([str(x) for x in tfx_variant_effects])]
-        vcf_record.INFO['TFX_PVT'] = [':'.join([str(x) for x in tfx_variant_types])]
-        
-        vcf_record.INFO['TFX_PROTEIN_TRANSCRIPT'] = [':'.join([str(x) for x in tfx_protein_transcripts])]
+        # Replace spaces with underscore because spaces are not allowed in the INFO field.
+        vcf_record.INFO[TranscriptEffect.TFX_VARIANT_EFFECT.value] = [':'.join([_replaceNoneWithEmpty(x).replace(' ', '_') for x in tfx_variant_effects])]
         
         vcf_records.append(vcf_record)
     
@@ -196,55 +230,77 @@ def _update_header(header):
     '''
     Add the new transcript effect fields to the VCF header 
     '''
-    header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_BASEP'),
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_BASE_POSITION.value),
                                             ('Number', '.'),
                                             ('Type', 'String'),
                                             ('Description', 'Coding sequence start position.')]))
-    header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_EXON'),
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_EXON.value),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
-                                                            ('Description', 'Exon number associated with given '
-                                                                            'transcript.')]))
-    header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_HGNC'),
+                                                            ('Description', 'Exon number associated with given transcript.')]))
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_GENE.value),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
                                                             ('Description', 'HGNC gene symbol.')]))
-    header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_HGVSC'),
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_HGVSC.value),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
                                                             ('Description', 'HGVS cdot nomenclature.')]))
-    header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_HGVSP1'),
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_HGVSP1.value),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
                                                             ('Description', 'HGVS pdot nomenclature, single letter amino acids.')]))
-    header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_HGVSP3'),
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_HGVSP3.value),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
                                                             ('Description', 'HGVS pdot nomenclature, three letter amino acids.')]))
-    header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_SOURCE'),
-                                                            ('Number', '.'),
-                                                            ('Type', 'String'),
-                                                            ('Description', 'Annotation source.')]))
-    header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_SPLICE'),
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_SPLICE.value),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
                                                             ('Description', 'Splice site annotation.')]))
-    header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_TXC'),
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_TRANSCRIPT.value),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
                                                             ('Description', 'Transcript identifier.')]))
-    header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_VFX'),
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_VARIANT_EFFECT.value),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
                                                             ('Description', 'Variant effect annotation.')]))
-    header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_PVT'),
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_VARIANT_TYPE.value),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
                                                             ('Description', 'Variant type or location annotation.')]))
-    header.add_info_line(vcfpy.OrderedDict([('ID', 'TFX_PROTEIN_TRANSCRIPT'),
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_PROTEIN_TRANSCRIPT.value),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
                                                             ('Description', 'Protein transcript.')]))
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_AMINO_ACID_POSITION.value),
+                                                            ('Number', '.'),
+                                                            ('Type', 'String'),
+                                                            ('Description', 'Amino acid start position.')]))
+
+def create_vcf_with_transcript_effects(in_vcf_filename: str, out_vcf_filename: str, transcripts: list):
+    '''
+    Read VCF variants from file, add transcript effects to the INFO fields and write out a new VCF. 
+    '''
+
+    # Transform the transcript list into a dictionary 
+    transcript_dict = _get_transcripts_dict(transcripts)
+    logger.info(f'There are {len(transcript_dict)} distinct variants among {len(transcripts)} transcripts')
+    
+    # Read all variant rows from the VCF
+    vcf_variant_dict, vcf_header = _read_vcf(in_vcf_filename)
+    logger.info(f'Read {len(vcf_variant_dict)} distinct variants from {in_vcf_filename}')
+    
+    # Combine VCF variants with transcript effects      
+    vcf_transcript_records = _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict)
+    assert len(vcf_transcript_records) == len(vcf_variant_dict), f"The number of variants updated with transcript effects is not the same as the number of variants in the VCF: {len(vcf_transcript_records)} != {len(vcf_variant_dict)}"
+    
+    # Add new INFO fields to VCF header
+    _update_header(vcf_header)
+    
+    logger.info(f"Writing {len(vcf_transcript_records)} variants with transcript effects to VCF file {out_vcf_filename}")
+    _write_vcf(out_vcf_filename, vcf_header, vcf_transcript_records)
 
 
 def _main():
@@ -253,21 +309,12 @@ def _main():
     '''
     args = _parse_args()
     
-    vcf_variant_dict, vcf_header = _read_vcf(args.in_vcf.name)
+    logger.info(f"Reading transcripts from {args.in_csv.name}")
+    transcripts = _read_hgvs_transcripts_from_file(args.in_csv.name)
     
-    logger.info(f'Read {len(vcf_variant_dict)} variants from {args.in_vcf.name}')
-    
-    transcript_dict = _read_hgvs_transcripts(args.in_csv.name)
-    
-    logger.info(f'Read {len(transcript_dict)} distinct variants from {args.in_csv.name}')
-    
-    vcf_transcript_records = _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict)
-    
-    # Add new INFO fields to VCF header
-    _update_header(vcf_header) 
-    
-    logger.info(f"Writing VCF file {args.out_vcf.name}")
-    _write_vcf(args.out_vcf.name, vcf_header, vcf_transcript_records)
+    # Combine transcript effects with VCF variants and write to file 
+    create_vcf_with_transcript_effects(args.in_vcf.name, args.out_vcf.name, transcripts)
+
 
 if __name__ == '__main__':
     _main()

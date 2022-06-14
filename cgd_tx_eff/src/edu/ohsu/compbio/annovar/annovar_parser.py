@@ -118,20 +118,18 @@ class AnnovarParser(object):
             hgvs_c_dot = transcript_parts[3]
             full_c = ':'.join([refseq_transcript, hgvs_c_dot])
             
-            # jDebug: this may thrown an exception of type hgvs.exceptions.HGVSParseError
+            # This may thrown an exception of type hgvs.exceptions.HGVSParseError but we don't catch it because 
+            # it isn't possible to recover. 
             hgvs_basep = self.hgvs_parser.parse(full_c).posedit.pos.start
             
             # p. single amino acid
             hgvs_p = transcript_parts[4]
             full_p = ':'.join([refseq_transcript, hgvs_p])
             
-            # jDebug: modify these two lines so that you only call hgvs_parser.parse(full_p) once.
-            if full_p == 'NM_001289397.2:p.223_223del':
-                logger.error("Found it")
-            
-            try:    
-                hgvs_three = 'p.' + str(self.hgvs_parser.parse(full_p).posedit)
-                amino_acid_position = self.hgvs_parser.parse(full_p).posedit.pos.start.pos
+            try:
+                parsed_p_dot = self.hgvs_parser.parse(full_p)
+                hgvs_three = 'p.' + str(parsed_p_dot.posedit)
+                amino_acid_position = parsed_p_dot.posedit.pos.start.pos                
             except hgvs.exceptions.HGVSParseError as e:
                 logger.warning(f"Unable to parse {full_p}: {e}")
                 hgvs_three = None
@@ -149,7 +147,7 @@ class AnnovarParser(object):
 
         # There are three different types of information that may be in annovar_row[1]. The types are determined by the number of ':' separated values. 
         tuple_type = len(delimited_transcript.split(':'))
-        # jDebug: you should create unit tests for all three types
+        
         if tuple_type == 1:
             # Don't use transcripts that are labeled with "dist=nnn" 
             if "(dist=" in delimited_transcript:
@@ -157,7 +155,7 @@ class AnnovarParser(object):
             else:
                 refseq_transcript = delimited_transcript
         elif tuple_type == 2:
-            # Looks like "str: NM_000791.4(NM_000791.4:c.-417_-416insGCGCTGCGG)"
+            # Looks like "NM_000791.4(NM_000791.4:c.-417_-416insGCGCTGCGG)"
             refseq_transcript = delimited_transcript.split('(')[0]
             hgvs_c_dot = delimited_transcript.split(':')[1].rstrip(')')
         elif tuple_type == 3:
@@ -325,8 +323,9 @@ class AnnovarParser(object):
                 # Splicing variants don't get merged 
                 pass
             elif len(matching_genotypes) > 2:
-                # jDebug: Our current workflow only involves two annovar input files so there will only be a maximum of two matching transcripts; this exception ensures
-                # that is the case. Once we are through development and testing, this condition can be removed.  
+                # Our current workflow only involves two annovar input files so there will only be a maximum of two matching transcripts; this exception ensures
+                # that is the case. Once we are through development and testing, this condition can be removed.
+                  
                 # This function can only merge two records. If you need to merge more than two than two then the code needs to be updated.                  
                 raise Exception(f"This transcript has more than 2 instances, which is not supported; see code comment. rec={left_rec}")
             elif len(matching_genotypes) == 2:

@@ -79,28 +79,37 @@ def _write_csv(file_name, annovar_records: list):
                                 rec.splicing, rec.refseq_transcript])
 
 
-def _main():
+def get_annovar_records(annovar_file_names: list):
     '''
-    main function
+    Parse Annovar records from the list files 
     '''
-    args = _parse_args()
-
     annovar_records = list()
     annovarParser = annovar_parser.AnnovarParser()
 
-    for file_name in args.annovar_file:
-        file_transcripts = annovarParser.parse_file(file_name.name)
-        logger.debug(f'Read {len(file_transcripts)} transcripts from {file_name.name}')    
+    for file_name in annovar_file_names:
+        file_transcripts = annovarParser.parse_file(file_name)
+        logger.debug(f'Read {len(file_transcripts)} transcripts from {file_name}')    
         annovar_records.extend(file_transcripts)
 
     disinct_variant_count = len({f'{x.chromosome}-{x.position}-{x.reference}-{x.alt}' for x in annovar_records})
-    logger.debug(f'Read {disinct_variant_count} distinct variants and {len(annovar_records)} transcripts from {len(args.annovar_file)} files')
+    logger.debug(f'Read {disinct_variant_count} distinct variants and {len(annovar_records)} transcripts from {len(annovar_file_names)} files')
 
     # Merge like transcripts into a single annovar record 
     initial_size = len(annovar_records)
     annovar_records = annovarParser.merge(annovar_records)
 
     logger.info(f"Merged {initial_size} transcripts down to {len(annovar_records)}")
+    return annovar_records
+
+        
+def _main():
+    '''
+    main function
+    '''
+    args = _parse_args()
+
+    annovar_file_names = [x.name for x in args.annovar_file]
+    annovar_records = get_annovar_records(annovar_file_names)
 
     logger.info(f"Writing {args.out_file.name}")
     _write_csv(args.out_file.name, annovar_records)
