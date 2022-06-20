@@ -44,6 +44,10 @@ def _parse_args():
                     help='One or more variant_function and exonic_variant_function Annovar files.',
                     type=argparse.FileType('r'))
 
+    parser.add_argument('-r', '--require_match',
+                        help='Only add transcript effects to variants that are found by both Annovar and HGVS/UTA.',
+                        action='store_true')
+
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     
     args = parser.parse_args()
@@ -66,7 +70,7 @@ def _main():
     
     # Use tx_eff_hgvs to fix the nomenclature
     tx_eff_hgvs.identify_hgvs_datasources() 
-    merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcritpts(annovar_records, require_match = True)
+    merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcritpts(annovar_records, require_match = args.require_match)
     
     # Use tx_eff_vcf to write the transcript effects to a VCF
     tx_eff_vcf.create_vcf_with_transcript_effects(args.in_vcf.name, args.out_vcf.name, merged_transcripts)

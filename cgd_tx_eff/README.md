@@ -2,7 +2,7 @@
 
 The python modules in this directory are used to gather transcript information with proper HGVS nomenclature for import into CGD. 
 
-The four main modules are ``tx_eff_control.py``, ``tx_eff_annovar.py``, ``tx_eff_hgvs.py``, and ``tx_eff_vcf.py``. Each module has has a main function and is able to take command line parameters indicating the file(s) to read from and write to. Unless you are debugging or developing this project then you should only run ``tx_eff_control.py``, and let it call the other modules. 
+The four main modules are ``tx_eff_control.py``, ``tx_eff_annovar.py``, ``tx_eff_hgvs.py``, and ``tx_eff_vcf.py``. Each module has a main function and is able to take command line parameters indicating the file(s) to read from and write to. Unless you are debugging or developing this project then you should only run ``tx_eff_control.py``, and let it call the other modules. 
 
 ## Configuration 
 

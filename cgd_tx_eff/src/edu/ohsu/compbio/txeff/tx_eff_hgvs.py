@@ -23,6 +23,7 @@ from edu.ohsu.compbio.txeff.variant import Variant
 
 # When we upgrade from python 3.8 to 3.9 this import needs to be changed to: from collections.abc import Iterable
 from typing import Iterable
+from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
 
 VERSION = '0.0.1'
 
@@ -133,7 +134,7 @@ def _lookup_hgvs_transcripts(variants: list):
         variant_transcripts = __lookup_hgvs_transcripts(hgvs_parser, hdp, am, variant)
         logger.info(f"HGVS found {len(variant_transcripts)} transcripts for {variant}")
         
-        # I expect that HGVS will find a transcript whenever Annovar did, but if that is not true then I want to know about it. 
+        # HGVS might not find any transcripts even though Annovar did 
         if len(variant_transcripts) == 0:
             logger.warning(f'HGVS could not find any transcripts for variant {variant} which has transcripts known to Annovar.')
         else:
@@ -222,16 +223,37 @@ def _get_unmatched_annovar_transcripts(annovar_dict: defaultdict(list), hgvs_dic
         # been processed. If HGVS does not have the key then the annovar transcript has not been looked at.
         if hgvs_dict.get(transcript_key) == None:
             logger.debug(f"Adding unmatched Annovar transcript(s) for {transcript_key}")
-            transcripts.extend(annovar_transcript_list)
+            
+            # Convert the AnnovarVariantFunction objects to VariantTranscript so all items in the list are of the same type. 
+            for annovar_transcript in annovar_transcript_list:
+                transcripts.append(to_variant_transcript(annovar_transcript))
     
     for (transcript_key, hgvs_transcript_list) in hgvs_dict.items():
         if annovar_dict.get(transcript_key) == None:
             logger.debug(f"Adding unmatched HGVS transcript(s) for {transcript_key}")
             transcripts.extend(hgvs_transcript_list)
-
+    
     return transcripts
 
-    
+def to_variant_transcript(annovar_transcript: AnnovarVariantFunction):
+        '''
+        Create a new VariantTranscript using the values from an object of parent type AnnovarVariantFunction
+        '''
+        variant_transcript = VariantTranscript(annovar_transcript.chromosome, annovar_transcript.position, annovar_transcript.reference, annovar_transcript.alt)
+        variant_transcript.protein_transcript = None
+        variant_transcript.variant_effect = annovar_transcript.variant_effect
+        variant_transcript.variant_type = annovar_transcript.variant_type
+        variant_transcript.hgvs_amino_acid_position = annovar_transcript.hgvs_amino_acid_position
+        variant_transcript.hgvs_base_position = annovar_transcript.hgvs_base_position
+        variant_transcript.exon = annovar_transcript.exon
+        variant_transcript.hgnc_gene = annovar_transcript.hgnc_gene
+        variant_transcript.hgvs_c_dot = annovar_transcript.hgvs_c_dot
+        variant_transcript.hgvs_p_dot_one = annovar_transcript.hgvs_p_dot_one
+        variant_transcript.hgvs_p_dot_three = annovar_transcript.hgvs_p_dot_three
+        variant_transcript.splicing = annovar_transcript.splicing
+        variant_transcript.refseq_transcript = annovar_transcript.refseq_transcript
+        return variant_transcript
+        
 def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list, require_match=False):
     '''
     Given a list of transcripts from Annovar and HGVS, find those with the same genotype and transcript, and merge them into a single record.

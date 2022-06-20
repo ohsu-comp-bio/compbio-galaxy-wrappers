@@ -193,7 +193,7 @@ def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
             tfx_variant_types.append(transcript.variant_type)
             tfx_protein_transcripts.append(transcript.protein_transcript)
             tfx_amino_acid_positions.append(transcript.hgvs_amino_acid_position)
-            
+
         vcf_record.INFO[TranscriptEffect.TFX_BASE_POSITION.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_base_positions])]
         vcf_record.INFO[TranscriptEffect.TFX_EXON.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_exons])]
         vcf_record.INFO[TranscriptEffect.TFX_GENE.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_genes])]        
