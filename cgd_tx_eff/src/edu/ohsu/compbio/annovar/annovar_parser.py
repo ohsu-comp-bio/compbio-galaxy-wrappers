@@ -122,19 +122,23 @@ class AnnovarParser(object):
             # it isn't possible to recover. 
             hgvs_basep = self.hgvs_parser.parse(full_c).posedit.pos.start
             
-            # p. single amino acid
-            hgvs_p = transcript_parts[4]
-            full_p = ':'.join([refseq_transcript, hgvs_p])
-            
-            try:
-                parsed_p_dot = self.hgvs_parser.parse(full_p)
-                hgvs_three = 'p.' + str(parsed_p_dot.posedit)
-                amino_acid_position = parsed_p_dot.posedit.pos.start.pos                
-            except hgvs.exceptions.HGVSParseError as e:
-                logger.warning(f"Unable to parse {full_p}: {e}")
-                hgvs_three = None
+            # p. single letter amino acid; not always present
+            if len(transcript_parts) == 5:
+                hgvs_p = transcript_parts[4]                 
+                full_p = ':'.join([refseq_transcript, hgvs_p])
+                try:
+                    parsed_p_dot = self.hgvs_parser.parse(full_p)
+                    hgvs_three = 'p.' + str(parsed_p_dot.posedit)
+                    amino_acid_position = parsed_p_dot.posedit.pos.start.pos                
+                except hgvs.exceptions.HGVSParseError as e:
+                    logger.warning(f"Unable to parse {full_p}: {e}")
+                    hgvs_three = None
+                    amino_acid_position = None                
+            else:
+                logger.warn(f"This transcript is missing the p. but that's ok, HGVS will probably fill it in: {transcript_parts}")
                 amino_acid_position = None
-            
+                hgvs_p = None
+                hgvs_three = None
 
         return amino_acid_position, hgvs_basep, exon, hgnc_gene, hgvs_c_dot, hgvs_p, hgvs_three, refseq_transcript
 
@@ -149,8 +153,9 @@ class AnnovarParser(object):
         tuple_type = len(delimited_transcript.split(':'))
         
         if tuple_type == 1:
-            # Don't use transcripts that are labeled with "dist=nnn" 
-            if "(dist=" in delimited_transcript:
+            # Don't use the intergenic transcripts that are labeled with "dist=nnn"
+            if delimited_transcript.find('(dist=') > 0:
+                logger.debug(f'Found intergenic transcript that will be thrown out: {delimited_transcript}')
                 refseq_transcript = None
             else:
                 refseq_transcript = delimited_transcript
@@ -163,9 +168,13 @@ class AnnovarParser(object):
             refseq_transcript = delimited_transcript.split('(')[0]
             exon = delimited_transcript.split(':')[1][4:]
             hgvs_c_dot = delimited_transcript.split(':')[2].rstrip(')')
+            
+            # Handle the special case of a UTR that doesn't actually have a c. (eg "NM_001324237.2(NM_001324237.2:exon2:UTR5)" or "...:r.spl)"
+            if hgvs_c_dot and hgvs_c_dot.endswith('UTR3') or hgvs_c_dot.endswith('UTR5') or hgvs_c_dot.endswith('r.spl'):
+                hgvs_c_dot = None
         else:
             raise Exception("Tuple format not recognized: " + str(delimited_transcript))
-        
+                
         if hgvs_c_dot:
             full_c = ':'.join([refseq_transcript, hgvs_c_dot])
             hgvs_basep = self.hgvs_parser.parse(full_c).posedit.pos.start
@@ -266,6 +275,10 @@ class AnnovarParser(object):
             avf.hgvs_c_dot,         \
             avf.refseq_transcript = self._unpack_vf_transcript_tuple(transcript_tuple)
             
+            if avf.refseq_transcript == None:
+                logger.debug("Ignoring transcript. Probably because it was intergenic and didn't have any useful tfx.")
+                continue
+
             logger.debug(f"Parsed variant_function record with transcript: {avf}")
             annovar_recs.append(avf)
         
@@ -285,13 +298,13 @@ class AnnovarParser(object):
             reader = csv.reader(annovar_file, delimiter = delimiter)
             for row in reader:
                 if annovar_file_type == AnnovarFileType.ExonicVariantFunction:
-                    assert len(row) == 19, "Exonic variant function file must have 19 columns. Make sure you run annovar with the parameter to include other information from the original VCF"
+                    assert len(row) == 19, f"Exonic variant function file must have 19 columns. Found {len(row)}. Make sure you run the annotate_variation.pl script with the '--otherinfo' parameter to include other information from the original VCF"
                     assert row[0].startswith('line')
 
                     # Parse a row in an exonic_variant_function file
                     annovar_recs.extend(self._parse_exonic_variant_function_row(row))
                 elif annovar_file_type == AnnovarFileType.VariantFunction:
-                    assert len(row) == 18, "Variant function file must have 18 columns. Make sure you run annovar with the parameter to include other information from the original VCF"
+                    assert len(row) == 18, f"Variant function file must have 18 columns. Found {len(row)}. Make sure you run the annotate_variation.pl with the '--otherinfo' parameter to include other information from the original VCF"
                     
                     # Parse a row in a variant_function file
                     annovar_recs.extend(self._parse_variant_function_row(row))
@@ -310,6 +323,9 @@ class AnnovarParser(object):
         
         key_maker = lambda x: "-".join([x.chromosome, str(x.position), x.reference, x.alt, x.refseq_transcript, (x.splicing or '')])
         for annovar_rec in annovar_records:
+            if annovar_rec.chromosome == None or annovar_rec.position == None or annovar_rec.reference == None or annovar_rec.alt == None or annovar_rec.refseq_transcript == None:
+                logger.error(f"There is going to be a problem with {annovar_rec}")
+                exit
             annovar_dict[key_maker(annovar_rec)].append(annovar_rec)
 
         # Merge the records that come from different files but refer to the same transcript.

@@ -18,14 +18,15 @@ import logging
 import os
 from hgvs.dataproviders.uta import UTABase
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
-from hgvs.exceptions import HGVSInvalidVariantError, HGVSUsageError
+from hgvs.exceptions import HGVSInvalidVariantError, HGVSUsageError, HGVSDataNotAvailableError
 from edu.ohsu.compbio.txeff.variant import Variant
 
-# When we upgrade from python 3.8 to 3.9 this import needs to be changed to: from collections.abc import Iterable
+# When we upgrade from python 3.8 to 3.9 this import needs to be changed to: "from collections.abc import Iterable"
 from typing import Iterable
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
 
 VERSION = '0.0.1'
+ASSEMBLY_VERSION = "GRCh37"
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -38,8 +39,9 @@ stream_handler.setFormatter(stream_format)
 stream_handler.setLevel(logging.DEBUG)
 logger.addHandler(stream_handler)
 
+# These will need to be updated when we switch from GRCh37 to GRCh38
 CHROM_MAP = {'1': 'NC_000001.10', '2': 'NC_000002.11', '3': 'NC_000003.11', '4': 'NC_000004.11', '5': 'NC_000005.9',
-             '6': 'NC_000006.11', '7': 'NC_000007.14', '8': 'NC_000008.10', '9': 'NC_000009.11', '10': 'NC_000010.10',
+             '6': 'NC_000006.11', '7': 'NC_000007.13', '8': 'NC_000008.10', '9': 'NC_000009.11', '10': 'NC_000010.10',
              '11': 'NC_000011.9', '12': 'NC_000012.11', '13': 'NC_000013.10', '14': 'NC_000014.8', '15': 'NC_000015.9',
              '16': 'NC_000016.9', '17': 'NC_000017.10', '18': 'NC_000018.9', '19': 'NC_000019.9', '20': 'NC_000020.10',
              '21': 'NC_000021.8', '22': 'NC_000022.10', 'X': 'NC_000023.10', 'Y': 'NC_000024.9', 'MT': 'NC_012920.1'}
@@ -126,7 +128,7 @@ def _lookup_hgvs_transcripts(variants: list):
     '''
     # Initialize the HGVS connection
     hdp = hgvs.dataproviders.uta.connect()
-    am = hgvs.assemblymapper.AssemblyMapper(hdp, assembly_name="GRCh37", alt_aln_method='splign')
+    am = hgvs.assemblymapper.AssemblyMapper(hdp, assembly_name=ASSEMBLY_VERSION, alt_aln_method='splign')
     hgvs_parser = hgvs.parser.Parser()
     
     transcripts = list()
@@ -144,12 +146,15 @@ def _lookup_hgvs_transcripts(variants: list):
         
 def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am: hgvs.assemblymapper.AssemblyMapper, variant: Variant):
     '''
-    Use HGVS to find the transcripts for a variant
+    Use HGVS/UTA to return a list of the transcripts for a variant
     '''
+    logger.debug(f"Using HGVS/UTA to find transcripts for {variant}")
+    
     hgvs_chrom = CHROM_MAP.get(variant.chromosome)
     
     if hgvs_chrom == None:
-        raise Exception("Unknown chromosome: {chrom}-{pos}-{ref}-{alt}")
+        logger.warning(f"Unknown chromosome: {variant.chromosome}-{variant.position}-{variant.reference}-{variant.alt}")
+        return list()
     
     # Look up the variant using HGVS            
     pos_part = _correct_indel_coords(variant.position, variant.reference, variant.alt)
@@ -163,7 +168,6 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
     
     for hgvs_transcript in tx_list:
         try:
-            # HGVS's dicts aren't labeled so you have to access everything by index.   
             var_c = am.g_to_c(var_g, str(hgvs_transcript[0]))
             var_p = am.c_to_p(var_c)
             
@@ -205,8 +209,10 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
             else:
                 raise(e)
         except HGVSInvalidVariantError as e:            
-            logger.warn("Invalid variant: %s", str(e))
+            logger.warn(f"Invalid variant {variant}: %s", str(e))
             raise(e)
+        except HGVSDataNotAvailableError as e:
+            logger.warn(f"Unable to use HGVS to parse variant {variant}: %s", str(e))
     
     return hgvs_transcripts
 
@@ -340,7 +346,7 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
     # Gene
     # Prefer annovar's gene, but annovar doesn't give us a gene for intron and utr; in those cases use hgvs's.        
     transcript_gene = annovar_transcript.hgnc_gene
-    if _noneIfEmpty(annovar_transcript.hgnc_gene) == None and _noneIfEmpty(annovar_transcript.hgnc_gene):
+    if _noneIfEmpty(annovar_transcript.hgnc_gene) == None and _noneIfEmpty(annovar_transcript.hgnc_gene) == None:
         logger.debug(f"Gene selection: Neither Annovar or HGVS have a gene for {transcript_key}") 
     elif annovar_transcript.hgnc_gene == None:
         logger.debug(f"Gene selection: Annovar did not provide a gene for {transcript_key}, using HGVS's: gene={hgvs_transcript.hgnc_gene}")            
@@ -358,7 +364,7 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
     if hgvs_transcript.hgvs_c_dot != annovar_transcript.hgvs_c_dot:
         logger.debug(f"HGVS and Annovar do not agree on c_dot for {transcript_key}: {hgvs_transcript.hgvs_c_dot} != {annovar_transcript.hgvs_c_dot} ")
 
-    if _allow_merge(new_transcript.hgvs_c_dot, annovar_transcript.hgvs_c_dot, transcript_key, 'hgvs_c_dot'):
+    if _allow_merge(new_transcript.hgvs_c_dot, hgvs_transcript.hgvs_c_dot, transcript_key, 'hgvs_c_dot'):
         new_transcript.hgvs_c_dot = hgvs_transcript.hgvs_c_dot
     
     # p-dot (1L)
@@ -385,7 +391,6 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
     assert hgvs_transcript.splicing == None
     if _allow_merge(new_transcript.splicing, annovar_transcript.splicing, transcript_key, 'splicing'):
         new_transcript.splicing = annovar_transcript.splicing
-    
 
     # Refseq Transcript
     assert hgvs_transcript.refseq_transcript == annovar_transcript.refseq_transcript
