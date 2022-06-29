@@ -6,7 +6,6 @@ Created on Jun 21, 2022
 import argparse
 import logging
 import csv
-from pickle import NONE
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -72,6 +71,11 @@ def _write_vcf(vcf_file_name: str, variants: list):
     '''
     with open(vcf_file_name, 'w') as vcf_file:
         vcf_file.write('##fileformat=VCFv4.2\n')
+        vcf_file.write('##FILTER=<ID=PASS,Description="All filters passed">')
+        vcf_file.write('##FILTER=<ID=PON,Description="Variant found in panel of normals in 3 or more samples.">\n')
+        vcf_file.write('##FILTER=<ID=PON_OV,Description="Variant found in panel of normals at low frequency, but call is at significantly higher frequency.">\n')
+        vcf_file.write('##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n')
+        vcf_file.write('##INFO=<ID=x,Number=1,Type=String,Description="Placeholder">\n')
         vcf_file.write('#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tabcd-123\n')
         
         for variant in variants:            

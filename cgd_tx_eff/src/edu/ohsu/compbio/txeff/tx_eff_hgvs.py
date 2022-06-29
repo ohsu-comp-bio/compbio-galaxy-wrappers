@@ -209,7 +209,7 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
             else:
                 raise(e)
         except HGVSInvalidVariantError as e:            
-            logger.warn(f"Invalid variant {variant}: %s", str(e))
+            logger.warning(f"Invalid variant {variant}: %s", str(e))
             raise(e)
         except HGVSDataNotAvailableError as e:
             logger.warn(f"Unable to use HGVS to parse variant {variant}: %s", str(e))
@@ -322,9 +322,9 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
     assert hgvs_transcript.alt == annovar_transcript.alt, f"HGVS and Annovar genotype alts are not equal: {hgvs_transcript.alt} != {annovar_transcript.alt}"
     
     # Amino Acid Position
-    ## If Amino acid position is non-empty then it should be the same in HGVS and Annovar 
+    ## Amino acid position is commonly different between HGVS and Annovar 
     if str(hgvs_transcript.hgvs_amino_acid_position) != str(annovar_transcript.hgvs_amino_acid_position):
-        logger.warning(f"HGVS and Annovar do not agree on amino acid position for {transcript_key}: {hgvs_transcript.hgvs_amino_acid_position} != {annovar_transcript.hgvs_amino_acid_position}")
+        logger.debug(f"HGVS and Annovar do not agree on amino acid position for {transcript_key}: {hgvs_transcript.hgvs_amino_acid_position} != {annovar_transcript.hgvs_amino_acid_position}")
 
     if _allow_merge(new_transcript.hgvs_amino_acid_position, hgvs_transcript.hgvs_amino_acid_position, transcript_key, 'hgvs_amino_acid_position'):
         new_transcript.hgvs_amino_acid_position = hgvs_transcript.hgvs_amino_acid_position 
@@ -407,7 +407,7 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
     ## Variant type is only provided by Annovar, and the value will be empty in the case of splice variants. 
     assert hgvs_transcript.variant_type == None
     if annovar_transcript.splicing != 'splicing':
-        assert annovar_transcript.variant_type != None
+        assert _noneIfEmpty(annovar_transcript.variant_type) != None, f'Variant type must not be empty for non-splicing transcripts. See {transcript_key}'
 
     if _allow_merge(new_transcript.variant_type, annovar_transcript.variant_type, transcript_key, 'variant_type'):
         new_transcript.variant_type = annovar_transcript.variant_type 
@@ -457,8 +457,10 @@ def get_summary(require_match: bool, annovar_transcripts: list, annovar_variants
     
     # Collect annovar records into a map keyed by genotype and transcript
     for annovar_rec in annovar_transcripts:
-        if annovar_rec.splicing == 'splicing':
+        if annovar_rec.splicing == 'splicing' or annovar_rec.splicing == 'ncRNA_splicing':
             annovar_splice_variant_transcript_count += 1
+        elif annovar_rec.splicing != None:
+            logger.warning(f"Invalid value in splicing column: {annovar_rec.splicing}")
 
         annovar_dict[key_maker(annovar_rec)].append(annovar_rec)
     
@@ -505,21 +507,26 @@ def get_summary(require_match: bool, annovar_transcripts: list, annovar_variants
 
     # Sanity check: The number of HGVS transcripts minus the count of merged HGVS transcripts is equal to the number of merged HGVS and annovar transcripts.    
     sanity_check_hgvs = (len(hgvs_transcripts) - unmatched_hgvs_transcript_count) == matched_annovar_and_hgvs_transcript_count
+    if not sanity_check_hgvs:
+        logger.debug(f"Failed sanity check 'sanity_check_hgvs': {len(hgvs_transcripts)} - {unmatched_hgvs_transcript_count} != {matched_annovar_and_hgvs_transcript_count}")
     
     # Sanity check: The number of annovar transcripts minus the count of merged annovar transcripts, minus the number of 
     # splice variants is equal to the number of merged HGVS and annovar transcripts. Splice variants must be subtradcted because 
     # they get counted twice - once as a splice variant and once as an exonic or intronic variant. 
-    santity_check_annovar = (len(annovar_transcripts) - unmatched_annovar_transcript_count - annovar_splice_variant_transcript_count) == matched_annovar_and_hgvs_transcript_count    
+    sanity_check_annovar = (len(annovar_transcripts) - unmatched_annovar_transcript_count - annovar_splice_variant_transcript_count) == matched_annovar_and_hgvs_transcript_count    
+    # sanity_check_annovar = (len(annovar_transcripts) - unmatched_annovar_transcript_count) == matched_annovar_and_hgvs_transcript_count
+    if not sanity_check_annovar:
+        logger.debug(f"Failed sanity check 'sanity_check_annovar': {len(annovar_transcripts)} - {unmatched_annovar_transcript_count} - {annovar_splice_variant_transcript_count} != {matched_annovar_and_hgvs_transcript_count}")
 
     # Essential sanity check:  
-    assert sanity_check_hgvs and santity_check_annovar, f'Sanity check failed: Total number of transcripts does not equal sum of matched, and unmatched ({sanity_check_hgvs} and {santity_check_annovar}).'
+    assert sanity_check_hgvs and sanity_check_annovar, f'Failed sanity check: Total number of transcripts does not equal sum of matched, and unmatched ({sanity_check_hgvs} and {sanity_check_annovar}).'
          
     # Non-essential sanity check: all variants from annovar have at least one transcript in the final output
     sanity_check_variant_coverage = merged_distinct_variant_count == results['annovar_distinct_variant_count']
     if not sanity_check_variant_coverage:
         logger.warning(f"Not all of the Annovar variants made it into the list of variant-transcripts ({merged_distinct_variant_count}/{results['annovar_distinct_variant_count']})")
 
-    sanity_check = sanity_check_hgvs and santity_check_annovar and sanity_check_variant_coverage
+    sanity_check = sanity_check_hgvs and sanity_check_annovar and sanity_check_variant_coverage
     results['sanity_check'] = sanity_check
 
     return results
