@@ -1,20 +1,22 @@
-<tool id="filter_strand" name="FreeBayes Strand Bias Filter" version="0.4.3" >
+<tool id="filter_strand" name="FreeBayes Strand Bias Filter" version="1.0.0" >
     <description>Filter based on bias in alternate and reference read direction.</description>
+
+    <requirements>
+        <requirement type="package" version="0.13.4">vcfpy</requirement>
+        <requirement type="package" version="1.23.0">numpy</requirement>
+    </requirements>
 
     <command><![CDATA[
     python $__tool_directory__/filter_strand.py
-    "${infile}" "${cosmic}" "${hotspots}" "${outfile}" "${outfile_removed}"
+    "${infile}" "${outfile}"
     ]]></command>
 
     <inputs>
-        <param name="infile" type="data" format="vcf" label="Input VCF" help="" />
-        <param name="hotspots" type="data" format="vcf" label="Hotspots VCF" help="" />
-        <param name="cosmic" type="data" format="vcf,vcf_bgzip" label="Input COSMIC VCF" help="" />
+        <param name="infile" type="data" format="vcf" label="Input VCF" />
     </inputs>
 
     <outputs>
-        <data format="vcf" name="outfile" label="${tool.name} on ${on_string}" />
-        <data format="vcf" name="outfile_removed" label="${tool.name} on ${on_string}: Removed Variants" />
+        <data format="vcf" name="outfile" label="${tool.name} on ${on_string}: vcf" />
     </outputs>
 
     <help>Filter based on bias in alternate and reference read direction.</help>
