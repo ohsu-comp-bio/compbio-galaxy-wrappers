@@ -2,16 +2,14 @@
 
 # DESCRIPTION: Given a panel of normals VCF, as created by
 # panel_of_normals.py, annotate or remove entries in a sample VCF.
-# USAGE: use_pon.py <pon> <infile> <outfile>
-# CODED BY: John Letaw
 
 from __future__ import print_function
 from collections import OrderedDict
 from string import Template
 import argparse
-import numpy
 
-VERSION = '0.5.3'
+VERSION = '0.6.0'
+
 
 def supply_args():
     """
@@ -25,22 +23,28 @@ def supply_args():
     parser.add_argument('outfile_bad', help='Output VCF with removed variants.')
 
     # Hard cutoff section
-    parser.add_argument('--min_cnt', type=int, help='Variants seen at least this many times in the PON will be removed, unless they are subject to background assessment.')
-    parser.add_argument('--pon_flag_above', help='Flag to apply if variant is seen in PON, does not get removed for other reasons, and is above min_cnt.')
-    parser.add_argument('--pon_flag_below', help='Flag to apply if variant is seen in PON, does not get removed for other reasons, and is below min_cnt.')
-    parser.add_argument('--no_clinvar_rm', action='store_true', help='If the call is in ClinVar, and is not benign, do not remove the entry based on min_cnt thresholds.')
+    parser.add_argument('--min_cnt', type=int, help='Variants seen at least this many times in the PON will be '
+                                                    'removed, unless they are subject to background assessment.')
+    parser.add_argument('--pon_flag_above', help='Flag to apply if variant is seen in PON, does not get removed '
+                                                 'for other reasons, and is above min_cnt.')
+    parser.add_argument('--pon_flag_below', help='Flag to apply if variant is seen in PON, does not get removed '
+                                                 'for other reasons, and is below min_cnt.')
+    parser.add_argument('--no_clinvar_rm', action='store_true', help='If the call is in ClinVar, and is not benign, '
+                                                                     'do not remove the entry based on '
+                                                                     'min_cnt thresholds.')
 
     # Background filtering option section
-    parser.add_argument('--bkgd_avg', help='Average VAF for which we will assess whether variant rises above background.  '
-                                           'Site will be assessed if value falls below this.  '
-                                           'If this is specified, bkgd_std must also be specified.')
+    parser.add_argument('--bkgd_avg', help='Average VAF for which we will assess whether variant rises above '
+                                           'background. Site will be assessed if value falls below this. If this '
+                                           'is specified, bkgd_std must also be specified.')
     parser.add_argument('--bkgd_std', help='VAF stdev for which we will assess whether variant rises above background. '
                                            'Site will be assessed if value falls below this.  '
                                            'If this is specified, bkgd_avg must also be specified.')
-    parser.add_argument('--bkgd_pass_flag', help='Flag to apply if background assessment is passed.  No value here means no flag will be applied.')
-    parser.add_argument('--bkgd_min_cnt', default=0, type=int, help='PON variant must be seen at least this number of times to be assessed.')
+    parser.add_argument('--bkgd_pass_flag', help='Flag to apply if background assessment is passed.  No value '
+                                                 'here means no flag will be applied.')
+    parser.add_argument('--bkgd_min_cnt', default=0, type=int, help='PON variant must be seen at least this number '
+                                                                    'of times to be assessed.')
 
-    parser.add_argument('--hotspots', required=False, help='Hotspots VCF.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     if args.bkgd_avg and not args.bkgd_std:
@@ -49,6 +53,7 @@ def supply_args():
         raise Exception('bkgd_avg and bkgd_std must be specified together.')
 
     return args
+
 
 class VcfWriter(object):
     """
@@ -85,12 +90,14 @@ class VcfWriter(object):
         if len(entry) < length:
             raise Exception("VCF record length does not have at least " + str(length) + " columns.")
 
+
 class VcfRecBase(object):
     """
     Basic parsing of VCF records.
     #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	RDM-0C19G1-1
     1	16200729	.	A	AT	.	m2	DP=1180;ECNT=1;POP_AF=5e-08;RPA=9;RU=T;STR;TLOD=25.6;OLD_VARIANT
-    =1:16200729:AT/ATT	GT:AD:AF:DP:F1R2:F2R1:MBQ:MFRL:MMQ:MPOS:ORIGINAL_CONTIG_MISMATCH:SA_MAP_AF:SA_POST_PROB	0/1:906,38:0.031
+    =1:16200729:AT/ATT	GT:AD:AF:DP:F1R2:F2R1:MBQ:MFRL:MMQ:MPOS:ORIGINAL_CONTIG_MISMATCH:SA_MAP_AF:
+    SA_POST_PROB	0/1:906,38:0.031
     :1078:906,38:0,0:36,32:202,190:60,60:38,35:0:0.121,0.121,0.129:0.011,0.002304,0.986
     """
     def __init__(self, rec, args):
@@ -131,7 +138,8 @@ class VcfRecBase(object):
                 vafs.append(self._get_from_ad(val['AD']))
         return vafs
 
-    def _get_from_ad(self, depths):
+    @staticmethod
+    def _get_from_ad(depths):
         """
         Retrieve VAFs from the AD values, instead of and actual AF sample field.
         Depths are in [ref, alt] format.
@@ -206,7 +214,8 @@ class VcfRecBase(object):
                     new_samps[samp][self.frmt[idx]] = val
         return new_samps
 
-    def _create_info(self, info):
+    @staticmethod
+    def _create_info(info):
         """
         Place INFO data in structure.
         :return:
@@ -240,6 +249,7 @@ class VcfRecBase(object):
         print("PYVCF REC: {0}".format(self.rec))
         print("PYVCF INFO: {0}".format(self.info))
 
+
 class MyVcf(object):
     """
     Hold VCF records, manage access to them based in chrom, pos, ref, alt.
@@ -270,9 +280,10 @@ class MyVcf(object):
                     self.header.append(line.rstrip('\n'))
         return myvcf
 
-    def _sel_vcfrec(self, vcfrec, val, args):
+    @staticmethod
+    def _sel_vcfrec(vcfrec, val, args):
         """
-
+        Supply correct class call.
         :return:
         """
         return vcfrec(val, args)
@@ -307,8 +318,8 @@ class VcfRecPON(VcfRecBase):
         self.is_cosmic = self._assess_bool(self.cosmic)
         self.is_clinvar = self._assess_clinvar(self.clnsig)
 
-
-    def _assess_clinvar(self, val):
+    @staticmethod
+    def _assess_clinvar(val):
         """
         For ClinVar, the entries that are not benign are interesting.
         :return:
@@ -322,7 +333,8 @@ class VcfRecPON(VcfRecBase):
         else:
             return True
 
-    def _assess_bool(self, val):
+    @staticmethod
+    def _assess_bool(val):
         """
         If value is set as T, return True.  Otherwise, return False.
         :return:
@@ -402,7 +414,8 @@ class MyVcfEdited(MyVcf):
 
     def _insert_new_headers(self):
         """
-        Locate the place these new header lines belong.  Currently, just place them before the first column heading line.
+        Locate the place these new header lines belong.  Currently, just place them before the first
+        column heading line.
         :return:
         """
         return self.header[:-1] + self.new_headers + self.header[-1:]
@@ -426,11 +439,15 @@ class MyVcfEdited(MyVcf):
         Create FILTER lines to be added for each new label.
         :return:
         """
-        filt_tmpls = {'bkgd_pass_flag': Template('##FILTER=<ID=${bkgd_pass_flag},Description=\"Variant found in panel of normals in ${bkgd_min_cnt} or greater samples, and exceeds background at this site.\">'),
-                      'pon_flag_below': Template('##FILTER=<ID=${pon_flag_below},Description=\"Variant found in panel of normals in ${low_seen} or more and fewer than ${min_cnt} samples.\">'),
-                      'pon_flag_above': Template('##FILTER=<ID=${pon_flag_above},Description=\"Variant found in panel of normals in ${min_cnt} or more samples.\">')}
+        filt_tmpls = {'bkgd_pass_flag': Template('##FILTER=<ID=${bkgd_pass_flag},Description=\"Variant found in '
+                                                 'panel of normals in ${bkgd_min_cnt} or greater samples, '
+                                                 'and exceeds background at this site.\">'),
+                      'pon_flag_below': Template('##FILTER=<ID=${pon_flag_below},Description=\"Variant found in '
+                                                 'panel of normals in ${low_seen} or more and fewer '
+                                                 'than ${min_cnt} samples.\">'),
+                      'pon_flag_above': Template('##FILTER=<ID=${pon_flag_above},Description=\"Variant found in '
+                                                 'panel of normals in ${min_cnt} or more samples.\">')}
         return filt_tmpls[tmpl].substitute(self.param_dict)
-
 
 
 class PanelOfNormals(MyVcf):
@@ -462,7 +479,8 @@ class PanelOfNormals(MyVcf):
                 low_seen = int(entry.info['SEEN'])
         return low_seen
 
-    def _delim_to_dict(self, info, delim=';'):
+    @staticmethod
+    def _delim_to_dict(info, delim=';'):
         """
         Create a dict out of a typical VCF INFO field string.
         :return:
@@ -481,7 +499,8 @@ class VcfRecComp(object):
     The rules:
         if the entry is in the PON, at above min_cnt, we can either remove it, or just label it
             min_cnt implies either removal or label of variants seen above min_cnt times
-        if the entry is in the PON, at below min_cnt, it can be labeled, though probably not removed (otherwise no need to specify min_cnt)
+        if the entry is in the PON, at below min_cnt, it can be labeled, though probably not removed
+        (otherwise no need to specify min_cnt)
 
     """
     def __init__(self, pon_rec, vcf_rec, bkgd_pass_flag, pon_flag_below, no_clinvar_rm):
@@ -537,13 +556,14 @@ class VcfRecComp(object):
         Perform the background assessment.
         :return:
         """
-        thresh = 3.0 * (max(float(self.pon_rec.stdev_ab), min_stdev) + float(self.pon_rec.avg_ab))
+        thresh = (3.0 * (max(float(self.pon_rec.stdev_ab), min_stdev)) + float(self.pon_rec.avg_ab))
         if float(self.vcf_rec.vafs) >= thresh:
             return True
         else:
             return False
 
-    def _replace_filter(self, filt, anno):
+    @staticmethod
+    def _replace_filter(filt, anno):
         """
         Remove the dot if it's there, otherwise just append something with a
         semicolon.
@@ -556,6 +576,7 @@ class VcfRecComp(object):
         if anno not in filt:
             filt.append(anno)
         return filt
+
 
 class CompVcf(object):
     """
@@ -600,59 +621,16 @@ class CompVcf(object):
         return good_vcf, bad_vcf
 
 
-class Hotspots():
-    """
-    Import HOTSPOTS file, if given, to idential structure as for PON.
-    """
-    def __init__(self, filename):
-        self.filename = filename
-        self.hotspots = self._hotspots_grab()
-
-    def _hotspots_grab(self):
-        """
-
-        :param filename:
-        :return:
-        """
-        hotspots = []
-        with open(self.filename, 'rU') as hots:
-            for line in hots:
-                if not line.startswith('#'):
-                    line = line.rstrip('\n').split('\t')
-                    chrom = line[0]
-                    pos = line[1]
-                    ref = line[3]
-                    alt = line[4]
-                    uniq_key = (chrom, pos, ref, alt)
-                    if uniq_key not in hotspots:
-                        hotspots.append(uniq_key)
-        return hotspots
-
-
 def main():
 
-    # Possible filters:
-
-    # Calls not assessed as above will need to go through normal filtering process. Parameters should be set for
-    # number of times seen (SEEN), and flag names should be specified.  When looking at number of times seen, user can
-    # choose to include or exclude variants in COSMIC.  Similar criteria can be set (eg SEEN) for these COSMIC or ClinVar
-    # instances.
-
-    # TODO: bad_vcf should not be writing new header lines, since no annotation should ever be added
-
     args = supply_args()
-    # Add this at some point.  Not high priority.
-    # if args.hotspots:
-    #     hotspots = Hotspots(args.hotspots).hotspots
-    # else:
-    #     hotspots = None
-
     my_pon = PanelOfNormals(args.pon, VcfRecPON, args)
     my_vcf = MyVcfEdited(args.infile, VcfRecBase, args, my_pon.low_seen)
     good_vcf = CompVcf(my_vcf, my_pon, args).good_vcf
     bad_vcf = CompVcf(my_vcf, my_pon, args).bad_vcf
     VcfWriter(args.outfile, good_vcf, my_vcf.new_header).write_me()
     VcfWriter(args.outfile_bad, bad_vcf, my_vcf.header).write_me()
+
 
 if __name__ == "__main__":
     main()
