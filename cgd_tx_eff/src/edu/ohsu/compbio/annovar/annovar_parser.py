@@ -9,6 +9,7 @@ from enum import Enum
 import hgvs.parser
 import logging
 from collections import defaultdict
+import re
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -135,7 +136,7 @@ class AnnovarParser(object):
                     hgvs_three = None
                     amino_acid_position = None                
             else:
-                logger.warn(f"This transcript is missing the p. but that's ok, HGVS will probably fill it in: {transcript_parts}")
+                logger.debug(f"This transcript is missing the p. but that's ok, HGVS will fill it in: {transcript_parts}")
                 amino_acid_position = None
                 hgvs_p = None
                 hgvs_three = None
@@ -176,8 +177,15 @@ class AnnovarParser(object):
             raise Exception("Tuple format not recognized: " + str(delimited_transcript))
                 
         if hgvs_c_dot:
-            full_c = ':'.join([refseq_transcript, hgvs_c_dot])
-            hgvs_basep = self.hgvs_parser.parse(full_c).posedit.pos.start
+            try:
+                full_c = ':'.join([refseq_transcript, hgvs_c_dot])
+                hgvs_basep = self.hgvs_parser.parse(full_c).posedit.pos.start
+            except hgvs.exceptions.HGVSParseError:
+                c_dot_alt = re.search(r"c\..*\>([\w]+)", hgvs_c_dot)            
+                if c_dot_alt and len(c_dot_alt.group(1)) > 1:
+                    # This doesn't matter because we use the c. from HGVS/UTA not this one from Annovar
+                    logger.debug(f"HGVS parser failed to determine c. because the parser expects the c. alt to be just one base, but is {len(c_dot_alt.group(1))}: {hgvs_c_dot}")
+                    hgvs_basep = None
         else:
             hgvs_basep = None
 

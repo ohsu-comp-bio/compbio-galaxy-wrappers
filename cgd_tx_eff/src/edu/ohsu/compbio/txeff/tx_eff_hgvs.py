@@ -18,7 +18,8 @@ import logging
 import os
 from hgvs.dataproviders.uta import UTABase
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
-from hgvs.exceptions import HGVSInvalidVariantError, HGVSUsageError, HGVSDataNotAvailableError
+from hgvs.exceptions import HGVSInvalidVariantError, HGVSUsageError, HGVSDataNotAvailableError,\
+    HGVSInvalidIntervalError
 from edu.ohsu.compbio.txeff.variant import Variant
 
 # When we upgrade from python 3.8 to 3.9 this import needs to be changed to: "from collections.abc import Iterable"
@@ -211,6 +212,8 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
         except HGVSInvalidVariantError as e:            
             logger.warning(f"Invalid variant {variant}: %s", str(e))
             raise(e)
+        except HGVSInvalidIntervalError as e:
+            logger.warning(f"Invalid variant interval {variant}: %s", str(e))
         except HGVSDataNotAvailableError as e:
             logger.warn(f"Unable to use HGVS to parse variant {variant}: %s", str(e))
     
@@ -519,7 +522,8 @@ def get_summary(require_match: bool, annovar_transcripts: list, annovar_variants
         logger.debug(f"Failed sanity check 'sanity_check_annovar': {len(annovar_transcripts)} - {unmatched_annovar_transcript_count} - {annovar_splice_variant_transcript_count} != {matched_annovar_and_hgvs_transcript_count}")
 
     # Essential sanity check:  
-    assert sanity_check_hgvs and sanity_check_annovar, f'Failed sanity check: Total number of transcripts does not equal sum of matched, and unmatched ({sanity_check_hgvs} and {sanity_check_annovar}).'
+    if not sanity_check_hgvs or not sanity_check_annovar:
+        logger.info(f'Failed sanity check: Total number of transcripts does not equal sum of matched, and unmatched ({sanity_check_hgvs} and {sanity_check_annovar}).')
          
     # Non-essential sanity check: all variants from annovar have at least one transcript in the final output
     sanity_check_variant_coverage = merged_distinct_variant_count == results['annovar_distinct_variant_count']
