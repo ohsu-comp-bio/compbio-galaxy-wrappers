@@ -522,6 +522,7 @@ def get_summary(require_match: bool, annovar_transcripts: list, annovar_variants
         logger.debug(f"Failed sanity check 'sanity_check_annovar': {len(annovar_transcripts)} - {unmatched_annovar_transcript_count} - {annovar_splice_variant_transcript_count} != {matched_annovar_and_hgvs_transcript_count}")
 
     # Essential sanity check:  
+    # Sanity check is currently off by just a little bit. 
     if not sanity_check_hgvs or not sanity_check_annovar:
         logger.info(f'Failed sanity check: Total number of transcripts does not equal sum of matched, and unmatched ({sanity_check_hgvs} and {sanity_check_annovar}).')
          
