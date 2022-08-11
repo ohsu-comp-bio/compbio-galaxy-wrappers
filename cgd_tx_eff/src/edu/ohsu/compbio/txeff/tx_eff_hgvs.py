@@ -25,6 +25,7 @@ from edu.ohsu.compbio.txeff.variant import Variant
 # When we upgrade from python 3.8 to 3.9 this import needs to be changed to: "from collections.abc import Iterable"
 from typing import Iterable
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
+from json.decoder import _decode_uXXXX
 
 VERSION = '0.0.1'
 ASSEMBLY_VERSION = "GRCh37"
@@ -139,6 +140,7 @@ def _lookup_hgvs_transcripts(variants: list):
         
         # HGVS might not find any transcripts even though Annovar did 
         if len(variant_transcripts) == 0:
+            # jDebug: how do you know there are transcripts known to annovar? 
             logger.warning(f'HGVS could not find any transcripts for variant {variant} which has transcripts known to Annovar.')
         else:
             transcripts.extend(variant_transcripts)
@@ -181,7 +183,7 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
             variant_transcript = VariantTranscript(variant.chromosome, variant.position, variant.reference, variant.alt)
             variant_type = None
             
-            # Annovar doesn't provie a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function. 
+            # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function. 
             transcript_detail = hdp.get_tx_info(hgvs_transcript[0], hgvs_transcript[1], 'splign')
             variant_transcript.hgnc_gene = transcript_detail['hgnc'] 
             
@@ -206,7 +208,7 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
         
         except HGVSUsageError as e:
             if("non-coding transcript" in e.args[0]):
-                logger.info("Transcript probably non-coding, ignore: %s", str(e))
+                logger.info(f"Error caused by non-coding transcript, skipping {variant}: %s", str(e))
             else:
                 raise(e)
         except HGVSInvalidVariantError as e:            
@@ -263,7 +265,7 @@ def to_variant_transcript(annovar_transcript: AnnovarVariantFunction):
         variant_transcript.refseq_transcript = annovar_transcript.refseq_transcript
         return variant_transcript
         
-def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list, require_match=False):
+def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list, require_match=True):
     '''
     Given a list of transcripts from Annovar and HGVS, find those with the same genotype and transcript, and merge them into a single record.
     
@@ -301,7 +303,6 @@ def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list, 
         transcripts.extend(_get_unmatched_annovar_transcripts(annovar_dict, hgvs_dict))
 
     return transcripts
-
 
 def _merge(transcript_key: str, hgvs_transcript: VariantTranscript, annovar_transcripts: Iterable[VariantTranscript]):
     '''
@@ -507,7 +508,6 @@ def get_summary(require_match: bool, annovar_transcripts: list, annovar_variants
     merged_distinct_variant_count = len(set(map(lambda x: Variant(x.chromosome, x.position, x.reference, x.alt), merged_transcripts)))
     results['merged_distinct_variant_count'] = merged_distinct_variant_count 
     
-
     # Sanity check: The number of HGVS transcripts minus the count of merged HGVS transcripts is equal to the number of merged HGVS and annovar transcripts.    
     sanity_check_hgvs = (len(hgvs_transcripts) - unmatched_hgvs_transcript_count) == matched_annovar_and_hgvs_transcript_count
     if not sanity_check_hgvs:

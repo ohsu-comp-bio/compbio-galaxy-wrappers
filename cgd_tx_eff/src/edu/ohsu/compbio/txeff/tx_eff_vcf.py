@@ -8,7 +8,7 @@ Update a VCF with the variant-transcript details.
 import argparse
 import csv
 from collections import defaultdict
-from enum import Enum, auto
+from enum import Enum
 import logging
 import vcfpy
 from edu.ohsu.compbio.txeff.variant import Variant

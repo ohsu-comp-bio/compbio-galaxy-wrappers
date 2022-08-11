@@ -109,7 +109,6 @@ The transcript-effects attributes in the INFO field are parallel arrays. For exa
 * TFX_PROTEIN_TRANSCRIPT=NP_001317687.1:NP_004159.2:NP_001281261.1:NP_004159.2:NP_004159.2
 * TFX_AMINO_ACID_POSITION=::splicing:;
 
-## To Do 
-
-- [ ] Determine what is the best value for the splicing_threshold parameter passed to ``annotate_variation.pl``.
-
+## avinput2vcf.py
+## csv2avinput.py
+## compare_cgd_tfx.py

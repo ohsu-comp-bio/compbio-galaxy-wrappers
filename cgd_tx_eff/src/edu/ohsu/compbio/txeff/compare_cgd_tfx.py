@@ -106,9 +106,9 @@ def write(csv_writer, heme_row, vc: vcfpy.record.Record):
                          heme_row['genotype_cdna'],                                 # 'cgd_hgvs_c_dot'
                          heme_row['genotype_amino_acid_onel'],                      # 'cgd_hgvs_p_dot_one' 
                          heme_row['genotype_amino_acid_threel'],                    # 'cgd_hgvs_p_dot_three' 
-                         'jDebug_splicing',                                         # 'cgd_splicing'
-                        heme_row['transcripts'],                                    # 'cgd_refseq_transcript'
-                        heme_row['protein_transcripts'],                            # 'cgd_protein_transcript'                        
+                         heme_row['splice_site_relationship'],                      # 'cgd_splicing'
+                         heme_row['transcripts'],                                   # 'cgd_refseq_transcript'
+                         heme_row['protein_transcripts'],                           # 'cgd_protein_transcript'                        
                         ' / '.join([x for x in vc.INFO[TranscriptEffect.TFX_VARIANT_EFFECT.value]]),         # 'tfx_variant_effect'
                         ' / '.join([x for x in vc.INFO[TranscriptEffect.TFX_VARIANT_TYPE.value]]),           # 'tfx_variant_type', 
                         ' / '.join([x for x in vc.INFO[TranscriptEffect.TFX_AMINO_ACID_POSITION.value]]),    # 'tfx_hgvs_amino_acid_position', 
