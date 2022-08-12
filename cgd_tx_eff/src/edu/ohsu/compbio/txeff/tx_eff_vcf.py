@@ -13,6 +13,7 @@ import logging
 import vcfpy
 from edu.ohsu.compbio.txeff.variant import Variant
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
+import sys
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -230,10 +231,13 @@ def _update_header(header):
     '''
     Add the new transcript effect fields to the VCF header 
     '''
+    header.add_line(vcfpy.HeaderLine('tfx_commandline', ' '.join(sys.argv)))
+
     header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_BASE_POSITION.value),
                                             ('Number', '.'),
                                             ('Type', 'String'),
                                             ('Description', 'Coding sequence start position.')]))
+
     header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_EXON.value),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
