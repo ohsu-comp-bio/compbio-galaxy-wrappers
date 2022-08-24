@@ -6,6 +6,7 @@ VCF are biased, or not proportionate to each other.  Current implementation is u
 Inequality to estimate upper and lower VAF bounds.
 
 1.0.0 - Rewrite.
+1.2.1 - Changed conf to 0.99999999999
 """
 
 from __future__ import print_function
@@ -13,7 +14,7 @@ import argparse
 import vcfpy
 import numpy as np
 
-VERSION = '1.2.0'
+VERSION = '1.2.1'
 
 
 def supply_args():
@@ -86,7 +87,7 @@ class StrandOps:
             saf = self.info[2]
             sar = self.info[3]
             alt_dp = self._alt_dp(saf, sar)
-            hoeff = self._hoeffding_t(alt_dp, conf=0.99)
+            hoeff = self._hoeffding_t(alt_dp, conf=0.99999999999)
             ref_vaf = self._strand_freq(srf, srr)
             alt_vaf = self._strand_freq(saf, sar)
             if ref_vaf:
