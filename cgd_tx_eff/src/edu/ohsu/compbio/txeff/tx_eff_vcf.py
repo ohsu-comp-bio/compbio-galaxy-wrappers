@@ -5,15 +5,16 @@ Created on Apr 29, 2022
 
 Update a VCF with the variant-transcript details.  
 '''
+
 import argparse
-import csv
+import logging
+import sys
+import vcfpy
 from collections import defaultdict
 from enum import Enum
-import logging
-import vcfpy
 from edu.ohsu.compbio.txeff.variant import Variant
-from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
-import sys
+
+from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -119,41 +120,6 @@ def _get_transcripts_dict(transcripts: list):
 
     return transcript_dict
 
-
-def _read_hgvs_transcripts_from_file(csv_file_name):
-    '''
-    Read the transcripts that have been written to a CSV file by the ``tx_eff_hgvs.py`` script, 
-    '''
-    transcripts = list()
-    
-    with open(csv_file_name) as csv_file:
-        reader = csv.DictReader(csv_file)
-        for row in reader:
-            transcript = VariantTranscript(row['chromosome'], row['position'], row['reference'], row['alt'])
-            transcript.hgvs_amino_acid_position = row['hgvs_amino_acid_position']
-            transcript.variant_effect = row['variant_effect']
-            transcript.variant_type = row['variant_type']
-            transcript.hgvs_amino_acid_position = _noneIfEmpty(row['hgvs_amino_acid_position'])
-            transcript.hgvs_base_position = _noneIfEmpty(row['hgvs_base_position'])
-            transcript.exon = row['exon']
-            transcript.hgnc_gene = row['hgnc_gene']
-            transcript.hgvs_c_dot = row['hgvs_c_dot']
-            transcript.hgvs_p_dot_one = row['hgvs_p_dot_one']
-            transcript.hgvs_p_dot_three = row['hgvs_p_dot_three']
-            transcript.splicing = row['splicing']
-            transcript.refseq_transcript = row['refseq_transcript']
-            transcript.protein_transcript = row['protein_transcript']
-            
-            transcripts.append(transcript)
-   
-    return transcripts
-
-def _replaceNoneWithEmpty(x):
-    '''
-    Return the empty string if x is None, otherwise return x
-    '''
-    return "" if x is None else str(x)
-
 def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
     '''
     Transform the transcript details into parallel arrays and add them to each VCF row.  
@@ -214,6 +180,11 @@ def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
     
     return vcf_records
 
+def _replaceNoneWithEmpty(x: str):
+    '''
+    Return the empty string if x is None, otherwise return x
+    '''
+    return "" if x is None else str(x)
 
 def _write_vcf(vcf_file_name, header: vcfpy.header.Header, vcf_records: list):
     '''
@@ -314,7 +285,8 @@ def _main():
     args = _parse_args()
     
     logger.info(f"Reading transcripts from {args.in_csv.name}")
-    transcripts = _read_hgvs_transcripts_from_file(args.in_csv.name)
+    txEffCsv = TxEffCsv()    
+    transcripts = txEffCsv.read_transcripts(args.in_csv.name)
     
     # Combine transcript effects with VCF variants and write to file 
     create_vcf_with_transcript_effects(args.in_vcf.name, args.out_vcf.name, transcripts)

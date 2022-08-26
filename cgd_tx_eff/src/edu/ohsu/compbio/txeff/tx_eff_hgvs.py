@@ -10,22 +10,22 @@ Created on Apr 20, 2022
 '''
 
 import argparse
-import csv
-from collections import defaultdict
 import hgvs.assemblymapper
 import hgvs.dataproviders.uta
 import logging
 import os
-from hgvs.dataproviders.uta import UTABase
+from collections import defaultdict
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
+from edu.ohsu.compbio.txeff.variant import Variant
+from hgvs.dataproviders.uta import UTABase
 from hgvs.exceptions import HGVSInvalidVariantError, HGVSUsageError, HGVSDataNotAvailableError,\
     HGVSInvalidIntervalError
-from edu.ohsu.compbio.txeff.variant import Variant
+
 
 # When we upgrade from python 3.8 to 3.9 this import needs to be changed to: "from collections.abc import Iterable"
 from typing import Iterable
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
-from json.decoder import _decode_uXXXX
+from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 
 VERSION = '0.0.1'
 ASSEMBLY_VERSION = "GRCh37"
@@ -55,31 +55,6 @@ def _noneIfEmpty(value: str):
     if value == '':
         return None
     return value
-
-
-def _read_annovar_transcripts(input_filename):
-    '''
-    '''
-    transcripts = list()
-
-    with open(input_filename) as csv_file:
-        reader = csv.DictReader(csv_file)
-        for row in reader:
-            transcript = VariantTranscript(row['chromosome'], row['position'], row['reference'], row['alt'])
-            transcript.variant_effect = _noneIfEmpty(row['variant_effect'])
-            transcript.variant_type = _noneIfEmpty(row['variant_type'])
-            transcript.hgvs_amino_acid_position = _noneIfEmpty(row['hgvs_amino_acid_position'])
-            transcript.hgvs_base_position = _noneIfEmpty(row['hgvs_base_position'])
-            transcript.exon = _noneIfEmpty(row['exon'])
-            transcript.hgnc_gene = _noneIfEmpty(row['hgnc_gene'])
-            transcript.hgvs_c_dot = _noneIfEmpty(row['hgvs_c_dot'])
-            transcript.hgvs_p_dot_one = _noneIfEmpty(row['hgvs_p_dot_one'])
-            transcript.hgvs_p_dot_three = _noneIfEmpty(row['hgvs_p_dot_three'])
-            transcript.splicing = _noneIfEmpty(row['splicing'])
-            transcript.refseq_transcript = _noneIfEmpty(row['refseq_transcript'])
-            transcripts.append(transcript)
-    
-    return transcripts
 
 def _correct_indel_coords(pos, ref, alt):
     """
@@ -463,7 +438,7 @@ def get_summary(require_match: bool, annovar_transcripts: list, annovar_variants
     for annovar_rec in annovar_transcripts:
         if annovar_rec.splicing == 'splicing' or annovar_rec.splicing == 'ncRNA_splicing':
             annovar_splice_variant_transcript_count += 1
-        elif annovar_rec.splicing != None:
+        elif annovar_rec.splicing != None and annovar_rec.splicing != '':
             logger.warning(f"Invalid value in splicing column: {annovar_rec.splicing}")
 
         annovar_dict[key_maker(annovar_rec)].append(annovar_rec)
@@ -554,27 +529,6 @@ def _log_summary(results: dict):
     logger.info(f"Number of distinct variants in merged transcript list: {results['merged_distinct_variant_count']}")
     logger.info(f"Total number of transcripts in final list: {results['merged_transcript_count']}")
     logger.info(f"Sanity check: {'Passed' if results['sanity_check'] else 'Failed' }")
-    
-
-def _write_csv(file_name, records: list):
-    '''
-    Write the transcript records to csv file
-    ''' 
-    fields = ['chromosome', 'position', 'reference', 'alt', 
-              'variant_effect', 'variant_type', 'hgvs_amino_acid_position', 'hgvs_base_position', 
-              'exon', 'hgnc_gene', 'hgvs_c_dot', 'hgvs_p_dot_one', 'hgvs_p_dot_three', 
-              'splicing', 'refseq_transcript', 'protein_transcript']
-    
-    with open(file_name, 'w') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(fields)
-        
-        for rec in records:
-            csv_writer.writerow([rec.chromosome, rec.position, rec.reference, rec.alt, 
-                                rec.variant_effect, rec.variant_type, rec.hgvs_amino_acid_position, rec.hgvs_base_position,
-                                rec.exon, rec.hgnc_gene, rec.hgvs_c_dot, rec.hgvs_p_dot_one, rec.hgvs_p_dot_three,
-                                rec.splicing, rec.refseq_transcript, rec.protein_transcript])
-
 
 def _parse_args():
     '''
@@ -619,7 +573,6 @@ def identify_hgvs_datasources():
         logger.warning("The UTA_DB_URL environment variable is not defined. The remote UTA database will be used.")
     else:
         logger.info(f"Using UTA Database at {os.environ.get('UTA_DB_URL')}")
-    
 
 def get_updated_hgvs_transcritpts(annovar_transcripts: list, require_match: bool):    
     '''
@@ -646,14 +599,14 @@ def _main():
     '''
     args = _parse_args()
     
-    annovar_transcripts = _read_annovar_transcripts(args.in_file.name)
+    txEffCsv = TxEffCsv()    
+    annovar_transcripts = txEffCsv.read_transcripts(args.in_file.name)
     logger.debug(f'Read {len(annovar_transcripts)} Annovar transcripts from {args.in_file.name}')
     
     merged_transcripts = get_updated_hgvs_transcritpts(annovar_transcripts, args.require_match)
     
     logger.info(f"Writing {args.out_file.name}")
-    _write_csv(args.out_file.name, merged_transcripts)
-
+    txEffCsv.write_transcripts(args.out_file.name, merged_transcripts)
 
 if __name__ == '__main__':
     _main()

@@ -9,6 +9,7 @@ import logging
 import sys
 import os
 from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
+from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
 VERSION = '0.0.1'
 
@@ -31,6 +32,11 @@ def _parse_args():
     
     parser.add_argument('-i', '--in_vcf', 
                 help='Input VCF', 
+                type=argparse.FileType('r'), 
+                required=True)
+
+    parser.add_argument('-c', '--ccds_map', 
+                help='Input CSV or GFF with Annovar-to-CCDS mappings', 
                 type=argparse.FileType('r'), 
                 required=True)
 
@@ -72,6 +78,10 @@ def _main():
     tx_eff_hgvs.identify_hgvs_datasources() 
     merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcritpts(annovar_records, require_match = args.require_match)
     
+    # Use tx_eff_ccds to add CCDS transcripts
+    tx_eff_ccds = TxEffCcds(args.ccds_map.name)
+    tx_eff_ccds.add_ccds_transcripts(merged_transcripts)
+     
     # Use tx_eff_vcf to write the transcript effects to a VCF
     tx_eff_vcf.create_vcf_with_transcript_effects(args.in_vcf.name, args.out_vcf.name, merged_transcripts)
 
