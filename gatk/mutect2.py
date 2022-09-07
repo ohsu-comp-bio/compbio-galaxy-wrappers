@@ -11,8 +11,6 @@ import pysam
 import logging
 import os
 
-# test
-
 def build_cmd(args):
     """
     Put together the command that will run MuTect2.
