@@ -1,4 +1,3 @@
-
 args <- commandArgs(TRUE)
 cnvvcf <- args[1]
 geneFile <- args[2]
@@ -13,10 +12,10 @@ cnvData <- read.table(cnvvcf, header=TRUE, sep="\t", comment.char="", skip=11)
 geneData <- read.table(geneFile, header=FALSE, sep="\t", skip=8)
 readCounts <- read.table(readCountsFile, header=TRUE, sep="\t", comment.char="@")
 
-if (nrow(cnvData) > 1000){
-   print("The CNV Data has too many lines. Please check to make sure that the segements file was run correctly.")
-   quit("no",1,FALSE)
-}
+#if (nrow(cnvData) > 1000){
+#   print("The CNV Data has too many lines. Please check to make sure that the segements file was run correctly.")
+#   quit("no",1,FALSE)
+#}
 
 colnames(geneData) <- c("ContigID", "ref", "type", "START", "END", "dot1", "sign", "dot2", "INFO")
 
@@ -48,7 +47,7 @@ for( segment_row in 1:nrow(cnvData) ) {
 		if (segment_row == 1 ) {
 			#if the gene list is a region
 			if ( geneData$type[[gene_row]] == "region" ){
-				#get the info from the region 
+				#get the info from the region
 				info <- as.vector(geneData$INFO[[gene_row]])
 				infoSplit <- as.vector(strsplit(info, ";", fixed=TRUE))
 				split <- as.vector(infoSplit[[1]])
@@ -125,7 +124,7 @@ for( segment_row in 1:nrow(cnvData) ) {
 	cnvData[segment_row, "MaxReadCount"] <- max
 	cnvData[segment_row, "MinReadCount"] <- min
 	print(paste0("Progress: ", cnvData[segment_row, "ID"], " : ", Sys.time()))
-	
+
 	#get the local freqs
 	id <- paste0(cnvData[segment_row, "ID"])
 	print(id)
@@ -138,13 +137,13 @@ for( segment_row in 1:nrow(cnvData) ) {
 	print(numCase)
 	localFreq <- as.numeric(localNum)/as.numeric(numCase)
 	cnvData[segment_row, "LocalFreq"] <- round(localFreq, 3)
-	
+
 	#deletion frequency
 	grep_string_del <- paste0("grep -s ", id, " ", segmentsDir,  "*/* | grep \t1: | wc -l")
 	local_Del_Num <- as.numeric(system(grep_string_del, intern=TRUE))
 	del_freq <- local_Del_Num/numCase
 	cnvData[segment_row, "DelFreq"] <- round(del_freq, 3)
-	
+
 	#Dup freq
 	grep_string_dup <- paste0("grep -s ", id, " ", segmentsDir, "*/* | grep \t2: | wc -l")
 	local_Dup_Num <- as.numeric(system(grep_string_dup, intern=TRUE))
@@ -162,6 +161,10 @@ cnvData$Size <- as.integer(cnvData$End) - as.integer(cnvData$POS)
 #make pretty location column
 cnvData$Location <- paste0("chr", cnvData$X.CHROM, ":", cnvData$POS, "-", cnvData$End)
 
+cgdData <- cnvData[c("X.CHROM", "POS", "End", "GENE", "Genotype", "CopyNumber", "Probes", "AvgReadCount", "MaxReadCount", "MinReadCount", "Size", "LocalFreq", "DelFreq", "DupFreq", "QCAll", "QCOne", "QCStart", "QCEnd")]
+
+colnames(cgdData) <- c("REGION_CHROM", "REGION_START", "REGION_STOP", "GENE", "CALL", "COPY_NUMBER", "PROBES", "AVG_READ_COUNT", "MAX_READ_COUNT", "MIN_READ_COUNT", "SIZE", "LOCAL_FREQ", "DEL_FREQ", "DUP_FREQ", "QC_ALL", "QC_ONE", "QC_START", "QC_END")
+
 #choose only relevant data
 cnvData <- cnvData[c("Location", "GENE", "Genotype", "CopyNumber", "Probes", "AvgReadCount", "MaxReadCount", "MinReadCount", "Size", "LocalFreq", "DelFreq", "DupFreq", "QCAll", "QCOne", "QCStart", "QCEnd")]
 
@@ -170,7 +173,7 @@ cnvData$Location2 <- gsub("chr", "", cnvData$Location)
 
 #write to a tsv
 #write.table(geneData, file="output_gene.tsv", row.names=FALSE, sep="\t")
-write.table(cnvData, file="output_cnv.tsv", row.names=FALSE, sep="\t")
+write.table(cgdData, file="output_cnv.tsv", row.names=FALSE, sep="\t")
 
 #write to an excel file
 write.xlsx(x=cnvData, file="excel_cnv_output.xlsx", sheetName="AnnotatedCNVs", row.names=FALSE)
