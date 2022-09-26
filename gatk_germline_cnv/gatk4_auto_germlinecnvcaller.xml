@@ -1,4 +1,4 @@
-<tool id="gatk4_auto_germlinecnvcaller" name="GATK4 AUTO GermlineCNVCaller" version="@WRAPPER_VERSION@0" profile="18.01">
+<tool id="gatk4_auto_germlinecnvcaller" name="GATK4 AUTO GermlineCNVCaller" version="@WRAPPER_VERSION@1" profile="18.01">
   <description>- Calls copy-number variants in germline samples given their counts and the output of DetermineGermlineContigPloidy</description>
   <macros>
     <import>macros.xml</import>

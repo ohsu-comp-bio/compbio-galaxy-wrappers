@@ -1,4 +1,4 @@
-<tool id="gatk4_auto_postprocessgermlinecnvcalls" name="GATK4 AUTO PostprocessGermlineCNVCalls" version="@WRAPPER_VERSION@0" profile="18.01">
+<tool id="gatk4_auto_postprocessgermlinecnvcalls" name="GATK4 AUTO PostprocessGermlineCNVCalls" version="@WRAPPER_VERSION@1" profile="18.01">
   <description>- Postprocesses the output of GermlineCNVCaller and generates VCFs and denoised copy ratios</description>
   <macros>
     <import>macros.xml</import>
