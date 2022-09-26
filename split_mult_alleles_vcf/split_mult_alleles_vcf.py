@@ -12,7 +12,7 @@ import vcfreader
 import vcfwriter
 import argparse
 
-VERSION = '0.8.0'
+VERSION = '0.8.1'
 
 
 def supply_args():
@@ -278,15 +278,20 @@ def unphase(rec):
     :param rec:
     :return:
     """
-    samp = rec[9].split(':')
-    new_rec = rec
-    gt = samp[0]
-    if '|' in gt:
-        gt = gt.replace('|', '/')
-        if '0' in gt and '1' in gt:
-            gt = '0/1'
-        samp[0] = gt
-    new_rec[9] = ':'.join(samp)
+    frmt_len = len(rec[8].split(':'))
+    new_rec = rec[:9]
+    for r in rec[9:]:
+        samp = r.split(':')
+        gt = samp[0]
+        if '|' in gt:
+            gt = gt.replace('|', '/')
+            if '0' in gt and '1' in gt:
+                gt = '0/1'
+            samp[0] = gt
+        if len(samp) > frmt_len:
+            new_rec.append(':'.join(samp[:-1]))
+        else:
+            new_rec.append(r)
     return new_rec
 
 
@@ -354,9 +359,13 @@ def main():
     new_header.add_header_line('FILTER', header_dict)
     # If unphase option is set, remove all the pipe symbols.
     if args.unphase:
+        new_out = []
         for entry in out_vcf_recs:
-            unphase(entry)
-    vcfwriter.VcfWriter(args.output, out_vcf_recs, new_header.raw_header).write_me()
+            new_entry = unphase(entry)
+            new_out.append(new_entry)
+        vcfwriter.VcfWriter(args.output, new_out, new_header.raw_header).write_me()
+    else:
+        vcfwriter.VcfWriter(args.output, out_vcf_recs, new_header.raw_header).write_me()
 
 
 if __name__ == "__main__":
