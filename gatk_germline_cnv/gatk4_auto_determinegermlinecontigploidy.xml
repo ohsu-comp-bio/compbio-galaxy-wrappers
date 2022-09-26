@@ -1,4 +1,4 @@
-<tool id="gatk4_determinegermlinecontigploidy" name="GATK4 DetermineGermlineContigPloidy" version="@WRAPPER_VERSION@0" profile="18.01">
+<tool id="gatk4_determinegermlinecontigploidy" name="GATK4 DetermineGermlineContigPloidy" version="@WRAPPER_VERSION@1" profile="18.01">
   <description>- Determines the baseline contig ploidy for germline samples given counts data</description>
   <macros>
     <import>macros.xml</import>
