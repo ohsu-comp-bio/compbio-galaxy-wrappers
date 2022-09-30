@@ -1,0 +1,21 @@
+<tool id='idat_reader' name="IDAT-to-text Converter" version='1.0.0'>
+    <description>converts red and green IDAT array data into tabular text format.</description>
+    <requirements>
+      <requirement type="package" version="0.36.0">bioconductor-illuminaio</requirement>
+      <requirement type="package" version="1.4.4">r-reshape2</requirement>
+      <requirement type="package" version="3.1.8">r-tibble</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+    Rscript $__tool_directory__/idat_reader.R $red $green $manifest
+]]>
+    </command>
+    <inputs>
+        <param type="data" name="red" label="Red microarray IDAT" format="idat"/>
+        <param type="data" name="green" label="Green microarray IDAT" format="idat"/>
+        <param type="data" name="manifest" label="MethylationEPIC B5 Manifest" format="txt"/>
+    </inputs>
+    <outputs>
+        <data format="txt" name="output" label="Methylation counts" from_work_dir="idat_output.txt"/>
+    </outputs>
+
+</tool>
