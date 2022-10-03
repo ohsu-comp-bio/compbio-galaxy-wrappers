@@ -17,5 +17,15 @@
     <outputs>
         <data format="txt" name="output" label="Methylation counts" from_work_dir="idat_output.txt"/>
     </outputs>
+    <help>
+        <![CDATA[
+IDAT-to-text Converter
+
+Description: R script to convert .idat files into interpretable comma-delimited tabular data.
+Usage: Rscript idat_reader.R --red --green --manifest
+Output: Consolidated output.txt file merging red + green Microarray counts and MethylationEPIC Manifest
+
+]]>
+    </help>
 
 </tool>
