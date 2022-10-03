@@ -1,10 +1,10 @@
-owner: "honeydiu"
-remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/methyl"
-homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/methyl"
+owner: "chongbe"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/idat_reader"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/idat_reader"
 categories:
   - "CompBio Galaxy Wrappers"
 repositories:
-  methyl:
+  idat_reader:
     description: "R script to convert .idat files into interpretable comma-delimited tabular data."
     include:
       - idat_reader.xml
