@@ -1,4 +1,4 @@
-<tool id="itd_detect" name="ITD Detect" version="0.4.1" >
+<tool id="itd_detect" name="ITD Detect" version="0.4.2" >
     <description>Detect ITD events in a BAM file.</description>
 
     <requirements>
