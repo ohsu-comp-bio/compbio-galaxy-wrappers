@@ -1,4 +1,4 @@
-<tool id='idat_reader' name="IDAT-to-text Converter" version='1.0.0'>
+<tool id="idat_reader" name="IDAT-to-text Converter" version="1.0.1">
     <description>converts red and green IDAT array data into tabular text format.</description>
     <requirements>
       <requirement type="package" version="0.36.0">bioconductor-illuminaio</requirement>
