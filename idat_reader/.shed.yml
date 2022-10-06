@@ -1,0 +1,12 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/idat_reader"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/idat_reader"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  idat_reader:
+    description: "R script to convert .idat files into interpretable comma-delimited tabular data."
+    include:
+      - idat_reader.xml
+      - idat_reader.R
