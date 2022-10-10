@@ -6,7 +6,7 @@
       <requirement type="package" version="3.1.8">r-tibble</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
-    Rscript $__tool_directory__/idat_reader.R $red $green $manifest
+    Rscript $__tool_directory__/idat_reader.R $red $green $manifest $output
 ]]>
     </command>
     <inputs>
@@ -15,16 +15,14 @@
         <param type="data" name="manifest" label="MethylationEPIC B5 Manifest" format="txt"/>
     </inputs>
     <outputs>
-        <data format="txt" name="output" label="Methylation counts" from_work_dir="idat_output.txt"/>
+        <data format="txt" name="output" label="Methylation counts"/>
     </outputs>
     <help>
         <![CDATA[
 IDAT-to-text Converter
-
 Description: R script to convert .idat files into interpretable comma-delimited tabular data.
 Usage: Rscript idat_reader.R --red --green --manifest
 Output: Consolidated output.txt file merging red + green Microarray counts and MethylationEPIC Manifest
-
 ]]>
     </help>
 
