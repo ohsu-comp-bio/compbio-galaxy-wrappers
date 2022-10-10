@@ -3,13 +3,14 @@
 # GATK4 SelectVariants is not working in the way we need to properly filter these VCFs.  Instead of spending a bunch
 # of time trying to get it to work for us, I'm writing this short script to do custom filtering.  It will only be useful
 # for the purpose of post-filtering multi-sample HOP VCFs.
+# 0.4.0 - Remove HGMD filtering strategies
 
 import argparse
 import numpy
 import re
 import vcf
 
-VERSION = '0.3.3'
+VERSION = '0.4.0'
 
 
 def supply_args():
@@ -55,11 +56,6 @@ class VcfRec(object):
         except:
             self.gnomad = None
 
-        try:
-            self.hgmd = rec.INFO['hgmd.CLASS'][0]
-        except:
-            self.hgmd = None
-
         self.snpeff_filt = ["3_prime_UTR_variant", "5_prime_UTR_variant", "downstream_gene_variant",
                             "intron_variant", "intergenic_region", "synonymous_variant",
                             "upstream_gene_variant", "non_coding_transcript_exon_variant"]
@@ -93,14 +89,13 @@ class VcfRec(object):
 
         self.is_path = (self.clnsig == 'Pathogenic') or \
                        (self.clnsig == 'Likely_pathogenic') or \
-                       ('athogenic' in self.clnsigconf) or \
-                       (self.hgmd == 'DM')
+                       ('athogenic' in self.clnsigconf)
 
         self.is_path_clinvar = (self.clnsig == 'Pathogenic') or \
                                (self.clnsig == 'Likely_pathogenic') or \
                                ('athogenic' in self.clnsigconf)
 
-        self.no_info = not self.clnsig and not self.gnomad and not self.hgmd
+        self.no_info = not self.clnsig and not self.gnomad
 
         self.ab_avg, self.ab_std = self._calc_ab()
         if self.ab_avg:
@@ -178,7 +173,6 @@ class VcfRec(object):
             print("CLNSIG: {0}".format(self.clnsig))
             print("CLNSIGCONF: {0}".format(self.clnsigconf))
             print("GNOMAD: {0}".format(self.gnomad))
-            print("HGMD: {0}".format(self.hgmd))
             print("SNPEFF STATUS: {0}".format(self.snpeff))
             print("SNPEFF TERMS: {0}".format(self.snpeff_terms))
             print("SNPEFF GENE: {0}".format(self.snpeff_gene))
@@ -246,9 +240,9 @@ def main():
         elif entry.bad_ab:
             vcf_writer_bad.write_record(record)
         elif ('missense_variant' in entry.snpeff_terms and len(entry.snpeff_terms) == 1
-              and not entry.is_path_clinvar and not entry.hgmd):
+              and not entry.is_path_clinvar):
             vcf_writer_bad.write_record(record)
-        elif entry.is_splice and not entry.canon_splice and not entry.is_path_clinvar and not entry.hgmd:
+        elif entry.is_splice and not entry.canon_splice and not entry.is_path_clinvar:
             vcf_writer_bad.write_record(record)
         elif 'synonymous_variant' in entry.snpeff_terms and len(entry.snpeff_terms) == 1 and not entry.is_path_clinvar:
             vcf_writer_bad.write_record(record)
