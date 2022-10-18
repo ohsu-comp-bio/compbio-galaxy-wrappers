@@ -1,0 +1,11 @@
+owner: "onwuzu"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/bkgd_filter"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  bkgd_filter:
+    description: "Filter variants in a VCF based on background threshold."
+    include:
+      - bkgd_filter.py
+      - bkgd_filter.xml
