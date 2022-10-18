@@ -1,0 +1,11 @@
+owner: "onwuzu"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/hotspot_check"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  hotspot_check:
+    description: "Check if hotspots are above or below background"
+    include:
+      - hotspot_check.py
+      - hotspot_check.xml
