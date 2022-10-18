@@ -8,7 +8,7 @@ from collections import OrderedDict
 from string import Template
 import argparse
 
-VERSION = '0.6.0'
+VERSION = '0.6.1'
 
 
 def supply_args():
@@ -29,6 +29,7 @@ def supply_args():
                                                  'for other reasons, and is above min_cnt.')
     parser.add_argument('--pon_flag_below', help='Flag to apply if variant is seen in PON, does not get removed '
                                                  'for other reasons, and is below min_cnt.')
+    parser.add_argument('--pon_flag_filtered', help='Flag to apply if variant is seen in PON, and should be removed.')
     parser.add_argument('--no_clinvar_rm', action='store_true', help='If the call is in ClinVar, and is not benign, '
                                                                      'do not remove the entry based on '
                                                                      'min_cnt thresholds.')
@@ -407,6 +408,7 @@ class MyVcfEdited(MyVcf):
                            'bkgd_pass_flag': args.bkgd_pass_flag,
                            'pon_flag_below': args.pon_flag_below,
                            'pon_flag_above': args.pon_flag_above,
+                           'pon_flag_filtered': args.pon_flag_filtered,
                            'min_cnt': args.min_cnt,
                            'low_seen': low_seen}
         self.new_headers = self._create_new_headers()
@@ -446,7 +448,9 @@ class MyVcfEdited(MyVcf):
                                                  'panel of normals in ${low_seen} or more and fewer '
                                                  'than ${min_cnt} samples.\">'),
                       'pon_flag_above': Template('##FILTER=<ID=${pon_flag_above},Description=\"Variant found in '
-                                                 'panel of normals in ${min_cnt} or more samples.\">')}
+                                                 'panel of normals in ${min_cnt} or more samples.\">'),
+                      'pon_flag_filtered': Template('##FILTER=<ID=${pon_flag_filtered},Description=\"Variant found in '
+                                                    'panel of normals in ${min_cnt} or more samples and should be filtered.\">')}
         return filt_tmpls[tmpl].substitute(self.param_dict)
 
 
@@ -587,6 +591,7 @@ class CompVcf(object):
         self.pon = pon
         self.bkgd_pass_flag = args.bkgd_pass_flag
         self.pon_flag_below = args.pon_flag_below
+        self.pon_flag_filtered = args.pon_flag_filtered
         self.no_clinvar_rm = args.no_clinvar_rm
         self.good_vcf, self.bad_vcf = self._start_comp()
 
@@ -616,6 +621,10 @@ class CompVcf(object):
                     good_vcf.append(self.myvcf.myvcf[coord].retr_curr_values())
                 else:
                     bad_vcf.append(self.myvcf.myvcf[coord].retr_curr_values())
+                    # K.O: so that records are labeled and added to the same final VCF
+                    record = self.myvcf.myvcf[coord].retr_curr_values()
+                    record[6] = record[6]+';'+self.pon_flag_filtered
+                    good_vcf.append(record)
             else:
                 good_vcf.append(self.myvcf.myvcf[coord].retr_curr_values())
         return good_vcf, bad_vcf
