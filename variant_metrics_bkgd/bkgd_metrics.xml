@@ -15,14 +15,16 @@
   <command><![CDATA[
     python $__tool_directory__/bkgd_metrics.py
     '${input_vcf}'
-    '${input_cov}'
+    #if $input_cov:
+        --input_cov '${input_cov}'
+    #end if
     '${bkgd_est_file}'
     '${output_vcf}'
 ]]></command>
 
   <inputs>
       <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
-      <param name="input_cov" type="data" format="tsv,tabular" label="Input Depth of Coverage file" />
+      <param name="input_cov" type="data" format="tsv,tabular" optional="true" label="Input Depth of Coverage file (optional)" />
       <param name="bkgd_est_file" type="data" format="tsv,tabular,txt" label="Background estimates file" />
   </inputs>
 

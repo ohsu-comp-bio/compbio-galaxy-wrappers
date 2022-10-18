@@ -28,7 +28,7 @@ def supply_args():
     """
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('input_vcf', help='Input VCF')
-    parser.add_argument('input_cov', type=DepthOfCoverageReader, help='Input Depth of Coverage file')
+    parser.add_argument('--input_cov', required=False, type=DepthOfCoverageReader, help='Input Depth of Coverage file')
     parser.add_argument('bkgd_est_file', help='Text file containing depth stats of loci in panel.')
     parser.add_argument('output_vcf', help='Output VCF')
     parser.add_argument('--version', action='version',
@@ -58,7 +58,8 @@ def main():
     header = reader.header
     sample = reader.header.samples.names[0]
 
-    doc_reader = args.input_cov.doc
+    if args.input_cov:
+        doc_reader = args.input_cov.doc
 
     res_est = get_est_dict(args.bkgd_est_file)
 
@@ -69,16 +70,16 @@ def main():
     header.add_info_line(vcfpy.OrderedDict([('ID', info_id),
                                             ('Number', 1), ('Type', 'Float'),
                                             ('Description', 'Background estimate threshold from cohort of normals (general)')]))
-    header.add_format_line(vcfpy.OrderedDict([('ID', fmt_id),
-                                              ('Number', 1), ('Type', 'Float'),
-                                              ('Description', 'Background estimate')]))
+    # header.add_format_line(vcfpy.OrderedDict([('ID', fmt_id),
+    #                                           ('Number', 1), ('Type', 'Float'),
+    #                                           ('Description', 'Background estimate')]))
     for base in BASES:
         header.add_info_line(vcfpy.OrderedDict([('ID', '{}_{}'.format(info_id, base)),
                                                 ('Number', 1), ('Type', 'Float'),
                                                 ('Description', 'Background estimate threshold from cohort of normals for base {}'.format(base))]))
-        header.add_format_line(vcfpy.OrderedDict([('ID', '{}_{}'.format(fmt_id, base)),
-                                                  ('Number', 1), ('Type', 'Float'),
-                                                  ('Description', 'Background estimate for base {}'.format(base))]))
+        # header.add_format_line(vcfpy.OrderedDict([('ID', '{}_{}'.format(fmt_id, base)),
+        #                                           ('Number', 1), ('Type', 'Float'),
+        #                                           ('Description', 'Background estimate for base {}'.format(base))]))
 
     records = {}
     # add info to VCF records
@@ -86,9 +87,10 @@ def main():
         pos = str(record.CHROM) + ':' + str(record.POS)
         if pos in res_est:
             record.INFO[info_id] = res_est[pos]['general']['upper']
-            record.add_format(key=fmt_id, value=None)
-            bkgd_est = calc_bkgd_est(doc_reader[pos]['off_target'], doc_reader[pos]['total_depth'])
-            record.call_for_sample[sample].data[fmt_id] = float('{:0.3f}'.format(bkgd_est))
+            #record.add_format(key=fmt_id, value=None)
+
+            #bkgd_est = calc_bkgd_est(doc_reader[pos]['off_target'], doc_reader[pos]['total_depth'])
+            #record.call_for_sample[sample].data[fmt_id] = float('{:0.3f}'.format(bkgd_est))
             for base in BASES:
 
                 # add cohort bkgd estimates info VCF INFO field
@@ -96,10 +98,10 @@ def main():
                 record.INFO[base_hid] = res_est[pos][base]['upper']
 
                 # add calculated AF/background estimates of variant to VCF SAMPLE field
-                base_hid = '{}_{}'.format(fmt_id, base)
-                record.add_format(key=base_hid, value=None)
-                bkgd_est = calc_bkgd_est(doc_reader[pos][base], doc_reader[pos]['total_depth'])
-                record.call_for_sample[sample].data[base_hid] = float('{:0.3f}'.format(bkgd_est))
+                #base_hid = '{}_{}'.format(fmt_id, base)
+                #record.add_format(key=base_hid, value=None)
+                #bkgd_est = calc_bkgd_est(doc_reader[pos][base], doc_reader[pos]['total_depth'])
+                #record.call_for_sample[sample].data[base_hid] = float('{:0.3f}'.format(bkgd_est))
         else:
             print('{} not found in PON background estimates file'.format(pos))
 
