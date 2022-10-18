@@ -1,4 +1,4 @@
-<tool id="umi_metrics" name="Variant Level UMI Metrics" version="0.1.2" >
+<tool id="umi_metrics" name="Variant Level UMI Metrics" version="0.1.3" >
   <description>Metrics calculated at the variant level specifically to address unique molecular indices.</description>
 
   <version_command>python $__tool_directory__/umi_metrics.py --version</version_command>

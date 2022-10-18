@@ -11,7 +11,7 @@ from vcf import VcfWriter
 
 import argparse
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 
 
 def supply_args():
@@ -41,7 +41,7 @@ def get_avgd(record, umi_avgd):
     Get the average depth from either the per locus or ProbeQC structures.
     :return:
     """
-    for entry, avgd in umi_avgd.iteritems():
+    for entry, avgd in umi_avgd.items():
         if record[0] == entry[0] and record[1] == entry[1]:
             return '{:0.3f}'.format(avgd)
 
@@ -69,8 +69,10 @@ def main():
     for record in vcf_in.vcf:
         chrom = record[0]
         coord = record[1]
+        ref = record[2]
+        alt = record[3]
         avgd = get_avgd(record, umi_avgd)
-        vcf_in.add_format_field(chrom, coord, hid, avgd)
+        vcf_in.add_format_field(chrom, coord, ref, alt, hid, avgd)
 
     VcfWriter(args.outvcf, vcf_in)
 
