@@ -2,7 +2,7 @@
 R script to convert .idat files into interpretable comma-delimited tabular data.
 ### Input
 <code>
-Rscript idat_reader.R --red --green --manifest
+Rscript idat_reader.R --red --green --manifest --output
 </code>
 
 ### Output
