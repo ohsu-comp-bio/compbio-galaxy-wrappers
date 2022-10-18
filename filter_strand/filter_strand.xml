@@ -1,4 +1,4 @@
-<tool id="filter_strand" name="Strand Bias Filter" version="1.2.0" >
+<tool id="filter_strand" name="Strand Bias Filter" version="1.2.1" >
     <description>Filter based on bias in alternate and reference read direction.</description>
 
     <requirements>
