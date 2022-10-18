@@ -1,0 +1,40 @@
+<tool id="hotspot_check" name="Hotspot Check" version="1.0.0" >
+    <description>Check if hotspots are annotated as above or below background</description>
+
+    <requirements>
+        <requirement type="package" version="0.13.3">vcfpy</requirement>
+    </requirements>
+
+    <version_command>python $__tool_directory__/hotspot_check.py --version</version_command>
+
+    <command><![CDATA[
+    python $__tool_directory__/hotspot_check.py
+    "${input_vcf}"
+    "${output_metrics}"
+    #if $label
+      --label "${label}"
+    #end if
+    #if $filter_condition
+      --filter_condition "${filter_condition}"
+    #end if
+  ]]></command>
+
+  <inputs>
+    <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
+    <param name="label" type="text" label="Hotspot label" />
+    <param name="filter_condition" type="text" label="FILTER annotation to use for filtering" />
+  </inputs>
+
+  <outputs>
+    <data name="output_metrics" format="txt" label="${tool.name} on ${on_string} metrics: JSON" />
+  </outputs>
+
+  <help>
+    Check if hotspots are annotated as above or below background
+  </help>
+
+  <tests> </tests>
+
+  <citations> </citations>
+
+</tool>
