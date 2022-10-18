@@ -18,14 +18,19 @@ class VcfReader(object):
         """
         header = []
         vcf = OrderedDict()
+        i = 0
         for line in self.infile:
             if line.startswith('#'):
                 header.append(line)
             else:
+                i += 1
+                #print(i)
                 line = line.rstrip('\n').split('\t')
                 chrom = line[0]
                 coord = line[1]
-                vcf[(chrom, coord)] = line
+                ref = line[3]
+                alt = line[4]
+                vcf[(chrom, coord, ref, alt)] = line
 
         return header, vcf
 
@@ -53,14 +58,14 @@ class VcfReader(object):
         my_index = self._find_header_index(hfield)
         self.header.insert(my_index, to_write)
 
-    def add_format_field(self, chrom, coord, fname, fvalue):
+    def add_format_field(self, chrom, coord, ref, alt, fname, fvalue):
         """
         Add an entry to the VCF FORMAT and Sample fields.
         :return:
         """
-        self.vcf[(chrom, coord)][8] = ':'.join([self.vcf[(chrom, coord)][8],
+        self.vcf[(chrom, coord, ref, alt)][8] = ':'.join([self.vcf[(chrom, coord, ref, alt)][8],
                                                 fname])
-        self.vcf[(chrom, coord)][9] = ':'.join([self.vcf[(chrom, coord)][9],
+        self.vcf[(chrom, coord, ref, alt)][9] = ':'.join([self.vcf[(chrom, coord, ref, alt)][9],
                                                 str(fvalue)])
 
 
