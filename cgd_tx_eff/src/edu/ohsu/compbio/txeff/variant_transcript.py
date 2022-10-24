@@ -32,6 +32,7 @@ class VariantTranscript(AnnovarVariantFunction):
         transcript.hgvs_p_dot_three = self._noneIfEmpty(self.hgvs_p_dot_three)
         transcript.splicing = self._noneIfEmpty(self.splicing)
         transcript.refseq_transcript = self._noneIfEmpty(self.refseq_transcript)
+        transcript.protein_transcript = self._noneIfEmpty(self.protein_transcript)
         return transcript
 
     def _noneIfEmpty(self, value: str):

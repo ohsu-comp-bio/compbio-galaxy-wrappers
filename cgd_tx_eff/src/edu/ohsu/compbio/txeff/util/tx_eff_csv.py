@@ -1,6 +1,8 @@
 '''
 Created on Aug. 24, 2022
 
+A class that can read and write transcripts to/from CSV
+
 @author: pleyte
 '''
 import csv

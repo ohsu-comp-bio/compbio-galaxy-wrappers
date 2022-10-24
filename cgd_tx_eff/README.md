@@ -116,7 +116,10 @@ The transcript-effects attributes in the INFO field are parallel arrays. For exa
 
 ### csv2avinput.py
 
+Read a csv with chromosome, posistion start, position end, reference, and variant base and generate a Annovar input file.
+
 ### compare_cgd_tfx.py
 
 ### refseq_to_ccds.py
 
+A class with methods for creating a RefSeq-to-CCDS dictionary from gff or csv files. This class can also be used to create a mapping csv from the gff file. 
