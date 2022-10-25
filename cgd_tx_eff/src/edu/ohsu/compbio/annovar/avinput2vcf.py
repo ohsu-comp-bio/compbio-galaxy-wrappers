@@ -1,6 +1,7 @@
 '''
 Created on Jun 21, 2022
 
+Convert an Annovar *.avinput file to VCF
 @author: pleyte
 '''
 import argparse

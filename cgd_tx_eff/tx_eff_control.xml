@@ -1,5 +1,8 @@
 <tool id="tx_eff_control" name="CGD Transcript Effects" version="0.1.1" >
-  <description>Apply transcript-effects annotations from Annovar and HGVS to a VCF.</description>
+  <description>
+  	Apply transcript-effects annotations from Annovar and HGVS to a VCF.
+  	Note: This configuration doesn't work yet. 
+  </description>
 
   <requirements>
     <requirement type="package" version="0.13.3">vcfpy</requirement>
@@ -27,12 +30,17 @@
     #if $annovar_files
         "${annovar_files}"
     #end if
+    
+    #if $ccds_map
+    	--ccds_map "${ccds_map}"
+    #end if
   ]]></command>
 
   <inputs>
     <param name="in_vcf" format="vcf,vcf_bgzip" optional="false" type="data" label="Input VCF" />
-    <param name="out_vcf" format="txt" optional="false" type="data" label="Output VCF" />    
-    <param name="require_match" format="txt" optional="true" type="data" label="Only add transcript effects to variants that are found by both Annovar and HGVS/UTA." />
+    <param name="out_vcf" format="txt" optional="false" type="data" label="Output VCF" />
+    <param name="ccds_map" format="txt" optional="false" type="data" label="CCDS GFF"/>
+    <param name="require_match" format="txt" optional="true" type="data" label="Only add transcript effects to variants that are found by both Annovar and HGVS/UTA." />    
     <param name="annovar_files" format="txt" optional="true" type="data" label="One or more of Annovar's variant_function or exonic_variant_function files" />    
   </inputs>
 
@@ -41,15 +49,16 @@
   </outputs>
 
   <help><![CDATA[
-    usage: tx_eff_control.py [-h] [--in_vcf VCF] [--out_vcf VCF] [--require_match] [--version] variant_function exonic_variant_function
+    usage: tx_eff_control.py [-h] [--version] --in_vcf VCF --out_vcf VCF --ccds_map GFF[--require_match] annovar.variant_function annovar.exonic_variant_function
                          
 	required arguments: 
 	  --in_vcf			Input VCF with variant calls but no transcript effects
 	  --out_vcf         Output VCF that will be a copy of the in_vcf, with transcript effects added	  
-	  
+	  --ccds_map        Input GFF that maps RefSeq id to CCDS id
+
     positional arguments:
-      variant_function               Annovar variant_function file
-      exonic_variant_function        Annovar exonic_variant_function file
+      annovar.variant_function               Annovar variant_function file
+      annovar.exonic_variant_function        Annovar exonic_variant_function file
 
     optional arguments:
       --require_match      Only add transcript effects to variants that are found by both Annovar and HGVS/UTA
@@ -57,4 +66,3 @@
       --version            show program's version number and exit
   ]]></help>
 </tool>
-

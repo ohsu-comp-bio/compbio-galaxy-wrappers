@@ -11,11 +11,11 @@ Created on Apr 14, 2022
 '''
 
 import argparse
-import csv
 import logging
 import os
 import sys
 from edu.ohsu.compbio.annovar import annovar_parser
+from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 
 VERSION = '0.0.1'
 
@@ -57,28 +57,6 @@ def _parse_args():
         
     return args
 
-
-def _write_csv(file_name, annovar_records: list):
-    '''
-    Write the AnnovarVariantFunction records to a csv
-    ''' 
-    fields = ['chromosome', 'position', 'reference', 'alt', 
-              'variant_effect', 'variant_type', 'hgvs_amino_acid_position', 'hgvs_base_position', 
-              'exon', 'hgnc_gene', 'hgvs_c_dot', 'hgvs_p_dot_one', 'hgvs_p_dot_three', 
-              'splicing', 'refseq_transcript']
-    
-    with open(file_name, 'w') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(fields)
-        
-        for rec in annovar_records:
-            
-            csv_writer.writerow([rec.chromosome, rec.position, rec.reference, rec.alt, 
-                                rec.variant_effect, rec.variant_type, rec.hgvs_amino_acid_position, rec.hgvs_base_position,
-                                rec.exon, rec.hgnc_gene, rec.hgvs_c_dot, rec.hgvs_p_dot_one, rec.hgvs_p_dot_three,
-                                rec.splicing, rec.refseq_transcript])
-
-
 def get_annovar_records(annovar_file_names: list):
     '''
     Parse Annovar records from the list files 
@@ -111,9 +89,9 @@ def _main():
     annovar_file_names = [x.name for x in args.annovar_file]
     annovar_records = get_annovar_records(annovar_file_names)
 
-    logger.info(f"Writing {args.out_file.name}")
-    _write_csv(args.out_file.name, annovar_records)
-
+    logger.info(f"Writing {args.out_file.name}")    
+    txEffCsv = TxEffCsv()
+    txEffCsv.write_transcripts(args.out_file.name, annovar_records)
 
 if __name__ == '__main__':
     _main()
