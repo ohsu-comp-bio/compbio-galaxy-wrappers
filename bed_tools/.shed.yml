@@ -1,0 +1,11 @@
+owner: "onwuzu"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/bed_tools"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  sort_bed:
+    description: "Sort a Bed by natural order."
+    include:
+      - sort_bed.xml
+      - sort_bed.py

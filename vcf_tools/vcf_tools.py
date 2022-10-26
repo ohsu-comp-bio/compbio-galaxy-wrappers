@@ -3,21 +3,20 @@ import vcfpy
 from operator import attrgetter
 from natsort import natsorted
 import json
-import sys
-import os
 
-VERSION = '0.0.1'
-print(os.path.basename(sys.argv[0]), VERSION, sep=' ')
+VERSION = '0.0.3'
 
 # TODO: m2 vcf INFO ',' are converted to %2C; no ',' in fb INFO values
 
 
 class VarLabel:
+    """
+    Label variant in a VCF
+    """
     def __init__(self, input_vcf, label):
         self.reader = vcfpy.Reader.from_path(input_vcf)
         self.label = label
 
-    @staticmethod
     def _get_dict_records(reader):
         records = {}
         for record in reader:
@@ -49,10 +48,6 @@ class VarLabel:
         else:
             return selected, removed
 
-    def get_record_count(self, records, metric):
-        count_rec = len(records)
-        return {metric: count_rec}
-
     def add_label_info(self, description):
         self.reader.header.add_filter_line(vcfpy.OrderedDict([('ID', self.label), ('Description', description)]))
 
@@ -72,7 +67,37 @@ class VarLabel:
         return records
 
 
+class VarFilter:
+    """
+    Filter records in a VCF based from an INFO field column and on a FORMAT field column
+    """
+    def __init__(self, input_vcf):
+        self.reader = vcfpy.Reader.from_path(input_vcf)
+        self.header = self.reader.header
+        self.samples = self.reader.header.samples.names
+
+    def filter_records(self, filter_from, filter_on, alt_allele):
+        records_abovebkgd = []
+        records_belowbkgd = []
+        for record in self.reader:
+            alt_type = record.ALT[0].type
+            if alt_allele and alt_type == 'SNV':
+                alt_str = '_' + record.ALT[0].value
+            else:
+                alt_str = ''
+            f_on = filter_on + alt_str
+            f_from = filter_from + alt_str
+            if record.call_for_sample[self.samples[0]].data[f_on] > record.INFO[f_from]:
+                records_abovebkgd.append(record)
+            else:
+                records_belowbkgd.append(record)
+        return records_abovebkgd, records_belowbkgd
+
+
 class VarWriter:
+    """
+    Write out records to a VCF
+    """
     def __init__(self, records):
         self.records = records
 
@@ -87,8 +112,11 @@ class VarWriter:
             oj.write(json.dumps(to_dump))
 
 
-# TODO: multi-sample instead of first vcf samples
 class VcfMerger:
+    """
+    Merge headers and variants in VCFs produced by different variant callers
+    """
+    # TODO: multi-sample instead of first vcf samples
     def __init__(self, input_vcfs, callers, vcf_format="VCFv4.2"):
         self.readers = [vcfpy.Reader.from_path(vcf) for vcf in input_vcfs]
         self.callers = callers
@@ -184,6 +212,9 @@ class VcfMerger:
 
 
 class VcfSelecter:
+    """
+    In a merged VCF, select VCF fields of interest
+    """
     def __init__(self, input_vcf, info_fields, format_fields, caller_priority, vcf_format="VCFv4.2"):
         self.reader = vcfpy.Reader.from_path(input_vcf)
         self.info_fields = info_fields
@@ -203,6 +234,10 @@ class VcfSelecter:
                 info_id = '{}_{}'.format(caller, info_field)
                 if info_id in self.reader.header.info_ids():
                     info = self.reader.header.get_info_field_info(info_id)
+                    # AF in fb is Number = 1 unlike AF in m2 which is 'A'.
+                    # this avoids vcfpy write errors
+                    if info.id == 'AF' and caller == 'fb':
+                        info.number = 'A'
                     self.header.add_info_line(vcfpy.OrderedDict([('ID', info.id.split('_', 1)[1]),
                                                                  ('Number', info.number),
                                                                  ('Type', info.type),
@@ -234,33 +269,58 @@ class VcfSelecter:
         records = {}
         for record in self.reader:
             var_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT)
-            for info in self.info_fields:
-                for caller in self.caller_priority:
-                    caller_key = '{}_{}'.format(caller, info)
+            if var_id not in records:
+                # get the first caller in the priority
+                first_caller = None
+                for filt in record.FILTER:
+                    if filt in self.caller_priority:
+                        first_caller = filt
+                        break
+                # get only info values from first caller
+                for info in self.info_fields:
+                    if first_caller:
+                        caller_key = '{}_{}'.format(first_caller, info)
+                    else:
+                        raise Exception('No caller in given caller priority list in record: {}'.format(var_id))
                     if caller_key in record.INFO:
                         value = record.INFO.get(caller_key, None)
-                        if value is not None:
+                        # if None or empty
+                        if value:
                             record.INFO[info] = value
-                            break
-            for info in list(record.INFO):
-                if info not in self.info_fields:
-                    record.INFO.pop(info, None)
+                # get values of info field of first or next priority caller
+                # for info in self.info_fields:
+                #     for caller in self.caller_priority:
+                #         caller_key = '{}_{}'.format(caller, info)
+                #         if caller_key in record.INFO:
+                #             value = record.INFO.get(caller_key, None)
+                #             if value:
+                #                 record.INFO[info] = value
+                #                 break
 
-            for sample in self.samples.names:
-                for fmt in self.format_fields:
-                    for caller in self.caller_priority:
-                        caller_key = '{}_{}'.format(caller, fmt)
+                # remove all info_fields not of interest
+                for info in list(record.INFO):
+                    if info not in self.info_fields:
+                        record.INFO.pop(info, None)
+
+                # get only sample values from first caller
+                for sample in self.samples.names:
+                    for fmt in self.format_fields:
+                        caller_key = '{}_{}'.format(first_caller, fmt)
                         if caller_key in record.call_for_sample[sample].data:
                             value = record.call_for_sample[sample].data.get(caller_key, None)
-                            if value is not None:
+                            # AF in fb is Number = 1 unlike AF in m2 which is 'A'. This avoids vcfpy write errors
+                            if caller_key == 'fb_AF':
+                                value = [value]
+                            if value:
                                 record.call_for_sample[sample].data[fmt] = value
                                 record.FORMAT.append(fmt)
-                                break
-            for call in record.calls:
-                for fmt in list(call.data):
-                    if fmt not in self.format_fields:
-                        call.data.pop(fmt, None)
-                        if fmt in record.FORMAT:
-                            record.FORMAT.remove(fmt)
+                # remove all info_fields not of interest
+                for call in record.calls:
+                    for fmt in list(call.data):
+                        if fmt not in self.format_fields:
+                            call.data.pop(fmt, None)
+                            if fmt in record.FORMAT:
+                                record.FORMAT.remove(fmt)
+
             records[var_id] = record
         return list(records.values())

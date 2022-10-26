@@ -24,7 +24,7 @@
     </xml>
 
     <!--Command token, java options should not be hard coded here.-->
-    <token name="@CMD_BEGIN@">gatk --java-options "-Xmx24g -Xms2g"</token>
+    <token name="@CMD_BEGIN@">gatk</token>
 
     <!--Define sections that parameters could exist within.-->
     <template name="set_sections">
@@ -406,7 +406,17 @@
 <!--DetermineGermlineContigPloidy-->
 
     <xml name="dgcp_model">
-        <param name="model" type="text" label="Model" help="Input ploidy-model directory.  If only a single sample is specified, this input is required.  If multiple samples are specified, this input should not be provided."/>
+        <param name="model" type="text" label="Model" help="Input ploidy-model directory.  If only a single sample is specified, this input is required.  If multiple samples are specified, this input should not be provided.">
+            <sanitizer>
+                <valid initial="string.ascii_letters,string.digits">
+                    <add value="/"/>
+                    <add value="_"/>
+                    <add value="-"/>
+                    <add value="."/>
+                    <add value="$"/>
+                </valid>
+            </sanitizer>
+        </param>
     </xml>
 
 <!--AnalyzeSaturationMutagenesis-->

@@ -1,4 +1,4 @@
-<tool id="gatk4_auto_determinegermlinecontigploidy" name="GATK4 AUTO DetermineGermlineContigPloidy" version="@WRAPPER_VERSION@0" profile="18.01">
+<tool id="gatk4_determinegermlinecontigploidy" name="GATK4 DetermineGermlineContigPloidy" version="@WRAPPER_VERSION@0" profile="18.01">
   <description>- Determines the baseline contig ploidy for germline samples given counts data</description>
   <macros>
     <import>macros.xml</import>
@@ -176,13 +176,23 @@
   --verbosity $common.verbosity
 #end if
 &&
-cat ${output}/${output_prefix}-calls/SAMPLE_0/contig_ploidy.tsv > $dummy_output
+cat "${output}/${output_prefix}-calls/SAMPLE_0/contig_ploidy.tsv" > $dummy_output
 ]]></command>
   <inputs>
     <repeat name="input_rpt" title="input">
-      <param name="input" argument="--input" type="data" optional="false" multiple="true" format="h5,tsv" label="Input" help="Input read-count files containing integer read counts in genomic intervals for all samples.  Intervals must be identical and in the same order for all samples.  If only a single sample is specified, an input ploidy-model directory must also be specified.  "/>
+      <param name="input" argument="--input" type="data" optional="false" multiple="true" format="h5,tsv,tabular" label="Input" help="Input read-count files containing integer read counts in genomic intervals for all samples.  Intervals must be identical and in the same order for all samples.  If only a single sample is specified, an input ploidy-model directory must also be specified.  "/>
     </repeat>
-    <param name="output" argument="--output" type="text" optional="false" value="" label="Output" help="Output directory.  This will be created if it does not exist."/>
+    <param name="output" argument="--output" type="text" optional="false" value="" label="Output" help="Output directory.  This will be created if it does not exist." >
+        <sanitizer>
+          <valid initial="string.ascii_letters,string.digits">
+            <add value="/"/>
+            <add value="_"/>
+            <add value="-"/>
+            <add value="."/>
+            <add value="$"/>
+          </valid>
+        </sanitizer>
+    </param>
     <param name="output_prefix" argument="--output-prefix" type="text" optional="false" value="" label="Output Prefix" help="Prefix for output filenames."/>
     <section name="optional" title="Optional Parameters" expanded="False">
       <expand macro="gatk_ints"/>

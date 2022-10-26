@@ -3,94 +3,108 @@ remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers
 categories:
   - "CompBio Galaxy Wrappers"
 repositories:
-  gatk4_auto_applybqsr:
-    description: "Apply a linear base quality recalibration model trained with the BaseRecalibrator tool."
-    include:
-      - gatk4_auto_applybqsr.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
-  gatk4_auto_applyvqsr:
-    description: "Apply a score cutoff to filter variants based on a recalibration table."
-    include:
-      - gatk4_auto_applyvqsr.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
-  gatk4_auto_baserecalibrator:
-    description: "First pass of the Base Quality Score Recalibration (BQSR) -- Generates recalibration table based on various user-specified covariates (such as read group, reported quality score, machine cycle, and nucleotide context)."
-    include:
-      - gatk4_auto_baserecalibrator.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
-  gatk4_auto_collectalignmentsummarymetrics:
-    description: "Produces a summary of alignment metrics from a SAM or BAM file."
-    include:
-      - gatk4_auto_collectalignmentsummarymetrics.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
-  gatk4_auto_collectreadcounts:
-    description: "Collects read counts at specified intervals."
-    include:
-      - gatk4_auto_collectreadcounts.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
-  gatk4_auto_combinegvcfs:
-    description: "Merges one or more HaplotypeCaller GVCF files into a single GVCF with appropriate annotations."
-    include:
-      - gatk4_auto_combinegvcfs.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
-  gatk4_auto_depthofcoverage:
-    description: "Generate coverage summary information for reads data."
-    include:
-      - gatk4_auto_depthofcoverage.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
-  gatk4_auto_genotypegvcfs:
-    description: "Perform joint genotyping on a single-sample GVCF from HaplotypeCaller or a multi-sample GVCF from CombineGVCFs or GenomicsDBImport."
-    include:
-      - gatk4_auto_genotypegvcfs.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
-  gatk4_auto_haplotypecaller:
-    description: "Call germline SNPs and indels via local re-assembly of haplotypes."
-    include:
-      - gatk4_auto_haplotypecaller.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
-  gatk4_auto_markduplicatesspark:
-    description: "Marks duplicates on spark."
-    include:
-      - gatk4_auto_markduplicatesspark.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
-  gatk4_auto_selectvariants:
-    description: "This tool makes it possible to select a subset of variants based on various criteria in order to facilitate certain analyses. Examples include comparing and contrasting cases vs. controls, extracting variant or non-variant loci that meet certain requirements, or troubleshooting some unexpected results, to name a few."
-    include:
-      - gatk4_auto_selectvariants.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
-  gatk4_auto_variantfiltration:
-    description: "Filter variant calls based on INFO and/or FORMAT annotations."
-    include:
-      - gatk4_auto_variantfiltration.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
-  gatk4_auto_variantrecalibrator:
-    description: "Build a recalibration model to score variant quality for filtering purposes."
-    include:
-      - gatk4_auto_variantrecalibrator.xml
-      - macros.xml
-      - tool-data/*
-      - tool_data_table_conf.xml.sample
+    gatk4_auto_applybqsr:
+      description: "Apply a linear base quality recalibration model trained with the BaseRecalibrator tool."
+      include:
+        - gatk4_auto_applybqsr.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_applyvqsr:
+      description: "Apply a score cutoff to filter variants based on a recalibration table."
+      include:
+        - gatk4_auto_applyvqsr.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_baserecalibrator:
+      description: "First pass of the Base Quality Score Recalibration (BQSR) -- Generates recalibration table based on various user-specified covariates (such as read group, reported quality score, machine cycle, and nucleotide context)."
+      include:
+        - gatk4_auto_baserecalibrator.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_collectalignmentsummarymetrics:
+      description: "Produces a summary of alignment metrics from a SAM or BAM file."
+      include:
+        - gatk4_auto_collectalignmentsummarymetrics.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_collectreadcounts:
+      description: "Collects read counts at specified intervals."
+      include:
+        - gatk4_auto_collectreadcounts.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_combinegvcfs:
+      description: "Merges one or more HaplotypeCaller GVCF files into a single GVCF with appropriate annotations."
+      include:
+        - gatk4_auto_combinegvcfs.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_depthofcoverage:
+      description: "Generate coverage summary information for reads data."
+      include:
+        - gatk4_auto_depthofcoverage.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_filtermutectcalls:
+      description: "Filter somatic SNVs and indels called by Mutect2."
+      include:
+        - gatk4_auto_filtermutectcalls.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_genotypegvcfs:
+      description: "Perform joint genotyping on a single-sample GVCF from HaplotypeCaller or a multi-sample GVCF from CombineGVCFs or GenomicsDBImport."
+      include:
+        - gatk4_auto_genotypegvcfs.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_haplotypecaller:
+      description: "Call germline SNPs and indels via local re-assembly of haplotypes."
+      include:
+        - gatk4_auto_haplotypecaller.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_markduplicatesspark:
+      description: "Marks duplicates on spark."
+      include:
+        - gatk4_auto_markduplicatesspark.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_mutect2:
+      description: "Call somatic SNVs and indels via local assembly of haplotypes."
+      include:
+        - gatk4_auto_mutect2.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_selectvariants:
+      description: "This tool makes it possible to select a subset of variants based on various criteria in order to facilitate certain analyses. Examples include comparing and contrasting cases vs. controls, extracting variant or non-variant loci that meet certain requirements, or troubleshooting some unexpected results, to name a few."
+      include:
+        - gatk4_auto_selectvariants.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_variantfiltration:
+      description: "Filter variant calls based on INFO and/or FORMAT annotations."
+      include:
+        - gatk4_auto_variantfiltration.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample
+    gatk4_auto_variantrecalibrator:
+      description: "Build a recalibration model to score variant quality for filtering purposes."
+      include:
+        - gatk4_auto_variantrecalibrator.xml
+        - macros.xml
+        - tool-data/*
+        - tool_data_table_conf.xml.sample

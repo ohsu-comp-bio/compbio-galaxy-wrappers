@@ -1,0 +1,256 @@
+<macros>
+<!--    wrapper originally created by jjohnson:-->
+<!--    https://toolshed.g2.bx.psu.edu/repository?repository_id=ff2b95a868edf1df-->
+    <token name="@TOOL_VERSION@">1.5.1</token>
+    <token name="@VERSION_SUFFIX@">1</token>
+    <xml name="requirements">
+        <requirements>
+            <requirement type="package" version="@TOOL_VERSION@">fgbio</requirement>
+            <yield/>
+        </requirements>
+    </xml>
+    <xml name="citations">
+        <citations>
+            <citation type="bibtex">@online{fgbio,
+              author = {Tim Fennell, Nils Homer},
+              title = {fgbio},
+              year = 2015,
+              url = {https://github.com/fulcrumgenomics/fgbio},
+              urldate = {2021-03-01}
+            }</citation>
+        </citations>
+    </xml>
+    <token name="@READ_STRUCTURE_PATTERN@">(([1-9][0-9]*[TBMS])*([+]|[1-9][0-9]*)[TBMS])</token>
+    <token name="@READ_STRUCTURES_PATTERN@">@READ_STRUCTURE_PATTERN@(\s@READ_STRUCTURE_PATTERN@)*</token>
+    <xml name="read_structures_validator" token_pattern="@READ_STRUCTURES_PATTERN@">
+            <validator type="regex" message="">^@READ_STRUCTURES_PATTERN@$</validator>
+    </xml>
+    <xml name="read_structures" token_pattern="@READ_STRUCTURES_PATTERN@">
+        <param argument="--read-structures" type="text" value="" optional="true" label="Read structures, one for each of the FASTQ">
+            <expand macro="read_structures_validator" pattern="@READ_STRUCTURE_PATTERN@" />
+        </param>
+    </xml>
+
+    <xml name="fastq_input" token_fastqtype="reads" token_defaultpaired="True" token_defaultnone="False">
+        <conditional name="@FASTQTYPE@">
+            <param name="type" type="select" label="Library type of FASTQ @FASTQTYPE@">
+                <option value="none" selected="@DEFAULTNONE@">NO fastq @FASTQTYPE@</option>
+                <option value="single">Single-end</option>
+                <option value="paired" selected="@DEFAULTPAIRED@">Paired-end</option>
+                <option value="paired_collection">Paired-end Dataset Collection</option>
+            </param>
+            <when value="none"/>
+            <when value="single">
+                <param name="input_single" type="data" format="fastq,fastq.gz" label="Reads in FASTQ format" />
+                <expand macro="read_structures" pattern="@READ_STRUCTURE_PATTERN@" />
+            </when>
+            <when value="paired">
+                <param name="input_read1" type="data" format="fastq,fastq.gz" label="Reads #1 in FASTQ format" />
+                <param name="input_read2" type="data" format="fastq,fastq.gz" label="Reads #2 in FASTQ format" />
+                <expand macro="read_structures" pattern="@READ_STRUCTURES_PATTERN@" />
+            </when>
+            <when value="paired_collection">
+                <param name="input_readpair" type="data_collection" collection_type="paired" format="fastq,fastq.gz" label="Paired Reads in FASTQ format" />
+                <expand macro="read_structures" pattern="@READ_STRUCTURES_PATTERN@" />
+            </when>
+        </conditional>
+    </xml>
+    <xml name="fastq_reads">
+        <expand macro="fastq_input" fastqtype="reads" defaultpaired="True" defaultnone="False"/>
+    </xml>
+    <xml name="fastq_inputs">
+        <expand macro="fastq_input" fastqtype="reads" defaultpaired="True" defaultnone="False"/>
+        <expand macro="fastq_input" fastqtype="indices" defaultpaired="False" defaultnone="True"/>
+    </xml>
+    <token name="@FASTQ_READS@"><![CDATA[
+        #set $fastqs = []
+        #set $read_structs = []
+        #if $reads.type == 'single':
+            $fastqs.append($reads.input_single)
+        #elif $reads.type == 'paired':
+            $fastqs.append($reads.input_read1)
+            $fastqs.append($reads.input_read2)
+        #elif $reads.type == 'paired_collection':
+            $fastqs.append($reads.input_readpair.forward)
+            $fastqs.append($reads.input_readpair.reverse)
+        #end if
+        #if $reads.type !='none' and $reads.read_structures:
+            $read_structs.append(str($reads.read_structures))
+        #end if
+        #set $read_structures = "%s" % (' '.join($read_structs))
+        #if $read_structs:
+            --read-structures $read_structures
+        #end if
+]]></token>
+    <token name="@LINK_FASTQ_INPUTS@"><![CDATA[
+#import re
+#def identifier_or_name($input1)
+    #if hasattr($input1, 'element_identifier')
+        #return $input1.element_identifier
+    #else
+        #return $input1.name
+    #end if
+#end def
+#def clean($name1)
+    #set $name_clean = $re.sub('[^\w\-_]', '_', $re.sub('(?i)[.](fq|fastq)$','', $re.sub('.*/','', $name1.rstrip('.gz'))))
+    #return $name_clean
+#end def
+#def ln_name($ds)
+    #set $ext = ''
+    #if $ds.is_of_type('mzml') or $ds.is_of_type('fastq.gz')
+        #set $ext = ".fastq.gz"
+    #else if $ds.is_of_type('fastq')
+        #set $ext = ".fastq"
+    #end if
+    #set $name = "%s%s" % ($clean($identifier_or_name($ds)),$ext)
+    #return $name
+#end def
+        #set $fastqs = []
+        #set $read_structs = []
+        #if $reads.type == 'single':
+            #set $i_name = $ln_name($reads.input_single)
+            #silent $fastqs.append($i_name)
+            ln -s '$reads.input_single' '$i_name' &&
+        #elif $reads.type == 'paired':
+            #set $f_name = $ln_name($reads.input_read1)
+            #silent $fastqs.append($f_name)
+            ln -s '$reads.input_read1' '$f_name' &&
+            #set $r_name = $ln_name($reads.input_read2)
+            #silent $fastqs.append($r_name)
+            ln -s '$reads.input_read2' '$r_name' &&
+        #elif $reads.type == 'paired_collection':
+            #set $f_name = $ln_name($reads.input_readpair.forward)
+            #silent $fastqs.append($f_name)
+            ln -s '$reads.input_readpair.forward' '$f_name' &&
+            #set $r_name = $ln_name($reads.input_readpair.reverse)
+            #silent $fastqs.append($r_name)
+            ln -s '$reads.input_readpair.reverse' '$r_name' &&
+        #end if
+        #if $reads.type !='none' and $reads.read_structures:
+            $read_structs.append(str($reads.read_structures))
+        #end if
+        #if $indices.type == 'single':
+            #set $i_name = $ln_name($indices.input_single)
+            #silent $fastqs.append($i_name)
+            ln -s '$indices.input_single' '$i_name' &&
+        #elif $indices.type == 'paired':
+            #set $f_name = $ln_name($indices.input_read1)
+            #silent $fastqs.append($f_name)
+            ln -s '$indices.input_read1' '$f_name' &&
+            #set $r_name = $ln_name($indices.input_read2)
+            #silent $fastqs.append($r_name)
+            ln -s '$indices.input_read2' '$r_name' &&
+        #elif $indices.type == 'paired_collection':
+            #set $f_name = $ln_name($indices.input_readpair.forward)
+            #silent $fastqs.append($f_name)
+            ln -s '$indices.input_readpair.forward' '$f_name' &&
+            #set $r_name = $ln_name($indices.input_readpair.reverse)
+            #silent $fastqs.append($r_name)
+            ln -s '$indices.input_readpair.reverse' '$r_name' &&
+        #end if
+        #if $indices.type != 'none' and $indices.read_structures:
+            $read_structs.append(str($indices.read_structures))
+        #end if
+]]></token>
+    <token name="@FASTQ_INPUTS@"><![CDATA[
+        --input 
+        #for $input in $fastqs
+            '$input'
+        #end for
+        #set $read_structures = "%s" % (' '.join($read_structs))
+        #if $read_structs:
+            --read-structures $read_structures
+        #end if
+]]></token>
+        <xml name="inherit_format_1">
+            <actions>
+                <conditional name="library.type">
+                    <when value="single">
+                        <action type="format">
+                            <option type="from_param" name="library.input_1" param_attribute="ext" />
+                        </action>
+                    </when>
+                    <when value="paired">
+                        <action type="format">
+                            <option type="from_param" name="library.input_1" param_attribute="ext" />
+                        </action>
+                    </when>
+                    <when value="paired_collection">
+                        <action type="format">
+                            <option type="from_param" name="library.input_1" param_attribute="forward.ext" />
+                        </action>
+                    </when>
+                </conditional>
+            </actions>
+        </xml>
+
+        <xml name="inherit_format_2">
+            <actions>
+                <conditional name="library.type">
+                    <when value="paired">
+                        <action type="format">
+                            <option type="from_param" name="library.input_2" param_attribute="ext" />
+                        </action>
+                    </when>
+                    <when value="paired_collection">
+                        <action type="format">
+                            <option type="from_param" name="library.input_1" param_attribute="reverse.ext" />
+                        </action>
+                    </when>
+                </conditional>
+            </actions>
+        </xml>
+    <xml name="sam_tag_validator">
+
+            <validator type="regex" message="">^[A-Za-z][A-Za-z]$</validator>
+    </xml>
+    <xml name="sam_sort_order">
+        <param argument="--sort-order" type="select" optional="true" label="Sort BAM by">
+            <option value="TemplateCoordinate">TemplateCoordinate</option>
+            <option value="Coordinate">Coordinate</option>
+            <option value="Queryname">Queryname</option>
+            <option value="Random">Random</option>
+            <option value="RandomQuery">RandomQuery</option>
+        </param>
+    </xml>
+    
+    <xml name="sort_order_change_format">
+        <change_format>
+            <when input="sort_order" value="Coordinate" format="bam" />
+            <when input="sort_order" value="TemplateCoordinate" format="bam" />
+            <when input="sort_order" value="QueryName" format="unsorted.bam" />
+            <when input="sort_order" value="Random" format="unsorted.bam" />
+            <when input="sort_order" value="RandomQuery" format="unsorted.bam" />
+        </change_format>
+    </xml>
+
+    <token name="@READ_STRUCTURES_HELP@"><![CDATA[
+**Read Structures**
+
+Read structures are made up of <number><operator> pairs much like the CIGAR string in BAM files. Four kinds of operators are recognized:
+
+ -  T identifies a template read
+ -  B identifies a sample barcode read
+ -  M identifies a unique molecular index read
+ -  S identifies a set of bases that should be skipped or ignored
+
+The last <number><operator> pair may be specified using a + sign instead of number to denote “all remaining bases”. This is useful if, e.g., fastqs have been trimmed and contain reads of varying length. For example to convert a paired-end run with an index read and where the first 5 bases of R1 are a UMI and the second five bases are monotemplate you might specify:
+
+:: 
+
+    --input r1.fq r2.fq i1.fq --read-structures 5M5S+T +T +B
+
+Alternative if you know your reads are of fixed length you could specify:
+
+:: 
+
+    --input r1.fq r2.fq i1.fq --read-structures 5M5S65T 75T 8B
+
+
+]]></token>
+    <xml name="citations">
+        <citations>
+            <yield />
+        </citations>
+    </xml>
+</macros>

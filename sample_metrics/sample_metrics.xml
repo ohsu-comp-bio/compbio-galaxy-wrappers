@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.7.0" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.8.3" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
 
   <requirements>
@@ -55,8 +55,11 @@
     #if $blia_post
         --blia_post '${blia_post}'
     #end if
-    #if $calls_forced
-        --calls_forced '${calls_forced}'
+    #if $calls_forced_above
+        --calls_forced_above '${calls_forced_above}'
+    #end if
+    #if $calls_forced_below
+        --calls_forced_below '${calls_forced_below}'
     #end if
     #if $json_in:
         --json_in
@@ -69,7 +72,6 @@
     #if $workflow:
         --workflow '${workflow}'
     #end if
-
 ]]></command>
 
   <inputs>
@@ -85,7 +87,8 @@
       <param name="msi" type="data" format="tabular" optional="true" label="MSIsensor TSV" help="TSV file with MSI results." />
       <param name="blia_pre" type="data" format="txt" optional="true" label="BLIA BLIS Pre" help="JSON metrics from BLIA BLIA subtyping pre-normalization." />
       <param name="blia_post" type="data" format="txt" optional="true" label="BLIA BLIS Post" help="JSON metrics from BLIA BLIA subtyping post-normalization." />
-      <param name="calls_forced" type="data" format="txt" optional="true" label="Forced calls VCF" help="VCF with forced calls only." />
+      <param name="calls_forced_above" type="data" format="vcf" optional="true" label="Forced calls VCF" help="VCF with forced calls above threshold." />
+      <param name="calls_forced_below" type="data" format="vcf" optional="true" label="Forced calls below threshold VCF" help="VCF with forced calls below threshold." />
       <param name="json_in" type="data" format="txt" optional="true" multiple="true" label="JSON Formatted Metrics File" help="Some arbitrary number of input files containing json formatted metrics." />
       <conditional name="umi">
           <param label="Assess UMI deduplication" name="umi_sel" type="select">

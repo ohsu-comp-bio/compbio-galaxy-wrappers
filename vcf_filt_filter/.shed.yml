@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/vcf_filt_filter"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  vcf_filt_filter:
+    description: "Perform basic filtering based on annotations in the VCF FILTER column."
+    include:
+      - vcf_filt_filter.py
+      - vcf_filt_filter.xml

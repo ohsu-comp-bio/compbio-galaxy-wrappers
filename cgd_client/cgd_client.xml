@@ -1,4 +1,4 @@
-<tool id="cgd_client" name="CGD Import Client" version="1.2.9.3" profile="16.01">
+<tool id="cgd_client" name="CGD Import Client" version="1.2.9.4" profile="16.01">
 
     <description>Send a pipeline output file to the CGD via cgd_client.jar.</description>
 
@@ -182,6 +182,7 @@
         #if $endpoint_choice.endpoint=="reportedvariants"
             --runid $endpoint_choice.runid
             --barcodeid $endpoint_choice.barcodeid
+            --sampleid $endpoint_choice.sampleid
             --report_vcf $report_vcf
             --report_bed $report_bed
         #end if
@@ -375,6 +376,7 @@
             <when value="reportedvariants">
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
+                <param name="sampleid" type="text" label="Sample ID: " />
             </when>
 
             <when value="cnvpdf">

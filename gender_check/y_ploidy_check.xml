@@ -1,4 +1,4 @@
-<tool id="y_check_sex_gatk" name="Biological Sex Check- Y ploidy" version="1.2.0">
+<tool id="y_ploidy_check" name="Biological Sex Check- Y ploidy" version="1.2.0">
 	<description>Checks the biological sex of a sample based on the ploidy of the y chromosome from DetermineGermlineContigPloidy</description>
 	<command detect_errors="exit_code"><![CDATA[
         grep "^Y" $input > $output &&

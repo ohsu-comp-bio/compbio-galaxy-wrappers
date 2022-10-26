@@ -6,6 +6,7 @@
 # BAM file.  This is an appropriate input file for the detection algorithm.
 # Paired mode is not working very well especially when estimating VAFs, use at own risk.
 # VAFs are also off in paired-end mode because I am only looking for exact matches during overlap determination.
+# 0.4.2 - If we can't get HGVS results, just return an output file where they are blank.
 
 import argparse
 import hgvs.assemblymapper
@@ -19,7 +20,7 @@ from itertools import imap
 from operator import itemgetter
 from string import Template
 
-VERSION = '0.4.1'
+VERSION = '0.4.2'
 
 def supply_args():
     """
@@ -423,12 +424,16 @@ class SequenceCollection(object):
                 # TODO: Parameter
                 if len(set(self.itd_list[diff])) > 10 or max([len(x) for x in self.itd_list[diff]]) > 30:
                     #and self._calc_vaf(ref_cnt, itd_cnt) > 0.005:
-                    my_hgvs = HgvsVars(chrom, start_coord, stop_coord)
-                    to_write = [chrom, str(start_coord), str(stop_coord),
-                                my_hgvs.var_g, my_hgvs.hgvs_print(my_hgvs.var_c),
-                                my_hgvs.hgvs_print(my_hgvs.var_p), str(diff),
-                                str(itd_cnt), str(ref_cnt), "{0:0.3f}".format(self._calc_vaf(ref_cnt, itd_cnt)),
-                                this_seq]
+                    try:
+                        my_hgvs = HgvsVars(chrom, start_coord, stop_coord)
+                        to_write = [chrom, str(start_coord), str(stop_coord),
+                                    my_hgvs.var_g, my_hgvs.hgvs_print(my_hgvs.var_c),
+                                    my_hgvs.hgvs_print(my_hgvs.var_p), str(diff),
+                                    str(itd_cnt), str(ref_cnt), "{0:0.3f}".format(self._calc_vaf(ref_cnt, itd_cnt)),
+                                    this_seq]
+                    except:
+                        to_write = [chrom, str(start_coord), str(stop_coord), '', '', '', str(diff), str(itd_cnt),
+                                    str(ref_cnt), "{0:0.3f}".format(self._calc_vaf(ref_cnt, itd_cnt)), this_seq]
                     self.handle_out.write('\t'.join(to_write))
                     self.handle_out.write('\n')
 
