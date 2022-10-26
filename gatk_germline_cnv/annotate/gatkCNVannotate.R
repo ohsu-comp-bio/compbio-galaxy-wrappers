@@ -1,3 +1,6 @@
+# VERSION:
+# 1.1.1 - added sanitizer to segmentsDir input in xml
+
 args <- commandArgs(TRUE)
 cnvvcf <- args[1]
 geneFile <- args[2]
