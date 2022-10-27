@@ -15,12 +15,10 @@
     #end if
     #if $umi.umi_sel == 'umi_yes':
       --probeqc_before '${probeqc_before_umi}'
+      --picard_summary_umi '${picard_metrics_umi}'
     #end if
     #if $picard_metrics
       --picard_summary '${picard_metrics}'
-    #end if
-    #if $picard_metrics_umi
-      --picard_summary_umi '${picard_metrics_umi}'
     #end if
     --outfile '${output}'
     --outfile_new '${output_new}'
