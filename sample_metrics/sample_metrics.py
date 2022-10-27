@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 # DESCRIPTION: Create sample level metrics to be passed to the CGD.  Metrics
 #  are passed as a json dump.
