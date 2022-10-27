@@ -1,8 +1,7 @@
-<tool id="itd_detect" name="ITD Detect" version="0.4.2" >
+<tool id="itd_detect" name="ITD Detect" version="1.0.0" >
     <description>Detect ITD events in a BAM file.</description>
 
     <requirements>
-      <requirement type="package" version="1.1.0.post1">hgvs</requirement>
       <requirement type="package" version="0.15.3">pysam</requirement>
     </requirements>
 
@@ -12,6 +11,7 @@
     python $__tool_directory__/itd_detect.py
     --sam input.bam
     --target '${target}'
+    --sample_id '${sample_id}'
     #if $reference_source.reference_source_selector != "no_ref"
         #if $reference_source.reference_source_selector != "history"
             --ref ${reference_source.reference_sequence.fields.path}
@@ -23,6 +23,7 @@
         --paired
     #end if
     --outfile '${outfile}'
+    --outfile_vcf '${outfile_vcf}'
     ]]></command>
 
     <inputs>
@@ -45,6 +46,7 @@
         </conditional>
 
         <param name="input" type="data" format="bam" label="Input BAM" help="Input BAM file to assess." />
+        <param name="sample_id" type="text" label="Sample ID" help="Sample ID to be added to the VCF." />
         <param name="target" type="select" label="Target Region" help="Target region to assess." >
             <option value="flt3" selected="true">FLT3</option>
             <option value="flt3_e13">FLT3e13</option>
@@ -56,7 +58,8 @@
     </inputs>
 
     <outputs>
-        <data format="tabular" name="outfile" label="${tool.name} on ${on_string}: TSV OUTPUT" />
+        <data format="tabular" name="outfile" label="${tool.name} on ${on_string}: TABULAR" />
+        <data format="vcf" name="outfile_vcf" label="${tool.name} on ${on_string}: VCF" />
     </outputs>
 
     <help>Detect ITD events in a BAM file.  Can be run as either single-end or paired-end.  Best results will be obtained if the reads
