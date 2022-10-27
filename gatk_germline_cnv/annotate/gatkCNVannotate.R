@@ -1,5 +1,5 @@
 # VERSION:
-# 1.1.1 - added sanitizer to segmentsDir input in xml
+# 1.1.1 - added sanitizer to segmentsDir input in xml; only grab gene symbols when refseq symbol prefixed by NC
 
 args <- commandArgs(TRUE)
 cnvvcf <- args[1]
@@ -49,7 +49,7 @@ for( segment_row in 1:nrow(cnvData) ) {
 		#if it is the first run through the gene list add the contig
 		if (segment_row == 1 ) {
 			#if the gene list is a region
-			if ( geneData$type[[gene_row]] == "region" ){
+			if ( geneData$type[[gene_row]] == "region" && startsWith( toString(geneData$ContigID[[gene_row]]), "NC_" ) ){
 				#get the info from the region
 				info <- as.vector(geneData$INFO[[gene_row]])
 				infoSplit <- as.vector(strsplit(info, ";", fixed=TRUE))
