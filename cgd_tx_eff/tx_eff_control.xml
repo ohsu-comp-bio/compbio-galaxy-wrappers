@@ -35,8 +35,8 @@
   <inputs>
     <param name="require_match" optional="true" type="boolean" truevalue="--require_match" falsevalue="" label="Only add transcript effects to variants that are found by both Annovar and HGVS/UTA." />
     <param name="in_vcf" format="vcf,vcf_bgzip" optional="false" type="data" label="Input VCF" />    
-    <param name="ccds_map" format="txt" optional="false" type="data" label="CCDS GFF"/>
-    <param name="annovar_variant_function" format="tsv" optional="false" type="data" label="Annovar variant_function files" />
+    <param name="ccds_map" format="txt" optional="false" type="data" label="Input CSV or GFF with Annovar-to-CCDS mappings. Use refseq_to_ccds.py to convert GFF to CSV."/>
+    <param name="annovar_variant_function" format="tsv" optional="false" type="data" label="Annovar variant_function file" />
     <param name="annovar_exonic_variant_function" format="tsv" optional="false" type="data" label="Annovar exonic_variant_function file" />    
   </inputs>
  
@@ -65,12 +65,13 @@
 usage: tx_eff_control.py [-h] 
 						 [-r] 
 						 [--version]
+						 [--require_match]
 						 --in_vcf IN_VCF 
 						 --ccds_map CCDS_MAP 
 						 --annovar_variant_function ANNOVAR_VARIANT_FUNCTION 
 						 --annovar_exonic_variant_function ANNOVAR_EXONIC_VARIANT_FUNCTION 
-						 --out_vcf OUT_VCF 
-  ]]>
+						 --out_vcf OUT_VCF
+]]>
   </help>
   <citations>
   	<citation type="bibtex">

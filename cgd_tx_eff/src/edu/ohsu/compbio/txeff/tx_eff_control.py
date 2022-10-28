@@ -6,8 +6,6 @@ Created on May 18, 2022
 
 import argparse
 import logging
-import sys
-import os
 from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
 from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
