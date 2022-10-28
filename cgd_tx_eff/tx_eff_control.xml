@@ -14,68 +14,73 @@
     python $__tool_directory__/src/edu/ohsu/compbio/txeff/tx_eff_control.py --version
   ]]></version_command>
 
-  <command detect_errors="exit_code"><![CDATA[
-  	export PYTHONPATH="\$PYTHONPATH:$__tool_directory__/src";
+  <command detect_errors="exit_code"><![CDATA[  
   	python $__tool_directory__/src/edu/ohsu/compbio/txeff/tx_eff_control.py     
-        --in_vcf "${in_vcf}"
-        --out_vcf "${out_vcf}"
-    	--ccds_map "${ccds_map}"
 	    #if $require_match
 	        --require_match
-	    #end if
-	    "${annovar_files}"
+	    #end if  	
+        --in_vcf "${in_vcf}"
+        --annovar_variant_function "${annovar_variant_function}"
+        --annovar_exonic_variant_function "${annovar_exonic_variant_function}"
+    	--ccds_map "${ccds_map}"
+	    --out_vcf "${vcf_with_tfx}"; 	    
   ]]></command>
-
+  
+ <environment_variables>
+    <environment_variable name="HGVS_SEQREPO_DIR">/mnt/store/resources/seqrepo/2020-04-13</environment_variable>
+    <environment_variable name="UTA_DB_URL">postgresql://uta_admin:uta_admin@localhost:5432/uta/uta_20190920</environment_variable>
+    <environment_variable name="PYTHONPATH">$__tool_directory__/src</environment_variable>
+  </environment_variables>
+ 
   <inputs>
-    <param name="in_vcf" format="vcf,vcf_bgzip" optional="false" type="data" label="Input VCF" />
-    <param name="out_vcf" format="txt" optional="false" type="data" label="Output VCF" />
+    <param name="require_match" optional="true" type="boolean" truevalue="--require_match" falsevalue="" label="Only add transcript effects to variants that are found by both Annovar and HGVS/UTA." />
+    <param name="in_vcf" format="vcf,vcf_bgzip" optional="false" type="data" label="Input VCF" />    
     <param name="ccds_map" format="txt" optional="false" type="data" label="CCDS GFF"/>
-    <param name="require_match" format="txt" optional="true" type="boolean" truevalue="--require_match" falsevalue="" label="Only add transcript effects to variants that are found by both Annovar and HGVS/UTA." />    
-    <param name="annovar_files" format="txt" optional="false" type="data" label="One or more of Annovar's variant_function or exonic_variant_function files" />    
+    <param name="annovar_variant_function" format="tsv" optional="false" type="data" label="Annovar variant_function files" />
+    <param name="annovar_exonic_variant_function" format="tsv" optional="false" type="data" label="Annovar exonic_variant_function file" />    
   </inputs>
-
+ 
   <outputs>
-    <data format="vcf" name="out_vcf" label="${tool.name} on ${on_string}: VCF" />
+    <data format="vcf" name="vcf_with_tfx" label="${tool.name} on ${on_string}: VCF" />
   </outputs>
 
   <tests>
   	<test>
-  		<param name="in_vcf" value="test_in.vcf"/>  		
-  		<param name="ccds_map" value="test_GRCh37_latest_genomic.csv"/>
   		<param name="require_match" value="true"/>
-  		<param name="annovar_files" value="test_annovar.variant_function"/>
-  		<param name="annovar_files" value="test_annovar.exonic_variant_function"/>
-        <output name="out_vcf" file="test_out.vcf" ftype="vcf"/>
+  		<param name="in_vcf" value="test_in.vcf"/>  		
+  		<param name="ccds_map" value="test_GRCh37_minimal_genomic.csv"/>
+  		<param name="annovar_variant_function" value="test_annovar.variant_function"/>
+  		<param name="annovar_exonic_variant_function" value="test_annovar.exonic_variant_function"/>
+  		<param name="out_vcf" value="test_out.vcf"/>
+        <output name="vcf_with_tfx" ftype="vcf">
+        	<assert_contents>
+        		<!-- Chromosome 1, and one of the transcripts is CCDS30551.1 -->
+        		<has_line_matching expression="^1.*TFX_TRANSCRIPT=.*CCDS30551.1;" />
+        	</assert_contents>
+        </output>
   	</test>
   </tests>
   
   <help><![CDATA[
-usage: tx_eff_control.py [-h] -i IN_VCF -c CCDS_MAP -o OUT_VCF [-r] [--version] ...
-
-Read variants from a VCF, add Annovar variant effects, correct nomenclature using HGVS, and write out a new VCF.
-
-positional arguments:
-  annovar_file          One or more variant_function and exonic_variant_function Annovar files.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -i IN_VCF, --in_vcf IN_VCF
-                        Input VCF
-  -c CCDS_MAP, --ccds_map CCDS_MAP
-                        Input CSV or GFF with Annovar-to-CCDS mappings
-  -o OUT_VCF, --out_vcf OUT_VCF
-                        Output VCF
-  -r, --require_match   Only add transcript effects to variants that are found by both Annovar and HGVS/UTA.
-  --version             show program's version number and exit
-  ]]></help>
-      <citations>
-        <citation type="bibtex">
-@misc{tx_eff_control,
-  author = {Pleyte, Jay},
-  year = {2022},
-  title = {tx_eff_control},
-  publisher = {OHSU},
-  url = {https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff},
-}</citation>
-    </citations>
+usage: tx_eff_control.py [-h] 
+						 [-r] 
+						 [--version]
+						 --in_vcf IN_VCF 
+						 --ccds_map CCDS_MAP 
+						 --annovar_variant_function ANNOVAR_VARIANT_FUNCTION 
+						 --annovar_exonic_variant_function ANNOVAR_EXONIC_VARIANT_FUNCTION 
+						 --out_vcf OUT_VCF 
+  ]]>
+  </help>
+  <citations>
+  	<citation type="bibtex">
+		@misc{tx_eff_control,
+		  author = {Pleyte, Jay},
+		  year = {2022},
+		  title = {tx_eff_control},
+		  publisher = {OHSU},
+		  url = {https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff},
+		}
+	</citation>
+  </citations>
 </tool>

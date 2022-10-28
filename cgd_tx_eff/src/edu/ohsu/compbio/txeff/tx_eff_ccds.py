@@ -8,7 +8,15 @@ import argparse
 import logging
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.refseq_to_ccds import RefseqToCcds
+from enum import Enum
 
+class CcdsMapFileType(Enum):
+    '''
+    File type that maps Refseq to CCDS
+    '''
+    GFF = 1
+    CSV = 2
+    
 class TxEffCcds(object):
     '''
     classdocs
@@ -41,15 +49,34 @@ class TxEffCcds(object):
         '''
         refseq_to_ccds = RefseqToCcds()
         
-        if(self.refseq_to_ccds_file.endswith(".gff")):
+        map_file_type = self.__get_file_type(self.refseq_to_ccds_file)
+        
+        if(map_file_type == CcdsMapFileType.GFF):
             refSeq_to_ccds_mappings = refseq_to_ccds.get_mappings_from_gff(self.refseq_to_ccds_file)
-        elif(self.refseq_to_ccds_file.endswith(".csv")):
+        elif(map_file_type == CcdsMapFileType.CSV):
             refSeq_to_ccds_mappings = refseq_to_ccds.get_mappings_from_csv(self.refseq_to_ccds_file)
         else:
-            raise Exception(f"Mapping file must be csv or gff. Input is unknown: {self.refseq_to_ccds_file}")
+            raise Exception(f"Mapping file must be csv or gff. File type is unknown: {self.refseq_to_ccds_file}")
         
         return refSeq_to_ccds_mappings
 
+    def __get_file_type(self, file_name:str):        
+        '''
+        Determines file type by reading the first line of the file. A gff file will have a comment with the gff version in the first line; a csv will have the field headers in the first line. 
+        '''
+        with open(file_name) as f:
+            firstline = f.readline().rstrip()
+        
+        if('gff' in firstline):
+            # The first line of a gff file should be something like "##gff-version 3" 
+            return CcdsMapFileType.GFF
+        elif('refseq_id' in firstline and 'ccds_id' in firstline):
+            # The first line of the csv is the field list
+            return CcdsMapFileType.CSV
+            
+        self.logger.warn(f"Expected GFF or CSV but received unknown file type having first line: {firstline}")
+        return None
+        
     def add_ccds_transcripts(self, refseq_transcripts: list):
         '''
         Iterate over the list of RefSeq transcripts, lookup each refseq id in the Refseq-to-CCDS id map, and create a copy of the transcript.  
@@ -93,7 +120,7 @@ def _parse_args():
                         required=True)
     
     parser.add_argument('-c', '--ccds_map', 
-                        help='Input CSV or GFF with Annovar-to-CCDS mappings', 
+                        help='Input CSV or GFF with Annovar-to-CCDS mappings. Use refseq_to_ccds.py to convert GFF to CSV.', 
                         type=argparse.FileType('r'), 
                         required=True)
 
