@@ -1,5 +1,6 @@
 # VERSION:
 # 1.1.1 - added sanitizer to segmentsDir input in xml; only grab gene symbols when refseq symbol prefixed by NC
+# 1.2.0 - write entries with NA as gene to different output
 
 args <- commandArgs(TRUE)
 cnvvcf <- args[1]
@@ -175,8 +176,10 @@ cnvData <- cnvData[c("Location", "GENE", "Genotype", "CopyNumber", "Probes", "Av
 cnvData$Location2 <- gsub("chr", "", cnvData$Location)
 
 #write to a tsv
-#write.table(geneData, file="output_gene.tsv", row.names=FALSE, sep="\t")
-write.table(cgdData, file="output_cnv.tsv", row.names=FALSE, sep="\t")
+write.table(cgdData[!is.na(cgdData$GENE),], file="output_cnv.tsv", row.names=FALSE, sep="\t")
+
+# write entries where gene is NA to another file
+write.table(cgdData[is.na(cgdData$GENE),], file="output_cnv_na.tsv", row.names=FALSE, sep="\t")
 
 #write to an excel file
 write.xlsx(x=cnvData, file="excel_cnv_output.xlsx", sheetName="AnnotatedCNVs", row.names=FALSE)
