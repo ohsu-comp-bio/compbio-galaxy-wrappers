@@ -1,4 +1,4 @@
-owner: "letaw"
+owner: "pleyte"
 remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff"
 type: "unrestricted"
 categories:
@@ -7,6 +7,6 @@ repositories:
   cgd_tx_eff:
     description: "Apply annotations from Annovar and HGVS/UTA to a VCF."
     include:
-      - tx_eff_control.xml
+      - cgd_tx_eff.xml
       - src/*
       - test-data/*
