@@ -14,20 +14,10 @@
     "${output_vcf}"
     "${output2_vcf}"
     --callers "${callers}"
-
     #for $i, input in enumerate( $inputs ):
       --exclude "${input.exclude}"
-    #end for
-
-    #for $i, input in enumerate( $inputs ):
       --include "${input.include}"
-    #end for
-
-    #for $i, input in enumerate( $inputs ):
       --snp_threshold "${input.snp_threshold}"
-    #end for
-
-    #for $i, input in enumerate( $inputs ):
       --indel_threshold "${input.indel_threshold}"
     #end for
   ]]></command>

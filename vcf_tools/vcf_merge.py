@@ -4,7 +4,10 @@
 Merge VCFs produced by various variant callers.
 
 Usage:
-    vcf_merge.py  --input_vcfs input1.vcf input2.vcf --caller_labels m2 fb --output_vcf output.vcf
+    python vcf_merge.py
+        --input_vcf input1.vcf --caller_label m2
+        --input_vcf input2.vcf --caller_label fb
+        --output_vcf output.vcf
 
 Details:
 Given multiple VCFs produced by various variant callers, this will merge all vcfs into one.
@@ -127,8 +130,8 @@ class VcfMerger:
 
 def get_args():
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument('--input_vcfs', nargs="+", help="Input VCFs")
-    parser.add_argument('--caller_labels', nargs="+", help="Labels for each input vcf")
+    parser.add_argument('--input_vcf', action='append', help="Input VCF")
+    parser.add_argument('--caller_label', action='append', help="Label for given input vcf")
     parser.add_argument('--output_vcf', help="Output VCF.")
     parser.add_argument('-v', '--version', action='version', version="%(prog)s " + VERSION)
     args = parser.parse_args()
@@ -138,7 +141,7 @@ def get_args():
 def main():
     args = get_args()
 
-    merge = VcfMerger(args.input_vcfs, args.caller_labels)
+    merge = VcfMerger(args.input_vcf, args.caller_label)
 
     writer = vcfpy.Writer.from_path(args.output_vcf, header=merge.merge_headers())
     for record in natsorted(merge.merge_records(), key=attrgetter('CHROM', 'POS')):
