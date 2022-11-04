@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 # DESCRIPTION: Create sample level metrics to be passed to the CGD.  Metrics
 #  are passed as a json dump.
@@ -6,7 +5,7 @@
 # 0.7.0 - Now calculate percentOnTarget from FastQC tatal sequences and collectalignmentmetrics on sorted bwa bam
 # 0.8.0 - Pass forced calls above and below background metric
 # 0.8.3 - Add entry for json metric bio_sex_check
-# 0.8.4 - Change forced calls metric to json
+# 0.8.5 - Change forced calls metric to json
 
 import argparse
 import json

@@ -1,3 +1,7 @@
+# VERSION:
+# 1.1.1 - added sanitizer to segmentsDir input in xml; only grab gene symbols when refseq symbol prefixed by NC
+# 1.2.0 - write entries with NA as gene to different output
+
 args <- commandArgs(TRUE)
 cnvvcf <- args[1]
 geneFile <- args[2]
@@ -46,7 +50,7 @@ for( segment_row in 1:nrow(cnvData) ) {
 		#if it is the first run through the gene list add the contig
 		if (segment_row == 1 ) {
 			#if the gene list is a region
-			if ( geneData$type[[gene_row]] == "region" ){
+			if ( geneData$type[[gene_row]] == "region" && startsWith( toString(geneData$ContigID[[gene_row]]), "NC_" ) ){
 				#get the info from the region
 				info <- as.vector(geneData$INFO[[gene_row]])
 				infoSplit <- as.vector(strsplit(info, ";", fixed=TRUE))
@@ -172,8 +176,10 @@ cnvData <- cnvData[c("Location", "GENE", "Genotype", "CopyNumber", "Probes", "Av
 cnvData$Location2 <- gsub("chr", "", cnvData$Location)
 
 #write to a tsv
-#write.table(geneData, file="output_gene.tsv", row.names=FALSE, sep="\t")
-write.table(cgdData, file="output_cnv.tsv", row.names=FALSE, sep="\t")
+write.table(cgdData[!is.na(cgdData$GENE),], file="output_cnv.tsv", row.names=FALSE, sep="\t")
+
+# write entries where gene is NA to another file
+write.table(cgdData[is.na(cgdData$GENE),], file="output_cnv_na.tsv", row.names=FALSE, sep="\t")
 
 #write to an excel file
 write.xlsx(x=cnvData, file="excel_cnv_output.xlsx", sheetName="AnnotatedCNVs", row.names=FALSE)

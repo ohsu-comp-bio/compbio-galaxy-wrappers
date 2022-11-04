@@ -7,20 +7,16 @@
 # Paired mode is not working very well especially when estimating VAFs, use at own risk.
 # VAFs are also off in paired-end mode because I am only looking for exact matches during overlap determination.
 # 0.4.2 - If we can't get HGVS results, just return an output file where they are blank.
+# 1.0.0 - Remove hgvs from script, create vcf as output.
 
 import argparse
-import hgvs.assemblymapper
-import hgvs.dataproviders.uta
-import hgvs.parser
 import pysam
 from collections import defaultdict
 from copy import deepcopy
 from itertools import groupby
-from itertools import imap
 from operator import itemgetter
-from string import Template
 
-VERSION = '0.4.2'
+VERSION = '1.0.0'
 
 def supply_args():
     """
@@ -29,8 +25,10 @@ def supply_args():
     """
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--sam', required=True, help='Input SAM File')
-    parser.add_argument('--outfile', required=True, help='Output File')
+    parser.add_argument('--outfile', required=True, help='Output TSV')
+    parser.add_argument('--outfile_vcf', required=True, help='Output VCF')
     parser.add_argument('--ref', required=True, help='Input Reference Sequence')
+    parser.add_argument('--sample_id', required=True, help='Sample ID string to be added to the VCF.')
     parser.add_argument('--ref_build', choices=['hg19'], default='hg19', help='Which reference build to utilize')
     parser.add_argument('--target', choices=['flt3', 'flt3_e13', 'flt3_e14', 'flt3_e15'], default='flt3_e14', help='Region to target')
     parser.add_argument('--coords', help='Coordinate range, in the format [chrom:start-stop], 1-based.')
@@ -46,7 +44,7 @@ def supply_args():
     return args
 
 
-class SuffixArray(object):
+class SuffixArray:
     """Analyze all common strings in the text.
 
     Short substrings of the length _step a are first pre-sorted. The are the
@@ -72,7 +70,6 @@ class SuffixArray(object):
                assert text[sa[i-1]:sa[i-1]+lcp[i]] == text[sa[i]:sa[i]+lcp[i]]
                if sa[i-1] + lcp[i] < len(text):
                    assert text[sa[i-1] + lcp[i]] < text[sa[i] + lcp[i]]
-    >>> suffix_array(text='banana')
     ([5, 3, 1, 0, 4, 2], [3, 2, 5, 1, 4, 0], [0, 1, 3, 0, 0, 2])
 
     Explanation: 'a' < 'ana' < 'anana' < 'banana' < 'na' < 'nana'
@@ -180,7 +177,7 @@ class SuffixArray(object):
         return dict((k, sorted(v)) for k, v in result.items())
 
 
-class GetSeq(object):
+class GetSeq:
     """
     Retrieve the sequence we need to search through, utilizing the pysam package.
     """
@@ -214,7 +211,7 @@ class GetSeq(object):
 
     def _get_ref_dups(self):
         flt3_dups = {}
-        if max(imap(len, self.curr_long)) > 0:
+        if max(list(map(len, self.curr_long))) > 0:
             for k, v in self.curr_long.items():
                 diff = v[1] - v[0]
                 if k not in flt3_dups:
@@ -224,7 +221,7 @@ class GetSeq(object):
         return flt3_dups
 
 
-class Sequence(object):
+class Sequence:
     """
     Dissecting pysam objects for necessary info, but will also include additional necessary structures on the sequence level.
     """
@@ -256,7 +253,7 @@ class Sequence(object):
         return 0
 
 
-class SequenceCollection(object):
+class SequenceCollection:
     """
     Structures resulting from operations on multiple Sequence objects.
     """
@@ -287,19 +284,17 @@ class SequenceCollection(object):
                         self._seq_diffs(self.this_seq)
                     else:
                         pass
-                        # self.this_seq = Sequence(read1)
-                        # self._seq_diffs(self.this_seq)
 
         self.samfile.close()
 
         self.handle_out = open(outfile, 'w')
-        self.handle_out.write('\t'.join(['CHROM', 'START', 'STOP', 'HGVS_G', 'HGVS_C', 'HGVS_P', 'ITD LENGTH', 'ITD COUNT', 'REF COUNT', 'VAF ESTIMATE', 'SEQUENCE']))
+        self.handle_out.write('\t'.join(['CHROM', 'START', 'STOP', 'ITD LENGTH', 'ITD COUNT', 'REF COUNT', 'VAF ESTIMATE', 'SEQUENCE']))
         self.handle_out.write('\n')
 
         if not paired:
-            self._spray_coords(False)
+            self.sample_data = self._spray_coords(False)
         else:
-            self._spray_coords(True)
+            self.sample_data = self._spray_coords(True)
 
         self.handle_out.close()
 
@@ -391,7 +386,7 @@ class SequenceCollection(object):
         TODO: This function is a disaster.
         :return:
         """
-
+        sample_data = []
         for k, v in self.itd_list.items():
             in_ref_cnt = 0.0
             total_cnt = len(v)
@@ -408,7 +403,7 @@ class SequenceCollection(object):
                 itd_start = flt3_pos - itd_len_diff + self.refseq.coords[1]
                 itd_stop = itd_start + k
 
-            maxseq = self.max_pos[k].keys()[0]
+            maxseq = list(self.max_pos[k].keys())[0]
             entry = self.max_pos[k][maxseq]
             diff = entry.curr_long[maxseq][1] - entry.curr_long[maxseq][0]
             if len(entry.gnmic_seq) - entry.curr_long[maxseq][1] >= len(maxseq):
@@ -416,6 +411,8 @@ class SequenceCollection(object):
                 start_coord = entry.pos + entry.curr_long[maxseq][0] + 1 - entry.soft_clip
                 stop_coord = start_coord + diff - 1
                 this_seq = self.refseq.fasta.fetch(reference=chrom, start=start_coord - 1, end=stop_coord)
+                # for the VCF, need to get the base that precedes the insertion
+                padding_base = self.refseq.fasta.fetch(reference=chrom, start=start_coord - 2, end=start_coord - 1)
                 itd_cnt = len(self.itd_list[diff])
                 if paired:
                     ref_cnt = (self._sam_seq_count(self._ref_seq_create(stop_coord), self._dup_junc_seq_create(this_seq))) / 2
@@ -423,33 +420,25 @@ class SequenceCollection(object):
                     ref_cnt = self._sam_seq_count(self._ref_seq_create(stop_coord), self._dup_junc_seq_create(this_seq))
                 # TODO: Parameter
                 if len(set(self.itd_list[diff])) > 10 or max([len(x) for x in self.itd_list[diff]]) > 30:
-                    #and self._calc_vaf(ref_cnt, itd_cnt) > 0.005:
-                    try:
-                        my_hgvs = HgvsVars(chrom, start_coord, stop_coord)
-                        to_write = [chrom, str(start_coord), str(stop_coord),
-                                    my_hgvs.var_g, my_hgvs.hgvs_print(my_hgvs.var_c),
-                                    my_hgvs.hgvs_print(my_hgvs.var_p), str(diff),
-                                    str(itd_cnt), str(ref_cnt), "{0:0.3f}".format(self._calc_vaf(ref_cnt, itd_cnt)),
-                                    this_seq]
-                    except:
-                        to_write = [chrom, str(start_coord), str(stop_coord), '', '', '', str(diff), str(itd_cnt),
-                                    str(ref_cnt), "{0:0.3f}".format(self._calc_vaf(ref_cnt, itd_cnt)), this_seq]
+                    to_write = [chrom, str(start_coord), str(stop_coord), str(diff), str(itd_cnt), str(ref_cnt),
+                                    "{0:0.3f}".format(self._calc_vaf(ref_cnt, itd_cnt)), this_seq]
                     self.handle_out.write('\t'.join(to_write))
                     self.handle_out.write('\n')
-
+                    sample_data.append(ItdCallVcf(chrom, str(start_coord), str(stop_coord), str(diff), itd_cnt,
+                                               ref_cnt, "{0:0.3f}".format(self._calc_vaf(ref_cnt, itd_cnt)),
+                                               this_seq, padding_base))
+        return sample_data
 
     def _seq_diffs(self, seq):
         """
         Create the structure containing number of times distances between duplicate sequences occur.
         :return:
         """
-        if max(imap(len, seq.curr_long)) > 8:
+        if max(list(map(len, seq.curr_long))) > 8:
             for k, v in seq.curr_long.items():
                 diff = v[1] - v[0]
                 # TODO: parameter
                 if len(k) > 8:
-#                    v = [v[0] + seq.pos - seq.soft_clip, v[1] + seq.pos - seq.soft_clip]
-#                    v = [v[0] + seq.pos, v[1] + seq.pos]
                     if diff not in self.itd_list:
                         self.itd_list[diff] = [k]
                     else:
@@ -458,92 +447,94 @@ class SequenceCollection(object):
                     if diff not in self.max_pos:
                         self.max_pos[diff] = {k: seq}
                     else:
-                        if len(k) > len(self.max_pos[diff].keys()[0]):
+                        if len(k) > len(list(self.max_pos[diff].keys())[0]):
                             self.max_pos[diff] = {k: seq}
 
-
-class HgvsVars(object):
-    """
-    Provide HGVS c./p./g.
-    #'NC_000013.10:g.28608250_28608300dup'
-    :param object:
-    :return:
-    """
-    def __init__(self, chrom, start, stop, genome='GRCh37'):
-        self.hdp = hgvs.dataproviders.uta.connect()
-        self.vm = hgvs.assemblymapper.AssemblyMapper(self.hdp, assembly_name=genome)
-        self.hp = hgvs.parser.Parser()
-        self.chrom = self._chrom_map(chrom)
+class ItdCall:
+    def __init__(self, chrom, start, stop, diff, itd_cnt, ref_cnt, vaf, seq, pad_seq):
+        """
+        We need fields for the VCF.
+        CHROM: chrom
+        POS: self.start - 1
+        ID: .
+        REF: pad_seq
+        ALT: pad_seq+seq
+        QUAL: .
+        FILTER: .
+        INFO: diff can go here (ITD_LENGTH=)
+        FORMAT:
+            GT: pretty much always 0/1
+            DP: itd_cnt + ref_cnt
+            AD: ref_cnt, itd_cnt
+            AF: vaf
+        samples
+        :param chrom:
+        :param start:
+        :param stop:
+        :param diff:
+        :param itd_cnt:
+        :param ref_cnt:
+        :param vaf:
+        :param seq:
+        :param pad_seq:
+        """
+        self.chrom = chrom
         self.start = start
         self.stop = stop
-        self.var_g = self._create_hgvs_g()
-        self.var_c = self._create_hgvs_c()
-        self.var_p = self._create_hgvs_p()
+        self.diff = diff
+        self.itd_cnt = itd_cnt
+        self.ref_cnt = ref_cnt
+        self.vaf = vaf
+        self.seq = seq
+        self.pad_seq = pad_seq
 
-    def _create_hgvs_g(self):
+
+class ItdCallVcf(ItdCall):
+    def __init__(self, chrom, start, stop, diff, itd_cnt, ref_cnt, vaf, seq, pad_seq):
+        super(ItdCallVcf, self).__init__(chrom, start, stop, diff, itd_cnt, ref_cnt, vaf, seq, pad_seq)
+        self.pos = str(int(self.start) - 1)
+        self.id = '.'
+        self.ref = self.pad_seq
+        self.alt = self.pad_seq + self.seq
+        self.qual = '.'
+        self.filter = '.'
+        self.info = 'ITD_LENGTH=' + diff
+        self.frmt = 'GT:DP:AD:AF'
+        self.gt = '0/1'
+        self.dp = str(self.itd_cnt + self.ref_cnt)
+        self.ad = ','.join([str(self.ref_cnt), str(self.itd_cnt)])
+        self.sample = ':'.join([self.gt, self.dp, self.ad, self.vaf])
+        self.to_write = '\t'.join([self.chrom, self.pos, self.id, self.ref, self.alt,
+                         self.qual, self.filter, self.info, self.frmt, self.sample])
+
+
+class VcfWrite:
+    def __init__(self, filename, sample_id, sample_data):
+        self.filename = filename
+        self.sample_id = sample_id
+        self.sample_data = sample_data
+
+    def write_me(self):
+        with open(self.filename, 'w') as self.myfile:
+            self._write_header()
+            for vrnt in self.sample_data:
+                self.myfile.write(vrnt.to_write)
+                self.myfile.write('\n')
+        self.myfile.close()
+
+    def _write_header(self):
         """
-        Provide the actual HGVS nomenclature.  To start, we are just providing the g. value.  To provide c./p., we will need
-        to bring in the python hgvs package, which is probably worth doing.
-        return cht_tmpl.substitute(self.xml_out)
-        13:g.28608251_28608301dup
+        Write the header to the VCF.
         :return:
         """
-        hgvs_g = Template('${chrom}:g.${start}_${stop}dup')
-        return hgvs_g.substitute(chrom=self.chrom, start=self.start, stop=self.stop)
-
-    def _create_hgvs_c(self):
-        """
-        Create a list of the HGVS c. values.
-        :return:
-        """
-        var_c = []
-        var_g = self.hp.parse_hgvs_variant(self.var_g)
-        self.tx_list = self.hdp.get_tx_for_region(str(var_g.ac), 'splign', str(var_g.posedit.pos.start),
-                                        str(var_g.posedit.pos.end))
-        for entry in self.tx_list:
-            try:
-                var_c.append(self.vm.g_to_c(var_g, str(entry[0])))
-            except:
-                pass
-        return var_c
-
-    def _create_hgvs_p(self):
-        """
-        Create a list of the HGVS p. values.
-        :return:
-        """
-        var_p = []
-        for entry in self.var_c:
-            try:
-                var_p.append(self.vm.c_to_p(entry))
-            except:
-                pass
-        return var_p
-
-    def hgvs_print(self, hgvs):
-        """
-
-        :return:
-        """
-        return ', '.join([str(x) for x in hgvs])
-
-    def _chrom_map(self, chrom):
-        """
-        Mapping of current common to RefSeq chromsome ids.
-        :return:
-        """
-        chrom_map = {'1': 'NC_000001.10', '2': 'NC_000002.11', '3': 'NC_000003.11', '4': 'NC_000004.11', '5': 'NC_000005.9',
-             '6': 'NC_000006.11', '7': 'NC_000007.14', '8': 'NC_000008.10', '9': 'NC_000009.11', '10': 'NC_000010.10',
-             '11': 'NC_000011.9', '12': 'NC_000012.11', '13': 'NC_000013.10', '14': 'NC_000014.8', '15': 'NC_000015.9',
-             '16': 'NC_000016.9', '17': 'NC_000017.10', '18': 'NC_000018.9', '19': 'NC_000019.9', '20': 'NC_000020.10',
-             '21': 'NC_000021.8', '22': 'NC_000022.10', 'X': 'NC_000023.10', 'Y': 'NC_000024.9', 'MT': 'NC_012920.1'}
-        # In case someone is trying to utilize chr prefixed chromosomes.
-        if chrom.startswith('chr'):
-            chrom = chrom[3:]
-        try:
-            return chrom_map[chrom]
-        except:
-            return None
+        self.myfile.write("##fileformat=VCFv4.2\n")
+        self.myfile.write("##INFO=<ID=ITD_LENGTH,Number=1,Type=Integer,Description=\"ITD estimated length\">\n")
+        self.myfile.write("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
+        self.myfile.write("##FORMAT=<ID=DP,Number=1,Type=Integer,Description=\"k-mer Depth\">\n")
+        self.myfile.write("##FORMAT=<ID=AD,Number=.,Type=Integer,Description=\"k-mer depth supporting reference/indel at the site\">\n")
+        self.myfile.write("##FORMAT=<ID=AF,Number=1,Type=Float,Description=\"Variant allele frequency\">\n")
+        self.myfile.write('\t'.join(['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', self.sample_id]))
+        self.myfile.write('\n')
 
 
 def main():
@@ -554,9 +545,12 @@ def main():
     args = supply_args()
     my_seq = GetSeq(args.ref, args.target)
     if args.paired:
-        SequenceCollection(args.sam, args.outfile, my_seq, True)
+        coll = SequenceCollection(args.sam, args.outfile, my_seq, True)
     else:
-        SequenceCollection(args.sam, args.outfile, my_seq, False)
+        coll = SequenceCollection(args.sam, args.outfile, my_seq, False)
+    sample_data = coll.sample_data
+
+    VcfWrite(args.outfile_vcf, args.sample_id, sample_data).write_me()
 
 if __name__ == "__main__":
     main()
