@@ -122,7 +122,7 @@ def main():
 
     if args.input_vcf:
         infile = open(args.input_vcf, 'r')
-        handle_out = open(args.output_vcf, 'wb')
+        handle_out = open(args.output_vcf, 'w')
         vcf_reader = vcf.Reader(infile)
         vcf_writer = vcf.Writer(handle_out, vcf_reader)
 

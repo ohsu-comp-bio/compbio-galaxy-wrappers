@@ -25,7 +25,7 @@ def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--infile', help='Input VCF.')
     parser.add_argument('--vcftype', help='Type of VCF.')
-    parser.add_argument('--callers', help='Callers in a merged VCF.')
+    parser.add_argument('--callers', help='FILTER labels of variant callers used in the merged VCF')
     parser.add_argument('--outfile', help='Output VCF.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
@@ -190,7 +190,6 @@ def main():
             strand = StrandOps(info)
             strand_res = strand.assess_strand()
             if not strand_res:
-                #print(entry.CHROM, entry.POS, entry.FILTER)
                 filt = FilterAdd(entry.FILTER)
                 filt.add_filt(text=filter_annot)
         writer.write_record(entry)
