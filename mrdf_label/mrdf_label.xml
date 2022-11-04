@@ -1,5 +1,5 @@
 <tool id="mrdf_label" name="MRDF Label" version="1.0.0" >
-    <description>Remove mrdf label from a merged VCF FILTER field of a record if variant called by other callers</description>
+    <description>Remove MRDF label from a merged VCF FILTER field of a record if variant called by other callers</description>
 
     <requirements>
         <requirement type="package" version="0.13.3">vcfpy</requirement>
@@ -14,15 +14,15 @@
     #if $label
       --label "${label}"
     #end if
-    #if $filter_condition
-      --filter_condition "${filter_condition}"
+    #if $callers
+      --callers "${callers}"
     #end if
   ]]></command>
 
   <inputs>
     <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
-    <param name="label" type="text" label="MRDF label to be removed from VCF FILTER field if conditions are met" />
-    <param name="filter_condition" type="text" label="FILTER annotation to use for filtering" />
+    <param name="label" type="text" label="MRDF label" />
+    <param name="callers" type="text" label="FILTER labels of variant callers used in the merged VCF" />
   </inputs>
 
   <outputs>
