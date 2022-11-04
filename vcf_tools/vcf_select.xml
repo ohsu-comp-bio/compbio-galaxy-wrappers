@@ -1,29 +1,28 @@
-<tool id="vcf_select" name="Select VCF fields" version="@VERSION@.0" >
+<tool id="vcf_select" name="VCF Select" version="2.0.0" >
   <description>Select fields of interest from a merged VCF</description>
 
-  <macros>
-    <import>vcf_tools_macros.xml</import>
-  </macros>
-  <expand macro="requirements" />
-  <expand macro="version_command" />
+  <requirements>
+    <requirement type="package" version="0.13.3">vcfpy</requirement>
+    <requirement type="package" version="7.1.1">natsort</requirement>
+  </requirements>
+
+  <version_command><![CDATA[python '$__tool_directory__/vcf_select.py --version']]></version_command>
 
   <command><![CDATA[
     python $__tool_directory__/vcf_select.py
-    --input_vcf $input_vcf
-    --caller_priority
-    #for $i, caller in enumerate( $caller_priority ):
-      "${caller.caller_label}"
-    #end for
+    $input_vcf $output_vcf
+    --caller_priority $caller_priority
+    --caller_priority_indel $caller_priority_indel
+    --filter_fields $filter_fields
     --info_fields $info_fields
     --format_fields $format_fields
-    --output_vcf $output_vcf
   ]]></command>
 
   <inputs>
     <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
-    <repeat name="caller_priority" title="Variant caller priority" help="Priority of caller labels">
-      <param name="caller_label" type="text" label="Caller label" />
-    </repeat>
+    <param name="caller_priority" type="text" label="Caller label priority" />
+    <param name="caller_priority_indel" type="text" label="Caller label priority for INDELs" />
+    <param name="filter_fields" type="text" label="Filter fields of interest" />
     <param name="info_fields" type="text" label="Info fields of interest" />
     <param name="format_fields" type="text" label="Format fields of interest" />
   </inputs>
