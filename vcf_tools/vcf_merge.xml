@@ -12,16 +12,16 @@
     #for $i, $input in enumerate( $inputs ):
       #if $input.input_vcf.is_of_type("vcf_bgzip")
         ln -f -s $input.input_vcf input${i}.vcf.gz &&
-        bgzip -d input${i}.vcf.gz &&
+        bgzip -d $input.input_vcf &&
       #else
         ln -f -s $input.input_vcf input${i}.vcf &&
       #end if
     #end for
 
     python $__tool_directory__/vcf_merge.py
-    --caller_labels
     #for $i, input in enumerate( $inputs ):
-      "${input.caller_label}"
+      --caller_label "${input.caller_label}"
+      --input_vcf input${i}.vcf
     #end for
     --input_vcfs
     #for $i, $input in enumerate( $inputs ):
