@@ -95,13 +95,16 @@ class AnnovarParser(object):
         '''
         Return the Annovar output type as determined by its contents
         '''
+        
+        # These are the allowable keywords for variant functions (https://annovar.openbioinformatics.org/en/latest/user-guide/gene/) 
+        variant_functions = ['UTR3', 'UTR5', 'downstream', 'exonic', 'intronic', 'ncRNA_exonic', 'ncRNA_intronic', 'ncRNA_splicing', 'splicing', 'upstream']
+        
         first_line = self.__read_first_line(file_name)
         
-        if first_line[0].startswith('line') and first_line[3].startswith('chr'):
+        if first_line[0].startswith('line'):
             # Field zero is 'lineN' and 'chrX' is in the third field for *.exonic_variant_function files
             return AnnovarFileType.ExonicVariantFunction
-        elif first_line[2].startswith('chr'):
-            # The chromosome is in the second field for *.variant_function files
+        elif first_line[0] in variant_functions:            
             return AnnovarFileType.VariantFunction
         else:
             raise Exception(f"Unrecognized Annovar file type: {file_name}")

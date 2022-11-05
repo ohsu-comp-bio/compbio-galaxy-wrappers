@@ -5,7 +5,11 @@ categories:
   - "KDL Tools"
 repositories:
   annovar:
-    description: "Functionally annotates genetic variants"
+    description: "Functionally annotate genetic variants using Annovar"
     include:
       - annovar.xml
+  convert2annovar:
+    description: "Convert variant call file generated from various software programs into ANNOVAR input format"
+    include:
+      - convert2annovar.xml
 

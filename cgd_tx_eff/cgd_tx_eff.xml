@@ -1,4 +1,4 @@
-<tool id="cgd_tx_eff" name="CGD Transcript Effects" version="0.1.3" >
+<tool id="cgd_tx_eff" name="CGD Transcript Effects" version="0.1.9" >
   <description>
   	Apply transcript-effects annotations from Annovar and HGVS to a VCF.
   	Note: This configuration doesn't work yet. 
@@ -35,10 +35,10 @@
  
   <inputs>
     <param name="require_match" optional="true" type="boolean" truevalue="--require_match" falsevalue="" label="Only add transcript effects to variants that are found by both Annovar and HGVS/UTA." />
-    <param name="in_vcf" format="vcf,vcf_bgzip" optional="false" type="data" label="Input VCF" />    
-    <param name="ccds_map" format="txt" optional="false" type="data" label="Input CSV or GFF with Annovar-to-CCDS mappings. Use refseq_to_ccds.py to convert GFF to CSV."/>
+    <param name="in_vcf" format="vcf" optional="false" type="data" label="Input VCF" />    
+    <param name="ccds_map" format="csv,gff" optional="false" type="data" label="Input CSV or GFF with Annovar-to-CCDS mappings. Use refseq_to_ccds.py to convert GFF to CSV."/>
     <param name="annovar_variant_function" format="tsv" optional="false" type="data" label="Annovar variant_function file" />
-    <param name="annovar_exonic_variant_function" format="tsv" optional="false" type="data" label="Annovar exonic_variant_function file" />    
+    <param name="annovar_exonic_variant_function" format="tsv" optional="false" type="data" label="Annovar exonic_variant_function file" />
   </inputs>
  
   <outputs>
@@ -78,7 +78,7 @@ usage: tx_eff_control.py [-h]
 		@misc{tx_eff_control,
 		  author = {Pleyte, Jay},
 		  year = {2022},
-		  title = {tx_eff_control},
+		  title = {Transcript Effects Tool},
 		  publisher = {OHSU},
 		  url = {https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff},
 		}
