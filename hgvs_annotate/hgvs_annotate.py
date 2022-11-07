@@ -5,6 +5,7 @@
 # These libraries most closely represent the current HGVS recommendations, imo.
 # USAGE: hgvs_test.py <input> <output>
 # CODED BY: John Letaw
+# NOTE: Had to create a symlink to libcrypto.so.1.0.0 in the conda env lib directory for this tool.
 
 import argparse
 import vcf
