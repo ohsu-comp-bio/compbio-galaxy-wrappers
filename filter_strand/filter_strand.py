@@ -3,10 +3,11 @@
 """
 This tool attempts to determine whether the forward and reverse strand counts in a FreeBayes
 VCF are biased, or not proportionate to each other.  Current implementation is utilizing Hoeffding's
-Inequality to estimate upper and lower VAF bounds.
+Inequality to estimate upper and lower VAF bounds.  Will not assess 1/1 genotypes.
 
 1.0.0 - Rewrite.
 1.2.1 - Changed conf to 0.99999999999
+1.3.0 - Don't apply StrandBias label when genotype is 1/1; make conf a parameter
 """
 
 from __future__ import print_function
@@ -14,7 +15,7 @@ import argparse
 import vcfpy
 import numpy as np
 
-VERSION = '1.2.1'
+VERSION = '1.3.0'
 
 
 def supply_args():
@@ -25,6 +26,7 @@ def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--infile', help='Input VCF.')
     parser.add_argument('--vcftype', help='Type of VCF.')
+    parser.add_argument('--conf', type=float, default=0.9999, help='Confidence level.')
     parser.add_argument('--callers', help='Callers in a merged VCF.')
     parser.add_argument('--outfile', help='Output VCF.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
@@ -73,8 +75,9 @@ class VcfReader:
 
 
 class StrandOps:
-    def __init__(self, info):
+    def __init__(self, info, conf):
         self.info = info
+        self.conf = conf
 
     def assess_strand(self):
         """
@@ -87,7 +90,7 @@ class StrandOps:
             saf = self.info[2]
             sar = self.info[3]
             alt_dp = self._alt_dp(saf, sar)
-            hoeff = self._hoeffding_t(alt_dp, conf=0.99999999999)
+            hoeff = self._hoeffding_t(alt_dp, self.conf)
             ref_vaf = self._strand_freq(srf, srr)
             alt_vaf = self._strand_freq(saf, sar)
             if ref_vaf:
@@ -96,15 +99,6 @@ class StrandOps:
             else:
                 lower = 0
                 upper = 1
-
-            # if saf != 0 and sar != 0:
-            #     print("SAF: {0}".format(saf))
-            #     print("SAR: {0}".format(sar))
-            #     print("SRF: {0}".format(srf))
-            #     print("SRR: {0}".format(srr))
-            #     print("Lower: {0}".format(lower))
-            #     print("Upper: {0}".format(upper))
-            #     print("Alt VAF: {0}".format(alt_vaf))
 
             if lower <= alt_vaf <= upper:
                 return True
@@ -122,7 +116,6 @@ class StrandOps:
         """
         # Strand count can sometimes be 0 in mutect2
         # https://gatk.broadinstitute.org/hc/en-us/articles/360035532252-Allele-Depth-AD-is-lower-than-expected
-
         try:
             return np.sqrt((-1/(2*n))*(np.log((1-conf)/2)))
         except ZeroDivisionError:
@@ -187,12 +180,13 @@ def main():
     for entry in infile.vrnts:
         info = get_strand_count(entry, args.vcftype, args.callers)
         if info:
-            strand = StrandOps(info)
+            gt = entry.calls[0].gt_type
+            strand = StrandOps(info, args.conf)
             strand_res = strand.assess_strand()
             if not strand_res:
-                #print(entry.CHROM, entry.POS, entry.FILTER)
-                filt = FilterAdd(entry.FILTER)
-                filt.add_filt(text=filter_annot)
+                if gt != 2:
+                    filt = FilterAdd(entry.FILTER)
+                    filt.add_filt(text=filter_annot)
         writer.write_record(entry)
 
     writer.close()

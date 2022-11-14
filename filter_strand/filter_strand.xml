@@ -1,4 +1,4 @@
-<tool id="filter_strand" name="Strand Bias Filter" version="1.2.0" >
+<tool id="filter_strand" name="Strand Bias Filter" version="1.3.0" >
     <description>Filter based on bias in alternate and reference read direction.</description>
 
     <requirements>
@@ -13,6 +13,9 @@
     #if $vcftype
         --vcftype "${vcftype}"
     #end if
+    #if $conf
+        --conf "${conf}"
+    #end if
     #if $callers
         --callers "${callers}"
     #end if
@@ -21,6 +24,7 @@
     <inputs>
         <param name="infile" type="data" format="vcf" label="Input VCF" />
         <param name="vcftype" type="text" label="Type of VCF" />
+        <param name="conf" type="float" value="0.9999" min="0" max="1" label="Confidence level" />
         <param name="callers" type="text" optional="true" label="Callers if VCF type is a merged VCF" />
     </inputs>
 
