@@ -4,13 +4,14 @@
 # of time trying to get it to work for us, I'm writing this short script to do custom filtering.  It will only be useful
 # for the purpose of post-filtering multi-sample HOP VCFs.
 # 0.4.0 - Remove HGMD filtering strategies
+# 0.4.1 - Added Pathogenic/Likely_pathogenic classification to those considered "pathogenic"
 
 import argparse
 import numpy
 import re
 import vcf
 
-VERSION = '0.4.0'
+VERSION = '0.4.1'
 
 
 def supply_args():
@@ -42,7 +43,7 @@ class VcfRec(object):
         self.uniq_key = (self.chrom, self.coord, self.ref, self.alt)
 
         try:
-            self.clnsig = rec.INFO['clinvar.CLNSIG'][0]
+            self.clnsig = rec.INFO['clinvar.CLNSIG'][0].split('|')[0]
         except:
             self.clnsig = None
 
@@ -89,10 +90,12 @@ class VcfRec(object):
 
         self.is_path = (self.clnsig == 'Pathogenic') or \
                        (self.clnsig == 'Likely_pathogenic') or \
+                       (self.clnsig == 'Pathogenic/Likely_pathogenic') or \
                        ('athogenic' in self.clnsigconf)
 
         self.is_path_clinvar = (self.clnsig == 'Pathogenic') or \
                                (self.clnsig == 'Likely_pathogenic') or \
+                               (self.clnsig == 'Pathogenic/Likely_pathogenic') or \
                                ('athogenic' in self.clnsigconf)
 
         self.no_info = not self.clnsig and not self.gnomad
