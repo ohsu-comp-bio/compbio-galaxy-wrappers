@@ -1,0 +1,39 @@
+<tool id="hotspots_input" name="Hotspots Inputs" version="1.0.0" >
+  <description>Create hotspots inputs</description>
+
+  <requirements>
+    <requirement type="package" version="7.1.1">natsort</requirement>
+  </requirements>
+
+  <version_command><![CDATA[python '$__tool_directory__/hotspots_inputs.py --version']]></version_command>
+
+  <command><![CDATA[
+    python $__tool_directory__/hotspots_inputs.py
+    "${input_file}" "${ordered_test}"
+    #if $output_bed
+        --output_bed "${output_bed}"
+    #end if
+    #if $output_vcf
+        --output_vcf "${output_vcf}"
+    #end if
+  ]]></command>
+
+  <inputs>
+    <param name="input_file" type="data" format="txt" label="Input TXT" />
+    <param name="ordered_test" type="text" label="Ordered test" />
+  </inputs>
+
+  <outputs>
+    <data format="bed" name="output_bed" label="${tool.name} on ${on_string}: BED" />
+      <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" />
+  </outputs>
+
+  <help>
+    Create hotspots inputs
+  </help>
+
+  <tests> </tests>
+
+  <citations> </citations>
+
+</tool>

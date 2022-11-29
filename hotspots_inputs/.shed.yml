@@ -1,0 +1,11 @@
+name: "hotspots_inputs"
+owner: "onwuzu"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/hotspots_inputs"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  hotspots_inputs:
+    description: "Create hotspots inputs"
+    include:
+      - hotspots_inputs.py
+      - hotspots_inputs.xml
