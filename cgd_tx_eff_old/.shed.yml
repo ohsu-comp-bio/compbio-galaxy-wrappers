@@ -7,5 +7,5 @@ repositories:
   cgd_tx_eff:
     description: "Apply annotations from Annovar to a VCF."
     include:
-      - cgd_tx_eff_old.xml
-      - cgd_tx_eff_old.py
+      - cgd_tx_eff.xml
+      - cgd_tx_eff.py
