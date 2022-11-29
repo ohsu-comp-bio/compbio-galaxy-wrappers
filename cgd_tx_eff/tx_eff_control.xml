@@ -1,0 +1,68 @@
+<tool id="tx_eff_control" name="CGD Transcript Effects" version="0.1.1" >
+  <description>
+  	Apply transcript-effects annotations from Annovar and HGVS to a VCF.
+  	Note: This configuration doesn't work yet. 
+  </description>
+
+  <requirements>
+    <requirement type="package" version="0.13.3">vcfpy</requirement>
+    <requirement type="package" version="1.5.1">hgvs</requirement>
+  </requirements>
+
+  <version_command><![CDATA[
+    python $__tool_directory__/src/edu/ohsu/compbio/txeff/tx_eff_control.py --version
+  ]]></version_command>
+
+  <command detect_errors="exit_code"><![CDATA[
+    python $__tool_directory__/src/edu/ohsu/compbio/txeff/tx_eff_control.py 
+    #if $in_vcf
+        --in_vcf "${in_vcf}"
+    #end if
+
+    #if $out_vcf
+        --out_vcf "${out_vcf}"
+    #end if
+
+    #if $require_match
+        --require_match
+    #end if
+
+    #if $annovar_files
+        "${annovar_files}"
+    #end if
+    
+    #if $ccds_map
+    	--ccds_map "${ccds_map}"
+    #end if
+  ]]></command>
+
+  <inputs>
+    <param name="in_vcf" format="vcf,vcf_bgzip" optional="false" type="data" label="Input VCF" />
+    <param name="out_vcf" format="txt" optional="false" type="data" label="Output VCF" />
+    <param name="ccds_map" format="txt" optional="false" type="data" label="CCDS GFF"/>
+    <param name="require_match" format="txt" optional="true" type="data" label="Only add transcript effects to variants that are found by both Annovar and HGVS/UTA." />    
+    <param name="annovar_files" format="txt" optional="true" type="data" label="One or more of Annovar's variant_function or exonic_variant_function files" />    
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="out_vcf" label="${tool.name} on ${on_string}: VCF" />
+  </outputs>
+
+  <help><![CDATA[
+    usage: tx_eff_control.py [-h] [--version] --in_vcf VCF --out_vcf VCF --ccds_map GFF[--require_match] annovar.variant_function annovar.exonic_variant_function
+                         
+	required arguments: 
+	  --in_vcf			Input VCF with variant calls but no transcript effects
+	  --out_vcf         Output VCF that will be a copy of the in_vcf, with transcript effects added	  
+	  --ccds_map        Input GFF that maps RefSeq id to CCDS id
+
+    positional arguments:
+      annovar.variant_function               Annovar variant_function file
+      annovar.exonic_variant_function        Annovar exonic_variant_function file
+
+    optional arguments:
+      --require_match      Only add transcript effects to variants that are found by both Annovar and HGVS/UTA
+      -h, --help           show this help message and exit
+      --version            show program's version number and exit
+  ]]></help>
+</tool>
