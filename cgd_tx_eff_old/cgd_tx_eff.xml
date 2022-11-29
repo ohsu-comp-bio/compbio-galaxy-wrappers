@@ -1,0 +1,62 @@
+<tool id="cgd_tx_eff" name="CGD Transcript Effects" version="0.1.1" >
+  <description>Apply annotations from Annovar to a VCF.</description>
+
+  <requirements>
+    <requirement type="package" version="0.13.3">vcfpy</requirement>
+    <requirement type="package" version="1.5.1">hgvs</requirement>
+  </requirements>
+
+  <version_command><![CDATA[
+    python $__tool_directory__/cgd_tx_eff.py --version
+  ]]></version_command>
+
+  <command detect_errors="exit_code"><![CDATA[
+    python $__tool_directory__/cgd_tx_eff.py "${infile}" "${outfile}"
+    #if $evf
+        --evf "${evf}"
+    #end if
+
+    #if $vf
+        --vf "${vf}"
+    #end if
+
+    #if $ccds_evf
+        --ccds_evf "${ccds_evf}"
+    #end if
+
+    #if $ccds_vf
+        --ccds_vf "${ccds_vf}"
+    #end if
+  ]]></command>
+
+  <inputs>
+    <param name="infile" format="vcf,vcf_bgzip" type="data" label="Input VCF" />
+    <param name="evf" format="txt" optional="true" type="data" label="exonic_variant_function RefGene db" />
+    <param name="vf" format="txt" optional="true" type="data" label="variant_function RefGene db" />
+    <param name="ccds_evf" format="txt" optional="true" type="data" label="exonic_variant_function CCDS db" />
+    <param name="ccds_vf" format="txt" optional="true" type="data" label="variant_function CCDS db" />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="outfile" label="${tool.name} on ${on_string}: VCF" />
+  </outputs>
+
+  <help><![CDATA[
+    usage: cgd_tx_eff.py [-h] [--evf EVF] [--vf VF] [--ccds_evf CCDS_EVF]
+                         [--ccds_vf CCDS_VF] [--version]
+                         infile outfile
+
+    positional arguments:
+      infile               Input VCF to apply Annovar annotations to.
+      outfile              Output VCF
+
+    optional arguments:
+      -h, --help           show this help message and exit
+      --evf EVF            Input exonic_variant_function Annovar file.
+      --vf VF              Input variant_function Annovar file.
+      --ccds_evf CCDS_EVF  Input CCDS exonic_variant_function Annovar file.
+      --ccds_vf CCDS_VF    Input CCDS variant_function Annovar file.
+      --version            show program's version number and exit
+  ]]></help>
+</tool>
+

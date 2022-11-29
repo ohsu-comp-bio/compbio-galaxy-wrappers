@@ -1,5 +1,5 @@
 owner: "letaw"
-remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff_old"
 type: "unrestricted"
 categories:
   - "CompBio Galaxy Wrappers"
@@ -7,5 +7,5 @@ repositories:
   cgd_tx_eff:
     description: "Apply annotations from Annovar to a VCF."
     include:
-      - cgd_tx_eff.xml
-      - cgd_tx_eff.py
+      - cgd_tx_eff_old.xml
+      - cgd_tx_eff_old.py
