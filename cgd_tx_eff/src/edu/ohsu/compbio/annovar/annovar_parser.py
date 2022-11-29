@@ -93,15 +93,34 @@ class AnnovarParser(object):
     
     def _get_file_type(self, file_name:str):
         '''
-        Return the Annovar output type as determined by file extension
+        Return the Annovar output type as determined by its contents
         '''
-        if file_name.endswith('.exonic_variant_function'):
+        
+        # These are the allowable keywords for variant functions (https://annovar.openbioinformatics.org/en/latest/user-guide/gene/) 
+        variant_functions = ['UTR3', 'UTR5', 'downstream', 'exonic', 'intronic', 'ncRNA_exonic', 'ncRNA_intronic', 'ncRNA_splicing', 'splicing', 'upstream']
+        
+        first_line = self.__read_first_line(file_name)
+        
+        if first_line[0].startswith('line'):
+            # Field zero is 'lineN' and 'chrX' is in the third field for *.exonic_variant_function files
             return AnnovarFileType.ExonicVariantFunction
-        elif file_name.endswith('.variant_function'):
+        elif first_line[0] in variant_functions:            
             return AnnovarFileType.VariantFunction
         else:
             raise Exception(f"Unrecognized Annovar file type: {file_name}")
         
+    def __read_first_line(self, filename: str, delimiter = '\t'):
+        '''
+        Read the first line of a delimited file. The function is used to determine the file type.
+        '''
+        with open(filename, 'r') as annovar_file:
+            reader = csv.reader(annovar_file, delimiter = delimiter)
+            for row in reader:
+                return row
+        
+        raise Exception(f"File is empty: {filename}")
+            
+
     def _unpack_evf_transcript_tuple(self, delimited_transcript: str):
         '''
         Takes the transcript tuple (index 2 in the tsv) from an exonic_variant_function file and parses out the values.  

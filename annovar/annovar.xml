@@ -1,4 +1,4 @@
-<tool id='annovar' name="ANNOVAR" version='20191024.0.0'>
+<tool id='annovar' name="CompBio's ANNOVAR Tool" version='0.0.2'>
     <description>Functionally annotates genetic variants</description>
     <command detect_errors="exit_code"><![CDATA[
 
@@ -163,14 +163,11 @@
         #end if
 
     #end if
-
-
-
 ]]>
     </command>
     <inputs>
         <param name="annovar_loc" type="text" label="ANNOVAR Program Location"/>
-        <param name="input" type="data" format="vcf, txt" label="Variant File" help="Input file with variants, either in vcf format or in ANNOVAR input file format."/>
+        <param name="input" type="data" format="tsv" label="Annovar (avinput) Variant File" help="ANNOVAR input file with variants"/>
         <param name="dbloc" type="text" label="Database Folder Location"/>
         <param name="buildver" type="select" label="Genome Build">
             <option value="hg19">hg19</option>
@@ -239,10 +236,10 @@
         <data name="table_vcf_out" format="vcf" label="${tool.name} on $on_string: vcf" from_work_dir="outfile.vcf">
             <filter>mode['mode_type'] == "table" and mode['vcfinput']</filter>
         </data>
-        <data name="variation_function" format="txt" label="${tool.name} on $on_string: variant function" from_work_dir="outfile.variant_function">
+        <data name="variation_function" format="tsv" label="${tool.name} on $on_string: variant function" from_work_dir="outfile.variant_function">
             <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "geneanno"</filter>
         </data>
-        <data name="exon_variation_function" format="txt" label="${tool.name} on $on_string: exonic variant function" from_work_dir="outfile.exonic_variant_function">
+        <data name="exon_variation_function" format="tsv" label="${tool.name} on $on_string: exonic variant function" from_work_dir="outfile.exonic_variant_function">
             <filter>mode['mode_type'] == "variation" and mode['annotation_type'] == "geneanno"</filter>
         </data>
         <data name="region_out" format="txt" label="${tool.name} on $on_string: ${mode.dbtype}" from_work_dir="outfile.txt">
@@ -272,5 +269,14 @@
     </help>
     <citations>
         <citation type="doi">10.1093/nar/gkq603</citation>
+        <citation type="bibtex">
+		@misc{Annovar,
+		  author = {Pleyte, Jay},
+		  year = {2022},
+		  title = {CompBio Annovar Tool},
+		  publisher = {OHSU},
+		  url = {https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/annovar},
+		}        
+        </citation>
     </citations>
 </tool>
