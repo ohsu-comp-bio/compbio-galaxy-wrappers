@@ -1,7 +1,7 @@
-<tool id="star_fusion" name="STAR-Fusion" version="1.10.0.0">
+<tool id="star_fusion" name="STAR-Fusion" version="1.11.1.0">
     <description>detect fusion genes in RNA-Seq data</description>
     <requirements>
-        <requirement type="package" version="1.10.0">star-fusion</requirement>
+        <requirement type="package" version="1.11.1">star-fusion</requirement>
         <requirement type="package" version="3.2">hmmer</requirement>
     </requirements>
 
