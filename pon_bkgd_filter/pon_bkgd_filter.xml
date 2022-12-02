@@ -1,0 +1,62 @@
+<tool id="pon_bkgd_filter" name="PON BKGD Filter" version="1.0.0" >
+  <description>
+      Filter variants in a VCF based on PON background allele frequencies
+  </description>
+
+  <requirements>
+      <requirement type="package" version="0.13.3">vcfpy</requirement>
+  </requirements>
+
+  <version_command>
+      python $__tool_directory__/pon_bkgd_filter.py --version
+  </version_command>
+
+  <command><![CDATA[
+    python $__tool_directory__/pon_bkgd_filter.py
+    '${input_vcf}' '${output_vcf}' '${filter_id}'
+    #if $fc_bkgd_metrics
+        --fc_bkgd_metrics '${fc_bkgd_metrics}'
+    #end if
+    #if $fc_label
+        --fc_label '${fc_label}'
+    #end if
+
+    #if $per_base_bkgd_metrics
+        --per_base_bkgd_metrics '${per_base_bkgd_metrics}'
+    #end if
+    #if $vaf_threshold
+        --vaf_threshold '${vaf_threshold}'
+    #end if
+    #if $alt_specific
+        --alt_specific '${alt_specific}'
+    #end if
+]]></command>
+
+  <inputs>
+      <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
+      <param name="filter_id" type="text" label="FILTER ID to add to VCF record" />
+      <param name="fc_bkgd_metrics" type="data" format="tsv,tabular,txt"
+             label="Text file containing freq stats for forced call" />
+      <param name="fc_label" type="text" label="Forced call label" />
+
+      <param name="per_base_bkgd_metrics" type="data" format="tsv,tabular,txt" optional="true"
+             label="Text file containing freq stats of locus in panel" />
+      <param name="vaf_threshold" type="float" value="0.1" min="0" max="1.0" optional="true"
+           label="VAF threshold" help="VAF threshold under to perform filtering"/>
+      <param name="alt_specific" type="boolean" truevalue="--alt_specific" falsevalue="" optional="true"
+           label="Use ALT allele threshold to filter" />
+  </inputs>
+
+  <outputs>
+    <data name="output_vcf" format="vcf" label="${tool.name} on ${on_string}: VCF" />
+  </outputs>
+
+  <tests></tests>
+
+  <help>
+      Filter variants in a VCF based on PON background allele frequencies
+  </help>
+
+  <citations></citations>
+
+</tool>

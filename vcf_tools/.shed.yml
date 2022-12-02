@@ -4,33 +4,18 @@ type: "unrestricted"
 categories:
   - "CompBio Galaxy Wrappers"
 repositories:
-  var_label:
-    description: "Label variants in a VCF."
-    include:
-      - var_label.py
-      - var_label.xml
-      - vcf_tools_macros.xml
-  var_select:
-    description: "Select variants in a VCF."
-    include:
-      - var_select.py
-      - var_select.xml
-      - vcf_tools_macros.xml
-  var_filter:
-    description: "Filter variants in a VCF based on INFO field."
-    include:
-      - var_filter.py
-      - var_filter.xml
-      - vcf_tools_macros.xml
-  vcf_merge:
+  vcf_merge_2:
     description: "Merge multiple VCFs."
     include:
       - vcf_merge.py
       - vcf_merge.xml
-      - vcf_tools_macros.xml
-  vcf_select:
-    description: "Select VCF fields."
+  vcf_select_2:
+    description: "Select VCF fields in a merged VCF."
     include:
       - vcf_select.py
       - vcf_select.xml
-      - vcf_tools_macros.xml
+  vcf_filter_2:
+    description: "Filter VCF based on FILTER column."
+    include:
+      - vcf_filter.py
+      - vcf_filter.xml

@@ -12,7 +12,7 @@ import vcfreader
 import vcfwriter
 import argparse
 
-VERSION = '0.8.1'
+VERSION = '0.8.2'
 
 
 def supply_args():
@@ -147,7 +147,7 @@ class VcfRecDecomp(object):
                     if alt not in split:
                         split[alt] = {}
                     if self.samples_number[entry] == 'A':
-                        split[alt][entry] = self._decomp_alt(samp[entry], idx)
+                        split[alt][entry] = self._decomp_alt(samp[entry], idx, entry)
                     elif self.samples_number[entry] == 'R':
                         split[alt][entry] = self._decomp_ref(samp[entry], idx + 1)
                     elif self.samples_number[entry] == 'G':
@@ -175,7 +175,7 @@ class VcfRecDecomp(object):
                     split[alt] = {}
 
                 if self.info_number[entry] == 'A':
-                    split[alt][entry] = self._decomp_alt(vrnt.INFO[entry], idx)
+                    split[alt][entry] = self._decomp_alt(vrnt.INFO[entry], idx, entry)
                 elif self.info_number[entry] == 'R':
                     split[alt][entry] = self._decomp_ref(vrnt.INFO[entry], idx + 1)
                 elif self.info_number[entry] == 'G':
@@ -208,12 +208,16 @@ class VcfRecDecomp(object):
                 raise Exception("PL field should not contain more than three values.")
 
     @staticmethod
-    def _decomp_alt(val, idx):
+    def _decomp_alt(val, idx, entry):
         """
         Find fields in INFO that need to be split.
         Input is comma-deliminted value set, can be treated as a string.
         :return:
         """
+        # print(val.split(','))
+        # https://github.com/broadinstitute/gatk/issues/6857
+        if entry == 'AS_FilterStatus':
+            return val.split('|')[idx]
         return val.split(',')[idx]
 
     @staticmethod

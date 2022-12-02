@@ -14,3 +14,4 @@ repositories:
       - vt_decompose.xml
       - vt_macros.xml
       - vt_normalize.xml
+      - vt_decompose_blocksub.xml
