@@ -1,0 +1,11 @@
+owner: "onwuzu"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/mrdf_label"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  mrdf_label:
+    description: "Remove mrdf label from a merged VCF FILTER field of a record if variant called by other callers"
+    include:
+      - mrdf_label.py
+      - mrdf_label.xml
