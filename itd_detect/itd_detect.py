@@ -16,7 +16,7 @@ from copy import deepcopy
 from itertools import groupby
 from operator import itemgetter
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 
 def supply_args():
     """
@@ -388,7 +388,7 @@ class SequenceCollection:
         """
         sample_data = []
         for k, v in self.itd_list.items():
-            in_ref_cnt = 0.0
+            in_ref_cnt = 0
             total_cnt = len(v)
             for seq in sorted(v, key=len, reverse=True):
                 if seq in self.flt3:
@@ -450,6 +450,7 @@ class SequenceCollection:
                         if len(k) > len(list(self.max_pos[diff].keys())[0]):
                             self.max_pos[diff] = {k: seq}
 
+
 class ItdCall:
     def __init__(self, chrom, start, stop, diff, itd_cnt, ref_cnt, vaf, seq, pad_seq):
         """
@@ -501,8 +502,8 @@ class ItdCallVcf(ItdCall):
         self.info = 'ITD_LENGTH=' + diff
         self.frmt = 'GT:DP:AD:AF'
         self.gt = '0/1'
-        self.dp = str(self.itd_cnt + self.ref_cnt)
-        self.ad = ','.join([str(self.ref_cnt), str(self.itd_cnt)])
+        self.dp = str(int(self.itd_cnt + self.ref_cnt))
+        self.ad = ','.join([str(int(self.ref_cnt)), str(int(self.itd_cnt))])
         self.sample = ':'.join([self.gt, self.dp, self.ad, self.vaf])
         self.to_write = '\t'.join([self.chrom, self.pos, self.id, self.ref, self.alt,
                          self.qual, self.filter, self.info, self.frmt, self.sample])
@@ -551,6 +552,7 @@ def main():
     sample_data = coll.sample_data
 
     VcfWrite(args.outfile_vcf, args.sample_id, sample_data).write_me()
+
 
 if __name__ == "__main__":
     main()
