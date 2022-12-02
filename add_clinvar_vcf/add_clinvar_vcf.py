@@ -9,7 +9,7 @@
 import argparse
 import gzip
 
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 
 
 def supply_args():
@@ -78,7 +78,7 @@ class ClinVar(object):
         :return:
         """
         for i in range(len(self.annot)):
-            new_label = ';' + self.prefix + '.' + self.annot[i]
+            new_label = self.prefix + '.' + self.annot[i]
             new_value = values[i]
             if new_value:
                 yield '='.join([new_label, new_value])
@@ -129,7 +129,13 @@ class ClinVar(object):
                     uniq_key = (chrom, coord, ref, alt)
                     if uniq_key in self.clinvar_vars:
                         for entry in self._create_new_info(self.clinvar_vars[uniq_key]):
-                            info += entry
+                            # to avoid FILTER values like '.;DP=100' which causes downstream vcfpy error
+                            # AttributeError: 'bool' object has no attribute 'split'
+                            if info == '.':
+                                info = ''
+                                info += entry
+                            else:
+                                info += ';'+entry
                     to_write = line[:7]
                     to_write.append(info)
                     to_write.extend(line[8:])
