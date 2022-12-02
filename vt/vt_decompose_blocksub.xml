@@ -1,0 +1,147 @@
+<tool id="vt_@BINARY@" name="VT @BINARY@" version="@VERSION@.0">
+    <description>Decomposes biallelic block substitutions into its constituent SNPs.</description>
+    <macros>
+        <import>vt_macros.xml</import>
+        <token name="@BINARY@">decompose_blocksub</token>
+    </macros>
+    <expand macro="requirements" />
+    <expand macro="stdio" />
+    <expand macro="version_command" />
+    <command>
+<![CDATA[
+
+        ln -s "${ infile }" infile.vcf &&
+
+
+        vt @BINARY@
+            #if str($output_format) == 'bcf':
+                -o decompose_blocksub.bcf
+            #else:
+                -o decompose_blocksub.vcf
+            #end if
+            $p $a $i
+            #if $intervals_file:
+                -I "${intervals_file}"
+            #end if
+            infile.vcf
+
+        &&
+        ## For some reason, the file move will randomly produce empty files.
+        ## Wait two seconds to let the system close file handlers and clean up.
+        sleep 2
+        &&
+
+        #if str($output_format) == 'bcf':
+            mv decompose_blocksub.bcf "${ outfile }";
+        #else:
+            mv decompose_blocksub.vcf "${ outfile }";
+        #end if
+
+]]>
+    </command>
+
+    <inputs>
+        <param name="infile" type="data" format="vcf" label="VCF file to be block substitution decomposed" />
+
+        <param argument="-p" type="boolean" truevalue="-p" falsevalue=""
+            selected="false" label="Output phased genotypes and PS tags for decomposed variants"
+            help="Output phased genotypes and PS tags for decomposed variants."/>
+
+        <param argument="-a" type="boolean" truevalue="-a" falsevalue=""
+            selected="false" label="enable aggressive/alignment mode."
+            help="enable aggressive/alignment mode."/>
+
+        <param name="intervals_file" type="data" format="txt"
+            optional="true" label="file containing list of intervals." />
+
+        <param argument="-i" type="text" optional="true" label="intervals" />
+
+        <param name="output_format" type="select" label="Choose the output format" help="">
+            <option value="bcf">BCF</option>
+            <option value="vcf" selected="true">VCF</option>
+        </param>
+    </inputs>
+
+    <outputs>
+        <data name="outfile" format="vcf" label="${tool.name} on ${on_string}">
+            <change_format>
+                <when input="output_format" value="bcf" format="bcf" />
+            </change_format>
+        </data>
+    </outputs>
+
+    <tests>
+        <test>
+            <param name="infile" value="infile01.vcf" />
+            <output name="outfile" file="decompose_result01.vcf" ftype="vcf" />
+        </test>
+        <test>
+            <param name="infile" value="infile02.vcf" />
+            <param name="s" value="True" />
+            <output name="outfile" file="decompose_result02.vcf" ftype="vcf" />
+        </test>
+    </tests>
+
+    <help>
+<![CDATA[
+
+**What it does**
+
+Decomposes biallelic block substitutions into its constituent SNPs.
+
+.. code::
+
+  usage : vt decompose_blocksub [options] <in.vcf>
+  options : -m  keep MNVs (multi-nucleotide variants) [false]
+            -a  enable aggressive/alignment mode [false]
+            -d  MNVs max distance (when -m option is used) [2]
+            -o  output VCF file [-]
+            -I  file containing list of intervals []
+            -i  intervals []
+            -?  displays help-a  enable aggressive/alignment mode
+
+.. code::
+
+   #decomposes biallelic block substitutions and write out to decomposed_blocksub.vcf
+  vt decompose_blocksub gatk.vcf -o decomposed_blocksub.vcf
+  #before decomposition
+  #CHROM  POS     ID    REF     ALT     QUAL    FILTER  INFO            FORMAT  S1
+  20	  763837  .	CA	TG	50340.1	PASS	AC=1;AN=2	GT	0|1
+  #after decomposition
+  #CHROM  POS     ID    REF     ALT     QUAL    FILTER  INFO                                    FORMAT  S1
+  20	  763837  .	C	T	50340.1	PASS	AC=1;AN=2;OLD_CLUMPED=20:763837:CA/TG	GT	0|1
+  20	  763838  .	A	G	50340.1	PASS	AC=1;AN=2;OLD_CLUMPED=20:763837:CA/TG	GT	0|1
+
+
+.. code::
+
+  #decomposes biallelic clumped variant and write out to decomposed_blocksub.vcf
+  vt decompose_blocksub -a gatk.vcf -o decomposed_blocksub.vcf
+  #before decomposition
+  #CHROM  POS     ID    REF     ALT     QUAL    FILTER  INFO            FORMAT  S1
+  20	  763837  .	CG	TGA	50340.1	PASS	AC=1;AN=2	GT	0|1
+  #after decomposition
+  #CHROM  POS     ID    REF     ALT     QUAL    FILTER  INFO                                    FORMAT  S1
+  20	  763837  .	C	T	50340.1	PASS	AC=1;AN=2;OLD_CLUMPED=20:763837:CG/TGA	GT	0|1
+  20	  763838  .	G	GA	50340.1	PASS	AC=1;AN=2;OLD_CLUMPED=20:763837:CG/TGA	GT	0|1
+
+
+.. code::
+
+ #decomposes biallelic clumped variant and write out to decomposed_blocksub.vcf and add phase set information in the genotype fields
+  vt decompose_blocksub -p gatk.vcf -o decomposed_blocksub.vcf
+  #before decomposition
+  #CHROM  POS	    ID	  REF        ALT        QUAL	FILTER	INFO	                                        FORMAT	tumor	     normal
+  1	  159030    .	  TAACCTTTC  TGACCTTTT  0.04	.	AF=0.5	                                        GT      0/0          1/1
+  #after decomposition
+  1	  159031    .	  A          G	        0.04	.	AF=0.5;OLD_CLUMPED=1:159030:TAACCTTTC/TGACCTTTT	GT:PS	0|0:159031   1|1:159031
+  1	  159038    .	  C          T	        0.04	.	AF=0.5;OLD_CLUMPED=1:159030:TAACCTTTC/TGACCTTTT	GT:PS	0|0:159031   1|1:159031
+
+
+@CITATION@
+]]>
+    </help>
+
+    <expand macro="citations"/>
+
+</tool>
