@@ -58,17 +58,22 @@ def main():
 
     if args.output_bed:
         with open(args.output_bed, 'w') as bed_writer:
-            for roi in natsorted(roi_dict.values(), key=attrgetter('chrom', 'pos')):
-                bed_writer.write('{}\t{}\t{}\n'.format(roi.chrom, roi.start, roi.end))
+            if len(roi_dict) > 0:
+                for roi in natsorted(roi_dict.values(), key=attrgetter('chrom', 'pos')):
+                    bed_writer.write('{}\t{}\t{}\n'.format(roi.chrom, roi.start, roi.end))
+            else:  # add fake pos if hotspots not in ordered tests hotspots file
+                bed_writer.write('{}\t{}\t{}\n'.format('1', '1', '2'))
 
     if args.output_vcf:
         vcf_header = ['#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
         with open(args.output_vcf, 'w') as vcf_writer:
             vcf_writer.write('##fileformat=VCFv4.2\n')
             vcf_writer.write('\t'.join(vcf_header)+'\n')
-            for roi in natsorted(roi_dict.values(), key=attrgetter('chrom', 'pos')):
-                vcf_writer.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(roi.chrom, roi.pos, roi.id, roi.ref, roi.alt, roi.qual, roi.filter, roi.info))
-
+            if len(roi_dict) > 0:
+                for roi in natsorted(roi_dict.values(), key=attrgetter('chrom', 'pos')):
+                    vcf_writer.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(roi.chrom, roi.pos, roi.id, roi.ref, roi.alt, roi.qual, roi.filter, roi.info))
+            else:  # add fake pos if hotspots not in ordered tests hotspots file
+                vcf_writer.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format('1', '3', '.', 'T', 'C', '.', '.', '.'))
 
 if __name__ == "__main__":
     main()
