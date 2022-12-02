@@ -1,0 +1,11 @@
+owner: "onwuzu"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/pon_bkgd_filter"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  pon_bkgd_filter:
+    description: "Filter variants in a VCF based on PON background allele frequencies"
+    include:
+      - pon_bkgd_filter.py
+      - pon_bkgd_filter.xml
