@@ -13,9 +13,13 @@
 
   <command><![CDATA[
     python $__tool_directory__/pon_bkgd_filter.py
-    '${input_vcf}' '${output_vcf}' '${filter_id}' '${filter_desc}'
-    '${fc_bkgd_metrics}'
-    '${fc_label}'
+    '${input_vcf}' '${output_vcf}' '${filter_id}'
+    #if $fc_bkgd_metrics
+        --fc_bkgd_metrics '${fc_bkgd_metrics}'
+    #end if
+    #if $fc_label
+        --fc_label '${fc_label}'
+    #end if
 
     #if $per_base_bkgd_metrics
         --per_base_bkgd_metrics '${per_base_bkgd_metrics}'

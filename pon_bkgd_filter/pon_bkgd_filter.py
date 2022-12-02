@@ -26,8 +26,8 @@ def supply_args():
     parser.add_argument('input_vcf', help='Input VCF')
     parser.add_argument('output_vcf', help='Output VCF')
     parser.add_argument('filter_id', help='FILTER ID to add to VCF record')
-    parser.add_argument('fc_bkgd_metrics', help='Text file containing freq stats for forced call')
-    parser.add_argument('fc_label', help='Forced call label')
+    parser.add_argument('--fc_bkgd_metrics', help='Text file containing freq stats for forced call')
+    parser.add_argument('--fc_label', help='Forced call label')
 
     parser.add_argument('--per_base_bkgd_metrics', help='Text file containing freq stats of locus in panel')
     parser.add_argument('--vaf_threshold', help='VAF threshold under to perform filtering')
