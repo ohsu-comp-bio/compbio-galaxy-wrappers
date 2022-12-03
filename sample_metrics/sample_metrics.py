@@ -14,7 +14,7 @@ from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, 
 from inputs import FastQcRead
 from inputs import VcfRead
 
-VERSION = '0.8.5'
+VERSION = '0.8.6'
 
 def supply_args():
     """
@@ -560,6 +560,7 @@ class MetricPrep(SampleMetrics):
         :return:
         """
         return {'QIAseq_V3_RNA': ['qthirty', 'averageDepth', 'percentUmi'],
+                'QIAseq_V3_RNA_HEME': ['qthirty', 'averageDepth', 'percentUmi'],
                 'TruSightOne': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
                                 'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
                 'TruSightOneV2_5': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
@@ -588,6 +589,7 @@ class MetricPrep(SampleMetrics):
         :return:
         """
         return {'QIAseq_V3_RNA': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
+                'QIAseq_V3_RNA_HEME': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
                 'TruSightOne': ['gc_pct_r1', 'gc_pct_r2', 'gender_check'],
                 'TruSightOneV2_5': ['gc_pct_r1', 'gc_pct_r2', 'gender_check', 'homozygosity_flag'],
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
