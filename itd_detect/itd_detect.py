@@ -8,6 +8,7 @@
 # VAFs are also off in paired-end mode because I am only looking for exact matches during overlap determination.
 # 0.4.2 - If we can't get HGVS results, just return an output file where they are blank.
 # 1.0.0 - Remove hgvs from script, create vcf as output.
+# 1.0.2 - Added bcor and fgfr targets
 
 import argparse
 import pysam
@@ -16,7 +17,7 @@ from copy import deepcopy
 from itertools import groupby
 from operator import itemgetter
 
-VERSION = '1.0.1'
+VERSION = '1.0.2'
 
 def supply_args():
     """
@@ -204,9 +205,12 @@ class GetSeq:
         :return:
         """
         known_targ = {'flt3': ('13', 28577411, 28682904),
-                    'flt3_e13': ('13', 28608438, 28608544),
-                    'flt3_e14': ('13', 28608219, 28608351),
-                    'flt3_e15': ('13', 28608024, 28608128)}
+                      'flt3_e13': ('13', 28608438, 28608544),
+                      'flt3_e14': ('13', 28608219, 28608351),
+                      'flt3_e15': ('13', 28608024, 28608128),
+                      'bcor_e15': ('X', 39910499, 39911653),
+                      'fgfr1_e10': ('8', 38275746, 38275891),
+                      'fgfr1_e18': ('8', 38268656, 38271322)}
         return known_targ[target]
 
     def _get_ref_dups(self):
