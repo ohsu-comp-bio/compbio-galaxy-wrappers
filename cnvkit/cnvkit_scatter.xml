@@ -1,0 +1,287 @@
+<tool id="cnvkit_scatter" name="CNVkit Scatter" version="@VERSION@.0" profile="17.09">
+    <description>CNVkit, a command-line toolkit for copy number analysis.</description>
+
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+
+    @VERSION_CMD@
+
+    <requirements>
+      <requirement type="package" version="0.9.4a0">cnvkit</requirement>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+        @CMD_BEGIN@ scatter 
+
+        #if $segments.include_segments:
+        --segment ${segments.segment_file}
+        #if $segments.color.specify_color:
+        --segment-color $segments.color.color
+        #end if
+        #end if
+
+        #if $restrict_analysis.restrict_to == "chromosome":
+        --chromosome ${restrict_analysis.chromosome}
+        #else if $restrict_analysis.restrict_to == "region":
+        --chromosome ${restrict_analysis.chromosome}:${restrict_analysis.start_idx}-${restrict_analysis.end_idx}
+        #else if $restrict_analysis.restrict_to == "genes":
+        --gene ${restrict_analysis.geneNames}
+        #end if
+
+        
+        -o scatter.pdf
+
+
+        #if $width.specify_width:
+        --width ${width.width}
+        #end if
+
+
+        #if $plot.antitarget.specify_antitarget
+        --antitarget-marker ${plot.antitarget.character}
+        #end if
+
+        #if $plot.by_bin
+        --by-bin
+        #end if
+
+        #if $plot.title.specify_title 
+        --title "${plot.title.title}"
+        #end if
+
+        #if $plot.trendline
+        --trend
+        #end if
+
+        #if $plot.plot_max.specify_max:
+        --y-max ${plot.plot_max.max}
+        #end if
+
+        #if $plot.plot_min.specify_min:
+        --y-min ${plot.plot_min.min}
+        #end if
+
+        #if $SNP.vcf.use_vcf
+        --vcf ${SNP.vcf.vcf_file}
+        #if $SNP.vcf.sample.specify_id
+        --sample-id ${SNP.vcf.sample.id}
+        #end if
+        #if $SNP.vcf.normal.specify_id
+        --sample-id ${SNP.vcf.normal.id}
+        #end if 
+        #if $SNP.vcf.min_depth.specify_depth
+        --min-variant-depth ${SNP.vcf.min_depth.depth}
+        #end if 
+        #if $SNP.vcf.zygosity.infer
+        --zygosity-freq ${SNP.vcf.zygosity.freq}
+        #end if
+        #end if
+
+        ${calls}
+
+    ]]></command>
+
+    <inputs>
+        <param name="calls" type="data" format="tabular,tsv" multiple="false" label="CNR File"/>
+        <conditional name="segments">
+            <param name="include_segments" type="boolean" value="false" label="Include Segments"/>
+            <when value="true">
+                <param name="segment_file" type="data" format="tabular,tsv" multiple="false" label="Segments"/>
+
+                <conditional name="color">
+                    <param name="specify_color" type="boolean" value="false" label="Specify Segment Color"/>
+                    <when value="true">
+                        <param name="color" type="text" value="orange" label="Color"/>
+                    </when>
+                </conditional>
+
+            </when>
+        </conditional>
+        
+        <conditional name="restrict_analysis">
+            <param name="restrict_to" type="select" label="Restrict Analysis">
+                <option value="whole">Whole</option>
+                <option value="chromosome">Chromosome</option>
+                <option value="region">Region</option>
+                <option value="genes">Genes</option>
+            </param>
+            <when value="whole">
+            </when>
+            <when value="chromosome">
+                <param name="chromosome" type="text" label="Chromosome"/>
+            </when>
+            <when value="region">
+                <param name="chromosome" type="text" label="Chromosome"/>
+                <param name="start_idx" type="integer" value="0" label="Region starting index (inclusive)"/>
+                <param name="end_idx" type="integer" value="0" label="Region ending index (exclusive)"/>
+            </when>
+            <when value="genes">
+                <param name="geneNames" type="text" label="Gene Name(s)" help="Provide a comma separated list of gene names"/>
+            </when>
+        </conditional>
+
+
+        <conditional name="width">
+            <param name="specify_width" type="boolean" value="false" label="Specify Width"/>
+            <when value="true">
+                <param name="width" type="integer" value="1" label="Width"/>
+            </when>
+        </conditional>
+
+        <section name="plot" title="Plot Options" expanded="false">
+            <conditional name="antitarget">
+                <param name="specify_antitarget" type="boolean" value="false" label="Antitargets"/>
+                <when value="true">
+                    <param name="character" type="text" label="Antitarget Label"/>
+                </when>
+            </conditional>
+
+            <param name="by_bin" type="boolean" value="false" label="Plot By Bin"/>
+
+            <conditional name="title">
+                <param name="specify_title" type="boolean" value="false" label="Specify Title"/>
+                <when value="true">
+                    <param name="title" type="text" label="Plot Title"/>
+                </when>
+            </conditional>
+
+            <param name="trendline" type="boolean" value="false" label="Include Trendline"/>
+
+            <conditional name="plot_min">
+                <param name="specify_min" type="boolean" value="false" label="Specify Plot Minimum"/>
+                <when value="true">
+                    <param name="min" type="integer" value="-4" label="Minimum value"/>
+                </when>
+            </conditional>
+
+            <conditional name="plot_max">
+                <param name="specify_max" type="boolean" value="false" label="Specify Plot Maximum"/>
+                <when value="true">
+                    <param name="max" type="integer" value="4" label="Maximum value"/>
+                </when>
+            </conditional>
+        </section>
+
+        <section name="SNP" title="SNV b-Allele Frequencies" expanded="false">
+            <conditional name="vcf">
+                <param name="use_vcf" type="boolean" value="false" label="Use VCF File"/>
+                <when value="true">
+                    <param name="vcf_file" type="data" format="tsv" label="VCF File"/>
+
+                    <conditional name="sample">
+                        <param name="specify_id" type="boolean" value="false" label="Specify Sample ID"/>
+                        <when value="true">
+                            <param name="id" type="text" label="Sample ID"/>
+                        </when>
+                    </conditional> 
+
+                    <conditional name="normal">
+                        <param name="specify_id" type="boolean" value="false" label="Specify Normal ID"/>
+                        <when value="true">
+                            <param name="id" type="text" label="Normal ID"/>
+                        </when>
+                    </conditional>
+
+                    <conditional name="min_depth">
+                        <param name="specify_depth" type="boolean" value="false" label="Specify Minimum Read Depth" help="Used in the b-allele frequency calculation. Default 20."/>
+                        <when value="true">
+                            <param name="min_depth" type="integer" value="20" label="Minimum Read Depth"/>
+                        </when>
+                    </conditional>
+
+                    <conditional name="zygosity">
+                        <param name="infer" type="boolean" value="true" label="Infer Zygosity"/>
+                        <when value="true">
+                            <param name="freq" type="float" label="Value" optional="true"/>
+                        </when>
+                    </conditional>
+                </when>
+            </conditional>
+        </section>
+
+    </inputs>
+
+    <outputs>
+        <data name="scatterplot" format="pdf" from_work_dir="scatter.pdf" label="${tool.name} on ${on_string}"/>
+    </outputs>
+
+    <help><![CDATA[
+usage: cnvkit.py scatter [-h] [-s FILENAME] [-c RANGE] [-g GENE]
+                         [-l RANGE_LIST] [-w WIDTH] [-o FILENAME]
+                         [-a CHARACTER] [--by-bin]
+                         [--segment-color SEGMENT_COLOR] [--title TITLE] [-t]
+                         [--y-max Y_MAX] [--y-min Y_MIN] [-v FILENAME]
+                         [-i SAMPLE_ID] [-n NORMAL_ID] [-m MIN_VARIANT_DEPTH]
+                         [-z [ALT_FREQ]]
+                         [filename]
+
+positional arguments:
+  filename              Processed bin-level copy ratios (*.cnr), the output of
+                        the 'fix' sub-command.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s FILENAME, --segment FILENAME
+                        Segmentation calls (.cns), the output of the 'segment'
+                        command.
+  -c RANGE, --chromosome RANGE
+                        Chromosome or chromosomal range, e.g. 'chr1' or
+                        'chr1:2333000-2444000', to display. If a range is
+                        given, all targeted genes in this range will be shown,
+                        unless -g/--gene is also given.
+  -g GENE, --gene GENE  Name of gene or genes (comma-separated) to display.
+  -l RANGE_LIST, --range-list RANGE_LIST
+                        File listing the chromosomal ranges to display, as
+                        BED, interval list or 'chr:start-end' text. Creates
+                        focal plots similar to -c/--chromosome for each listed
+                        region, combined into a multi-page PDF. The output
+                        filename must also be specified (-o/--output).
+  -w WIDTH, --width WIDTH
+                        Width of margin to show around the selected gene(s)
+                        (-g/--gene) or small chromosomal region
+                        (-c/--chromosome). [Default: 1000000]
+  -o FILENAME, --output FILENAME
+                        Output PDF file name.
+
+Plot aesthetics:
+  -a CHARACTER, --antitarget-marker CHARACTER
+                        Plot antitargets using this symbol when plotting in a
+                        selected chromosomal region (-g/--gene or
+                        -c/--chromosome). [Default: same as targets]
+  --by-bin              Plot data x-coordinates by bin indices instead of
+                        genomic coordinates. All bins will be shown with equal
+                        width, no blank regions will be shown, and x-axis
+                        values indicate bin number (within chromosome) instead
+                        of genomic position.
+  --segment-color SEGMENT_COLOR
+                        Plot segment lines in this color. Value can be any
+                        string accepted by matplotlib, e.g. 'red' or
+                        '#CC0000'.
+  --title TITLE         Plot title. [Default: sample ID, from filename or -i]
+  -t, --trend           Draw a smoothed local trendline on the scatter plot.
+  --y-max Y_MAX         y-axis upper limit.
+  --y-min Y_MIN         y-axis lower limit.
+
+To plot SNP b-allele frequencies:
+  -v FILENAME, --vcf FILENAME
+                        VCF file name containing variants to plot for SNV
+                        b-allele frequencies.
+  -i SAMPLE_ID, --sample-id SAMPLE_ID
+                        Name of the sample in the VCF to use for b-allele
+                        frequency extraction and as the default plot title.
+  -n NORMAL_ID, --normal-id NORMAL_ID
+                        Corresponding normal sample ID in the input VCF. This
+                        sample is used to select only germline SNVs to plot.
+  -m MIN_VARIANT_DEPTH, --min-variant-depth MIN_VARIANT_DEPTH
+                        Minimum read depth for a SNV to be used in the
+                        b-allele frequency calculation. [Default: 20]
+  -z [ALT_FREQ], --zygosity-freq [ALT_FREQ]
+                        Ignore VCF's genotypes (GT field) and instead infer
+                        zygosity from allele frequencies. [Default if used
+                        without a number: 0.25]
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>
