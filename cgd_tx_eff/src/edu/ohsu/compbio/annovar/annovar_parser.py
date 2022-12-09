@@ -131,7 +131,15 @@ class AnnovarParser(object):
         refseq_transcript = transcript_parts[1]
         raw_exon = transcript_parts[2]
 
-        if raw_exon != 'wholegene':
+        if raw_exon == 'wholegene':
+            logger.debug(f'This transcript\'s raw_exon value is \'wholegene\' and is of no use: {transcript_parts}')
+            amino_acid_position = None 
+            hgvs_basep = None
+            exon = None
+            hgvs_c_dot = None
+            hgvs_p = None
+            hgvs_three = None
+        else:
             # Remove the prefix 'exon' prefix from the raw exon string like "exon4"
             exon = raw_exon.replace('exon','')
             
@@ -200,11 +208,11 @@ class AnnovarParser(object):
                 full_c = ':'.join([refseq_transcript, hgvs_c_dot])
                 hgvs_basep = self.hgvs_parser.parse(full_c).posedit.pos.start
             except hgvs.exceptions.HGVSParseError:
+                hgvs_basep = None
                 c_dot_alt = re.search(r"c\..*\>([\w]+)", hgvs_c_dot)            
                 if c_dot_alt and len(c_dot_alt.group(1)) > 1:
                     # This doesn't matter because we use the c. from HGVS/UTA not this one from Annovar
                     logger.debug(f"HGVS parser failed to determine c. because the parser expects the c. alt to be just one base, but is {len(c_dot_alt.group(1))}: {hgvs_c_dot}")
-                    hgvs_basep = None
         else:
             hgvs_basep = None
 
@@ -325,13 +333,13 @@ class AnnovarParser(object):
             reader = csv.reader(annovar_file, delimiter = delimiter)
             for row in reader:
                 if annovar_file_type == AnnovarFileType.ExonicVariantFunction:
-                    assert len(row) == 19, f"Exonic variant function file must have 19 columns. Found {len(row)}. Make sure you run the annotate_variation.pl script with the '--otherinfo' parameter to include other information from the original VCF"
+                    assert len(row) == 18, f"Exonic variant function file must have 18 columns. Found {len(row)}. Make sure you run the annotate_variation.pl script with the '--otherinfo' parameter to include other information from the original VCF"
                     assert row[0].startswith('line')
 
                     # Parse a row in an exonic_variant_function file
                     annovar_recs.extend(self._parse_exonic_variant_function_row(row))
                 elif annovar_file_type == AnnovarFileType.VariantFunction:
-                    assert len(row) == 18, f"Variant function file must have 18 columns. Found {len(row)}. Make sure you run the annotate_variation.pl with the '--otherinfo' parameter to include other information from the original VCF"
+                    assert len(row) == 17, f"Variant function file must have 17 columns. Found {len(row)}. Make sure you run the annotate_variation.pl with the '--otherinfo' parameter to include other information from the original VCF"
                     
                     # Parse a row in a variant_function file
                     annovar_recs.extend(self._parse_variant_function_row(row))
