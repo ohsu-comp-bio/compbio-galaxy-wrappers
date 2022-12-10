@@ -131,7 +131,7 @@ def _parse_args():
     parser = argparse.ArgumentParser(description='Join a VCF containing transcript effects with a heme variant export')
 
     parser.add_argument('-v', '--vcf',  
-                        help='Input VCF containing transcript effects',
+                        help='Input VCF.bgz containing transcript effects (index must also exist)',
                         type=argparse.FileType('r'),
                         required=True)
 
