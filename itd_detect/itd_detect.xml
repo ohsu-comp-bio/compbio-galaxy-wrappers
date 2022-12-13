@@ -1,4 +1,4 @@
-<tool id="itd_detect" name="ITD Detect" version="1.0.2" >
+<tool id="itd_detect" name="ITD Detect" version="1.1.0" >
     <description>Detect ITD events in a BAM file.</description>
 
     <requirements>
@@ -21,6 +21,9 @@
     #end if
     #if $paired
         --paired
+    #end if
+    #if $min_size
+        --min_size $min_size
     #end if
     --outfile '${outfile}'
     --outfile_vcf '${outfile_vcf}'
@@ -54,7 +57,7 @@
             <option value="flt3_e15">FLT3e15</option>
         </param>
         <param name="paired" type="boolean" checked="true" label="Paired-end?" help="Check if the BAM is paired-end." />
-
+        <param name="min_size" type="integer" value="12" min="0" label="Minimum Size" help="Minimum ITD size to write to VCF." />
     </inputs>
 
     <outputs>
