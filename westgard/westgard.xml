@@ -1,0 +1,25 @@
+<tool id="westgard" name="Westgard Multirule QC" version="0.3.0">
+    <description>Performs Westgard Multirule QC on raw DSP data on specified TMA and Probe combo</description>
+    <requirements>
+      <requirement type="package" version="1.21.5">numpy</requirement>
+      <requirement type="package" version="1.4.2">pandas</requirement>
+      <requirement type="package" version="2022.3.15">regex</requirement>
+      <requirement type="package" version="3.5.1">matplotlib</requirement>
+      <requirement type="package" version="3.0.9">openpyxl</requirement>
+      <requirement type="package" version="3.5.68">reportlab</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+    ln -s $dsp_tma_results tma_results.csv &&
+    python $__tool_directory__/westgard.py tma_results.csv $tma_name $ab_name $qc_report
+]]>
+    </command>
+    <inputs>
+        <param type="data" name="dsp_tma_results" label="TMA abundance counts" format="csv"/>
+        <param type="text" name="tma_name" label="TMA Name"/>
+        <param type="text" name="ab_name" label="Antibody Probe Name"/>
+    </inputs>
+    <outputs>
+        <data format="pdf" name="qc_report" label="Levey-Jennings Plots"/>
+    </outputs>
+    <help></help>
+</tool>
