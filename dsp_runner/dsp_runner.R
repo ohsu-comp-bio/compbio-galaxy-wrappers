@@ -192,6 +192,9 @@ melt.tma[,ceil_igg:=pmin(perc_igg, 100)]
 melt.tma$monthday<- substr(melt.tma$batch, 1, 4)
 melt.tma$monthday<- str_remove(melt.tma$monthday, "^0+")
 melt.tma$year<- substr(melt.tma$batch, 5, 8)
+
+# Create combined name_ProbeName column
+melt.tma$name_ProbeName<- str_c(melt.tma$name,'_',melt.tma$ProbeName)
 # Write out csv for Westgard rules script in Galaxy wf
 write.csv(melt.tma, file=paste0(args[10]), row.names=F)
 
