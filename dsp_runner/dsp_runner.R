@@ -1,4 +1,4 @@
-    # VERSION: 0.9.4
+    # VERSION: 0.9.5
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -188,6 +188,10 @@ melt.tma <- merge(melt.tma, melt.tma[ProbeName %in% c("Ms IgG1",  "Ms IgG2a", "R
 melt.tma[,perc_igg:=(abundance/igg_abund)*100]
 melt.tma[,ceil_igg:=pmin(perc_igg, 100)]
 
+# Add columns splitting batch date into month-day and year for sorting
+tma.meta$monthday<- substr(tma.meta$batch, 1, 4)
+tma.meta$monthday<- str_remove(tma.meta$monthday, "^0+")
+tma.meta$year<- substr(tma.meta$batch, 5, 8)
 # Write out csv for Westgard rules script in Galaxy wf
 write.csv(melt.tma, file=paste0(args[10]), row.names=F)
 
