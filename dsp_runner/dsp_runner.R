@@ -189,9 +189,9 @@ melt.tma[,perc_igg:=(abundance/igg_abund)*100]
 melt.tma[,ceil_igg:=pmin(perc_igg, 100)]
 
 # Add columns splitting batch date into month-day and year for sorting
-tma.meta$monthday<- substr(tma.meta$batch, 1, 4)
-tma.meta$monthday<- str_remove(tma.meta$monthday, "^0+")
-tma.meta$year<- substr(tma.meta$batch, 5, 8)
+melt.tma$monthday<- substr(melt.tma$batch, 1, 4)
+melt.tma$monthday<- str_remove(melt.tma$monthday, "^0+")
+melt.tma$year<- substr(melt.tma$batch, 5, 8)
 # Write out csv for Westgard rules script in Galaxy wf
 write.csv(melt.tma, file=paste0(args[10]), row.names=F)
 
