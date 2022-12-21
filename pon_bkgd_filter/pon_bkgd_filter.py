@@ -39,11 +39,11 @@ def supply_args():
 
 def add_metrics_header(field, prefix, metric, field_number, field_type, field_desc, header):
     if field == 'INFO':
-        header.add_info_line(vcfpy.OrderedDict([('ID', '{}_{}'.format(prefix, metric)),
+        header.add_info_line(vcfpy.OrderedDict([('ID', '{}{}'.format(prefix, metric)),
                                                 ('Number', field_number), ('Type', field_type),
                                                 ('Description', field_desc)]))
     else:
-        header.add_format_line(vcfpy.OrderedDict([('ID', '{}_{}'.format(prefix, metric)),
+        header.add_format_line(vcfpy.OrderedDict([('ID', '{}{}'.format(prefix, metric)),
                                                  ('Number', field_number), ('Type', field_type),
                                                  ('Description', field_desc)]))
     return header
@@ -85,6 +85,8 @@ def main():
                            'Descriptive stats of locus allele frequencies from PON samples', header)
     add_metrics_header('INFO', '', args.filter_id, 1, 'Float',
                        'Below background', header)
+    add_metrics_header('INFO', 'fc', args.filter_id, 1, 'Float',
+                       'Below background for forced calls', header)
     writer = vcfpy.Writer.from_path(args.output_vcf, header=header)
 
     # add info to VCF records
@@ -93,7 +95,7 @@ def main():
         if args.fc_label in record.FILTER:
             if fc_mets:
                 for metric in metrics:
-                    record.INFO['{}_{}'.format(prefix, metric)] = fc_mets[roi_id][metric]
+                    record.INFO['{}{}'.format(prefix, metric)] = fc_mets[roi_id][metric]
                 if record.calls[0].data['AF'] < float(fc_mets[roi_id]['threshold']):
                     record.add_filter('{}{}'.format(args.fc_label, args.filter_id))
         else:
@@ -105,7 +107,7 @@ def main():
                         roi_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.ALT[0].value, record.ALT[0].value)
                     if roi_id in per_base_mets:
                         for metric in metrics:
-                            record.INFO['{}_{}'.format(prefix, metric)] = per_base_mets[roi_id]['threshold']
+                            record.INFO['{}{}'.format(prefix, metric)] = per_base_mets[roi_id]['threshold']
                         if record.calls[0].data['AF'] < float(per_base_mets[roi_id]['threshold']):
                             record.add_filter(args.filter_id)
                     else:
