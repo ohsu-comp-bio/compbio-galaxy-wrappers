@@ -15,7 +15,6 @@
     </requirements>
 
     <command detect_errors="exit_code"><![CDATA[
-       echo "testing"
        mkdir -p dsp_results && mkdir -p dsp_results/"${sample_id}" &&
        ln -s $__tool_directory__/dsp_inputs.R &&
        ln -s $__tool_directory__/evaluation.R &&
@@ -29,8 +28,6 @@
        ln -s "$dsp_meta" dsp_meta.xlsx &&
        ln -s "$igg_info" igg_info.xlsx &&
        Rscript $__tool_directory__/dsp_runner.R "$sample_id" "$run_id" "$coh" "$datadir" ab_info.xlsx low_probes.xlsx control_type.xlsx dsp_meta.xlsx igg_info.xlsx $dsp_tma_results $dsp_report
-
-       rm -rf "dsp_results"
     ]]></command>
 
     <inputs>
