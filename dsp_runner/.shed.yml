@@ -10,3 +10,9 @@ repositories:
     include:
       - dsp_runner.xml
       - dsp_runner.R
+      - dsp_inputs.R
+      - evaluation.R
+      - helpers.R
+      - normalization.R
+      - plots.R
+      - summarization.R
