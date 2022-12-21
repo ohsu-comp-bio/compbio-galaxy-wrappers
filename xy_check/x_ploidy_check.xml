@@ -1,15 +1,15 @@
-<tool id='gender_check_HOP' name="HOP Gender Check" version='1.0.0'>
-    <description>Check the gender of a sample against the gender given in the samplesheet using heterozygosity of X.</description>
+<tool id='x_ploidy_check' name="X Ploidy Check" version='2.0.0'>
+    <description>Check the heterozygosity of X to confirm specification in samplesheet</description>
     <requirements>
         <requirement type="package" version="4.0.5.1">gatk4</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
-        $__tool_directory__/gender_HOP.sh $input $sample $gender
+        $__tool_directory__/x_ploidy_check.sh $input $sample $bio_sex
 ]]>
     </command>
     <inputs>
         <param type="data" name="input" label="VCF Input File" format="vcf"/>
-        <param type="select" name="gender" label="Gender">
+        <param type="select" name="bio_sex" label="Biological Sex">
             <option value="Female">Female</option>
             <option value="Male">Male</option>
             <option value="Unknown" selected="True">Unknown</option>
@@ -17,7 +17,7 @@
         <param type="text" name="sample" label="Sample Name"/>
     </inputs>
     <outputs>
-        <data format="txt" name="output" label="Dummy Gender Check Output" from_work_dir="output.txt"/>
+        <data format="txt" name="output" label="Dummy Biological Sex Check Output" from_work_dir="output.txt"/>
     </outputs>
 
 </tool>
