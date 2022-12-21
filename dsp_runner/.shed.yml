@@ -1,0 +1,12 @@
+owner: "chongbe"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/dsp_runner"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/dsp_runner"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  dsp_runner:
+    description: "NanoString DSP RUV-III Normalization"
+    include:
+      - dsp_runner.xml
+      - dsp_runner.R

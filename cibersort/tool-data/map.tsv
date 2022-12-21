@@ -1,0 +1,25 @@
+Condensed	Full	CellType	CondensedColor	FullColor
+CD45 other	CD45 other	Plasma.cells	#a9a9a9	#a9a9a9
+Mast Cell	Mast Cell	Mast.cells.activated	#009452	#009452
+Mast Cell	Mast Cell	Mast.cells.resting	#009452	#009452
+Granulocytes	Granulocytes	Eosinophils	#9bc2e4	#9bc2e4
+Granulocytes	Granulocytes	Neutrophils	#9bc2e4	#9bc2e4
+Dendritic cells	Mature Dendritic Cell	Dendritic.cells.activated	#a0da66	#d2691e
+Dendritic cells	Immature Dendritic Cell	Dendritic.cells.resting	#a0da66	#6495ed
+Myelomonocytic	CD163+ Macrophages	Macrophages.M2	#8d40c0	#8d40c0
+Myelomonocytic	CD163- Macrophages	Macrophages.M0	#8d40c0	#20c579
+Myelomonocytic	CD163- Macrophages	Macrophages.M1	#8d40c0	#20c579
+Myelomonocytic	Monocytes	Monocytes	#8d40c0	#9cd121
+B cell	B cell	B.cells.naive	#F99539	#F99539
+B cell	B cell	B.cells.memory	#F99539	#F99539
+NK Cell	NK cells	NK.cells.resting	#ffff55	#ffff55
+NK Cell	NK cells	NK.cells.activated	#ffff55	#ffff55
+CD8+ T cell	CD8+ T Cell	T.cells.CD8	#DE2D31	#DE2D31
+CD8+ T cell	CD8+ T Cell	Tregs	#DE2D31	#DE2D31
+CD4 T cell	CD4 T cell	T.cells.CD4.naive	#cceef7	#cceef7
+CD4 T cell	CD4 T cell	T.cells.CD4.memory.resting	#cceef7	#cceef7
+CD4 T cell	CD4 T cell	T.cells.CD4.memory.activated	#cceef7	#cceef7
+CD4 T cell	CD4 T cell	T.cells.follicular.helper	#cceef7	#cceef7
+CD4 T cell	CD4 T cell	T.cells.regulatory..Tregs.	#cceef7	#cceef7
+CD4 T cell	CD4 T cell	T.cells.gamma.delta	#cceef7	#cceef7
+

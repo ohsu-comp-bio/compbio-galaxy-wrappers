@@ -1,0 +1,12 @@
+owner: "chongbe"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/westgard"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/westgard"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  westgard:
+    description: "Performs Westgard multirule QC and generates Levey-Jennings plots"
+    include:
+      - westgard.xml
+      - westgard.py

@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<macros>
+
+    <xml name="requirements">
+        <requirements>
+            <requirement type="package" version="3.6.2">R</requirement>
+            <requirement type="package">reshape2</requirement>
+            <requirement type="package">ggplot2</requirement>
+            <requirement type="package">RColorBrewer</requirement>
+            <requirement type="package">e1071</requirement>
+            <requirement type="package">parallel</requirement>
+            <requirement type="package">preprocessCore</requirement>
+        </requirements>
+    </xml>
+
+    <xml name="version_cmd">
+        <version_command>echo @VERSION@</version_command>
+    </xml>
+    <xml name="citations">
+        <citations>
+        </citations>
+    </xml>
+
+    <token name="@VERSION@">1.04</token>
+
+</macros>

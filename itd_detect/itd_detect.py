@@ -8,6 +8,9 @@
 # VAFs are also off in paired-end mode because I am only looking for exact matches during overlap determination.
 # 0.4.2 - If we can't get HGVS results, just return an output file where they are blank.
 # 1.0.0 - Remove hgvs from script, create vcf as output.
+# 1.0.2 - Added bcor and fgfr targets
+# 1.1.0 - Fixed error when read sequences are empty due to amplicon clipping.  Provide parameter to limit output size
+# of potential ITDs.
 
 import argparse
 import pysam
@@ -16,7 +19,7 @@ from copy import deepcopy
 from itertools import groupby
 from operator import itemgetter
 
-VERSION = '1.0.1'
+VERSION = '1.1.0'
 
 def supply_args():
     """
@@ -33,6 +36,7 @@ def supply_args():
     parser.add_argument('--target', choices=['flt3', 'flt3_e13', 'flt3_e14', 'flt3_e15'], default='flt3_e14', help='Region to target')
     parser.add_argument('--coords', help='Coordinate range, in the format [chrom:start-stop], 1-based.')
     parser.add_argument('--paired', action='store_true', help='Data is paired-end data.')
+    parser.add_argument('--min_size', type=int, default=12, help='Minimum size of ITD call to write to VCF.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
 
@@ -204,9 +208,12 @@ class GetSeq:
         :return:
         """
         known_targ = {'flt3': ('13', 28577411, 28682904),
-                    'flt3_e13': ('13', 28608438, 28608544),
-                    'flt3_e14': ('13', 28608219, 28608351),
-                    'flt3_e15': ('13', 28608024, 28608128)}
+                      'flt3_e13': ('13', 28608438, 28608544),
+                      'flt3_e14': ('13', 28608219, 28608351),
+                      'flt3_e15': ('13', 28608024, 28608128),
+                      'bcor_e15': ('X', 39910499, 39911653),
+                      'fgfr1_e10': ('8', 38275746, 38275891),
+                      'fgfr1_e18': ('8', 38268656, 38271322)}
         return known_targ[target]
 
     def _get_ref_dups(self):
@@ -327,7 +334,7 @@ class SequenceCollection:
         """
         read_dict = defaultdict(lambda: [None, None])
         for read in self.samfile.fetch(reference=self.refseq.coords[0], start=self.refseq.coords[1], end=self.refseq.coords[2]):
-            if not read.is_proper_pair or read.is_secondary or read.is_supplementary:
+            if not read.is_proper_pair or read.is_secondary or read.is_supplementary or not read.seq:
                 continue
             qname = read.query_name
             if qname not in read_dict:
@@ -350,8 +357,9 @@ class SequenceCollection:
         samfile = pysam.AlignmentFile(self.filename, 'rb')
         match_cnt = 0
         for line in samfile.fetch(reference=self.refseq.coords[0], start=self.refseq.coords[1], end=self.refseq.coords[2]):
-            if seq_to_find in line.seq and seq_to_excl not in line.seq:
-                match_cnt += 1
+            if line.seq:
+                if seq_to_find in line.seq and seq_to_excl not in line.seq:
+                    match_cnt += 1
         samfile.close()
         return match_cnt
 
@@ -510,17 +518,19 @@ class ItdCallVcf(ItdCall):
 
 
 class VcfWrite:
-    def __init__(self, filename, sample_id, sample_data):
+    def __init__(self, filename, sample_id, sample_data, min_size):
         self.filename = filename
         self.sample_id = sample_id
         self.sample_data = sample_data
+        self.min_size = min_size
 
     def write_me(self):
         with open(self.filename, 'w') as self.myfile:
             self._write_header()
             for vrnt in self.sample_data:
-                self.myfile.write(vrnt.to_write)
-                self.myfile.write('\n')
+                if len(vrnt.alt) > self.min_size:
+                    self.myfile.write(vrnt.to_write)
+                    self.myfile.write('\n')
         self.myfile.close()
 
     def _write_header(self):
@@ -551,7 +561,7 @@ def main():
         coll = SequenceCollection(args.sam, args.outfile, my_seq, False)
     sample_data = coll.sample_data
 
-    VcfWrite(args.outfile_vcf, args.sample_id, sample_data).write_me()
+    VcfWrite(args.outfile_vcf, args.sample_id, sample_data, args.min_size).write_me()
 
 
 if __name__ == "__main__":
