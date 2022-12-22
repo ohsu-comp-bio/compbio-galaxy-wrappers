@@ -1,4 +1,7 @@
-    # VERSION: 0.9.5
+# Current Version: 0.9.6
+# Version history
+# 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
+# 0.9.6 - modified regex to allow for new batch date format
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -37,7 +40,7 @@ dsp_meta <- args[8]
 igg_info <- args[9]
 
 # Set constants
-exp.regex <- "[0-9]{8}"
+exp.regex <- "[0-9]{8}-[0-9]{2}"
 clia_abs <- c("c-Myc", "Ki-67", "Cyclin E1", "Cyclin D1", "Cyclin B1", "ATR_pS428", "ATM (phospho S1981)",
               "PARP", "Cleaved Caspase 9", "CD95/Fas", "BIM", "BCLXL", "BCL6", "Bcl-2", "BAD",
               "Pan-AKT", "PTEN", "Phospho-PRAS40 (T246)", "PLCG1", "INPP4B", "Phospho-GSK3B (S9)", "Phospho-AKT1 (S473)",
@@ -56,7 +59,7 @@ dsp.meta <- data.table(read.xlsx(dsp_meta))
 # Check to see if my_samp is in dsp.meta, stop if it's not.
 stopifnot(nrow(dsp.meta[`Specimen.ID` %in% my_samp]) > 0)
 
-batch.dt <- data.table(files=list.files(datadir, pattern="[-0-9A-Za-z_ ]*nit[-0-9A-Za-z_ ]*ataset[-0-9A-Za-z_ ]*[0-9]{8}.xlsx", recursive = T, full.names=T))
+batch.dt <- data.table(files=list.files(datadir, pattern="[-0-9A-Za-z_ ]*nit[-0-9A-Za-z_ ]*ataset[-0-9A-Za-z_ ]*[0-9]{8}-[0-9]{2}.xlsx", recursive = T, full.names=T))
 batch.dt[,batch:=str_extract(files, exp.regex)]
 
 res.list <- process_batches(batch.dt, sheet='Exported dataset')
