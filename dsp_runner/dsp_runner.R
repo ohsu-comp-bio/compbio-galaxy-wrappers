@@ -98,7 +98,7 @@ tma.abund <- abund.mat[,tma.meta$barcode]
 
 ## QC of experimental samples with respect to ROI
 exp.meta <- qc.meta[`sample_id` %in% dsp.meta$Specimen.ID]
-exp.meta$`Segment (Named/ Label)` <- ifelse(exp.meta$`Segment (Name/ Label)` == 'Geometric Segment', "Segment 1", exp.meta$`Segment (Name/ Label)`)
+exp.meta$`Segment (Name/ Label)` <- ifelse(exp.meta$`Segment (Name/ Label)` == 'Geometric Segment', "Segment 1", exp.meta$`Segment (Name/ Label)`)
 exp.meta$`Segment (Name/ Label)` <- ifelse(exp.meta$`Segment (Name/ Label)` == 'Full ROI', "Segment 1", exp.meta$`Segment (Name/ Label)`)
 
 exp.abund <- abund.mat[, exp.meta$barcode]
