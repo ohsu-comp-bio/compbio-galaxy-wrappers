@@ -12,16 +12,17 @@ import pandas as pd
 import sys
 import re
 import matplotlib.pyplot as plt
-import openpyxl
 from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
 from reportlab.lib.pagesizes import letter
 from datetime import date
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
-#report_path = f'{sys.argv[2]}_{sys.argv[3]}_{date.today().strftime("%Y%m%d")}'
-#report_path = re.sub(r'[^\w]', '', report_path).replace(" ", "") + ".pdf"
-report_path = sys.argv[4]
+report_path = sys.argv[3]
 # fix -- IF path is not properly formatted *.pdf, then stop script
 
 c = canvas.Canvas(report_path, pagesize=letter)
@@ -52,6 +53,7 @@ def parse_batches(abcount_path, tma_oi, ab_oi):
 
     # Take mean and sd from table rather than calculate
     #mean, sigma = df['Mean'][0], df['StDev'][0]
+
 
     df = df[['name_ProbeName', 'abundance', 'year', 'monthday', 'batch']]
     df = df.sort_values(['year', 'monthday']).reset_index()
@@ -118,7 +120,7 @@ def chart(y, i, segment, plotname, counts):
     plt.axhline(y=neg_2s, color='gold', linestyle='--')
     plt.axhline(y=neg_3s, color='red', linestyle='-')
 
-    plt.figure(i)
+    #plt.figure()
     figure = plt.gcf()
     figure.set_size_inches(8,8)
     plt.title("Rule: " + plotname)
@@ -131,6 +133,7 @@ def chart(y, i, segment, plotname, counts):
     plt.savefig(image, dpi=500)
 
     c.drawImage(image, 30, 250, width=500, height=500)
+    os.remove(image)
     c.showPage()
 
 
@@ -282,15 +285,25 @@ def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
 
 
 def main():
-    tma_oi = cellsearch(sys.argv[2])
-    batches = parse_batches(sys.argv[1], tma_oi, str(sys.argv[3]))
-    counts, ids = batches[0], batches[1]
-    print('Running Westgard QC...')
-    rule_broke = westgard_qc(counts, ids, tma_oi, str(sys.argv[3]))
-    if rule_broke:
+
+    with open(sys.argv[2]) as f:
+        for combo in f:
+            if combo.split(',')[0] == 'name':
+                continue
+
+            tma_oi = combo.split(',')[0]
+            ab_oi = combo.split(',')[1]
+            batches = parse_batches(sys.argv[1], tma_oi, ab_oi)
+            counts, ids = batches[0], batches[1]
+            print(f'Running Westgard QC for {tma_oi}/{ab_oi}...')
+            rule_broke = westgard_qc(counts, ids, tma_oi, ab_oi)
+
+            if rule_broke is False:
+                print(f'No rules broken for {tma_oi}/{ab_oi}!')
+            else:
+                continue
         c.save()
-    else:
-        print('No rules broken!')
+
 
 if __name__ == '__main__':
     main()
