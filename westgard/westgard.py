@@ -2,7 +2,7 @@
 
 # DESCRIPTION: Extracts DSP counts data for specified TMA and Ab and plots Levey-Jennings chart. It will also execute
 # Westgard multirule QC and reject samples that break the ruleset
-# USAGE: python westgard.py <filepath> <TMA-name> <Ab-name>
+# USAGE: python westgard.py <tma_results> <tma_combos>
 
 # By Benson Chong
 
@@ -14,11 +14,6 @@ import re
 import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import inch
-from reportlab.lib.pagesizes import letter
-from datetime import date
 
 VERSION = '0.3.1'
 
