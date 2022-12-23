@@ -17,7 +17,7 @@ class TxEffCsv(object):
         '''
         Read the transcripts that have been written to a CSV file  
         '''
-        transcripts = list()
+        transcripts = []
     
         with open(in_file) as csv_file:
             reader = csv.DictReader(csv_file)

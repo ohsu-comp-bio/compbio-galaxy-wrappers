@@ -222,7 +222,7 @@ class AnnovarParser(object):
         '''
         Takes a single row from an Annovar exonic_variant_function file and returns one or more AnnovarVariantFunction objects
         ''' 
-        annovar_recs = list()
+        annovar_recs = []
         
         # genotype fields are in positions 3,4,6,7 and 8,9,11,12 and we want the second group because the first group
         # may have been altered by the convert2annovar.pl script.   
@@ -270,7 +270,7 @@ class AnnovarParser(object):
         '''
         Takes a single row from an Annovar variant_function file and returns one or more AnnovarVariantFunction objects.
         '''  
-        annovar_recs = list()
+        annovar_recs = []
         
         # genotype fields are in positions 2,3,5,6 and 7,8,10,11 and we want the second group because the first group
         # may have been altered by the convert2annovar.pl script.
@@ -327,7 +327,7 @@ class AnnovarParser(object):
 
         annovar_file_type = self._get_file_type(file_name)
 
-        annovar_recs = list()
+        annovar_recs = []
 
         with open(file_name, 'r') as annovar_file:
             reader = csv.reader(annovar_file, delimiter = delimiter)
@@ -364,7 +364,7 @@ class AnnovarParser(object):
             annovar_dict[key_maker(annovar_rec)].append(annovar_rec)
 
         # Merge the records that come from different files but refer to the same transcript.
-        annovar_records = list()
+        annovar_records = []
         
         # Each value in the dictionary is list of Annovar records with the same genotype and transcript
         for matching_genotypes in annovar_dict.values():

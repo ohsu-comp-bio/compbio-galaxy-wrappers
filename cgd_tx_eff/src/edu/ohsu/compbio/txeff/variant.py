@@ -1,5 +1,5 @@
 '''
-A variatn defined by chromosome, postion, ref and alt
+A variant defined by chromosome, postion, ref and alt
 
 Created on May 2, 2022
 

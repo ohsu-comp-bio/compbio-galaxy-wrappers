@@ -32,7 +32,7 @@ def find_in_vcf(chromosome: str, position_start: int, position_end: int, ref: st
         logger.warning("Unable to search for variant because {position_start}>{position_end}: {chromosome}-{position_start}-{ref}-{alt}")
         return None
 
-    vcf_records = list() 
+    vcf_records = [] 
     
     search_string = f"{chromosome_number}:{position_start}-{position_end}"
     
