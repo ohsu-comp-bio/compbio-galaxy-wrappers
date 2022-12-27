@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 
-VERSION = '0.3.1'
+VERSION = '0.3.2'
 
 report_path = sys.argv[3]
 # fix -- IF path is not properly formatted *.pdf, then stop script
@@ -282,6 +282,9 @@ def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
 def main():
 
     with open(sys.argv[2]) as f:
+        output = open(sys.argv[4], 'w')
+        sys.stdout = output
+
         for combo in f:
             if combo.split(',')[0] == 'name':
                 continue
@@ -290,13 +293,14 @@ def main():
             ab_oi = combo.split(',')[1]
             batches = parse_batches(sys.argv[1], tma_oi, ab_oi)
             counts, ids = batches[0], batches[1]
-            print(f'Running Westgard QC for {tma_oi}/{ab_oi}...')
+            print(f'\nRunning Westgard QC for {tma_oi}/{ab_oi}...')
             rule_broke = westgard_qc(counts, ids, tma_oi, ab_oi)
 
             if rule_broke is False:
                 print(f'No rules broken for {tma_oi}/{ab_oi}!')
             else:
                 continue
+        output.close
         c.save()
 
 
