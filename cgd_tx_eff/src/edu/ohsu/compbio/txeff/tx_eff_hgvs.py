@@ -19,7 +19,7 @@ from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
 from edu.ohsu.compbio.txeff.variant import Variant
 from hgvs.dataproviders.uta import UTABase
 from hgvs.exceptions import HGVSInvalidVariantError, HGVSUsageError, HGVSDataNotAvailableError,\
-    HGVSInvalidIntervalError
+    HGVSInvalidIntervalError, HGVSUnsupportedOperationError
 
 
 # When we upgrade from python 3.8 to 3.9 this import needs to be changed to: "from collections.abc import Iterable"
@@ -189,6 +189,8 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
         except HGVSInvalidVariantError as e:            
             logger.warning(f"Invalid variant {variant}: %s", str(e))
             raise(e)
+        except HGVSUnsupportedOperationError as e:
+            logger.warning(f"Invalid parameters while processing variant={variant}, var_g={var_g}, transcript={str(hgvs_transcript[0])}: %s", str(e))
         except HGVSInvalidIntervalError as e:
             logger.warning(f"Invalid variant interval {variant}: %s", str(e))
         except HGVSDataNotAvailableError as e:
