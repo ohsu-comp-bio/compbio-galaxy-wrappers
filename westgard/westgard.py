@@ -2,7 +2,7 @@
 
 # DESCRIPTION: Extracts DSP counts data for specified TMA and Ab and plots Levey-Jennings chart. It will also execute
 # Westgard multirule QC and reject samples that break the ruleset
-# USAGE: python westgard.py <tma_results> <tma_combos>
+# USAGE: python westgard.py <tma_results> <tma_combos> <outfile_plots_path> <outfile_stdout_path>
 
 # By Benson Chong
 
@@ -14,13 +14,22 @@ import re
 import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+import argparse
 
-VERSION = '0.3.2'
+VERSION = '0.3.3'
 
-report_path = sys.argv[3]
-# fix -- IF path is not properly formatted *.pdf, then stop script
+c = canvas.Canvas('placeholder.pdf', pagesize=letter)
 
-c = canvas.Canvas(report_path, pagesize=letter)
+def supply_args():
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('dataset', help='TMA melt of abundance counts from dsp_runner')
+    parser.add_argument('combos', help='TMA and Ab combinations to run QC on')
+    parser.add_argument('outfile_plots', help='PDF of plots')
+    parser.add_argument('outfile_stdout', help='Terminal printout outfile')
+    parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
+    args = parser.parse_args()
+    return args
+
 
 # RegEx keyword search for TMA cell line name
 def cellsearch(tma_input: str):
@@ -281,8 +290,10 @@ def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
 
 def main():
 
-    with open(sys.argv[2]) as f:
-        output = open(sys.argv[4], 'w')
+    args = supply_args()
+
+    with open(args.combos) as f:
+        output = open(args.outfile_stdout, 'w')
         sys.stdout = output
 
         for combo in f:
@@ -291,7 +302,7 @@ def main():
 
             tma_oi = combo.split(',')[0]
             ab_oi = combo.split(',')[1]
-            batches = parse_batches(sys.argv[1], tma_oi, ab_oi)
+            batches = parse_batches(args.dataset, tma_oi, ab_oi)
             counts, ids = batches[0], batches[1]
             print(f'\nRunning Westgard QC for {tma_oi}/{ab_oi}...')
             rule_broke = westgard_qc(counts, ids, tma_oi, ab_oi)
@@ -300,9 +311,9 @@ def main():
                 print(f'No rules broken for {tma_oi}/{ab_oi}!')
             else:
                 continue
-        output.close
-        c.save()
 
+        c._filename = args.outfile_plots
+        c.save()
 
 if __name__ == '__main__':
     main()
