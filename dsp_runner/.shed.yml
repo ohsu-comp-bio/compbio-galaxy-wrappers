@@ -1,4 +1,4 @@
-owner: "chongbe"
+owner: "letaw"
 remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/dsp_runner"
 homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/dsp_runner"
 type: "unrestricted"
@@ -10,3 +10,9 @@ repositories:
     include:
       - dsp_runner.xml
       - dsp_runner.R
+      - dsp_inputs.R
+      - evaluation.R
+      - helpers.R
+      - normalization.R
+      - plots.R
+      - summarization.R
