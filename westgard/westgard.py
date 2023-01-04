@@ -2,7 +2,7 @@
 
 # DESCRIPTION: Extracts DSP counts data for specified TMA and Ab and plots Levey-Jennings chart. It will also execute
 # Westgard multirule QC and reject samples that break the ruleset
-# USAGE: python westgard.py <tma_results> <tma_combos> <outfile_plots_path> <outfile_stdout_path>
+# USAGE: python westgard.py <tma_results> <tma_combos>
 
 # By Benson Chong
 
@@ -16,17 +16,19 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import argparse
 
-VERSION = '0.3.3'
+VERSION = '0.3.4'
 
 c = canvas.Canvas('placeholder.pdf', pagesize=letter)
 
 def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('dataset', help='TMA melt of abundance counts from dsp_runner')
-    parser.add_argument('combos', help='TMA and Ab combinations to run QC on')
     parser.add_argument('outfile_plots', help='PDF of plots')
     parser.add_argument('outfile_stdout', help='Terminal printout outfile')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
+    parser.add_argument('--combos','-c')
+    parser.add_argument('--tma','-t')
+    parser.add_argument('--ab', '-a')
     args = parser.parse_args()
     return args
 
@@ -292,28 +294,53 @@ def main():
 
     args = supply_args()
 
-    with open(args.combos) as f:
+    # Error catching
+    if args.combos is not None and args.ab is not None:
+        raise Exception('A control sheet and --tma and/or --ab cannot be entered at once.')
+    elif args.combos is not None and args.tma is not None:
+        raise Exception('A control sheet and --tma and/or --ab cannot be entered at once.')
+    elif args.combos is None and args.tma is not None and args.ab is None:
+        raise Exception('Both TMA and Antibody name need to be provided.')
+    elif args. combos is None and args.tma is None and args.ab is not None:
+        raise Exception('Both TMA and Antibody name need to be provided')
+
+    if args.combos is None:
         output = open(args.outfile_stdout, 'w')
         sys.stdout = output
+        batches = parse_batches(args.dataset, args.tma, args.ab)
+        counts, ids = batches[0], batches[1]
+        print(f'\nRunning Westgard QC for {args.tma}/{args.ab}...')
+        rule_broke = westgard_qc(counts, ids, args.tma, args.ab)
 
-        for combo in f:
-            if combo.split(',')[0] == 'name':
-                continue
-
-            tma_oi = combo.split(',')[0]
-            ab_oi = combo.split(',')[1]
-            batches = parse_batches(args.dataset, tma_oi, ab_oi)
-            counts, ids = batches[0], batches[1]
-            print(f'\nRunning Westgard QC for {tma_oi}/{ab_oi}...')
-            rule_broke = westgard_qc(counts, ids, tma_oi, ab_oi)
-
-            if rule_broke is False:
-                print(f'No rules broken for {tma_oi}/{ab_oi}!')
-            else:
-                continue
+        if rule_broke is False:
+            print(f'No rules broken for {args.tma}/{args.ab}!')
 
         c._filename = args.outfile_plots
         c.save()
+
+    else:
+        with open(args.combos) as f:
+            output = open(args.outfile_stdout, 'w')
+            sys.stdout = output
+
+            for combo in f:
+                if combo.split(',')[0] == 'name':
+                    continue
+
+                tma_oi = combo.split(',')[0]
+                ab_oi = combo.split(',')[1]
+                batches = parse_batches(args.dataset, tma_oi, ab_oi)
+                counts, ids = batches[0], batches[1]
+                print(f'\nRunning Westgard QC for {tma_oi}/{ab_oi}...')
+                rule_broke = westgard_qc(counts, ids, tma_oi, ab_oi)
+
+                if rule_broke is False:
+                    print(f'No rules broken for {tma_oi}/{ab_oi}!')
+                else:
+                    continue
+
+            c._filename = args.outfile_plots
+            c.save()
 
 if __name__ == '__main__':
     main()
