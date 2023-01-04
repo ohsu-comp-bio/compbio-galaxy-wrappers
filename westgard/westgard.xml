@@ -9,14 +9,25 @@
       <requirement type="package" version="3.5.68">reportlab</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
-    ln -s $dsp_tma_results tma_results.csv &&
-    ln -s $dsp_tma_combos tma_combos.csv &&
-    python $__tool_directory__/westgard.py tma_results.csv tma_combos.csv $qc_report $qc_stdout
+    python $__tool_directory__/westgard.py
+    '${dsp_tma_results}' '${qc_report}' '${qc_stdout}'
+    #if $dsp_tma_combos
+      -c '${dsp_tma_combos}'
+    #end if
+    #if $tma_name
+      -t '${tma_name}'
+    #end if
+    #if $ab_name
+      -a '${ab_name}'
+    #end if
 ]]>
     </command>
     <inputs>
         <param type="data" name="dsp_tma_results" label="TMA abundance counts" format="csv"/>
         <param type="data" name="dsp_tma_combos" label="TMA/Ab combinations" format="csv"/>
+        <param type="text" name="tma_name" label="TMA Name"/>
+        <param type="text" name="ab_name" label="Antibody Probe Name"/>
+
     </inputs>
     <outputs>
         <data format="pdf" name="qc_report" label="Levey-Jennings Plots"/>
