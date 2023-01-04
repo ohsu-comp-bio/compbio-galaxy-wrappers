@@ -47,7 +47,7 @@ class FindGenotypeInAvinput(object):
         Return a list of genotype object read from the input file
         '''
         logger.info(f"Reading genotypes from {self.genotype_file}")
-        genotypes = list()
+        genotypes = []
         with open(self.genotype_file,"r") as file:
             for line in file:                
                 genotypes.append(Genotype(line.strip()))
@@ -70,9 +70,10 @@ class FindGenotypeInAvinput(object):
                 
     def _get_matching_avinput(self, genotypes):
         '''
+        Search the annovar input file for lines corresponding to the list of genotypes. 
         '''
         logger.info(f"Attempting to find {len(genotypes)} genotypes in {self.av_input_file}")
-        annovar_lines = list()
+        annovar_lines = []
         
         logger.info(f"There are {len(genotypes)} genotypes")
         

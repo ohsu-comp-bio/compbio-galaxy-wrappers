@@ -19,7 +19,7 @@ from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
 from edu.ohsu.compbio.txeff.variant import Variant
 from hgvs.dataproviders.uta import UTABase
 from hgvs.exceptions import HGVSInvalidVariantError, HGVSUsageError, HGVSDataNotAvailableError,\
-    HGVSInvalidIntervalError
+    HGVSInvalidIntervalError, HGVSUnsupportedOperationError
 
 
 # When we upgrade from python 3.8 to 3.9 this import needs to be changed to: "from collections.abc import Iterable"
@@ -108,7 +108,7 @@ def _lookup_hgvs_transcripts(variants: list):
     am = hgvs.assemblymapper.AssemblyMapper(hdp, assembly_name=ASSEMBLY_VERSION, alt_aln_method='splign')
     hgvs_parser = hgvs.parser.Parser()
     
-    transcripts = list()
+    transcripts = []
     for variant in variants:
         variant_transcripts = __lookup_hgvs_transcripts(hgvs_parser, hdp, am, variant)
         logger.info(f"HGVS found {len(variant_transcripts)} transcripts for {variant}")
@@ -132,7 +132,7 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
     
     if hgvs_chrom == None:
         logger.warning(f"Unknown chromosome: {variant.chromosome}-{variant.position}-{variant.reference}-{variant.alt}")
-        return list()
+        return []
     
     # Look up the variant using HGVS            
     pos_part = _correct_indel_coords(variant.position, variant.reference, variant.alt)
@@ -142,7 +142,7 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
     
     tx_list = hdp.get_tx_for_region(str(var_g.ac), 'splign', str(var_g.posedit.pos.start), str(var_g.posedit.pos.end))
     
-    hgvs_transcripts = list()
+    hgvs_transcripts = []
     
     for hgvs_transcript in tx_list:
         try:
@@ -189,6 +189,8 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
         except HGVSInvalidVariantError as e:            
             logger.warning(f"Invalid variant {variant}: %s", str(e))
             raise(e)
+        except HGVSUnsupportedOperationError as e:
+            logger.warning(f"Invalid parameters while processing variant={variant}, var_g={var_g}, transcript={str(hgvs_transcript[0])}: %s", str(e))
         except HGVSInvalidIntervalError as e:
             logger.warning(f"Invalid variant interval {variant}: %s", str(e))
         except HGVSDataNotAvailableError as e:
@@ -202,7 +204,7 @@ def _get_unmatched_annovar_transcripts(annovar_dict: defaultdict(list), hgvs_dic
     After HGVS and Annovar transcripts have been merged, this function can be called to find Annovar transcripts that were not paired 
     with an HGVS trancsript. 
     '''
-    transcripts = list()
+    transcripts = []
     
     for (transcript_key, annovar_transcript_list) in annovar_dict.items():
         # Check the HGVS dictionary for a key matching the annovar key. If there is a match, then the annovar transcript has already  
@@ -247,7 +249,7 @@ def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list, 
     The optional ``require_match`` parameter can be used to indicate that only transcripts which are found in both the Annovar 
     and HGVS lists, are returned.       
     '''
-    transcripts = list()
+    transcripts = []
     
     # Collect annovar records into a map keyed by genotype and transcript 
     annovar_dict = defaultdict(list)

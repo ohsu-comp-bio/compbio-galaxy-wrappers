@@ -49,7 +49,7 @@ def _parse_args():
     return args
 
 def _read_avinput_variants(avinput_file_name: str):
-    variants = list()
+    variants = []
     
     with open(avinput_file_name) as tsv_file:
         reader = csv.reader(tsv_file, delimiter = '\t')

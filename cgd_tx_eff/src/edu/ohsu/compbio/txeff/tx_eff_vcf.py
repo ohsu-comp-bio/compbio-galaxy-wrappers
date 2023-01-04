@@ -81,7 +81,7 @@ def _read_vcf(vcf_filename: str):
     Read each variant from the VCF file and return a map of Variant[vcf-record]. Each variant must be unique and have only one ALT allele.  
     '''
     vcf_reader = vcfpy.Reader.from_path(vcf_filename)
-    variant_dict = dict()
+    variant_dict = {}
     
     for vcf_record in vcf_reader:
         if len(vcf_record.ALT) > 1:
@@ -89,7 +89,7 @@ def _read_vcf(vcf_filename: str):
         
         variant = Variant(vcf_record.CHROM, vcf_record.POS, vcf_record.REF, vcf_record.ALT[0].value)
 
-        if variant_dict.get(variant):
+        if variant in variant_dict:
             raise Exception(f"Duplicate variant in {vcf_filename}: {variant}")
         else:
             variant_dict[variant] = vcf_record
@@ -124,7 +124,7 @@ def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
     '''
     Transform the transcript details into parallel arrays and add them to each VCF row.  
     '''
-    vcf_records = list()
+    vcf_records = []
         
     for (variant, vcf_record) in vcf_variant_dict.items():
         transcripts = transcript_dict.get(variant)
@@ -134,18 +134,18 @@ def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
             vcf_records.append(vcf_record)
             continue
             
-        tfx_base_positions = list()
-        tfx_exons = list()
-        tfx_genes = list()
-        tfx_c_dots = list()
-        tfx_p1 = list()
-        tfx_p3 = list()
-        tfx_splice = list()
-        tfx_refseq_transcripts = list()
-        tfx_variant_effects = list()
-        tfx_variant_types = list()
-        tfx_protein_transcripts = list()
-        tfx_amino_acid_positions = list()
+        tfx_base_positions = []
+        tfx_exons = []
+        tfx_genes = []
+        tfx_c_dots = []
+        tfx_p1 = []
+        tfx_p3 = []
+        tfx_splice = []
+        tfx_refseq_transcripts = []
+        tfx_variant_effects = []
+        tfx_variant_types = []
+        tfx_protein_transcripts = []
+        tfx_amino_acid_positions = []
         
         for transcript in transcripts:
             tfx_base_positions.append(transcript.hgvs_base_position)

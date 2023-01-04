@@ -32,7 +32,7 @@ def find_in_vcf(chromosome: str, position_start: int, position_end: int, ref: st
         logger.warning("Unable to search for variant because {position_start}>{position_end}: {chromosome}-{position_start}-{ref}-{alt}")
         return None
 
-    vcf_records = list() 
+    vcf_records = [] 
     
     search_string = f"{chromosome_number}:{position_start}-{position_end}"
     
@@ -131,7 +131,7 @@ def _parse_args():
     parser = argparse.ArgumentParser(description='Join a VCF containing transcript effects with a heme variant export')
 
     parser.add_argument('-v', '--vcf',  
-                        help='Input VCF containing transcript effects',
+                        help='Input VCF.bgz containing transcript effects (index must also exist)',
                         type=argparse.FileType('r'),
                         required=True)
 

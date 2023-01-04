@@ -63,7 +63,7 @@ def get_annovar_records(annovar_variant_function_filename: str, annovar_exonic_v
     if annovar_variant_function_filename == None or annovar_exonic_variant_function_filename is None:
         logger.warning(f"Annovar input file(s) not provided and this may cause errors during processing: vf={annovar_variant_function_filename}, evf={annovar_exonic_variant_function_filename}")
         
-    annovar_records = list()
+    annovar_records = []
     annovarParser = annovar_parser.AnnovarParser()
     
     for file_name in [annovar_variant_function_filename, annovar_exonic_variant_function_filename]:
