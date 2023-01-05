@@ -22,9 +22,9 @@ c = canvas.Canvas('placeholder.pdf', pagesize=letter)
 
 def supply_args():
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('dataset', help='TMA melt of abundance counts from dsp_runner')
-    parser.add_argument('outfile_plots', help='PDF of plots')
-    parser.add_argument('outfile_stdout', help='Terminal printout outfile')
+    parser.add_argument('dsp_tma_results', help='TMA melt of abundance counts from dsp_runner')
+    parser.add_argument('qc_report', help='PDF of plots')
+    parser.add_argument('qc_stdout', help='Terminal printout outfile')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     parser.add_argument('--combos','-c')
     parser.add_argument('--tma','-t')
@@ -305,9 +305,9 @@ def main():
         raise Exception('Both TMA and Antibody name need to be provided')
 
     if args.combos is None:
-        output = open(args.outfile_stdout, 'w')
+        output = open(args.qc_stdout, 'w')
         sys.stdout = output
-        batches = parse_batches(args.dataset, args.tma, args.ab)
+        batches = parse_batches(args.dsp_tma_results, args.tma, args.ab)
         counts, ids = batches[0], batches[1]
         print(f'\nRunning Westgard QC for {args.tma}/{args.ab}...')
         rule_broke = westgard_qc(counts, ids, args.tma, args.ab)
@@ -315,12 +315,12 @@ def main():
         if rule_broke is False:
             print(f'No rules broken for {args.tma}/{args.ab}!')
 
-        c._filename = args.outfile_plots
+        c._filename = args.qc_report
         c.save()
 
     else:
         with open(args.combos) as f:
-            output = open(args.outfile_stdout, 'w')
+            output = open(args.qc_stdout, 'w')
             sys.stdout = output
 
             for combo in f:
@@ -329,7 +329,7 @@ def main():
 
                 tma_oi = combo.split(',')[0]
                 ab_oi = combo.split(',')[1]
-                batches = parse_batches(args.dataset, tma_oi, ab_oi)
+                batches = parse_batches(args.dsp_tma_results, tma_oi, ab_oi)
                 counts, ids = batches[0], batches[1]
                 print(f'\nRunning Westgard QC for {tma_oi}/{ab_oi}...')
                 rule_broke = westgard_qc(counts, ids, tma_oi, ab_oi)
@@ -339,7 +339,7 @@ def main():
                 else:
                     continue
 
-            c._filename = args.outfile_plots
+            c._filename = args.qc_report
             c.save()
 
 if __name__ == '__main__':
