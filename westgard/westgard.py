@@ -16,7 +16,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import argparse
 
-VERSION = '0.3.4'
+VERSION = '0.3.5'
 
 c = canvas.Canvas('placeholder.pdf', pagesize=letter)
 
