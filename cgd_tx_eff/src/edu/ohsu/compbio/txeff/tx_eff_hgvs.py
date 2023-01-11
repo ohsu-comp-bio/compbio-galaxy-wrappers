@@ -121,7 +121,7 @@ def _lookup_hgvs_transcripts(variants: list):
             transcripts.extend(variant_transcripts)
     
     return transcripts
-        
+
 def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am: hgvs.assemblymapper.AssemblyMapper, variant: Variant):
     '''
     Use HGVS/UTA to return a list of the transcripts for a variant
@@ -284,7 +284,7 @@ def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list, 
 def _merge(transcript_key: str, hgvs_transcript: VariantTranscript, annovar_transcripts: Iterable[VariantTranscript]):
     '''
     Combine Annovar and HGVS information relating to the same transcript into a single record.  
-    '''    
+    '''
     new_transcript = VariantTranscript(hgvs_transcript.chromosome, hgvs_transcript.position, hgvs_transcript.reference, hgvs_transcript.alt)
 
     for annovar_transcript in annovar_transcripts:
@@ -327,7 +327,7 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
     # Gene
     # Prefer annovar's gene, but annovar doesn't give us a gene for intron and utr; in those cases use hgvs's.        
     transcript_gene = annovar_transcript.hgnc_gene
-    if _noneIfEmpty(annovar_transcript.hgnc_gene) == None and _noneIfEmpty(annovar_transcript.hgnc_gene) == None:
+    if _noneIfEmpty(annovar_transcript.hgnc_gene) == None and _noneIfEmpty(hgvs_transcript.hgnc_gene) == None:
         logger.debug(f"Gene selection: Neither Annovar or HGVS have a gene for {transcript_key}") 
     elif annovar_transcript.hgnc_gene == None:
         logger.debug(f"Gene selection: Annovar did not provide a gene for {transcript_key}, using HGVS's: gene={hgvs_transcript.hgnc_gene}")            
