@@ -14,6 +14,7 @@ import argparse
 import logging
 from edu.ohsu.compbio.annovar import annovar_parser
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
+from edu.ohsu.compbio.annovar.annovar_parser import AnnovarFileType
 
 VERSION = '0.0.1'
 
@@ -65,12 +66,17 @@ def get_annovar_records(annovar_variant_function_filename: str, annovar_exonic_v
         
     annovar_records = []
     annovarParser = annovar_parser.AnnovarParser()
-    
-    for file_name in [annovar_variant_function_filename, annovar_exonic_variant_function_filename]:
-        file_transcripts = annovarParser.parse_file(file_name)
-        logger.debug(f'Read {len(file_transcripts)} transcripts from {file_name}')    
-        annovar_records.extend(file_transcripts)
 
+    # Parse the variant_function file
+    file_transcripts = annovarParser.parse_file(AnnovarFileType.VariantFunction, annovar_variant_function_filename)
+    logger.debug(f'Read {len(file_transcripts)} transcripts from {annovar_variant_function_filename}')    
+    annovar_records.extend(file_transcripts)
+    
+    # Parse the exonic_variant_function file
+    file_transcripts = annovarParser.parse_file(AnnovarFileType.ExonicVariantFunction, annovar_exonic_variant_function_filename)
+    logger.debug(f'Read {len(file_transcripts)} transcripts from {annovar_exonic_variant_function_filename}')
+    annovar_records.extend(file_transcripts)
+    
     disinct_variant_count = len({f'{x.chromosome}-{x.position}-{x.reference}-{x.alt}' for x in annovar_records})
     logger.debug(f'Read {disinct_variant_count} distinct variants and {len(annovar_records)} transcripts from annovar files')
 
