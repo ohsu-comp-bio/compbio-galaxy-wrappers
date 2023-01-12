@@ -16,7 +16,7 @@ from edu.ohsu.compbio.annovar import annovar_parser
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarFileType
 
-VERSION = '0.0.1'
+VERSION = '0.2.3'
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
