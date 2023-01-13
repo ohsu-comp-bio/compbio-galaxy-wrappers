@@ -1,8 +1,9 @@
-# Current Version: 0.9.6
+# Current Version: 0.9.7
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
 #       - limit normalization tmas to batches in good_tma
+# 0.9.7 - BC: edit intermediate .RData filenames for general usage
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -110,7 +111,7 @@ exp.meta[rm_croi == T,.(`Segment (Name/ Label)`, batch, sample_id, croi, max_cor
 exp.meta <- exp.meta[rm_croi == F]
 exp.abund <- abund.mat[, exp.meta$barcode]
 #at this point save the metadata and raw abundance
-save(exp.meta, exp.abund, tma.abund, tma.meta, file="tmp_dsp_batch1_11_expt_abund.RData")
+save(exp.meta, exp.abund, tma.abund, tma.meta, file=paste0(args[10]))
 
 ### Normalization and summarization of cohort
 # Determine relevant samples / batches and compute normalization factors
@@ -151,7 +152,7 @@ sapply(names(segment.proc), function(x){
 my.meta <- my.meta[!duplicated(cbind(`Segment (Name/ Label)`, Specimen.ID, num_batch, code)),]
 #Here define reference vs experimental
 my.meta[cohort==coh,Best_Response:="Ref"]
-save(my.meta, segment.proc, file="tmp_proc_data.RData")
+save(my.meta, segment.proc, file=paste0(args[11]))
 
 # Form antibody scores as the quantiles relevant to reference cohort
 ref_samps <- my.meta[Best_Response == "Ref",unique(sample_id)]
@@ -182,7 +183,6 @@ my.scores[,patient_ord:=factor(comb_id, levels=pt.ord$comb_id, ordered=T)]
 ref.abund <- rbindlist(lapply(quant.list, "[[", "ref_abund"), idcol="Segment (Name/ Label)")
 ref.abund[,segment_label:=ifelse(`Segment (Name/ Label)` == "Segment 1", "tumor", "stroma")]
 ref.abund <- merge(use.paths[,.(ab_ord, ProbeName, path_ord)], ref.abund, by="ProbeName", all=F)
-save(my.scores, ref.abund, file="tmp_results.RData")
 
 # Steps used to provide data for antibody plots.
 melt.tma <- data.table(reshape2::melt(tma.abund, as.is=T))
@@ -205,7 +205,7 @@ melt.tma$year<- substr(melt.tma$batch, 5, 8)
 # Create combined name_ProbeName column
 melt.tma$name_ProbeName<- str_c(melt.tma$name,'_',melt.tma$ProbeName)
 # Write out csv for Westgard rules script in Galaxy wf
-write.csv(melt.tma, file=paste0(args[10]), row.names=F)
+write.csv(melt.tma, file=paste0(args[12]), row.names=F)
 
 ref.batches <- melt.tma[batch != runid]
 cur.batch <- melt.tma[batch == runid]
@@ -219,7 +219,7 @@ samp.scores$patient_ord <- droplevels(samp.scores$patient_ord, except=my_samp)
 
 # Overall Plots
 plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund)
-pdf(file=paste0(args[11]), width=16, height=16)
+pdf(file=paste0(args[13]), width=16, height=16)
 
 for (tums in names(plot.list)){
   show(plot.list[[tums]])
