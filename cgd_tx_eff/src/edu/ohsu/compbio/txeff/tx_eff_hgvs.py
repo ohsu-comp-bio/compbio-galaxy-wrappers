@@ -27,7 +27,7 @@ from typing import Iterable
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 
-VERSION = '0.2.3'
+VERSION = '0.2.4'
 ASSEMBLY_VERSION = "GRCh37"
 
 logger = logging.getLogger(__name__)

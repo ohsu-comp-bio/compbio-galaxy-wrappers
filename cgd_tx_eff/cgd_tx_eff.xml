@@ -1,4 +1,4 @@
-<tool id="cgd_tx_eff" name="CGD Transcript Effects" version="0.2.3" >
+<tool id="cgd_tx_eff" name="CGD Transcript Effects" version="0.2.4" >
   <description>
   	Apply transcript-effects annotations from Annovar and HGVS to a VCF.
   	Note: This configuration doesn't work yet. 
