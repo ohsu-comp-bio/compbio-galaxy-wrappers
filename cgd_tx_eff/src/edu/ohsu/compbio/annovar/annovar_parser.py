@@ -307,13 +307,16 @@ class AnnovarParser(object):
             reader = csv.reader(annovar_file, delimiter = delimiter)
             for row in reader:
                 if annovar_file_type == AnnovarFileType.ExonicVariantFunction:
-                    assert len(row) == 18, f"Exonic variant function file must have 18 columns. Found {len(row)}. Make sure you run the annotate_variation.pl script with the '--otherinfo' parameter to include other information from the original VCF"
                     assert row[0].startswith('line')
+                    if len(row) != 18:
+                        logger.info(f"Exonic variant function file is expected have 18 columns. Found {len(row)}. Make sure you run the annotate_variation.pl script with the '--otherinfo' parameter to include other information from the original VCF")
+                    
 
                     # Parse a row in an exonic_variant_function file
                     annovar_recs.extend(self._parse_exonic_variant_function_row(row))
                 elif annovar_file_type == AnnovarFileType.VariantFunction:
-                    assert len(row) == 17, f"Variant function file must have 17 columns. Found {len(row)}. Make sure you run the annotate_variation.pl with the '--otherinfo' parameter to include other information from the original VCF"
+                    if len(row) != 17:
+                        logger.info(f"Variant function file file is expected to have 17 columns. Found {len(row)}. Make sure you run the annotate_variation.pl with the '--otherinfo' parameter to include other information from the original VCF")
                     
                     # Parse a row in a variant_function file
                     annovar_recs.extend(self._parse_variant_function_row(row))

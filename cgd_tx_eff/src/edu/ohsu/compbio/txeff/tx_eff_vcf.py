@@ -85,7 +85,7 @@ def _read_vcf(vcf_filename: str):
     
     for vcf_record in vcf_reader:
         if len(vcf_record.ALT) > 1:
-            raise Exception(f'VCF variants must have just one ALT allel: {vcf_record.CHROM}-{vcf_record.POS}-{vcf_record.REF}-{vcf_record.ALT}')
+            raise Exception(f'VCF variants must have just one ALT allele: {vcf_record.CHROM}-{vcf_record.POS}-{vcf_record.REF}-{vcf_record.ALT}')
         
         variant = Variant(vcf_record.CHROM, vcf_record.POS, vcf_record.REF, vcf_record.ALT[0].value)
 
