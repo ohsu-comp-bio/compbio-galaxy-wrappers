@@ -11,6 +11,7 @@ import logging
 from collections import defaultdict
 import re
 import os
+from hgvs.location import BaseOffsetPosition
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -121,6 +122,11 @@ class AnnovarParser(object):
             # it isn't possible to recover. 
             hgvs_basep = self.hgvs_parser.parse(full_c).posedit.pos.start
             
+            # Sometimes basepair position is an integer, but it can also be an offset (eg c.371-3C>T)
+            if hgvs_basep and type(hgvs_basep) is BaseOffsetPosition:
+                logger.debug(f"Converting base pair position to string because it is an offset: {full_c}")
+                hgvs_basep = str(hgvs_basep)
+            
             # p. single letter amino acid; not always present
             if len(transcript_parts) == 5:
                 hgvs_p = transcript_parts[4]                 
@@ -178,6 +184,12 @@ class AnnovarParser(object):
             try:
                 full_c = ':'.join([refseq_transcript, hgvs_c_dot])
                 hgvs_basep = self.hgvs_parser.parse(full_c).posedit.pos.start
+                
+                # Sometimes basepair position is an integer, but it can also be an offset (eg c.371-3C>T)
+                if hgvs_basep and type(hgvs_basep) is BaseOffsetPosition:
+                    logger.debug(f"Converting base pair position to string because it is an offset: {full_c}")
+                    hgvs_basep = str(hgvs_basep)
+
             except hgvs.exceptions.HGVSParseError:
                 hgvs_basep = None
                 c_dot_alt = re.search(r"c\..*\>([\w]+)", hgvs_c_dot)            

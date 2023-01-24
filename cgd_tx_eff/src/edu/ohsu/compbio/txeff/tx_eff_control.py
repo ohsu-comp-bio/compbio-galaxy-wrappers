@@ -9,7 +9,7 @@ import logging
 from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
 from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
-VERSION = '0.2.4'
+VERSION = '0.2.5'
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

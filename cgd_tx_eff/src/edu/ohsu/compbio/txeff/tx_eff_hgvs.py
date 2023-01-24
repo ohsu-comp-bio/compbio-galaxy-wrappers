@@ -27,7 +27,7 @@ from typing import Iterable
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 
-VERSION = '0.2.4'
+VERSION = '0.2.5'
 ASSEMBLY_VERSION = "GRCh37"
 
 logger = logging.getLogger(__name__)
@@ -172,6 +172,11 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
                 variant_transcript.hgvs_amino_acid_position = var_p.posedit.pos.start.pos
             
             variant_transcript.hgvs_base_position = var_c.posedit.pos.start.base
+            
+            # jDebug
+            if variant_transcript.hgvs_base_position and type(variant_transcript.hgvs_base_position) is not int:
+                print(variant_transcript.hgvs_base_position)
+
             variant_transcript.hgvs_c_dot = c_dot
             variant_transcript.hgvs_p_dot_one = var_p1
             variant_transcript.hgvs_p_dot_three = var_p3
