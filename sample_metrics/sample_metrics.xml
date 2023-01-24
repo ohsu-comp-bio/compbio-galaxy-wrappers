@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.8.8" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="1.0.0" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
 
   <requirements>
@@ -21,7 +21,6 @@
       --picard_summary '${picard_metrics}'
     #end if
     --outfile '${output}'
-    --outfile_new '${output_new}'
     --outfile_txt '${output_txt}'
     #if $fastqc_one:
         --fastqc_r1 '${fastqc_one}'
@@ -94,7 +93,6 @@
   </inputs>
   <outputs>
     <data format="txt" name="output" label="${tool.name} on ${on_string}: json" />
-    <data format="txt" name="output_new" label="${tool.name} on ${on_string}: json [NEW STYLE]" />
     <data format="txt" name="output_txt" label="${tool.name} on ${on_string}: txt" />
   </outputs>
 

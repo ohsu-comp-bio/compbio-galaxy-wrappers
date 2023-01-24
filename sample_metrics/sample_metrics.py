@@ -3,6 +3,8 @@
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
 VERSION HISTORY
+1.0.0
+    Combine new and old metrics style in to new only.
 0.8.8
     Revert xy_check to bio_sex_check to maintain CGD compatibility
 0.8.7
@@ -25,7 +27,7 @@ import json
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
 
-VERSION = '0.8.8'
+VERSION = '1.0.0'
 
 
 def supply_args():
@@ -62,8 +64,7 @@ def supply_args():
     parser.add_argument('--json_in', nargs='*',
                         help='Arbitrary number of files to be included in sample metrics that are in json format.')
 
-    parser.add_argument('--outfile', help='Output file with json string.')
-    parser.add_argument('--outfile_new', help='Output file with new style json string.')
+    parser.add_argument('--outfile', help='Output file with json string to be imported to CGD.')
     parser.add_argument('--outfile_txt', help='Output file in human readable text format.')
     parser.add_argument('--workflow', help='Pass the Galaxy workflow name, if applicable.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
@@ -82,8 +83,8 @@ def supply_args():
         parser.error("Argument primers_bed requires primers_bam.")
 
     # Ensure at least one output option has been selected.
-    if not args.outfile and not args.outfile_txt and not args.outfile_new:
-        parser.error("You must specify one of outfile, outfile_new, or outfile_txt.")
+    if not (args.outfile or args.outfile_txt):
+        parser.error("You must specify either outfile or outfile_txt.")
 
     return args
 
@@ -420,8 +421,7 @@ class MetricPrep(SampleMetrics):
     def __init__(self, raw_mets):
         super(MetricPrep, self).__init__(raw_mets)
         self.mets = self._gather_metrics()
-        self.req_old = self._req_old()
-        self.req_new = self._req_new()
+        self.req = self._req()
 
     def _gather_metrics(self):
         """
@@ -551,54 +551,44 @@ class MetricPrep(SampleMetrics):
             return None
 
     @staticmethod
-    def _req_old():
+    def _req():
         """
         Based on test name, list which metrics should be provided.
         :return:
         """
-        return {'QIAseq_V3_RNA': ['qthirty', 'averageDepth', 'percentUmi'],
-                'QIAseq_XP_RNA_HEME': ['qthirty', 'averageDepth', 'percentUmi'],
-                'TruSightOne': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
+        return {'QIAseq_V3_RNA': ['qthirty', 'averageDepth', 'percentUmi', 'total_on_target_transcripts',
+                                  'total_on_target_transcripts_pct'],
+                'QIAseq_XP_RNA_HEME': ['qthirty', 'averageDepth', 'percentUmi', 'total_on_target_transcripts',
+                                       'total_on_target_transcripts_pct'],
+                'TruSightOne': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty', 'depthOneHundred',
+                                'percentOnTarget', 'depthTen', 'depthFifty', 'gc_pct_r1', 'gc_pct_r2',
+                                'y_ploidy_check'],
                 'TruSightOneV2_5': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                    'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
-                'AgilentCRE_V1': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                  'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
+                                    'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'gc_pct_r1',
+                                    'gc_pct_r2', 'y_ploidy_check', 'homozygosity_flag'],
+                'AgilentCRE_V1': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty', 'depthOneHundred',
+                                  'percentOnTarget', 'depthTen', 'depthFifty', 'parentage_sites', 'parentage_disc',
+                                  'parentage_binom', 'parentage_confirmed', 'gc_pct_r1', 'gc_pct_r2',
+                                  'homozygosity_flag', 'y_ploidy_check'],
                 'QIAseq_V3_HEME2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                     'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'QIAseq_V4_MINI': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
+                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi',
+                                   'forced_calls_above', 'forced_calls_below', 'bio_sex_check'],
                 'QIAseq_V3_STP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
-                'TruSeq_RNA_Exome_V1-2': ['qthirty'],
-                'QIAseq_V3_HOP': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                  'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi'],
-                'QIAseq_V3_HOP2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi'],
-                'QIAseq_V3_HOP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi']
-                }
-
-    @staticmethod
-    def _req_new():
-        """
-        Based on test name, list which metrics should be provided.
-        :return:
-        """
-        return {'QIAseq_V3_RNA': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
-                'QIAseq_XP_RNA_HEME': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
-                'TruSightOne': ['gc_pct_r1', 'gc_pct_r2', 'y_ploidy_check'],
-                'TruSightOneV2_5': ['gc_pct_r1', 'gc_pct_r2', 'y_ploidy_check', 'homozygosity_flag'],
-                'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
-                                  'gc_pct_r1', 'gc_pct_r2', 'homozygosity_flag', 'y_ploidy_check'],
-                'QIAseq_V3_HEME2': [],
-                'QIAseq_V4_MINI': ['forced_calls_above', 'forced_calls_below', 'bio_sex_check'],
-                'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
-                'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
+                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi',
+                                   'msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
+                'TruSeq_RNA_Exome_V1-2': ['qthirty', 'total_on_target_transcripts', 'gatk_pct_mrna_bases',
                                           'gatk_pct_correct_strand_reads'],
-                'QIAseq_V3_HOP': ['allele_balance', 'allele_balance_het_count'],
-                'QIAseq_V3_HOP2': ['allele_balance', 'allele_balance_het_count'],
-                'QIAseq_V3_HOP3': ['allele_balance', 'allele_balance_het_count']
+                'QIAseq_V3_HOP': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty', 'depthOneHundred',
+                                  'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi', 'allele_balance',
+                                  'allele_balance_het_count'],
+                'QIAseq_V3_HOP2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
+                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi',
+                                   'allele_balance', 'allele_balance_het_count'],
+                'QIAseq_V3_HOP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
+                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi',
+                                   'allele_balance', 'allele_balance_het_count']
                 }
 
 
@@ -607,7 +597,7 @@ class Writer:
         self.mets = mets
         self.wf = self.mets.raw_mets.wf
 
-    def write_cgd_new(self, filename):
+    def write_cgd(self, filename):
         """
         Provide new metric style for CGD import.
         {
@@ -638,27 +628,10 @@ class Writer:
         """
         to_write = {'sampleRunMetrics': [], 'geneMetrics': []}
         for metric, val in self.mets.mets.items():
-            if metric in self.mets.req_new[self.wf]:
+            if metric in self.mets.req[self.wf]:
                 if val:
                     metric_dict = {'metric': str(metric), 'value': str(val)}
                     to_write['sampleRunMetrics'].append(metric_dict)
-
-        with open(filename, 'w') as jwrite:
-            json.dump(to_write, jwrite)
-
-    def write_cgd_old(self, filename):
-        """
-        Provide old metric style for CGD import.
-        {
-        "depthSevenHundred": "95.6",
-        "depthTwelveHundredFifty": "66.8",
-        "percentOnTarget": "61.03"
-        }
-        """
-        to_write = {}
-        for metric, val in self.mets.mets.items():
-            if metric in self.mets.req_old[self.wf]:
-                to_write[str(metric)] = str(val)
 
         with open(filename, 'w') as jwrite:
             json.dump(to_write, jwrite)
@@ -681,9 +654,7 @@ def main():
     if args.outfile_txt:
         writer.write_to_text(args.outfile_txt)
     if args.outfile:
-        writer.write_cgd_old(args.outfile)
-    if args.outfile_new:
-        writer.write_cgd_new(args.outfile_new)
+        writer.write_cgd(args.outfile)
 
 
 if __name__ == "__main__":
