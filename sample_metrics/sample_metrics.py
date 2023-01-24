@@ -1,11 +1,21 @@
 
-# DESCRIPTION: Create sample level metrics to be passed to the CGD.  Metrics
-#  are passed as a json dump.
-# VERSION HISTORY
-# 0.7.0 - Now calculate percentOnTarget from FastQC tatal sequences and collectalignmentmetrics on sorted bwa bam
-# 0.8.0 - Pass forced calls above and below background metric
-# 0.8.3 - Add entry for json metric bio_sex_check
-# 0.8.5 - Change forced calls metric to json
+"""
+Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
+
+VERSION HISTORY
+0.8.7
+    Rename metric bio_sex_check to y_ploidy_check for AgilentCRE_V1 and TruSightOneV2_5
+    Rename metric bio_sex_check to xy_check for QIAseq_V4_MINI
+0.8.5
+    Change forced calls metric to json
+0.8.3
+    Add entry for json metric bio_sex_check
+0.8.0
+    Pass forced calls above and below background metric
+0.7.0
+    Now calculate percentOnTarget from FastQC tatal sequences and collectalignmentmetrics on sorted bwa bam
+"""
+
 
 import argparse
 import json
@@ -14,7 +24,7 @@ from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, 
 from inputs import FastQcRead
 from inputs import VcfRead
 
-VERSION = '0.8.6'
+VERSION = '0.8.7'
 
 def supply_args():
     """
@@ -160,22 +170,10 @@ class RawMetricCollector:
         else:
             self.blia_post = {'blia': None, 'blis': None, 'lar': None, 'mes': None}
 
-        # if args.calls_forced_above:
-        #     self.fc_above_count = args.calls_forced_above.count
-        # else:
-        #     self.fc_above_count = None
-        #
-        # if args.calls_forced_below:
-        #     self.fc_below_count = args.calls_forced_below.count
-        # else:
-        #     self.fc_below_count = None
-
         if args.json_in:
             self.json_mets = self._json_in(args.json_in)
         else:
             self.json_mets = None
-
-        # self._params_stdout()
 
     @staticmethod
     def _json_in(json_in):
@@ -458,7 +456,7 @@ class MetricPrep(SampleMetrics):
                 'gatk_pct_correct_strand_reads': self._reduce_sig_pct(self.gatk_pct_correct_strand_reads),
                 'gc_pct_r1': self.raw_mets.gc_pct_1,
                 'gc_pct_r2': self.raw_mets.gc_pct_2,
-                'gender_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='gender_check'),
+                'xy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='xy_check'),
                 'homozygosity_flag': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='homozygosity_flag'),
                 'parentage_binom': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_binom'),
                 'parentage_disc': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_disc'),
@@ -504,7 +502,7 @@ class MetricPrep(SampleMetrics):
                 'total_on_target_transcripts_pct': self.on_primer_frag_count_pct,
                 'forced_calls_above': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_above'),
                 'forced_calls_below': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_below'),
-                'bio_sex_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='bio_sex_check')
+                'y_ploidy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='y_ploidy_check')
                 }
 
         return mets
@@ -590,25 +588,15 @@ class MetricPrep(SampleMetrics):
         """
         return {'QIAseq_V3_RNA': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
                 'QIAseq_XP_RNA_HEME': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
-                'TruSightOne': ['gc_pct_r1', 'gc_pct_r2', 'gender_check'],
-                'TruSightOneV2_5': ['gc_pct_r1', 'gc_pct_r2', 'gender_check', 'homozygosity_flag'],
+                'TruSightOne': ['gc_pct_r1', 'gc_pct_r2', 'y_ploidy_check'],
+                'TruSightOneV2_5': ['gc_pct_r1', 'gc_pct_r2', 'y_ploidy_check', 'homozygosity_flag'],
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
-                                  'gc_pct_r1', 'gc_pct_r2', 'gender_check', 'homozygosity_flag', 'bio_sex_check'],
+                                  'gc_pct_r1', 'gc_pct_r2', 'homozygosity_flag', 'y_ploidy_check'],
                 'QIAseq_V3_HEME2': [],
-                'QIAseq_V4_MINI': ['forced_calls_above', 'forced_calls_below', 'bio_sex_check'],
+                'QIAseq_V4_MINI': ['forced_calls_above', 'forced_calls_below', 'xy_check'],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
                                           'gatk_pct_correct_strand_reads'],
-                # 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
-                #                           'gatk_pct_correct_strand_reads', 'rna_count_zero', 'rna_count_one',
-                #                           'rna_count_ten', 'rna_count_onehundred', 'rna_count_onethousand',
-                #                           'rna_count_tenthousand', 'rna_count_hundredthousand', 'rna_tpm_zero',
-                #                           'rna_tpm_hundredth', 'rna_tpm_tenth', 'rna_tpm_one', 'rna_tpm_ten',
-                #                           'rna_tpm_onehundred', 'rna_tpm_onethousand', 'blia_pre_best',
-                #                           'blia_pre_second', 'blia_pre_diff', 'blia_post_best', 'blia_post_second',
-                #                           'blia_post_diff', 'blia_reportable', 'blia_raw_pre', 'blis_raw_pre',
-                #                           'lar_raw_pre', 'mes_raw_pre', 'blia_raw_post', 'blis_raw_post',
-                #                           'lar_raw_post', 'mes_raw_post'],
                 'QIAseq_V3_HOP': ['allele_balance', 'allele_balance_het_count'],
                 'QIAseq_V3_HOP2': ['allele_balance', 'allele_balance_het_count'],
                 'QIAseq_V3_HOP3': ['allele_balance', 'allele_balance_het_count']
