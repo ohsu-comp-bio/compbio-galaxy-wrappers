@@ -3,6 +3,8 @@
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
 VERSION HISTORY
+0.8.8
+    Revert xy_check to bio_sex_check to maintain CGD compatibility
 0.8.7
     Rename metric bio_sex_check to y_ploidy_check for AgilentCRE_V1 and TruSightOneV2_5
     Rename metric bio_sex_check to xy_check for QIAseq_V4_MINI
@@ -22,9 +24,9 @@ import json
 # User libraries
 from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
-from inputs import VcfRead
 
-VERSION = '0.8.7'
+VERSION = '0.8.8'
+
 
 def supply_args():
     """
@@ -55,9 +57,6 @@ def supply_args():
 
     parser.add_argument('--blia_pre', help='JSON from Ding correlation subtyping, pre-normalization.')
     parser.add_argument('--blia_post', help='JSON from Ding correlation subtyping, post-normalization.')
-
-    #parser.add_argument('--calls_forced_above', type=VcfRead, help='VCF with forced calls that are above background.')
-    #parser.add_argument('--calls_forced_below', type=VcfRead, help='VCF with forced calls that are below background.')
 
     # These just get attached to the final json output as-is.
     parser.add_argument('--json_in', nargs='*',
@@ -456,7 +455,7 @@ class MetricPrep(SampleMetrics):
                 'gatk_pct_correct_strand_reads': self._reduce_sig_pct(self.gatk_pct_correct_strand_reads),
                 'gc_pct_r1': self.raw_mets.gc_pct_1,
                 'gc_pct_r2': self.raw_mets.gc_pct_2,
-                'xy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='xy_check'),
+                'bio_sex_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='bio_sex_check'),
                 'homozygosity_flag': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='homozygosity_flag'),
                 'parentage_binom': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_binom'),
                 'parentage_disc': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_disc'),
@@ -593,7 +592,7 @@ class MetricPrep(SampleMetrics):
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
                                   'gc_pct_r1', 'gc_pct_r2', 'homozygosity_flag', 'y_ploidy_check'],
                 'QIAseq_V3_HEME2': [],
-                'QIAseq_V4_MINI': ['forced_calls_above', 'forced_calls_below', 'xy_check'],
+                'QIAseq_V4_MINI': ['forced_calls_above', 'forced_calls_below', 'bio_sex_check'],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
                                           'gatk_pct_correct_strand_reads'],
