@@ -1,4 +1,4 @@
-# VERSION: 0.9.3
+# VERSION: 0.9.4
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -22,6 +22,7 @@ source('summarization.R')
 ### START ARGS
 args <- commandArgs(trailingOnly=TRUE)
 my_samp <- args[1]
+my_samp_compare <- args[15]
 runid <- args[2]
 coh <- args[3]
 
@@ -182,14 +183,16 @@ my.scores %>% dplyr::select(sample_id, num_batch) %>% distinct() %>% group_by(sa
 
 #For the filter option, one can select the specimen/batch combos
 t9.dt <- my.scores %>%
-  filter((sample_id == "DN21-00153B" & num_batch !="10052021") | sample_id == "DN21-00163B") %>%
+  #filter((sample_id == "DN21-00153B" & num_batch !="10052021") | sample_id == "DN21-00163B") %>%
+  filter((sample_id == my_samp) | sample_id == my_samp_compare) %>%
   rename("avg_abund" = "norm") %>% mutate(use_roi = "avg") %>%
   dplyr::select("Segment (Name/ Label)", "segment_label", "sample_id", "use_roi", "ProbeName", "avg_abund", "num_batch") %>%
   as.data.table()
 
 #Changed color from segment # to segment_label
 t9.cast <- dcast(`segment_label`+ProbeName~sample_id, value.var="avg_abund",data=t9.dt[use_roi == "avg"])
-t9.cast[,delta:=`DN21-00163B`-`DN21-00153B`]
+colnames(t9.cast)<- c('segment_label','ProbeName','Specimen_ID','Specimen_ID_compare')
+t9.cast[,delta:=t9.cast$Specimen_ID-t9.cast$Specimen_ID_compare]
 t9.cast <- merge(t9.cast, delta.thresh, by="ProbeName",allow.cartesian=T)
 t9.cast[,`:=`(status="neither")]
 t9.cast[delta < low, status:="low"]
@@ -198,6 +201,9 @@ t9.cast[,perc:=mapply(function(d, x) d(x), distr, delta)]
 t9.delta <- t9.cast[status != "neither"]
 t9.cd <- comb.deltas[ProbeName %in% t9.delta[,ProbeName]]
 t9.cast[,fix_status:=ifelse(status=="neither", "neither", "high/low")]
+
+#Stop script if specimen(s) do not have both stromal tumor segments
+stopifnot(!any(is.na(t9.cast)))
 
 #Changed color from segment # to segment_label
 t9.plot <- ggplot(data=t9.cd, mapping=aes(x=delta)) +
