@@ -1,4 +1,4 @@
-# VERSION: 0.9.4
+# VERSION: 0.9.5
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -24,6 +24,7 @@ args <- commandArgs(trailingOnly=TRUE)
 my_samp <- args[1]
 my_samp_compare <- args[15]
 runid <- args[2]
+runid_compare <- args[16]
 coh <- args[3]
 
 # Metadata filepaths
@@ -184,7 +185,7 @@ my.scores %>% dplyr::select(sample_id, num_batch) %>% distinct() %>% group_by(sa
 #For the filter option, one can select the specimen/batch combos
 t9.dt <- my.scores %>%
   #filter((sample_id == "DN21-00153B" & num_batch !="10052021") | sample_id == "DN21-00163B") %>%
-  filter((sample_id == my_samp) | sample_id == my_samp_compare) %>%
+  filter((sample_id == my_samp & num_batch == runid) | sample_id == my_samp_compare & num_batch == runid_compare) %>%
   rename("avg_abund" = "norm") %>% mutate(use_roi = "avg") %>%
   dplyr::select("Segment (Name/ Label)", "segment_label", "sample_id", "use_roi", "ProbeName", "avg_abund", "num_batch") %>%
   as.data.table()
