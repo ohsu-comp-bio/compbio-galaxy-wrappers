@@ -1,9 +1,10 @@
-# Current Version: 0.9.7
+# Current Version: 1.0.0
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
 #       - limit normalization tmas to batches in good_tma
 # 0.9.7 - BC: edit intermediate .RData filenames for general usage
+# 1.0.0 - edits to support new TMA
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
