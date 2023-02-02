@@ -49,10 +49,7 @@ clia_abs <- c("c-Myc", "Ki-67", "Cyclin E1", "Cyclin D1", "Cyclin B1", "ATR_pS42
               "pan-RAS", "p44/42 MAPK ERK1/2", "Phospho-p90 RSK  (T359/S363)", "MET", "Phospho-MEK1 (S217/S221)", "Phospho-p44/42 MAPK ERK1/2 (T202/Y204)", "HER2_p1248", "Her2", "EGFR", "Phospho-c-RAF (S338)", "BRAF",
               "p53", "Phospho-p38 MAPK (T180/Y182)", "PR", "Phospho-JNK (T183/Y185)", "ER-alpha", "Androgen Receptor", "ARID1A",
               "PD-L1", "CD8", "CD68", "CD4", "CD3", "CD20", "Beta-2-microglobulin")
-good_tma <- c("08182021-01", "08192021-01", "08272021-01", "09032021-01", "09282021-01", "09292021-01", "10052021-01", "10272021-01",
-              "11052021-01", "11102021-01", "12082021-01", "01072022-01", "01262022-01", "02102022-01", "03072022-01", "03142022-01",
-              "03152022-01", "04072022-01", "05052022-01", "05112022-01", "05182022-01", "06282022-01", "07072022-01", "07292022-01",
-              "08032022-01", "09022022-01", "09232022-01", "11182022-01", "11292022-01", "11302022-01")
+#good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "01272023-01")
 
 # Load metadata
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
@@ -94,7 +91,7 @@ stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
 
 tma.meta <- merge(tma.meta, control.type[,.(lower_sample=lower_secondary, name, type)], by="lower_sample", all=F)
 stopifnot(tma.meta[,.N,by=batch][,all(N==14)])
-tma.meta <- tma.meta[`batch` %in% good_tma | `batch` %in% runid]
+#tma.meta <- tma.meta[`batch` %in% good_tma | `batch` %in% runid]
 tma.abund <- abund.mat[,tma.meta$barcode]
 
 ## QC of experimental samples with respect to ROI
