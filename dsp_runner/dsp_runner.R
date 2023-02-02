@@ -65,7 +65,7 @@ dsp.meta <- data.table(read.xlsx(dsp_meta))
 # Check to see if my_samp is in dsp.meta, stop if it's not.
 stopifnot(nrow(dsp.meta[`Specimen.ID` %in% my_samp]) > 0)
 
-batch.dt <- data.table(files=list.files(datadir, pattern="[-0-9A-Za-z_ ]*nit[-0-9A-Za-z_ ]*ataset[-0-9A-Za-z_ ]*[0-9]{8}-[0-9]{2}.xlsx", recursive = T, full.names=T))
+batch.dt <- data.table(files=list.files(datadir, pattern="[-0-9A-Za-z]_[0-9]{8}-[0-9]{2}.xlsx", recursive = T, full.names=T))
 batch.dt[,batch:=str_extract(files, exp.regex)]
 
 res.list <- process_batches(batch.dt, sheet='Exported dataset')
