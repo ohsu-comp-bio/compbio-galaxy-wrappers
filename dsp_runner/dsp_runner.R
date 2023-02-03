@@ -216,7 +216,7 @@ samp.scores <- my.scores[`sample_id` == my_samp]
 samp.scores$patient_ord <- droplevels(samp.scores$patient_ord, except=my_samp)
 
 # Overall Plots
-plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund)
+plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund, coh)
 pdf(file=paste0(args[13]), width=16, height=16)
 
 for (tums in names(plot.list)){
