@@ -44,12 +44,12 @@ igg_info <- args[9]
 
 # Set constants
 exp.regex <- "[0-9]{8}-[0-9]{2}"
-clia_abs <- c("c-Myc", "Ki-67", "Cyclin E1", "Cyclin D1", "Cyclin B1", "ATR_pS428", "ATM (phospho S1981)",
-              "PARP", "Cleaved Caspase 9", "CD95/Fas", "BIM", "BCLXL", "BCL6", "Bcl-2", "BAD",
-              "Pan-AKT", "PTEN", "Phospho-PRAS40 (T246)", "PLCG1", "INPP4B", "Phospho-GSK3B (S9)", "Phospho-AKT1 (S473)",
-              "pan-RAS", "p44/42 MAPK ERK1/2", "Phospho-p90 RSK  (T359/S363)", "MET", "Phospho-MEK1 (S217/S221)", "Phospho-p44/42 MAPK ERK1/2 (T202/Y204)", "HER2_p1248", "Her2", "EGFR", "Phospho-c-RAF (S338)", "BRAF",
-              "p53", "Phospho-p38 MAPK (T180/Y182)", "PR", "Phospho-JNK (T183/Y185)", "ER-alpha", "Androgen Receptor", "ARID1A",
-              "PD-L1", "CD8", "CD68", "CD4", "CD3", "CD20", "Beta-2-microglobulin")
+# clia_abs <- c("c-Myc", "Ki-67", "Cyclin E1", "Cyclin D1", "Cyclin B1", "ATR_pS428", "ATM (phospho S1981)",
+#               "PARP", "Cleaved Caspase 9", "CD95/Fas", "BIM", "BCLXL", "BCL6", "Bcl-2", "BAD",
+#               "Pan-AKT", "PTEN", "Phospho-PRAS40 (T246)", "PLCG1", "INPP4B", "Phospho-GSK3B (S9)", "Phospho-AKT1 (S473)",
+#               "pan-RAS", "p44/42 MAPK ERK1/2", "Phospho-p90 RSK  (T359/S363)", "MET", "Phospho-MEK1 (S217/S221)", "Phospho-p44/42 MAPK ERK1/2 (T202/Y204)", "HER2_p1248", "Her2", "EGFR", "Phospho-c-RAF (S338)", "BRAF",
+#               "p53", "Phospho-p38 MAPK (T180/Y182)", "PR", "Phospho-JNK (T183/Y185)", "ER-alpha", "Androgen Receptor", "ARID1A",
+#               "PD-L1", "CD8", "CD68", "CD4", "CD3", "CD20", "Beta-2-microglobulin")
 #good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "01272023-01")
 
 # Load metadata
@@ -186,6 +186,7 @@ ref.abund <- merge(use.paths[,.(ab_ord, ProbeName, path_ord)], ref.abund, by="Pr
 melt.tma <- data.table(reshape2::melt(tma.abund, as.is=T))
 names(melt.tma) <- c("ProbeName", "barcode", "abundance")
 melt.tma <- merge(melt.tma, tma.meta[,.(barcode, name, batch)], by="barcode")
+clia_abs <- unique(melt.tma$ProbeName)
 stopifnot(length(setdiff(melt.tma$ProbeName, igg.info$ProbeName)) == 0)
 melt.tma <- merge(igg.info[,.(ProbeName, igg)], melt.tma, by="ProbeName", all=T)
 melt.tma[,fac_batch:=factor(batch)]
