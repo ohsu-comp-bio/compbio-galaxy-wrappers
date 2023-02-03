@@ -1,4 +1,4 @@
-<tool id="move_file" name="Move Galaxy Dataset" version="0.4.3" >
+<tool id="move_file" name="Move Galaxy Dataset" version="0.4.4" >
   <description>Move a file (Galaxy dataset) to some location on the file system.</description>
 
   <requirements>
@@ -49,11 +49,16 @@
 
       mkdir -p $move_dir &&
 
+      #if $move_type.add_samp_str
+        #set $samp_str = str($move_type.add_samp_str)
+        #set $move_location += $samp_str
+      #end if
+
       #if $move_type.do_set_ext.set_ext_sel == "yes_set_ext"
         #if $move_type.do_set_ext.set_ext
-	  #set $file_ext = str($move_type.do_set_ext.set_ext)
+          #set $file_ext = str($move_type.do_set_ext.set_ext)
           #set $move_location += $file_ext
-	#end if
+        #end if
       #else
         #set $move_location += $file_ext
       #end if
@@ -173,15 +178,22 @@
 	        </when>
 	    </conditional>
 	    <param name="add_date" type="boolean" label="Include Year?" help="Answering yes will include the year as part of the directory structure.  This will be inserted right after the TEST NAME." />
+	    <param name="add_samp_str" type="text" optional="true" label="Sample Suffix String" help="Include an additional string right after the sample id, ie. for FASTQ R1 and R2." >
+            <sanitizer>
+                <valid initial="string.ascii_letters,string.digits">
+                    <add value="_"/>
+                </valid>
+            </sanitizer>
+        </param>
         <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." >
             <sanitizer>
-            <valid initial="string.ascii_letters,string.digits">
-              <add value="/"/>
-              <add value="_"/>
-              <add value="-"/>
-              <add value="."/>
-              <add value="$"/>
-            </valid>
+                <valid initial="string.ascii_letters,string.digits">
+                    <add value="/"/>
+                    <add value="_"/>
+                    <add value="-"/>
+                    <add value="."/>
+                    <add value="$"/>
+                </valid>
             </sanitizer>
         </param>
         <param name="test_name" type="text" label="Test Name" help="Test name, will be used to create dest directory." />
