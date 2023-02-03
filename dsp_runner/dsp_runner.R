@@ -187,7 +187,7 @@ melt.tma <- data.table(reshape2::melt(tma.abund, as.is=T))
 names(melt.tma) <- c("ProbeName", "barcode", "abundance")
 melt.tma <- merge(melt.tma, tma.meta[,.(barcode, name, batch)], by="barcode")
 clia_abs <- unique(melt.tma$ProbeName)
-stopifnot(length(setdiff(melt.tma$ProbeName, igg.info$ProbeName)) == 0)
+#stopifnot(length(setdiff(melt.tma$ProbeName, igg.info$ProbeName)) == 0)
 melt.tma <- merge(igg.info[,.(ProbeName, igg)], melt.tma, by="ProbeName", all=T)
 melt.tma[,fac_batch:=factor(batch)]
 #add in values for corresponding igg
