@@ -1,4 +1,4 @@
-# VERSION: 0.9.5
+# VERSION: 1.0.0
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -22,31 +22,26 @@ source('summarization.R')
 ### START ARGS
 args <- commandArgs(trailingOnly=TRUE)
 my_samp <- args[1]
-my_samp_compare <- args[15]
-runid <- args[2]
-runid_compare <- args[16]
-coh <- args[3]
+my_samp_compare <- args[2]
+runid <- args[3]
+runid_compare <- args[4]
 
 # Metadata filepaths
-ab_info <- args[4]
-low_probes <- args[5]
-control_type <- args[6]
-dsp_meta <- args[7]
-igg_info <- args[8]
-selected_pos <- args[9]
-pos_cntrls <- args[10]
+ab_info <- args[5]
+selected_pos <- args[6]
+pos_cntrls <- args[7]
 
 
 # Load dsp_runner intermediates
-load(args[11])
-load(args[12])
+load(args[8])
+load(args[9])
 
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
-igg.info <- data.table(openxlsx::read.xlsx(igg_info))
-exp.low <- data.table(openxlsx::read.xlsx(low_probes, colNames=F))
-control.type <- data.table(openxlsx::read.xlsx(control_type, startRow=2))
-stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
-dsp.meta <- data.table(read.xlsx(dsp_meta))
+#igg.info <- data.table(openxlsx::read.xlsx(igg_info))
+#exp.low <- data.table(openxlsx::read.xlsx(low_probes, colNames=F))
+#control.type <- data.table(openxlsx::read.xlsx(control_type, startRow=2))
+#stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
+#dsp.meta <- data.table(read.xlsx(dsp_meta))
 
 # Set constants
 exp.regex <- "[0-9]{8}"
@@ -139,7 +134,7 @@ delta.ridge <- ggplot(data=comb.deltas, mapping=aes(x=delta, y=ab_fac, fill = fa
   ) +
   facet_wrap(~type) +
   theme_bw() + ylab("") + xlab("Delta")
-ggsave(delta.ridge, width=7, height=7, file=paste0(args[13]))
+ggsave(delta.ridge, width=7, height=7, file=paste0(args[10]))
 #delta.ridge
 
 
@@ -215,5 +210,5 @@ t9.plot <- ggplot(data=t9.cd, mapping=aes(x=delta)) +
   geom_text_repel(data=t9.cast[ProbeName %in% t9.delta[,ProbeName]], mapping=aes(y=1, x=delta, label=paste0(round(delta, 2), " (", round(perc, 2), ")"))) +
   theme_bw() + ylab("") + xlab("Delta (Bx2 - Bx1)") +
   theme(strip.text.y=element_text(angle=0), axis.text.y=element_blank(), axis.ticks.y=element_blank())
-ggsave(t9.plot, file=paste0(args[14]), width=14, height=8)
+ggsave(t9.plot, file=paste0(args[11]), width=14, height=8)
 t9.plot

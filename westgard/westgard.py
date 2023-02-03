@@ -4,6 +4,9 @@
 # Westgard multirule QC and reject samples that break the ruleset
 # USAGE: python westgard.py <tma_results> <tma_combos>
 
+# UPDATES:
+# Ver. 1.0.0 -- added 5 TMA cell lines (total 19)
+
 # By Benson Chong
 
 import os
@@ -16,7 +19,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import argparse
 
-VERSION = '0.3.5'
+VERSION = '0.3.6'
 
 c = canvas.Canvas('placeholder.pdf', pagesize=letter)
 
@@ -36,7 +39,7 @@ def supply_args():
 # RegEx keyword search for TMA cell line name
 def cellsearch(tma_input: str):
     cell_line_names = ['Tonsil', 'OvCar8+PARPi', 'BT474', 'MCF7', '468', 'Jurkat', 'Raji', 'THP1', 'PBMC+PHA',
-                       '231', '453', 'Spleen', 'Liver', 'T47D']
+                       '231', '453', 'Spleen', 'Liver', 'T47D', 'HeyA8', '436', 'abemaciclib', 'HCC1954', 'MCF10A+Gemcitabine']
 
     tma_oi = None
 
@@ -56,10 +59,6 @@ def cellsearch(tma_input: str):
 def parse_batches(abcount_path, tma_oi, ab_oi):
     df = pd.read_csv(abcount_path, header=0)
     df = df[(df['name'] == tma_oi) & (df['ProbeName'] == ab_oi)].reset_index()
-
-    # Take mean and sd from table rather than calculate
-    #mean, sigma = df['Mean'][0], df['StDev'][0]
-
 
     df = df[['name_ProbeName', 'abundance', 'year', 'monthday', 'batch']]
     df = df.sort_values(['year', 'monthday']).reset_index()
