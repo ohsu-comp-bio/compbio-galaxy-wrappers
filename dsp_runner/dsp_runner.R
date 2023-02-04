@@ -163,10 +163,10 @@ my.scores <- merge(my.meta, pat.quants, by=c("Segment (Name/ Label)", "avg_barco
 my.scores <- my.scores[!(`sample_id` == my_samp & `num_batch` != runid)]
 
 #getting pathways in order
-use.paths <- paths[analysis_pathway %in% c("Expression Controls", "N/A")==F]
-use.paths[analysis_pathway == "Tumor Markers", analysis_pathway:="Other Markers"]
-use.paths <- use.paths[order(ab)]
-path.ord <- c("Cell Cycle", "Cell Death", "PI3K/AKT pathway", "RAS/MAPK pathway", "Other Markers", "IO CLIA", "IO RUO")
+#use.paths <- paths[analysis_pathway %in% c("Expression Controls", "N/A")==F]
+#use.paths[analysis_pathway == "Tumor Markers", analysis_pathway:="Other Markers"]
+use.paths <- paths
+path.ord <- c("Cell Cycle", "PI3K/AKT pathway", "RAS/MAPK pathway", "Tumor Markers", "Cell Death", "Immune Markers")
 use.paths[,`:=`(path_ord=factor(analysis_pathway, levels=path.ord, ordered=T),
                 ab_ord=factor(ab, levels=ab, ordered=T))]
 
@@ -186,7 +186,7 @@ ref.abund <- merge(use.paths[,.(ab_ord, ProbeName, path_ord)], ref.abund, by="Pr
 melt.tma <- data.table(reshape2::melt(tma.abund, as.is=T))
 names(melt.tma) <- c("ProbeName", "barcode", "abundance")
 melt.tma <- merge(melt.tma, tma.meta[,.(barcode, name, batch)], by="barcode")
-clia_abs <- unique(melt.tma$ProbeName)
+clia_abs <- paths$ProbeName
 #stopifnot(length(setdiff(melt.tma$ProbeName, igg.info$ProbeName)) == 0)
 melt.tma <- merge(igg.info[,.(ProbeName, igg)], melt.tma, by="ProbeName", all=T)
 melt.tma[,fac_batch:=factor(batch)]
