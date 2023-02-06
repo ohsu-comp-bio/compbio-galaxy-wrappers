@@ -41,8 +41,8 @@
     </inputs>
 
     <outputs>
-        <data name="dsp_abund_meta" format="RData" label="${sample_id}_dsp_abund_meta: RData"/>
-        <data name="dsp_proc_data" format="RData" label="${sample_id}_dsp_proc_data: RData"/>
+        <data name="dsp_abund_meta" format="rdata" label="${sample_id}_dsp_abund_meta: RData"/>
+        <data name="dsp_proc_data" format="rdata" label="${sample_id}_dsp_proc_data: RData"/>
         <data name="dsp_tma_results" format="csv" label="${sample_id}_tma_results: csv"/>
         <data name="dsp_report" format="pdf" label="${sample_id}_${coh}_${run_id}: pdf"/>
     </outputs>
