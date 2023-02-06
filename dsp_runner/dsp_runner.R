@@ -4,7 +4,7 @@
 # 0.9.6 - modified regex to allow for new batch date format
 #       - limit normalization tmas to batches in good_tma
 # 0.9.7 - BC: edit intermediate .RData filenames for general usage
-# 1.0.0 - edits to support new TMA
+# 1.0.0 - edits to support new TMA, removed extra igg_info input, fixed table output
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
