@@ -1,4 +1,4 @@
-<tool id="dsp_runner" name="NanoString DSP RUV-III Normalization" version="0.9.7" >
+<tool id="dsp_runner" name="NanoString DSP RUV-III Normalization" version="1.0.0" >
     <description>NanoString GeoMx Digital Spatial Profiling</description>
 
     <requirements>
@@ -26,8 +26,7 @@
        ln -s "$low_probes" low_probes.xlsx &&
        ln -s "$control_type" control_type.xlsx &&
        ln -s "$dsp_meta" dsp_meta.xlsx &&
-       ln -s "$igg_info" igg_info.xlsx &&
-       Rscript $__tool_directory__/dsp_runner.R "$sample_id" "$run_id" "$coh" "$datadir" ab_info.xlsx low_probes.xlsx control_type.xlsx dsp_meta.xlsx igg_info.xlsx $dsp_abund_meta $dsp_proc_data $dsp_tma_results $dsp_report
+       Rscript $__tool_directory__/dsp_runner.R "$sample_id" "$run_id" "$coh" "$datadir" ab_info.xlsx low_probes.xlsx control_type.xlsx dsp_meta.xlsx $dsp_abund_meta $dsp_proc_data $dsp_tma_results $dsp_report
     ]]></command>
 
     <inputs>
@@ -39,7 +38,6 @@
         <param name="low_probes" type="data" format="xlsx" label="Low probes xlsx file" help=""/>
         <param name="control_type" type="data" format="xlsx" label="Control type xlsx file" help=""/>
         <param name="dsp_meta" type="data" format="xlsx" label="DSP metadata xlsx file" help=""/>
-        <param name="igg_info" type="data" format="xlsx" label="Antibodies xlsx file" help=""/>
     </inputs>
 
     <outputs>

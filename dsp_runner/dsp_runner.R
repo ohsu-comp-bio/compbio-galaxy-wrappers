@@ -40,7 +40,6 @@ ab_info <- args[5]
 low_probes <- args[6]
 control_type <- args[7]
 dsp_meta <- args[8]
-igg_info <- args[9]
 
 # Set constants
 exp.regex <- "[0-9]{8}-[0-9]{2}"
@@ -54,7 +53,6 @@ exp.regex <- "[0-9]{8}-[0-9]{2}"
 
 # Load metadata
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
-igg.info <- data.table(openxlsx::read.xlsx(igg_info))
 exp.low <- data.table(openxlsx::read.xlsx(low_probes, colNames=F))
 control.type <- data.table(openxlsx::read.xlsx(control_type, startRow=2))
 stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
@@ -109,7 +107,7 @@ exp.meta[rm_croi == T,.(`Segment (Name/ Label)`, batch, sample_id, croi, max_cor
 exp.meta <- exp.meta[rm_croi == F]
 exp.abund <- abund.mat[, exp.meta$barcode]
 #at this point save the metadata and raw abundance
-save(exp.meta, exp.abund, tma.abund, tma.meta, file=paste0(args[10]))
+save(exp.meta, exp.abund, tma.abund, tma.meta, file=paste0(args[9]))
 
 ### Normalization and summarization of cohort
 # Determine relevant samples / batches and compute normalization factors
@@ -122,7 +120,7 @@ tma.meta <- tma.meta[batch %in% relevant.meta$batch]
 tma.meta[,num_batch:=batch]
 tma.abund <- abund.mat[,tma.meta$barcode]
 cntrl.abs <- setdiff(rownames(tma.abund), exp.low[[1]])
-segment.proc <- preprocess_dsp_tma(tma.meta, tma.abund, relevant.meta, relevant.abund, igg.map=igg.info, bg.method=c('none'), controls=cntrl.abs, use.type='quant', k=2, num.roi.avg=1)
+segment.proc <- preprocess_dsp_tma(tma.meta, tma.abund, relevant.meta, relevant.abund, igg.map=paths, bg.method=c('none'), controls=cntrl.abs, use.type='quant', k=2, num.roi.avg=1)
 #can save here
 
 # Use the summarized metadata to deal with replicates and form groups
@@ -150,7 +148,7 @@ sapply(names(segment.proc), function(x){
 my.meta <- my.meta[!duplicated(cbind(`Segment (Name/ Label)`, Specimen.ID, num_batch, code)),]
 #Here define reference vs experimental
 my.meta[cohort==coh,Best_Response:="Ref"]
-save(my.meta, segment.proc, file=paste0(args[11]))
+save(my.meta, segment.proc, file=paste0(args[10]))
 
 # Form antibody scores as the quantiles relevant to reference cohort
 ref_samps <- my.meta[Best_Response == "Ref",unique(sample_id)]
@@ -187,8 +185,7 @@ melt.tma <- data.table(reshape2::melt(tma.abund, as.is=T))
 names(melt.tma) <- c("ProbeName", "barcode", "abundance")
 melt.tma <- merge(melt.tma, tma.meta[,.(barcode, name, batch)], by="barcode")
 clia_abs <- unique(melt.tma$ProbeName)
-stopifnot(length(setdiff(melt.tma$ProbeName, igg.info$ProbeName)) == 0)
-melt.tma <- merge(igg.info[,.(ProbeName, igg)], melt.tma, by="ProbeName", all=T)
+melt.tma <- merge(paths[,.(ProbeName, igg)], melt.tma, by="ProbeName", all=T)
 melt.tma[,fac_batch:=factor(batch)]
 #add in values for corresponding igg
 melt.tma[ProbeName %in% c("Ms IgG1",  "Ms IgG2a", "Rb IgG"), igg:=ProbeName]
@@ -204,7 +201,7 @@ melt.tma$year<- substr(melt.tma$batch, 5, 8)
 # Create combined name_ProbeName column
 melt.tma$name_ProbeName<- str_c(melt.tma$name,'_',melt.tma$ProbeName)
 # Write out csv for Westgard rules script in Galaxy wf
-write.csv(melt.tma, file=paste0(args[12]), row.names=F)
+write.csv(melt.tma, file=paste0(args[11]), row.names=F)
 
 ref.batches <- melt.tma[batch != runid]
 cur.batch <- melt.tma[batch == runid]
@@ -218,7 +215,7 @@ samp.scores$patient_ord <- droplevels(samp.scores$patient_ord, except=my_samp)
 
 # Overall Plots
 plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund, coh)
-pdf(file=paste0(args[13]), width=16, height=16)
+pdf(file=paste0(args[12]), width=16, height=16)
 
 for (tums in names(plot.list)){
   show(plot.list[[tums]])
