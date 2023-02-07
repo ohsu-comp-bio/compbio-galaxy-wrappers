@@ -1,6 +1,7 @@
-# VERSION: 1.0.1
+# VERSION: 1.0.2
 # Version history
 # 1.0.1 - Named all arguments, reformatting, allow for reference to contain only segment 1
+# 1.0.2 - Use after_stat instead of stat(quantile) per deprecation msg
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -114,7 +115,7 @@ probe.mads <- data.table(openxlsx::read.xlsx(pos_cntrls))
 comb.deltas[,ab_fac:=factor(ProbeName, levels=rev(probe.mads$ProbeName), ordered=T)]
 
 #This is the first relevant image created
-delta.ridge <- ggplot(data=comb.deltas, mapping=aes(x=delta, y=ab_fac, fill = factor(stat(quantile)))) +
+delta.ridge <- ggplot(data=comb.deltas, mapping=aes(x=delta, y=ab_fac, fill = factor(after_stat(quantile)))) +
   stat_density_ridges(
     geom = "density_ridges_gradient",
     calc_ecdf = TRUE,

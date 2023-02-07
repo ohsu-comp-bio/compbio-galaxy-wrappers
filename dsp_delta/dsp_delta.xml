@@ -1,4 +1,4 @@
-<tool id="dsp_delta" name="Nanostring DSP Pairwise Comparisons" version="1.0.1" >
+<tool id="dsp_delta" name="Nanostring DSP Pairwise Comparisons" version="1.0.2" >
     <description>Performs pairwise comparisons between multiple DSP specimens for tumor/stromal regions</description>
 
     <requirements>
