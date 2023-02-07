@@ -1,10 +1,11 @@
-# Current Version: 1.0.0
+# Current Version: 1.0.1
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
 #       - limit normalization tmas to batches in good_tma
 # 0.9.7 - BC: edit intermediate .RData filenames for general usage
 # 1.0.0 - edits to support new TMA, removed extra igg_info input, fixed table output
+# 1.0.1 - handle situations where there are only segment 1 segements for reference comp
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -227,7 +228,7 @@ score_out <- samp.scores %>% select(ProbeName,segment_label,norm)
 score_tum <- score_out[`segment_label` == 'tumor']
 score_str <- score_out[`segment_label` == 'stroma']
 
-g <- tableGrob(score_tum[1:38,1:3], rows = NULL, theme = tt)
+g <- tableGrob(score_tum[1:34,1:3], rows = NULL, theme = tt)
 g <- gtable_add_grob(g,
                      grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                      t = 2, b = nrow(g), l = 1, r = ncol(g))
@@ -235,7 +236,7 @@ g <- gtable_add_grob(g,
                      grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                      t = 1, l = 1, r = ncol(g))
 
-g1 <- tableGrob(score_tum[39:76,1:3], rows = NULL, theme = tt)
+g1 <- tableGrob(score_tum[35:68,1:3], rows = NULL, theme = tt)
 g1 <- gtable_add_grob(g1,
                       grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                       t = 2, b = nrow(g1), l = 1, r = ncol(g1))
@@ -248,7 +249,7 @@ grid.newpage()
 grid.draw(haligned)
 
 if (nrow(score_str) > 0) {
-  g <- tableGrob(score_str[1:38,1:3], rows = NULL, theme = tt)
+  g <- tableGrob(score_str[1:34,1:3], rows = NULL, theme = tt)
   g <- gtable_add_grob(g,
                        grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                        t = 2, b = nrow(g), l = 1, r = ncol(g))
@@ -256,7 +257,7 @@ if (nrow(score_str) > 0) {
                        grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                        t = 1, l = 1, r = ncol(g))
 
-  g1 <- tableGrob(score_str[39:76,1:3], rows = NULL, theme = tt)
+  g1 <- tableGrob(score_str[35:68,1:3], rows = NULL, theme = tt)
   g1 <- gtable_add_grob(g1,
                         grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                         t = 2, b = nrow(g1), l = 1, r = ncol(g1))
