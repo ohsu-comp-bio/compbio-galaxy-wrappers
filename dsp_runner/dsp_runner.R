@@ -97,7 +97,7 @@ tma.meta[,lower_sample:=tolower(sample_id)]
 stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
 
 tma.meta <- merge(tma.meta, control.type[,.(lower_sample=lower_secondary, name, type)], by="lower_sample", all=F)
-stopifnot(tma.meta[,.N,by=batch][,all(N==14)])
+stopifnot(tma.meta[,.N,by=batch][,all(N==19)])
 #tma.meta <- tma.meta[`batch` %in% good_tma | `batch` %in% runid]
 tma.abund <- abund.mat[,tma.meta$barcode]
 
