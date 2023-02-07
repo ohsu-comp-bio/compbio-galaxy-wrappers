@@ -1,4 +1,4 @@
-# Current Version: 1.0.1
+# Current Version: 1.0.2
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -6,6 +6,7 @@
 # 0.9.7 - BC: edit intermediate .RData filenames for general usage
 # 1.0.0 - edits to support new TMA, removed extra igg_info input, fixed table output
 # 1.0.1 - handle situations where there are only segment 1 segements for reference comp
+# 1.0.2 - groups Ab boxplots by 4 to a page, give args actual names
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -41,6 +42,12 @@ ab_info <- args[5]
 low_probes <- args[6]
 control_type <- args[7]
 dsp_meta <- args[8]
+
+# Output options
+exp.out <- args[9]
+seg.proc.out <- args[10]
+melt.tma.out <- args[11]
+report.out <- args[12]
 
 # Set constants
 exp.regex <- "[0-9]{8}-[0-9]{2}"
@@ -108,7 +115,7 @@ exp.meta[rm_croi == T,.(`Segment (Name/ Label)`, batch, sample_id, croi, max_cor
 exp.meta <- exp.meta[rm_croi == F]
 exp.abund <- abund.mat[, exp.meta$barcode]
 #at this point save the metadata and raw abundance
-save(exp.meta, exp.abund, tma.abund, tma.meta, file=paste0(args[9]))
+save(exp.meta, exp.abund, tma.abund, tma.meta, file=paste0(exp.out))
 
 ### Normalization and summarization of cohort
 # Determine relevant samples / batches and compute normalization factors
@@ -149,7 +156,7 @@ sapply(names(segment.proc), function(x){
 my.meta <- my.meta[!duplicated(cbind(`Segment (Name/ Label)`, Specimen.ID, num_batch, code)),]
 #Here define reference vs experimental
 my.meta[cohort==coh,Best_Response:="Ref"]
-save(my.meta, segment.proc, file=paste0(args[10]))
+save(my.meta, segment.proc, file=paste0(seg.proc.out))
 
 # Form antibody scores as the quantiles relevant to reference cohort
 ref_samps <- my.meta[Best_Response == "Ref",unique(sample_id)]
@@ -212,7 +219,7 @@ melt.tma$year<- substr(melt.tma$batch, 5, 8)
 # Create combined name_ProbeName column
 melt.tma$name_ProbeName<- str_c(melt.tma$name,'_',melt.tma$ProbeName)
 # Write out csv for Westgard rules script in Galaxy wf
-write.csv(melt.tma, file=paste0(args[11]), row.names=F)
+write.csv(melt.tma, file=paste0(melt.tma.out), row.names=F)
 
 ref.batches <- melt.tma[batch != runid]
 cur.batch <- melt.tma[batch == runid]
@@ -226,7 +233,7 @@ samp.scores$patient_ord <- droplevels(samp.scores$patient_ord, except=my_samp)
 
 # Overall Plots
 plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund, coh)
-pdf(file=paste0(args[12]), width=16, height=16)
+pdf(file=paste0(report.out), width=16, height=16)
 
 for (tums in names(plot.list)){
   show(plot.list[[tums]])
@@ -281,17 +288,44 @@ if (nrow(score_str) > 0) {
 
 }
 
-for (ab in clia_abs){
+for (i in seq(1,length(clia_abs), by=4)){
 
-  print(ab)
-  q.plot <- ggplot(data=ref.batches[ProbeName == ab], mapping=aes(x=name, y=abundance)) +
-    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),linewidth=3, height=0, width=.15) +
-    geom_jitter(data=cur.batch[ProbeName == ab], linewidth=3, width=.15, height=0) +
+  print(clia_abs[i])
+  q1.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i]], mapping=aes(x=name, y=abundance)) +
+    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15) +
+    geom_jitter(data=cur.batch[ProbeName == clia_abs[i]], size=3, width=.15, height=0) +
     scale_color_manual(values=setNames(use.pal, unique(dsp.meta$batch)), name="Previous Batches") +
-    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", ab, "                Run ID: ", runid))
+    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i], "                Run ID: ", runid))
 
-  plot(q.plot)
+  if ((i+1)<=length(clia_abs)){
+  print(clia_abs[i+1])
+  q2.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+1]], mapping=aes(x=name, y=abundance)) +
+    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15) +
+    geom_jitter(data=cur.batch[ProbeName == clia_abs[i+1]], size=3, width=.15, height=0) +
+    scale_color_manual(values=setNames(use.pal, unique(dsp.meta$batch)), name="Previous Batches") +
+    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+1], "                Run ID: ", runid))
+  }
 
+  if ((i+2)<=length(clia_abs)){
+  print(clia_abs[i+2])
+  q3.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+2]], mapping=aes(x=name, y=abundance)) +
+    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15) +
+    geom_jitter(data=cur.batch[ProbeName == clia_abs[i+2]], size=3, width=.15, height=0) +
+    scale_color_manual(values=setNames(use.pal, unique(dsp.meta$batch)), name="Previous Batches") +
+    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+2], "                Run ID: ", runid))
+  }
+
+  if ((i+3)<=length(clia_abs)){
+  print(clia_abs[i+3])
+  q4.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+3]], mapping=aes(x=name, y=abundance)) +
+    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15) +
+    geom_jitter(data=cur.batch[ProbeName == clia_abs[i+3]], size=3, width=.15, height=0) +
+    scale_color_manual(values=setNames(use.pal, unique(dsp.meta$batch)), name="Previous Batches") +
+    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+3], "                Run ID: ", runid))
+  }
+
+  plots <- grid.arrange(q1.plot, q2.plot, q3.plot, q4.plot, nrow=2, ncol=2)
+  plot(plots)
 }
 
 dev.off()
