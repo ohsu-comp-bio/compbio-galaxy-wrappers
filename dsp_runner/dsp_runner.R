@@ -154,9 +154,15 @@ save(my.meta, segment.proc, file=paste0(args[10]))
 # Form antibody scores as the quantiles relevant to reference cohort
 ref_samps <- my.meta[Best_Response == "Ref",unique(sample_id)]
 ref_samps <- ref_samps[!ref_samps %in% my_samp]
-quant.list <- score_abs(segment.proc, ref.samples=ref_samps ,score.type="quant")
-#combine
-pat.quants <- rbindlist(lapply(quant.list, "[[", "scores"), idcol="Segment (Name/ Label)")
+# If there is no ref data for segment 3 (sarcomas) then we'll just look at segment 1.
+if (all(unique(my.meta[`sample_id` %in% ref_samps]$`Segment (Name/ Label)`) == "Segment 1")) {
+  quant.list <- score_abs(segment.proc$`Segment 1`, ref.samples=ref_samps, stroma=F,score.type="quant")
+  pat.quants <- quant.list$scores[,"Segment (Name/ Label)":="Segment 1"]
+}else{
+  quant.list <- score_abs(segment.proc, ref.samples=ref_samps, stroma=T,score.type="quant")
+  #combine
+  pat.quants <- rbindlist(lapply(quant.list, "[[", "scores"), idcol="Segment (Name/ Label)")
+}
 my.scores <- merge(my.meta, pat.quants, by=c("Segment (Name/ Label)", "avg_barcode"))
 # JHL: In the case of identical sample id's, get rid of the one that we are not currently analyzing.
 my.scores <- my.scores[!(`sample_id` == my_samp & `num_batch` != runid)]
@@ -177,7 +183,11 @@ my.scores[,sample_ord:=sample_id]
 pt.ord <- my.scores[,.N,by=.(comb_id, Best_Response)][order(Best_Response)]
 my.scores[,patient_ord:=factor(comb_id, levels=pt.ord$comb_id, ordered=T)]
 #output abundance for reference samples
-ref.abund <- rbindlist(lapply(quant.list, "[[", "ref_abund"), idcol="Segment (Name/ Label)")
+if (all(unique(my.meta[`sample_id` %in% ref_samps]$`Segment (Name/ Label)`) == "Segment 1")) {
+  ref.abund <- quant.list$ref_abund[,"Segment (Name/ Label)":="Segment 1"]
+}else{
+  ref.abund <- rbindlist(lapply(quant.list, "[[", "ref_abund"), idcol="Segment (Name/ Label)")
+}
 ref.abund[,segment_label:=ifelse(`Segment (Name/ Label)` == "Segment 1", "tumor", "stroma")]
 ref.abund <- merge(use.paths[,.(ab_ord, ProbeName, path_ord)], ref.abund, by="ProbeName", all=F)
 

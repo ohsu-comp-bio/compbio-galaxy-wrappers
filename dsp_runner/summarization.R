@@ -234,7 +234,7 @@ preprocess_dsp_tma <- function(tma.meta, tma.mat, exp.meta, exp.mat, igg.map=NUL
 #' @import matrixStats
 #' @import data.table
 #' @export
-score_abs <- function(norm.list, ref.samples=NULL, score.type=c("quant", "rscore")){
+score_abs <- function(norm.list, ref.samples=NULL, stroma=T, score.type=c("quant", "rscore")){
   
   score.type <- match.arg(score.type)
   
@@ -246,8 +246,46 @@ score_abs <- function(norm.list, ref.samples=NULL, score.type=c("quant", "rscore
     no.ref <- T
   }
   
-  lapply(norm.list, function(nl){
-    
+  if (stroma){
+    lapply(norm.list, function(nl){
+
+      if (no.ref){
+        tmp.ref <- nl$avg_abund
+        tmp.exp <- nl$avg_abund
+      }else{
+        tmp.ref <- nl$avg_abund[,nl$meta[sample_id %in% ref.samples,avg_barcode],drop=F]
+        tmp.exp <- nl$avg_abund[,nl$meta[sample_id %in% ref.samples == F,avg_barcode],drop=F]
+      }
+
+      if (score.type == "quant"){
+
+        tmp.interp <- quant_func(tmp.ref)
+
+        tmp.quants <- get_quants(tmp.interp, tmp.exp)
+        names(tmp.quants)[2] <- "avg_barcode"
+
+      }else{
+
+        #add in robust zscore as an alternative
+        #https://stats.stackexchange.com/questions/523865/calculating-robust-z-scores-with-median-and-mad
+
+        ref.mstats <- data.table(ProbeName=rownames(tmp.ref), mads=rowMads(tmp.ref, constant=1), medians=rowMedians(tmp.ref))
+
+        tmp.quants <- setNames(data.table(reshape2::melt(tmp.exp, as.is=T)), c("ProbeName", "avg_barcode","norm"))
+        tmp.quants <- merge(tmp.quants, ref.mstats, by="ProbeName")
+        tmp.quants[,rscore:=(norm-medians)/mads]
+        tmp.quants[,`:=`( mads=NULL, medians=NULL)]
+
+      }
+
+      list(
+        scores=tmp.quants,
+        ref_abund=setNames(data.table(reshape2::melt(tmp.ref, as.is=T)), c("ProbeName", "avg_barcode","norm"))
+      )
+
+    })
+  }else{
+    nl <- norm.list
     if (no.ref){
       tmp.ref <- nl$avg_abund
       tmp.exp <- nl$avg_abund
@@ -255,35 +293,34 @@ score_abs <- function(norm.list, ref.samples=NULL, score.type=c("quant", "rscore
       tmp.ref <- nl$avg_abund[,nl$meta[sample_id %in% ref.samples,avg_barcode],drop=F]
       tmp.exp <- nl$avg_abund[,nl$meta[sample_id %in% ref.samples == F,avg_barcode],drop=F]
     }
-    
+
     if (score.type == "quant"){
-      
+
       tmp.interp <- quant_func(tmp.ref)
-      
+
       tmp.quants <- get_quants(tmp.interp, tmp.exp)
       names(tmp.quants)[2] <- "avg_barcode"
-      
+
     }else{
-      
+
       #add in robust zscore as an alternative
       #https://stats.stackexchange.com/questions/523865/calculating-robust-z-scores-with-median-and-mad
-      
+
       ref.mstats <- data.table(ProbeName=rownames(tmp.ref), mads=rowMads(tmp.ref, constant=1), medians=rowMedians(tmp.ref))
-      
+
       tmp.quants <- setNames(data.table(reshape2::melt(tmp.exp, as.is=T)), c("ProbeName", "avg_barcode","norm"))
       tmp.quants <- merge(tmp.quants, ref.mstats, by="ProbeName")
       tmp.quants[,rscore:=(norm-medians)/mads]
       tmp.quants[,`:=`( mads=NULL, medians=NULL)]
-                             
+
     }
-    
+
     list(
       scores=tmp.quants,
       ref_abund=setNames(data.table(reshape2::melt(tmp.ref, as.is=T)), c("ProbeName", "avg_barcode","norm"))
     )
-    
-  })
-      
+
+  }
 }
 
 
