@@ -129,15 +129,31 @@ delta.ridge <- ggplot(data=comb.deltas, mapping=aes(x=delta, y=ab_fac, fill = fa
 ggsave(delta.ridge, width=7, height=7, file=paste0(delta.ridge.out))
 #delta.ridge
 
-
+# Form antibody scores as the quantiles relevant to reference cohort
 ref_samps <- my.meta[Best_Response == "Ref",unique(sample_id)]
 ref_samps <- ref_samps[!ref_samps %in% my_samp]
-quant.list <- score_abs(segment.proc, ref.samples=ref_samps ,score.type="quant")
-#combine
-pat.quants <- rbindlist(lapply(quant.list, "[[", "scores"), idcol="Segment (Name/ Label)")
+# If there is no ref data for segment 3 (sarcomas) then we'll just look at segment 1.
+if (all(unique(my.meta[`sample_id` %in% ref_samps]$`Segment (Name/ Label)`) == "Segment 1")) {
+  quant.list <- score_abs(segment.proc$`Segment 1`, ref.samples=ref_samps, stroma=F,score.type="quant")
+  pat.quants <- quant.list$scores[,"Segment (Name/ Label)":="Segment 1"]
+}else{
+  quant.list <- score_abs(segment.proc, ref.samples=ref_samps, stroma=T,score.type="quant")
+  #combine
+  pat.quants <- rbindlist(lapply(quant.list, "[[", "scores"), idcol="Segment (Name/ Label)")
+}
 my.scores <- merge(my.meta, pat.quants, by=c("Segment (Name/ Label)", "avg_barcode"))
 # JHL: In the case of identical sample id's, get rid of the one that we are not currently analyzing.
 my.scores <- my.scores[!(`sample_id` == my_samp & `num_batch` != runid)]
+
+# ref_samps <- my.meta[Best_Response == "Ref",unique(sample_id)]
+# ref_samps <- ref_samps[!ref_samps %in% my_samp]
+# quant.list <- score_abs(segment.proc, ref.samples=ref_samps ,score.type="quant")
+# #combine
+# pat.quants <- rbindlist(lapply(quant.list, "[[", "scores"), idcol="Segment (Name/ Label)")
+# my.scores <- merge(my.meta, pat.quants, by=c("Segment (Name/ Label)", "avg_barcode"))
+# # JHL: In the case of identical sample id's, get rid of the one that we are not currently analyzing.
+# my.scores <- my.scores[!(`sample_id` == my_samp & `num_batch` != runid)]
+
 #getting pathways in order
 use.paths <- paths[analysis_pathway %in% c("Expression Controls", "N/A")==F]
 use.paths[analysis_pathway == "Tumor Markers", analysis_pathway:="Other Markers"]
