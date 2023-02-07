@@ -145,15 +145,6 @@ my.scores <- merge(my.meta, pat.quants, by=c("Segment (Name/ Label)", "avg_barco
 # JHL: In the case of identical sample id's, get rid of the one that we are not currently analyzing.
 my.scores <- my.scores[!(`sample_id` == my_samp & `num_batch` != runid)]
 
-# ref_samps <- my.meta[Best_Response == "Ref",unique(sample_id)]
-# ref_samps <- ref_samps[!ref_samps %in% my_samp]
-# quant.list <- score_abs(segment.proc, ref.samples=ref_samps ,score.type="quant")
-# #combine
-# pat.quants <- rbindlist(lapply(quant.list, "[[", "scores"), idcol="Segment (Name/ Label)")
-# my.scores <- merge(my.meta, pat.quants, by=c("Segment (Name/ Label)", "avg_barcode"))
-# # JHL: In the case of identical sample id's, get rid of the one that we are not currently analyzing.
-# my.scores <- my.scores[!(`sample_id` == my_samp & `num_batch` != runid)]
-
 #getting pathways in order
 use.paths <- paths[analysis_pathway %in% c("Expression Controls", "N/A")==F]
 use.paths[analysis_pathway == "Tumor Markers", analysis_pathway:="Other Markers"]
