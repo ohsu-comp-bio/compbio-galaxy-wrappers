@@ -1,6 +1,6 @@
 # VERSION: 1.0.1
 # Version history
-# 1.0.1 - Named all arguments, reformatting
+# 1.0.1 - Named all arguments, reformatting, allow for reference to contain only segment 1
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
