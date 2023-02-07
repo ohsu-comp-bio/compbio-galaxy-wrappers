@@ -1,4 +1,6 @@
-# VERSION: 0.9.5
+# VERSION: 1.0.1
+# Version history
+# 1.0.1 - Named all arguments, reformatting, allow for reference to contain only segment 1
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -22,41 +24,26 @@ source('summarization.R')
 ### START ARGS
 args <- commandArgs(trailingOnly=TRUE)
 my_samp <- args[1]
-my_samp_compare <- args[15]
-runid <- args[2]
-runid_compare <- args[16]
-coh <- args[3]
+my_samp_compare <- args[2]
+runid <- args[3]
+runid_compare <- args[4]
 
 # Metadata filepaths
-ab_info <- args[4]
-low_probes <- args[5]
-control_type <- args[6]
-dsp_meta <- args[7]
-igg_info <- args[8]
-selected_pos <- args[9]
-pos_cntrls <- args[10]
+ab_info <- args[5]
+selected_pos <- args[6]
+pos_cntrls <- args[7]
 
+# dsp_runner intermediates
+exp.out <- args[8]
+seg.proc.out <- args[9]
 
-# Load dsp_runner intermediates
-load(args[11])
-load(args[12])
+# Output files
+delta.ridge.out <- args[10]
+plot.out <- args[11]
 
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
-igg.info <- data.table(openxlsx::read.xlsx(igg_info))
-exp.low <- data.table(openxlsx::read.xlsx(low_probes, colNames=F))
-control.type <- data.table(openxlsx::read.xlsx(control_type, startRow=2))
-stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
-dsp.meta <- data.table(read.xlsx(dsp_meta))
-
-# Set constants
-exp.regex <- "[0-9]{8}"
-clia_abs <- c("c-Myc", "Ki-67", "Cyclin E1", "Cyclin D1", "Cyclin B1", "ATR_pS428", "ATM (phospho S1981)",
-              "PARP", "Cleaved Caspase 9", "CD95/Fas", "BIM", "BCLXL", "BCL6", "Bcl-2", "BAD",
-              "Pan-AKT", "PTEN", "Phospho-PRAS40 (T246)", "PLCG1", "INPP4B", "Phospho-GSK3B (S9)", "Phospho-AKT1 (S473)",
-              "pan-RAS", "p44/42 MAPK ERK1/2", "Phospho-p90 RSK  (T359/S363)", "MET", "Phospho-MEK1 (S217/S221)", "Phospho-p44/42 MAPK ERK1/2 (T202/Y204)", "HER2_p1248", "Her2", "EGFR", "Phospho-c-RAF (S338)", "BRAF",
-              "p53", "Phospho-p38 MAPK (T180/Y182)", "PR", "Phospho-JNK (T183/Y185)", "ER-alpha", "Androgen Receptor", "ARID1A",
-              "PD-L1", "CD8", "CD68", "CD4", "CD3", "CD20", "Beta-2-microglobulin")
-
+load(exp.out)
+load(seg.proc.out)
 
 ## Pairwise Delta Distribution from RUV Normalized TMA
 tma.meta[,tmpval:=1]
@@ -139,19 +126,25 @@ delta.ridge <- ggplot(data=comb.deltas, mapping=aes(x=delta, y=ab_fac, fill = fa
   ) +
   facet_wrap(~type) +
   theme_bw() + ylab("") + xlab("Delta")
-ggsave(delta.ridge, width=7, height=7, file=paste0(args[13]))
+ggsave(delta.ridge, width=7, height=7, file=paste0(delta.ridge.out))
 #delta.ridge
 
-
+# Form antibody scores as the quantiles relevant to reference cohort
 ref_samps <- my.meta[Best_Response == "Ref",unique(sample_id)]
 ref_samps <- ref_samps[!ref_samps %in% my_samp]
-quant.list <- score_abs(segment.proc, ref.samples=ref_samps ,score.type="quant")
-#combine
-pat.quants <- rbindlist(lapply(quant.list, "[[", "scores"), idcol="Segment (Name/ Label)")
+# If there is no ref data for segment 3 (sarcomas) then we'll just look at segment 1.
+if (all(unique(my.meta[`sample_id` %in% ref_samps]$`Segment (Name/ Label)`) == "Segment 1")) {
+  quant.list <- score_abs(segment.proc$`Segment 1`, ref.samples=ref_samps, stroma=F,score.type="quant")
+  pat.quants <- quant.list$scores[,"Segment (Name/ Label)":="Segment 1"]
+}else{
+  quant.list <- score_abs(segment.proc, ref.samples=ref_samps, stroma=T,score.type="quant")
+  #combine
+  pat.quants <- rbindlist(lapply(quant.list, "[[", "scores"), idcol="Segment (Name/ Label)")
+}
 my.scores <- merge(my.meta, pat.quants, by=c("Segment (Name/ Label)", "avg_barcode"))
 # JHL: In the case of identical sample id's, get rid of the one that we are not currently analyzing.
 my.scores <- my.scores[!(`sample_id` == my_samp & `num_batch` != runid)]
-#stopifnot(my.scores[,.N] == pat.quants[,.N])
+
 #getting pathways in order
 use.paths <- paths[analysis_pathway %in% c("Expression Controls", "N/A")==F]
 use.paths[analysis_pathway == "Tumor Markers", analysis_pathway:="Other Markers"]
@@ -162,10 +155,8 @@ use.paths[,`:=`(path_ord=factor(analysis_pathway, levels=path.ord, ordered=T),
 
 my.scores <- merge(use.paths[,.(ab_ord, ProbeName, path_ord)], my.scores, by="ProbeName", all=F)
 my.scores[,comb_id:=Specimen.ID]
-#my.scores[Participant.ID == smmart.id, comb_id:=smmart.id]
 #at this point add in segment labels
 my.scores[,segment_label:=ifelse(`Segment (Name/ Label)` == "Segment 1", "tumor", "stroma")]
-#my.scores[,sample_ord:=factor(code, levels=c("pre", "tx"), ordered=T)]
 
 my.scores[,sample_ord:=sample_id]
 
@@ -215,5 +206,5 @@ t9.plot <- ggplot(data=t9.cd, mapping=aes(x=delta)) +
   geom_text_repel(data=t9.cast[ProbeName %in% t9.delta[,ProbeName]], mapping=aes(y=1, x=delta, label=paste0(round(delta, 2), " (", round(perc, 2), ")"))) +
   theme_bw() + ylab("") + xlab("Delta (Bx2 - Bx1)") +
   theme(strip.text.y=element_text(angle=0), axis.text.y=element_blank(), axis.ticks.y=element_blank())
-ggsave(t9.plot, file=paste0(args[14]), width=14, height=8)
+ggsave(t9.plot, file=paste0(plot.out), width=14, height=8)
 t9.plot

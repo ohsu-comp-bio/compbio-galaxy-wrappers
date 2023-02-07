@@ -1,4 +1,4 @@
-<tool id="dsp_delta" name="Nanostring DSP Pairwise Comparisons" version="0.9.5" >
+<tool id="dsp_delta" name="Nanostring DSP Pairwise Comparisons" version="1.0.1" >
     <description>Performs pairwise comparisons between multiple DSP specimens for tumor/stromal regions</description>
 
     <requirements>
@@ -24,32 +24,23 @@
        ln -s $__tool_directory__/plots.R &&
        ln -s $__tool_directory__/summarization.R &&
        ln -s "$ab_info" ab_info.xlsx &&
-       ln -s "$low_probes" low_probes.xlsx &&
-       ln -s "$control_type" control_type.xlsx &&
-       ln -s "$dsp_meta" dsp_meta.xlsx &&
-       ln -s "$igg_info" igg_info.xlsx &&
        ln -s "$selected_pos" selected_pos.xlsx &&
        ln -s "$pos_cntrl" pos_cntrl.xlsx &&
        ln -s "$plot1" plot1.pdf &&
        ln -s "$plot2" plot2.pdf &&
-       Rscript $__tool_directory__/dsp_delta.R "$sample_id" "$run_id" "$coh" ab_info.xlsx low_probes.xlsx control_type.xlsx dsp_meta.xlsx igg_info.xlsx selected_pos.xlsx pos_cntrl.xlsx $dsp_abund_meta $dsp_proc_data plot1.pdf plot2.pdf "$sample_id_compare" "$run_id_compare"
+       Rscript $__tool_directory__/dsp_delta.R "$sample_id" "$sample_id_compare" "$run_id" "$run_id_compare" ab_info.xlsx  selected_pos.xlsx pos_cntrl.xlsx $dsp_abund_meta $dsp_proc_data plot1.pdf plot2.pdf
     ]]></command>
 
     <inputs>
         <param name="sample_id" type="text" label="Sample ID" help=""/>
+        <param name="sample_id_compare" type="text" label="Sample ID (Compare)" help=""/>
         <param name="run_id" type="text" label="Run ID" help=""/>
-        <param name="coh" type="text" label="Cohort" help=""/>
+        <param name="run_id_compare" type="text" label="Run ID (Compare)" help=""/>
         <param name="ab_info" type="data" format="xlsx" label="GeoMx antibodies xlsx file" help=""/>
-        <param name="low_probes" type="data" format="xlsx" label="Low probes xlsx file" help=""/>
-        <param name="control_type" type="data" format="xlsx" label="Control type xlsx file" help=""/>
-        <param name="dsp_meta" type="data" format="xlsx" label="DSP metadata xlsx file" help=""/>
-        <param name="igg_info" type="data" format="xlsx" label="Antibodies xlsx file" help=""/>
         <param name="selected_pos" type="data" format="xlsx" label="Selected Positive Cell Lines" help=""/>
         <param name="pos_cntrl" type="data" format="xlsx" label="Positive Controls" help=""/>
         <param name="dsp_abund_meta" type="data" format="rdata"/>
         <param name="dsp_proc_data" type="data" format="rdata"/>
-        <param name="sample_id_compare" type="text" label="Sample ID (Compare)" help=""/>
-        <param name="run_id_compare" type="text" label="Run ID (Compare)" help=""/>
     </inputs>
 
     <outputs>
