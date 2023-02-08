@@ -1,7 +1,7 @@
 # VERSION: 1.0.2
 # Version history
 # 1.0.1 - Named all arguments, reformatting, allow for reference to contain only segment 1
-# 1.0.2 - Use after_stat instead of stat(quantile) per deprecation msg
+# 1.0.2 - Use after_stat instead of stat(quantile) per deprecation msg, exclude comp samp from ref_samps
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -133,6 +133,7 @@ ggsave(delta.ridge, width=7, height=7, file=paste0(delta.ridge.out))
 # Form antibody scores as the quantiles relevant to reference cohort
 ref_samps <- my.meta[Best_Response == "Ref",unique(sample_id)]
 ref_samps <- ref_samps[!ref_samps %in% my_samp]
+ref_samps <- ref_samps[!ref_samps %in% my_samp_compare]
 # If there is no ref data for segment 3 (sarcomas) then we'll just look at segment 1.
 if (all(unique(my.meta[`sample_id` %in% ref_samps]$`Segment (Name/ Label)`) == "Segment 1")) {
   quant.list <- score_abs(segment.proc$`Segment 1`, ref.samples=ref_samps, stroma=F,score.type="quant")
