@@ -7,6 +7,7 @@
 # 1.0.0 - edits to support new TMA, removed extra igg_info input, fixed table output
 # 1.0.1 - handle situations where there are only segment 1 segements for reference comp
 # 1.0.2 - groups Ab boxplots by 4 to a page, give args actual names
+# 1.0.3 - cleans up Ab plots to make x-axis legible and remove legends
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -292,38 +293,37 @@ for (i in seq(1,length(clia_abs), by=4)){
 
   print(clia_abs[i])
   q1.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i]], mapping=aes(x=name, y=abundance)) +
-    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15) +
+    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
     geom_jitter(data=cur.batch[ProbeName == clia_abs[i]], size=3, width=.15, height=0) +
-    scale_color_manual(values=setNames(use.pal, unique(dsp.meta$batch)), name="Previous Batches") +
-    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i], "                Run ID: ", runid))
+    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i])) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 3))
 
   if ((i+1)<=length(clia_abs)){
   print(clia_abs[i+1])
   q2.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+1]], mapping=aes(x=name, y=abundance)) +
-    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15) +
+    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
     geom_jitter(data=cur.batch[ProbeName == clia_abs[i+1]], size=3, width=.15, height=0) +
-    scale_color_manual(values=setNames(use.pal, unique(dsp.meta$batch)), name="Previous Batches") +
-    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+1], "                Run ID: ", runid))
+    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+1])) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
 
   if ((i+2)<=length(clia_abs)){
   print(clia_abs[i+2])
   q3.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+2]], mapping=aes(x=name, y=abundance)) +
-    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15) +
+    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
     geom_jitter(data=cur.batch[ProbeName == clia_abs[i+2]], size=3, width=.15, height=0) +
-    scale_color_manual(values=setNames(use.pal, unique(dsp.meta$batch)), name="Previous Batches") +
-    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+2], "                Run ID: ", runid))
+    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+2])) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
 
   if ((i+3)<=length(clia_abs)){
   print(clia_abs[i+3])
   q4.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+3]], mapping=aes(x=name, y=abundance)) +
-    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15) +
+    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
     geom_jitter(data=cur.batch[ProbeName == clia_abs[i+3]], size=3, width=.15, height=0) +
-    scale_color_manual(values=setNames(use.pal, unique(dsp.meta$batch)), name="Previous Batches") +
-    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+3], "                Run ID: ", runid))
+    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+3])) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
-
   plots <- grid.arrange(q1.plot, q2.plot, q3.plot, q4.plot, nrow=2, ncol=2)
   plot(plots)
 }
