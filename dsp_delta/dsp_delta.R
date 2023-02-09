@@ -1,7 +1,8 @@
-# VERSION: 1.0.2
+# VERSION: 1.0.3
 # Version history
 # 1.0.1 - Named all arguments, reformatting, allow for reference to contain only segment 1
 # 1.0.2 - Use after_stat instead of stat(quantile) per deprecation msg, exclude comp samp from ref_samps
+# 1.0.3 - Added tabular representation (.csv) of pairwise deltas
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -41,6 +42,7 @@ seg.proc.out <- args[9]
 # Output files
 delta.ridge.out <- args[10]
 plot.out <- args[11]
+table.out <- args[12]
 
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
 load(exp.out)
@@ -210,3 +212,15 @@ t9.plot <- ggplot(data=t9.cd, mapping=aes(x=delta)) +
   theme(strip.text.y=element_text(angle=0), axis.text.y=element_blank(), axis.ticks.y=element_blank())
 ggsave(t9.plot, file=paste0(plot.out), width=14, height=8)
 t9.plot
+
+#Data table with results for each Probe
+score_out <- t9.cast %>% dplyr::select("ProbeName", "segment_label")
+score_out <- cbind(score_out, t9.cast$Specimen_ID, t9.cast$Specimen_ID_compare)
+score_out <- cbind(score_out, t9.cast$delta, t9.cast$low, t9.cast$status)
+colnames(score_out) <- c("ProbeName", "segment_label", my_samp, my_samp_compare, "delta", "low", "status")
+
+score_out<- score_out %>% mutate(across(3:6, round, 2)) %>%
+  rename("Region"="segment_label", "Protein"="ProbeName", "Delta"="delta", "Threshold"="low", "Interpretation"="status") %>%
+  mutate(Threshold = abs(Threshold)) %>%
+  mutate(Interpretation = ifelse(Interpretation == "neither", "indeterminate", Interpretation))
+write.csv(score_out, table.out)
