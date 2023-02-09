@@ -8,6 +8,7 @@
 # 1.0.1 - handle situations where there are only segment 1 segements for reference comp
 # 1.0.2 - groups Ab boxplots by 4 to a page, give args actual names
 # 1.0.3 - cleans up Ab plots to make x-axis legible and remove legends
+# 1.0.4 - corrected duplicate Ab plot pages
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -324,8 +325,7 @@ for (i in seq(1,length(clia_abs), by=4)){
     theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+3])) +
     scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
-  plots <- grid.arrange(q1.plot, q2.plot, q3.plot, q4.plot, nrow=2, ncol=2)
-  plot(plots)
+  grid.arrange(q1.plot, q2.plot, q3.plot, q4.plot)
 }
 
 dev.off()
