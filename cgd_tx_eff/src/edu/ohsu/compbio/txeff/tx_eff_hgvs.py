@@ -146,6 +146,18 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
     
     for hgvs_transcript in tx_list:
         try:
+            variant_transcript = VariantTranscript(variant.chromosome, variant.position, variant.reference, variant.alt)
+            
+            # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function. 
+            transcript_detail = hdp.get_tx_info(hgvs_transcript[0], hgvs_transcript[1], 'splign')
+            variant_transcript.hgnc_gene = transcript_detail['hgnc']
+            
+            # Non-coding transcripts (prefx NR_) cause HGVS to throw an exception when determining c. and p. 
+            # But instead of giving up on the transcript altogether, the transcript is saved with transcript name and gene only. 
+            if hgvs_transcript[0].startswith('NR_'):
+                variant_transcript.refseq_transcript = hgvs_transcript[0] 
+                
+            # Determine c. and p.. Non coding transcripts will throw an error. See first exception caught below. 
             var_c = am.g_to_c(var_g, str(hgvs_transcript[0]))
             var_p = am.c_to_p(var_c)
             
@@ -154,13 +166,9 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
             var_p1 = var_p.format(conf={"p_3_letter": False}).replace(var_p.ac+':','')
             var_p3 = var_p.format(conf={"p_3_letter": True}).replace(var_p.ac+':','')
             c_dot = var_c.type +'.' + str(var_c.posedit)
-
-            variant_transcript = VariantTranscript(variant.chromosome, variant.position, variant.reference, variant.alt)
-            variant_type = None
             
-            # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function. 
-            transcript_detail = hdp.get_tx_info(hgvs_transcript[0], hgvs_transcript[1], 'splign')
-            variant_transcript.hgnc_gene = transcript_detail['hgnc'] 
+            # HGVS doesrn't provide a variant type. 
+            variant_type = None
             
             # The amino acid position only exists for certain types of variants.             
             if var_p3 == 'p.?':
@@ -172,10 +180,6 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
                 variant_transcript.hgvs_amino_acid_position = var_p.posedit.pos.start.pos
             
             variant_transcript.hgvs_base_position = var_c.posedit.pos.start.base
-            
-            # jDebug
-            if variant_transcript.hgvs_base_position and type(variant_transcript.hgvs_base_position) is not int:
-                print(variant_transcript.hgvs_base_position)
 
             variant_transcript.hgvs_c_dot = c_dot
             variant_transcript.hgvs_p_dot_one = var_p1
@@ -185,10 +189,13 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
             variant_transcript.protein_transcript = var_p.ac
             
             hgvs_transcripts.append(variant_transcript)
-        
+                 
         except HGVSUsageError as e:
             if("non-coding transcript" in e.args[0]):
-                logger.info(f"Error caused by non-coding transcript, skipping {variant}: %s", str(e))
+                logger.info(f"Error caused by non-coding transcript {variant}. Transcript will have name and gene only: %s", str(e))
+                
+                # Add the transcript even though an exception was thrown. At least we have the transcript+gene. 
+                hgvs_transcripts.append(variant_transcript)
             else:
                 raise(e)
         except HGVSInvalidVariantError as e:            
@@ -344,8 +351,8 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
         new_transcript.hgnc_gene = transcript_gene
     
     # c-dot
-    ## Use HGVS's c. because Annovar's is not always correct
-    assert hgvs_transcript.hgvs_c_dot != None, "The HGVS c. value is not supposed to be empty"
+    ## Use HGVS's c. because Annovar's is not always correct. Non-coding transcripts don't have a c. 
+    assert hgvs_transcript.hgvs_c_dot != None or hgvs_transcript.refseq_transcript.startswith('NR_'), "The HGVS c. value is not supposed to be empty"
     
     if hgvs_transcript.hgvs_c_dot != annovar_transcript.hgvs_c_dot:
         logger.debug(f"HGVS and Annovar do not agree on c_dot for {transcript_key}: {hgvs_transcript.hgvs_c_dot} != {annovar_transcript.hgvs_c_dot} ")
@@ -354,17 +361,17 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
         new_transcript.hgvs_c_dot = hgvs_transcript.hgvs_c_dot
     
     # p-dot (1L)
-    ## Use HGVS's p. because Annovar's is not always correct 
-    assert hgvs_transcript.hgvs_p_dot_one != None
+    ## Use HGVS's p. because Annovar's is not always correct. Non-coding transcripts don't have a p.
+    assert hgvs_transcript.hgvs_p_dot_one != None or hgvs_transcript.refseq_transcript.startswith('NR_')
     
     if hgvs_transcript.hgvs_p_dot_one != annovar_transcript.hgvs_p_dot_one:
         logger.debug(f"HGVS and Annovar do not agree on hgvs_p_dot_one for {transcript_key}: {hgvs_transcript.hgvs_p_dot_one} != {annovar_transcript.hgvs_p_dot_one} ")
 
     if _allow_merge(new_transcript.hgvs_p_dot_one, hgvs_transcript.hgvs_p_dot_one, transcript_key, 'hgvs_p_dot_one'):
         new_transcript.hgvs_p_dot_one = hgvs_transcript.hgvs_p_dot_one
-    
+
     # p-dot (3L)
-    assert hgvs_transcript.hgvs_p_dot_three != None
+    assert hgvs_transcript.hgvs_p_dot_three != None or hgvs_transcript.refseq_transcript.startswith('NR_')
 
     if hgvs_transcript.hgvs_p_dot_three != annovar_transcript.hgvs_p_dot_three:
         logger.debug(f"HGVS and Annovar do not agree on hgvs_p_dot_three for {transcript_key}: {hgvs_transcript.hgvs_p_dot_three} != {annovar_transcript.hgvs_p_dot_three} ")
@@ -400,7 +407,7 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
      
     # Protein Transcript
     ## Only HGVS provides protein transcript
-    assert hgvs_transcript.protein_transcript != None
+    assert hgvs_transcript.protein_transcript != None or hgvs_transcript.refseq_transcript.startswith('NR_')
     if _allow_merge(new_transcript.protein_transcript, hgvs_transcript.protein_transcript, transcript_key, 'protein_transcript'):
         new_transcript.protein_transcript = hgvs_transcript.protein_transcript
     
