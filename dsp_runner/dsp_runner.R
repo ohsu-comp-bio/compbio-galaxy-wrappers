@@ -1,4 +1,4 @@
-# Current Version: 1.0.2
+# Current Version: 1.0.3
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -8,7 +8,7 @@
 # 1.0.1 - handle situations where there are only segment 1 segements for reference comp
 # 1.0.2 - groups Ab boxplots by 4 to a page, give args actual names
 # 1.0.3 - cleans up Ab plots to make x-axis legible and remove legends
-# 1.0.4 - corrected duplicate Ab plot pages
+#       - fixed: corrected duplicate Ab plot pages
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
