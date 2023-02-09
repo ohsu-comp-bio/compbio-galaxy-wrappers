@@ -1,4 +1,4 @@
-<tool id="dsp_delta" name="Nanostring DSP Pairwise Comparisons" version="1.0.2" >
+<tool id="dsp_delta" name="Nanostring DSP Pairwise Comparisons" version="1.0.3" >
     <description>Performs pairwise comparisons between multiple DSP specimens for tumor/stromal regions</description>
 
     <requirements>
@@ -28,7 +28,8 @@
        ln -s "$pos_cntrl" pos_cntrl.xlsx &&
        ln -s "$plot1" plot1.pdf &&
        ln -s "$plot2" plot2.pdf &&
-       Rscript $__tool_directory__/dsp_delta.R "$sample_id" "$sample_id_compare" "$run_id" "$run_id_compare" ab_info.xlsx  selected_pos.xlsx pos_cntrl.xlsx $dsp_abund_meta $dsp_proc_data plot1.pdf plot2.pdf
+       ln -s "$delta_table" delta.csv &&
+       Rscript $__tool_directory__/dsp_delta.R "$sample_id" "$sample_id_compare" "$run_id" "$run_id_compare" ab_info.xlsx  selected_pos.xlsx pos_cntrl.xlsx $dsp_abund_meta $dsp_proc_data plot1.pdf plot2.pdf delta.csv
     ]]></command>
 
     <inputs>
@@ -46,6 +47,7 @@
     <outputs>
         <data name="plot1" format="pdf" label="${sample_id}_plot1.pdf"/>
         <data name="plot2" format="pdf" label="${sample_id}_plot2.pdf"/>
+        <data name="delta_table" format="csv" label="${sample_id}_delta_table.csv"/>
     </outputs>
 
     <tests>
