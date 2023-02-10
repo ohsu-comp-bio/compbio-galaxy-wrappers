@@ -77,9 +77,11 @@
 
       mkdir -p $move_dir &&
 
-      #if $move_type.add_samp_str
-        #set $samp_str = str($move_type.add_samp_str)
-        #set $move_location += $samp_str
+      #if $move_type.do_set_ss.set_ss_sel == "yes_set_ss"
+        #if $move_type.do_set_ss.add_samp_str
+            #set $samp_str = str($move_type.add_samp_str)
+            #set $move_location += $samp_str
+        #end if
       #end if
 
       #if $move_type.do_set_ext.set_ext_sel == "yes_set_ext"
@@ -239,13 +241,21 @@
 	            <param name="set_ext" type="text" label="File Extension" help="File extension to use for destination file." />
 	        </when>
 	    </conditional>
-	    <param name="add_samp_str" type="text" optional="true" label="Sample Suffix String" help="Include an additional string right after the sample id, ie. for FASTQ R1 and R2." >
-            <sanitizer>
-                <valid initial="string.ascii_letters,string.digits">
-                    <add value="_"/>
-                </valid>
-            </sanitizer>
-        </param>
+        <conditional name="do_set_ss">
+            <param name="set_ss_sel" type="select" label="Set SampleID String?" >
+	            <option value="no_set_ss" selected="true">Do not Add a SampleID String</option>
+	            <option value="yes_set_ss">Set SampleID String</option>
+            </param>
+            <when value="yes_set_ss">
+                <param name="add_samp_str" type="text" optional="true" label="Sample Suffix String" help="Include an additional string right after the sample id, ie. for FASTQ R1 and R2." >
+                    <sanitizer>
+                        <valid initial="string.ascii_letters,string.digits">
+                            <add value="_"/>
+                        </valid>
+                    </sanitizer>
+                </param>
+            </when>
+        </conditional>
         <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." >
             <sanitizer>
                 <valid initial="string.ascii_letters,string.digits">
