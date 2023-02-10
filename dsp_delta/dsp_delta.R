@@ -1,8 +1,9 @@
-# VERSION: 1.0.3
+# VERSION: 1.1.0
 # Version history
 # 1.0.1 - Named all arguments, reformatting, allow for reference to contain only segment 1
 # 1.0.2 - Use after_stat instead of stat(quantile) per deprecation msg, exclude comp samp from ref_samps
 # 1.0.3 - Added tabular representation (.csv) of pairwise deltas
+# 1.1.0 - Consolidated plots to one PDF file
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -15,6 +16,9 @@ suppressPackageStartupMessages(library(lubridate))
 suppressPackageStartupMessages(library(ggrepel))
 suppressPackageStartupMessages(library(stats))
 suppressPackageStartupMessages(library(testthat))
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(gtable))
 
 source('dsp_inputs.R')
 source('evaluation.R')
@@ -40,9 +44,7 @@ exp.out <- args[8]
 seg.proc.out <- args[9]
 
 # Output files
-delta.ridge.out <- args[10]
-plot.out <- args[11]
-table.out <- args[12]
+report.out <- args[10]
 
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
 load(exp.out)
@@ -116,6 +118,9 @@ comb.deltas <- rbind(
 probe.mads <- data.table(openxlsx::read.xlsx(pos_cntrls))
 comb.deltas[,ab_fac:=factor(ProbeName, levels=rev(probe.mads$ProbeName), ordered=T)]
 
+# Create pdf file to write to
+pdf(file=paste0(report.out), width=16, height=16)
+
 #This is the first relevant image created
 delta.ridge <- ggplot(data=comb.deltas, mapping=aes(x=delta, y=ab_fac, fill = factor(after_stat(quantile)))) +
   stat_density_ridges(
@@ -129,8 +134,8 @@ delta.ridge <- ggplot(data=comb.deltas, mapping=aes(x=delta, y=ab_fac, fill = fa
   ) +
   facet_wrap(~type) +
   theme_bw() + ylab("") + xlab("Delta")
-ggsave(delta.ridge, width=7, height=7, file=paste0(delta.ridge.out))
-#delta.ridge
+grid.draw(delta.ridge)
+
 
 # Form antibody scores as the quantiles relevant to reference cohort
 ref_samps <- my.meta[Best_Response == "Ref",unique(sample_id)]
@@ -210,10 +215,10 @@ t9.plot <- ggplot(data=t9.cd, mapping=aes(x=delta)) +
   geom_text_repel(data=t9.cast[ProbeName %in% t9.delta[,ProbeName]], mapping=aes(y=1, x=delta, label=paste0(round(delta, 2), " (", round(perc, 2), ")"))) +
   theme_bw() + ylab("") + xlab("Delta (Bx2 - Bx1)") +
   theme(strip.text.y=element_text(angle=0), axis.text.y=element_blank(), axis.ticks.y=element_blank())
-ggsave(t9.plot, file=paste0(plot.out), width=14, height=8)
-t9.plot
+grid.draw(t9.plot)
 
 #Data table with results for each Probe
+tt <- ttheme_default(base_size = 12)
 score_out <- t9.cast %>% dplyr::select("ProbeName", "segment_label")
 score_out <- cbind(score_out, t9.cast$Specimen_ID, t9.cast$Specimen_ID_compare)
 score_out <- cbind(score_out, t9.cast$delta, t9.cast$low, t9.cast$status)
@@ -223,4 +228,13 @@ score_out<- score_out %>% mutate(across(3:6, round, 2)) %>%
   rename("Region"="segment_label", "Protein"="ProbeName", "Delta"="delta", "Threshold"="low", "Interpretation"="status") %>%
   mutate(Threshold = abs(Threshold)) %>%
   mutate(Interpretation = ifelse(Interpretation == "neither", "indeterminate", Interpretation))
-write.csv(score_out, table.out)
+score_tum <- score_out[`Region` == 'tumor']
+score_str <- score_out[`Region` == 'stroma']
+
+g <- tableGrob(score_tum[1:44,1:7], rows = NULL, theme = tt)
+g <- gtable_add_grob(g, grobs = rectGrob(gp = gpar(fill = NA, lwd = 1)),
+                     t = 2, b = nrow(g), l = 1, r = ncol(g))
+g <- gtable_add_grob(g, grobs = rectGrob(gp = gpar(fill = NA, lwd = 1)),
+                     t = 1, l = 1, r = ncol(g))
+grid.newpage()
+grid.draw(g)
