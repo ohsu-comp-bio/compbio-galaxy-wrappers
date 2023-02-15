@@ -5,19 +5,9 @@ Convert an Annovar *.avinput file to VCF
 @author: pleyte
 '''
 import argparse
-import logging
+import logging.config
 import csv
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-stream_handler = logging.StreamHandler()
-logging_format = '%(levelname)s: [%(filename)s:%(lineno)s - %(funcName)s()]: %(message)s'
-
-stream_format = logging.Formatter(logging_format)
-stream_handler.setFormatter(stream_format)
-stream_handler.setLevel(logging.DEBUG)
-logger.addHandler(stream_handler)
+from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
 class Variant(object):
     def __init__(self):        
@@ -111,15 +101,17 @@ def _main():
     '''
     main function
     '''
+    logging.config.dictConfig(TfxLogConfig().utility_config)
+
     args = _parse_args()
     
     variants = _read_avinput_variants(args.in_file.name)
     
-    logger.info(f"Read {len(variants)} variants from {args.in_file.name}")
+    logging.info(f"Read {len(variants)} variants from {args.in_file.name}")
     
     _write_vcf(args.out_file.name, variants)
     
-    logger.info(f"Wrote VCF {args.out_file.name}")
+    logging.info(f"Wrote VCF {args.out_file.name}")
     
 if __name__ == '__main__':
     _main()
