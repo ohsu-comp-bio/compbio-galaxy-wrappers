@@ -61,12 +61,12 @@ def cellsearch(tma_input: str):
 # Extract count data from each initial batch dataset
 def parse_batches(abcount_path, tma_oi, ab_oi):
     df = pd.read_csv(abcount_path, header=0)
-    df = df[(df['name'] == tma_oi) & (df['ProbeName'] == ab_oi)].reset_index()
 
+    # Select rows of specified TMA and Ab combination
+    df = df[(df['name'] == tma_oi) & (df['ProbeName'] == ab_oi)].reset_index()
     df = df[['name_ProbeName', 'abundance', 'year', 'monthday', 'batch']]
     df = df.sort_values(['year', 'monthday']).reset_index()
 
-    # Following format of previous version
     counts = {}
     ids = {}
 
@@ -74,6 +74,11 @@ def parse_batches(abcount_path, tma_oi, ab_oi):
         id_name = f'Batch_{i + 1}_' + str(row['batch'])
         counts[row['batch']] = row['abundance']
         ids[id_name] = row['abundance']
+
+    # Checks if Ab name is valid ProbeName
+    if counts == {}:
+        print('Ab not found in dataset.')
+        return
 
     return [counts, ids]
 
@@ -100,7 +105,7 @@ def get_counts(counts):
 
     return x
 
-# Produces list containing mean and multiples of std dev from mean
+
 def get_stat(y):
     mu, sigma = np.mean(y), np.std(y)
     pos_1s = mu + sigma
@@ -111,13 +116,14 @@ def get_stat(y):
     neg_3s = mu + (-3 * sigma)
     return [mu, sigma, pos_1s, pos_2s, pos_3s, neg_1s, neg_2s, neg_3s]
 
-# Creates Levey-Jennings plot template containing axes using get_stats()
-def plot_lj_axes(y, counts, title, rule_broke=True):
+
+def plot_lj_ax(y, counts):
     stats = get_stat(y)
     mu, pos_1s, pos_2s, pos_3s, neg_1s, neg_2s, neg_3s = stats[0], stats[2], stats[3], \
                                                          stats[4], stats[5], stats[6], stats[7]
 
     x_ticks = np.arange(len(y))
+
     fig, ax = plt.subplots()
     plt.yticks([neg_3s, neg_2s, neg_1s, mu, pos_1s, pos_2s, pos_3s])
     ax.set_xticks(x_ticks)
@@ -136,38 +142,41 @@ def plot_lj_axes(y, counts, title, rule_broke=True):
     figure = plt.gcf()
     figure.set_size_inches(8, 8)
 
-    # Plots counts normally if no rules were broken
-    if rule_broke is not True:
-        plt.title(title)
-        plt.plot(x_ticks, y, color='black', marker='o', markersize=3)
-        plt.savefig('default_plot.png', dpi=500)
-        c.drawImage('default_plot.png', 30, 250, width=500, height=500)
-        os.remove('default_plot.png')
-        c.showPage()
-
     return figure
 
 
-# Creates Levey-Jennings plot highlighting offending batches
-def chart(y, i, segment, plotname, counts):
-    plot_lj_axes(y, counts)
-    plt.title("Rule: " + plotname)
-    plt.plot(x, y, color='blue', marker='o', markersize=3, linestyle='--')
-    plt.plot(x[segment], y[segment], color='red', linewidth=3, marker='o', markersize=6)
+# Creates LJ chart
+def chart(y, segment, title, f, rule_broke=True):
+    x = np.arange(len(y))
 
-    image = re.sub(r'[^\w]', '', (str(i) + "_Rule:" + plotname)).replace(" ", "")
-    image += ".png"
+    # Plots default LJ of counts
+    if rule_broke is False:
+        fig_name = re.sub(r'[^\w]', '', title)
+        plt.title(title)
+        plt.plot(x, y, color='black', marker='o', markersize=3)
+        plt.savefig(fig_name + '.png', dpi=500)
+        c.drawImage(fig_name + '.png', 30, 250, width=500, height=500)
+        os.remove(fig_name + '.png')
+        c.showPage()
 
-    plt.savefig(image, dpi=500)
+    # Plots counts with highlighted flagged batches
+    else:
+        fig_name = re.sub(r'[^\w]', '', "_Rule:" + title).replace(" ", "")
+        plt.title("Rule: " + title)
+        plt.plot(x, y, color='blue', marker='o', markersize=3, linestyle='--')
+        plt.plot(x[segment], y[segment], color='red', linewidth=3, marker='o', markersize=6)
+        plt.savefig(fig_name + '.png', dpi=500)
+        c.drawImage(fig_name + '.png', 30, 250, width=500, height=500)
+        os.remove(fig_name + '.png')
+        c.showPage()
 
-    c.drawImage(image, 30, 250, width=500, height=500)
-    os.remove(image)
-    c.showPage()
+    plt.close('all')
 
 
 # multirule QC
 def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
     x = get_counts(counts)
+    f = plot_lj_ax(x, counts)
     stats = get_stat(x)
     mu, pos_1s, pos_2s, pos_3s, neg_1s, neg_2s, neg_3s = stats[0], stats[2], stats[3], stats[4], stats[5], stats[6], \
                                                          stats[7]
@@ -195,7 +204,7 @@ def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
         # 1_3s rule
         if x[i] >= pos_3s or x[i] <= neg_3s:
             ruleset['1_3s'].append(list(ids.keys())[list(ids.values()).index(x[i])])
-            chart(x, j, [i], '1_3s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, ids)
+            chart(x, [i], '1_3s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, f)
             j += 1
 
         # Rules spanning multiple data points
@@ -204,27 +213,27 @@ def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
             # 2_2s rule
             if x[i - 1] > pos_2s and x[i] > pos_2s:
                 ruleset['2_2s'].append(list(ids.keys())[list(ids.values()).index(x[i - 1])])
-                chart(x, j, range((i - 1), (i + 1)),
-                      '2_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, ids)
+                chart(x, range((i - 1), (i + 1)),
+                      '2_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, f)
                 j += 1
 
             elif x[i - 1] < neg_2s and x[i] < neg_2s:
                 ruleset['2_2s'].append(list(ids.keys())[list(ids.values()).index(x[i - 1])])
-                chart(x, j, range((i - 1), (i + 1)),
-                      '2_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, ids)
+                chart(x, range((i - 1), (i + 1)),
+                      '2_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, f)
                 j += 1
 
             # R_4s rule
             if x[i - 1] >= pos_2s and x[i] <= neg_2s:
                 ruleset['R_4s'].append(list(ids.keys())[list(ids.values()).index(x[i - 1])])
-                chart(x, j, range((i - 1), (i + 1)),
-                      'R_4s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, ids)
+                chart(x, range((i - 1), (i + 1)),
+                      'R_4s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, f)
                 j += 1
 
             elif x[i] >= pos_2s and x[i - 1] <= neg_2s:
                 ruleset['R_4s'].append(list(ids.keys())[list(ids.values()).index(x[i - 1])])
-                chart(x, j, range((i - 1), (i + 1)),
-                      'R_4s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, ids)
+                chart(x, range((i - 1), (i + 1)),
+                      'R_4s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, f)
                 j += 1
 
         # If rule spans 3+ data points
@@ -233,51 +242,51 @@ def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
             # 3_1s rule
             if x[i - 2] >= pos_1s and x[i - 1] >= pos_1s and x[i] >= pos_1s:
                 ruleset['3_1s'].append(list(ids.keys())[list(ids.values()).index(x[i - 2])])
-                chart(x, j, range((i - 2), (i + 1)),
-                      '3_1s | ' + str(list(ids.keys())[list(ids.values()).index(x[i])]) + plotname, ids)
+                chart(x, range((i - 2), (i + 1)),
+                      '3_1s | ' + str(list(ids.keys())[list(ids.values()).index(x[i])]) + plotname, f)
                 j += 1
 
             elif x[i - 2] <= neg_1s and x[i - 1] <= neg_1s and x[i] <= neg_1s:
                 ruleset['3_1s'].append(list(ids.keys())[list(ids.values()).index(x[i - 2])])
-                chart(x, j, range((i - 2), (i + 1)),
-                      '3_1s | ' + str(list(ids.keys())[list(ids.values()).index(x[i])]) + plotname, ids)
+                chart(x, range((i - 2), (i + 1)),
+                      '3_1s | ' + str(list(ids.keys())[list(ids.values()).index(x[i])]) + plotname, f)
                 j += 1
 
             # 2of3_2s rule
             if (x[i - 2] > mu and x[i - 1] > mu and x[i] > mu) and x[i - 2] > pos_2s and x[i - 1] > pos_2s:
                 ruleset['2of3_2s'].append(list(ids.keys())[list(ids.values()).index(x[i - 2])])
-                chart(x, j, range((i - 2), (i + 1)),
-                      '2of3_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, ids)
+                chart(x, range((i - 2), (i + 1)),
+                      '2of3_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, f)
                 j += 1
 
             elif (x[i - 2] > mu and x[i - 1] and x[i] > mu > mu) and x[i - 2] > pos_2s and x[i] > pos_2s:
                 ruleset['2of3_2s'].append(list(ids.keys())[list(ids.values()).index(x[i - 2])])
-                chart(x, j, range((i - 2), (i + 1)),
-                      '2of3_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, ids)
+                chart(x, range((i - 2), (i + 1)),
+                      '2of3_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, f)
                 j += 1
 
             elif (x[i - 2] > mu and x[i - 1] > mu and x[i] > mu) and x[i - 1] > pos_2s and x[i] > pos_2s:
                 ruleset['2of3_2s'].append(list(ids.keys())[list(ids.values()).index(x[i - 2])])
-                chart(x, j, range((i - 2), (i + 1)),
-                      '2of3_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, ids)
+                chart(x, range((i - 2), (i + 1)),
+                      '2of3_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, f)
                 j += 1
 
             elif (x[i - 2] > mu and x[i - 1] > mu and x[i] > mu) and x[i - 2] > pos_2s and x[i - 1] < neg_2s:
                 ruleset['2of3_2s'].append(list(ids.keys())[list(ids.values()).index(x[i - 2])])
-                chart(x, j, range((i - 2), (i + 1)),
-                      '2of3_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, ids)
+                chart(x, range((i - 2), (i + 1)),
+                      '2of3_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, f)
                 j += 1
 
             elif (x[i - 2] > mu and x[i - 1] > mu and x[i] > mu) and x[i - 2] > pos_2s and x[i] < neg_2s:
                 ruleset['2of3_2s'].append(list(ids.keys())[list(ids.values()).index(x[i - 2])])
-                chart(x, j, range((i - 2), (i + 1)),
-                      '2of3_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, ids)
+                chart(x, range((i - 2), (i + 1)),
+                      '2of3_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, f)
                 j += 1
 
             elif (x[i - 2] > mu and x[i - 1] > mu and x[i] > mu) and x[i - 1] > pos_2s and x[i] < neg_2s:
                 ruleset['2of3_2s'].append(list(ids.keys())[list(ids.values()).index(x[i - 2])])
-                chart(x, j, range((i - 2), (i + 1)),
-                      '2of3_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, ids)
+                chart(x, range((i - 2), (i + 1)),
+                      '2of3_2s | ' + list(ids.keys())[list(ids.values()).index(x[i])] + plotname, f)
                 j += 1
 
         # If rule spans 6+ data points
@@ -286,14 +295,14 @@ def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
             # 6x rule
             if x[i - 5] > mu and x[i - 4] > mu and x[i - 3] > mu and x[i - 2] > mu and x[i - 1] > mu and x[i] > mu:
                 ruleset['6x'].append(list(ids.keys())[list(ids.values()).index(x[i - 5])])
-                chart(x, j, range((i - 5), (i + 1)),
-                      '6x | ' + list(ids.keys())[list(ids.values()).index(x[i - 5])] + plotname, ids)
+                chart(x, range((i - 5), (i + 1)),
+                      '6x | ' + list(ids.keys())[list(ids.values()).index(x[i - 5])] + plotname, f)
                 j += 1
 
             elif x[i - 5] < mu and x[i - 4] < mu and x[i - 3] < mu and x[i - 2] < mu and x[i - 1] < mu and x[i] < mu:
                 ruleset['6x'].append(list(ids.keys())[list(ids.values()).index(x[i - 5])])
-                chart(x, j, range((i - 5), (i + 1)),
-                      '6x | ' + list(ids.keys())[list(ids.values()).index(x[i - 5])] + plotname, ids)
+                chart(x, range((i - 5), (i + 1)),
+                      '6x | ' + list(ids.keys())[list(ids.values()).index(x[i - 5])] + plotname, f)
                 j += 1
 
         if i >= 7:
@@ -301,14 +310,14 @@ def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
             # 7T rule -- alternative: if equal to or greater/less than
             if x[i - 6] < x[i - 5] < x[i - 4] < x[i - 3] < x[i - 2] < x[i - 1] < x[i]:
                 ruleset['7T'].append(list(ids.keys())[list(ids.values()).index(x[i - 6])])
-                chart(x, j, range((i - 6), (i + 1)),
-                      '7T | ' + list(ids.keys())[list(ids.values()).index(x[i - 5])] + plotname, ids)
+                chart(x, range((i - 6), (i + 1)),
+                      '7T | ' + list(ids.keys())[list(ids.values()).index(x[i - 5])] + plotname, f)
                 j += 1
 
             elif x[i - 6] > x[i - 5] > x[i - 4] > x[i - 3] > x[i - 2] > x[i - 1] > x[i]:
                 ruleset['7T'].append(list(ids.keys())[list(ids.values()).index(x[i - 6])])
-                chart(x, j, range((i - 6), (i + 1)),
-                      '7T | ' + list(ids.keys())[list(ids.values()).index(x[i - 5])] + plotname, ids)
+                chart(x, range((i - 6), (i + 1)),
+                      '7T | ' + list(ids.keys())[list(ids.values()).index(x[i - 5])] + plotname, f)
                 j += 1
 
     y = 750  # starting y-position for PDF writing
@@ -336,7 +345,6 @@ def main():
     elif args. combos is None and args.tma is None and args.ab is not None:
         raise Exception('Both TMA and Antibody name need to be provided')
 
-    # Run this if singular TMA/Ab combination was entered
     if args.combos is None:
         output = open(args.qc_stdout, 'w')
         sys.stdout = output
@@ -346,31 +354,36 @@ def main():
         rule_broke = westgard_qc(counts, ids, args.tma, args.ab)
 
         if rule_broke is False:
-            plot_lj_axes(get_counts(counts), counts, f'TMA: {args.tma} / Ab: {args.ab}', rule_broke)
             print(f'No rules broken for {args.tma}/{args.ab}!')
 
         c._filename = args.qc_report
         c.save()
 
-    # Run this if a combination sheet was provided
     else:
         with open(args.combos) as f:
             output = open(args.qc_stdout, 'w')
             sys.stdout = output
 
             for combo in f:
+
                 if combo.split(',')[0] == 'name':
                     continue
 
                 tma_oi = combo.split(',')[0]
                 ab_oi = combo.split(',')[1]
                 batches = parse_batches(args.dsp_tma_results, tma_oi, ab_oi)
+                if batches is None:
+                    continue
                 counts, ids = batches[0], batches[1]
+
+                y = get_counts(counts)
+                p = plot_lj_ax(y, counts)
+
                 print(f'\nRunning Westgard QC for {tma_oi}/{ab_oi}...')
                 rule_broke = westgard_qc(counts, ids, tma_oi, ab_oi)
 
                 if rule_broke is False:
-                    plot_lj_axes(get_counts(counts), counts, f'TMA: {tma_oi} / Ab: {ab_oi}', rule_broke)
+                    chart(y,0, f'TMA: {tma_oi} / Ab: {ab_oi}', f, False)
                     print(f'No rules broken for {tma_oi}/{ab_oi}!')
                 else:
                     continue
