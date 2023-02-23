@@ -12,7 +12,7 @@ Created on Apr 20, 2022
 import argparse
 import hgvs.assemblymapper
 import hgvs.dataproviders.uta
-import logging
+import logging.config
 import os
 from collections import defaultdict
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
@@ -26,20 +26,10 @@ from hgvs.exceptions import HGVSInvalidVariantError, HGVSUsageError, HGVSDataNot
 from typing import Iterable
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
+from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
-VERSION = '0.0.1'
+VERSION = '0.2.5'
 ASSEMBLY_VERSION = "GRCh37"
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-stream_handler = logging.StreamHandler()
-logging_format = '%(levelname)s: [%(filename)s:%(lineno)s - %(funcName)s()]: %(message)s'
-
-stream_format = logging.Formatter(logging_format)
-stream_handler.setFormatter(stream_format)
-stream_handler.setLevel(logging.DEBUG)
-logger.addHandler(stream_handler)
 
 # These will need to be updated when we switch from GRCh37 to GRCh38
 CHROM_MAP = {'1': 'NC_000001.10', '2': 'NC_000002.11', '3': 'NC_000003.11', '4': 'NC_000004.11', '5': 'NC_000005.9',
@@ -111,27 +101,27 @@ def _lookup_hgvs_transcripts(variants: list):
     transcripts = []
     for variant in variants:
         variant_transcripts = __lookup_hgvs_transcripts(hgvs_parser, hdp, am, variant)
-        logger.info(f"HGVS found {len(variant_transcripts)} transcripts for {variant}")
+        logging.info(f"HGVS found {len(variant_transcripts)} transcripts for {variant}")
         
         # HGVS might not find any transcripts even though Annovar did 
         if len(variant_transcripts) == 0:
             # jDebug: how do you know there are transcripts known to annovar? 
-            logger.warning(f'HGVS could not find any transcripts for variant {variant} which has transcripts known to Annovar.')
+            logging.warning(f'HGVS could not find any transcripts for variant {variant} which has transcripts known to Annovar.')
         else:
             transcripts.extend(variant_transcripts)
     
     return transcripts
-        
+
 def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am: hgvs.assemblymapper.AssemblyMapper, variant: Variant):
     '''
     Use HGVS/UTA to return a list of the transcripts for a variant
     '''
-    logger.debug(f"Using HGVS/UTA to find transcripts for {variant}")
+    logging.debug(f"Using HGVS/UTA to find transcripts for {variant}")
     
     hgvs_chrom = CHROM_MAP.get(variant.chromosome)
     
     if hgvs_chrom == None:
-        logger.warning(f"Unknown chromosome: {variant.chromosome}-{variant.position}-{variant.reference}-{variant.alt}")
+        logging.warning(f"Unknown chromosome: {variant.chromosome}-{variant.position}-{variant.reference}-{variant.alt}")
         return []
     
     # Look up the variant using HGVS            
@@ -146,6 +136,18 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
     
     for hgvs_transcript in tx_list:
         try:
+            variant_transcript = VariantTranscript(variant.chromosome, variant.position, variant.reference, variant.alt)
+            
+            # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function. 
+            transcript_detail = hdp.get_tx_info(hgvs_transcript[0], hgvs_transcript[1], 'splign')
+            variant_transcript.hgnc_gene = transcript_detail['hgnc']
+            
+            # Non-coding transcripts (prefx NR_) cause HGVS to throw an exception when determining c. and p. 
+            # But instead of giving up on the transcript altogether, the transcript is saved with transcript name and gene only. 
+            if hgvs_transcript[0].startswith('NR_'):
+                variant_transcript.refseq_transcript = hgvs_transcript[0] 
+                
+            # Determine c. and p.. Non coding transcripts will throw an error. See first exception caught below. 
             var_c = am.g_to_c(var_g, str(hgvs_transcript[0]))
             var_p = am.c_to_p(var_c)
             
@@ -154,24 +156,21 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
             var_p1 = var_p.format(conf={"p_3_letter": False}).replace(var_p.ac+':','')
             var_p3 = var_p.format(conf={"p_3_letter": True}).replace(var_p.ac+':','')
             c_dot = var_c.type +'.' + str(var_c.posedit)
-
-            variant_transcript = VariantTranscript(variant.chromosome, variant.position, variant.reference, variant.alt)
-            variant_type = None
             
-            # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function. 
-            transcript_detail = hdp.get_tx_info(hgvs_transcript[0], hgvs_transcript[1], 'splign')
-            variant_transcript.hgnc_gene = transcript_detail['hgnc'] 
+            # HGVS doesrn't provide a variant type. 
+            variant_type = None
             
             # The amino acid position only exists for certain types of variants.             
             if var_p3 == 'p.?':
                 assert var_p.posedit == None, "A position is not expected with 'p.?'"                
             elif isinstance(var_p.posedit, hgvs.edit.AARefAlt):
                 # Some variants don't have any position information, and that is ok. Most of the time these are indels, as indicated by ``var_p.posedit.type``
-                logger.debug(f"HGVS variant does not have a position: ref={var_p.posedit.ref}, alt={var_p.posedit.alt}, type={var_p.posedit.type}, str={str(var_p.posedit)}. Keeping.")
+                logging.debug(f"HGVS variant does not have a position: ref={var_p.posedit.ref}, alt={var_p.posedit.alt}, type={var_p.posedit.type}, str={str(var_p.posedit)}. Keeping.")
             else:
                 variant_transcript.hgvs_amino_acid_position = var_p.posedit.pos.start.pos
             
             variant_transcript.hgvs_base_position = var_c.posedit.pos.start.base
+
             variant_transcript.hgvs_c_dot = c_dot
             variant_transcript.hgvs_p_dot_one = var_p1
             variant_transcript.hgvs_p_dot_three = var_p3
@@ -180,21 +179,24 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
             variant_transcript.protein_transcript = var_p.ac
             
             hgvs_transcripts.append(variant_transcript)
-        
+                 
         except HGVSUsageError as e:
             if("non-coding transcript" in e.args[0]):
-                logger.info(f"Error caused by non-coding transcript, skipping {variant}: %s", str(e))
+                logging.info(f"Error caused by non-coding transcript {variant}. Transcript will have name and gene only: %s", str(e))
+                
+                # Add the transcript even though an exception was thrown. At least we have the transcript+gene. 
+                hgvs_transcripts.append(variant_transcript)
             else:
                 raise(e)
         except HGVSInvalidVariantError as e:            
-            logger.warning(f"Invalid variant {variant}: %s", str(e))
+            logging.warning(f"Invalid variant {variant}: %s", str(e))
             raise(e)
         except HGVSUnsupportedOperationError as e:
-            logger.warning(f"Invalid parameters while processing variant={variant}, var_g={var_g}, transcript={str(hgvs_transcript[0])}: %s", str(e))
+            logging.warning(f"Invalid parameters while processing variant={variant}, var_g={var_g}, transcript={str(hgvs_transcript[0])}: %s", str(e))
         except HGVSInvalidIntervalError as e:
-            logger.warning(f"Invalid variant interval {variant}: %s", str(e))
+            logging.warning(f"Invalid variant interval {variant}: %s", str(e))
         except HGVSDataNotAvailableError as e:
-            logger.warn(f"Unable to use HGVS to parse variant {variant}: %s", str(e))
+            logging.warn(f"Unable to use HGVS to parse variant {variant}: %s", str(e))
     
     return hgvs_transcripts
 
@@ -210,7 +212,7 @@ def _get_unmatched_annovar_transcripts(annovar_dict: defaultdict(list), hgvs_dic
         # Check the HGVS dictionary for a key matching the annovar key. If there is a match, then the annovar transcript has already  
         # been processed. If HGVS does not have the key then the annovar transcript has not been looked at.
         if hgvs_dict.get(transcript_key) == None:
-            logger.debug(f"Adding unmatched Annovar transcript(s) for {transcript_key}")
+            logging.debug(f"Adding unmatched Annovar transcript(s) for {transcript_key}")
             
             # Convert the AnnovarVariantFunction objects to VariantTranscript so all items in the list are of the same type. 
             for annovar_transcript in annovar_transcript_list:
@@ -218,7 +220,7 @@ def _get_unmatched_annovar_transcripts(annovar_dict: defaultdict(list), hgvs_dic
     
     for (transcript_key, hgvs_transcript_list) in hgvs_dict.items():
         if annovar_dict.get(transcript_key) == None:
-            logger.debug(f"Adding unmatched HGVS transcript(s) for {transcript_key}")
+            logging.debug(f"Adding unmatched HGVS transcript(s) for {transcript_key}")
             transcripts.extend(hgvs_transcript_list)
     
     return transcripts
@@ -270,9 +272,9 @@ def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list, 
         
         annovar_matches = annovar_dict.get(transcript_key)
         if not annovar_matches:
-            logger.debug(f"HGVS {transcript_key} does not match any Annovar transcripts")
+            logging.debug(f"HGVS {transcript_key} does not match any Annovar transcripts")
         else:
-            logger.debug(f"Merging HGVS transcript with {len(annovar_matches)} Annovar transcripts having key {transcript_key}")
+            logging.debug(f"Merging HGVS transcript with {len(annovar_matches)} Annovar transcripts having key {transcript_key}")
             transcripts.append(_merge(transcript_key, hgvs_transcript, annovar_matches))
 
     # If matching is not required, then add unmatched Annovar transcripts to the final list
@@ -284,7 +286,7 @@ def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list, 
 def _merge(transcript_key: str, hgvs_transcript: VariantTranscript, annovar_transcripts: Iterable[VariantTranscript]):
     '''
     Combine Annovar and HGVS information relating to the same transcript into a single record.  
-    '''    
+    '''
     new_transcript = VariantTranscript(hgvs_transcript.chromosome, hgvs_transcript.position, hgvs_transcript.reference, hgvs_transcript.alt)
 
     for annovar_transcript in annovar_transcripts:
@@ -305,7 +307,7 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
     # Amino Acid Position
     ## Amino acid position is commonly different between HGVS and Annovar 
     if str(hgvs_transcript.hgvs_amino_acid_position) != str(annovar_transcript.hgvs_amino_acid_position):
-        logger.debug(f"HGVS and Annovar do not agree on amino acid position for {transcript_key}: {hgvs_transcript.hgvs_amino_acid_position} != {annovar_transcript.hgvs_amino_acid_position}")
+        logging.debug(f"HGVS and Annovar do not agree on amino acid position for {transcript_key}: {hgvs_transcript.hgvs_amino_acid_position} != {annovar_transcript.hgvs_amino_acid_position}")
 
     if _allow_merge(new_transcript.hgvs_amino_acid_position, hgvs_transcript.hgvs_amino_acid_position, transcript_key, 'hgvs_amino_acid_position'):
         new_transcript.hgvs_amino_acid_position = hgvs_transcript.hgvs_amino_acid_position 
@@ -313,7 +315,7 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
     # Base Position
     ## Base position may not match what HGVS says; can be empty; or will match between annovar and hgvs    
     if str(hgvs_transcript.hgvs_base_position) != str(annovar_transcript.hgvs_base_position):
-        logger.debug(f"HGVS and Annovar do not agree on base_position for {transcript_key}: {hgvs_transcript.hgvs_base_position} != {annovar_transcript.hgvs_base_position}")    
+        logging.debug(f"HGVS and Annovar do not agree on base_position for {transcript_key}: {hgvs_transcript.hgvs_base_position} != {annovar_transcript.hgvs_base_position}")    
     
     if _allow_merge(new_transcript.hgvs_base_position, hgvs_transcript.hgvs_base_position, transcript_key, 'hgvs_base_position'):
         new_transcript.hgvs_base_position = hgvs_transcript.hgvs_base_position
@@ -327,42 +329,42 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
     # Gene
     # Prefer annovar's gene, but annovar doesn't give us a gene for intron and utr; in those cases use hgvs's.        
     transcript_gene = annovar_transcript.hgnc_gene
-    if _noneIfEmpty(annovar_transcript.hgnc_gene) == None and _noneIfEmpty(annovar_transcript.hgnc_gene) == None:
-        logger.debug(f"Gene selection: Neither Annovar or HGVS have a gene for {transcript_key}") 
+    if _noneIfEmpty(annovar_transcript.hgnc_gene) == None and _noneIfEmpty(hgvs_transcript.hgnc_gene) == None:
+        logging.debug(f"Gene selection: Neither Annovar or HGVS have a gene for {transcript_key}") 
     elif annovar_transcript.hgnc_gene == None:
-        logger.debug(f"Gene selection: Annovar did not provide a gene for {transcript_key}, using HGVS's: gene={hgvs_transcript.hgnc_gene}")            
+        logging.debug(f"Gene selection: Annovar did not provide a gene for {transcript_key}, using HGVS's: gene={hgvs_transcript.hgnc_gene}")            
         transcript_gene = hgvs_transcript.hgnc_gene
     elif annovar_transcript.hgnc_gene != hgvs_transcript.hgnc_gene:
-        logger.debug(f"Gene selection: Annovar and HGVS genes don't match for {transcript_key}: {annovar_transcript.hgnc_gene} != {hgvs_transcript.hgnc_gene}")
+        logging.debug(f"Gene selection: Annovar and HGVS genes don't match for {transcript_key}: {annovar_transcript.hgnc_gene} != {hgvs_transcript.hgnc_gene}")
     
     if _allow_merge(new_transcript.hgnc_gene, transcript_gene, transcript_key, 'hgnc_gene'):
         new_transcript.hgnc_gene = transcript_gene
     
     # c-dot
-    ## Use HGVS's c. because Annovar's is not always correct
-    assert hgvs_transcript.hgvs_c_dot != None, "The HGVS c. value is not supposed to be empty"
+    ## Use HGVS's c. because Annovar's is not always correct. Non-coding transcripts don't have a c. 
+    assert hgvs_transcript.hgvs_c_dot != None or hgvs_transcript.refseq_transcript.startswith('NR_'), "The HGVS c. value is not supposed to be empty"
     
     if hgvs_transcript.hgvs_c_dot != annovar_transcript.hgvs_c_dot:
-        logger.debug(f"HGVS and Annovar do not agree on c_dot for {transcript_key}: {hgvs_transcript.hgvs_c_dot} != {annovar_transcript.hgvs_c_dot} ")
+        logging.debug(f"HGVS and Annovar do not agree on c_dot for {transcript_key}: {hgvs_transcript.hgvs_c_dot} != {annovar_transcript.hgvs_c_dot} ")
 
     if _allow_merge(new_transcript.hgvs_c_dot, hgvs_transcript.hgvs_c_dot, transcript_key, 'hgvs_c_dot'):
         new_transcript.hgvs_c_dot = hgvs_transcript.hgvs_c_dot
     
     # p-dot (1L)
-    ## Use HGVS's p. because Annovar's is not always correct 
-    assert hgvs_transcript.hgvs_p_dot_one != None
+    ## Use HGVS's p. because Annovar's is not always correct. Non-coding transcripts don't have a p.
+    assert hgvs_transcript.hgvs_p_dot_one != None or hgvs_transcript.refseq_transcript.startswith('NR_')
     
     if hgvs_transcript.hgvs_p_dot_one != annovar_transcript.hgvs_p_dot_one:
-        logger.debug(f"HGVS and Annovar do not agree on hgvs_p_dot_one for {transcript_key}: {hgvs_transcript.hgvs_p_dot_one} != {annovar_transcript.hgvs_p_dot_one} ")
+        logging.debug(f"HGVS and Annovar do not agree on hgvs_p_dot_one for {transcript_key}: {hgvs_transcript.hgvs_p_dot_one} != {annovar_transcript.hgvs_p_dot_one} ")
 
     if _allow_merge(new_transcript.hgvs_p_dot_one, hgvs_transcript.hgvs_p_dot_one, transcript_key, 'hgvs_p_dot_one'):
         new_transcript.hgvs_p_dot_one = hgvs_transcript.hgvs_p_dot_one
-    
+
     # p-dot (3L)
-    assert hgvs_transcript.hgvs_p_dot_three != None
+    assert hgvs_transcript.hgvs_p_dot_three != None or hgvs_transcript.refseq_transcript.startswith('NR_')
 
     if hgvs_transcript.hgvs_p_dot_three != annovar_transcript.hgvs_p_dot_three:
-        logger.debug(f"HGVS and Annovar do not agree on hgvs_p_dot_three for {transcript_key}: {hgvs_transcript.hgvs_p_dot_three} != {annovar_transcript.hgvs_p_dot_three} ")
+        logging.debug(f"HGVS and Annovar do not agree on hgvs_p_dot_three for {transcript_key}: {hgvs_transcript.hgvs_p_dot_three} != {annovar_transcript.hgvs_p_dot_three} ")
 
     if _allow_merge(new_transcript.hgvs_p_dot_three, hgvs_transcript.hgvs_p_dot_three, transcript_key, 'hgvs_p_dot_three'):
         new_transcript.hgvs_p_dot_three = hgvs_transcript.hgvs_p_dot_three
@@ -395,7 +397,7 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
      
     # Protein Transcript
     ## Only HGVS provides protein transcript
-    assert hgvs_transcript.protein_transcript != None
+    assert hgvs_transcript.protein_transcript != None or hgvs_transcript.refseq_transcript.startswith('NR_')
     if _allow_merge(new_transcript.protein_transcript, hgvs_transcript.protein_transcript, transcript_key, 'protein_transcript'):
         new_transcript.protein_transcript = hgvs_transcript.protein_transcript
     
@@ -441,7 +443,7 @@ def get_summary(require_match: bool, annovar_transcripts: list, annovar_variants
         if annovar_rec.splicing == 'splicing' or annovar_rec.splicing == 'ncRNA_splicing':
             annovar_splice_variant_transcript_count += 1
         elif annovar_rec.splicing != None and annovar_rec.splicing != '':
-            logger.warning(f"Invalid value in splicing column: {annovar_rec.splicing}")
+            logging.warning(f"Invalid value in splicing column: {annovar_rec.splicing}")
 
         annovar_dict[key_maker(annovar_rec)].append(annovar_rec)
     
@@ -488,7 +490,7 @@ def get_summary(require_match: bool, annovar_transcripts: list, annovar_variants
     # Sanity check: The number of HGVS transcripts minus the count of merged HGVS transcripts is equal to the number of merged HGVS and annovar transcripts.    
     sanity_check_hgvs = (len(hgvs_transcripts) - unmatched_hgvs_transcript_count) == matched_annovar_and_hgvs_transcript_count
     if not sanity_check_hgvs:
-        logger.debug(f"Failed sanity check 'sanity_check_hgvs': {len(hgvs_transcripts)} - {unmatched_hgvs_transcript_count} != {matched_annovar_and_hgvs_transcript_count}")
+        logging.debug(f"Failed sanity check 'sanity_check_hgvs': {len(hgvs_transcripts)} - {unmatched_hgvs_transcript_count} != {matched_annovar_and_hgvs_transcript_count}")
     
     # Sanity check: The number of annovar transcripts minus the count of merged annovar transcripts, minus the number of 
     # splice variants is equal to the number of merged HGVS and annovar transcripts. Splice variants must be subtradcted because 
@@ -496,17 +498,17 @@ def get_summary(require_match: bool, annovar_transcripts: list, annovar_variants
     sanity_check_annovar = (len(annovar_transcripts) - unmatched_annovar_transcript_count - annovar_splice_variant_transcript_count) == matched_annovar_and_hgvs_transcript_count    
     # sanity_check_annovar = (len(annovar_transcripts) - unmatched_annovar_transcript_count) == matched_annovar_and_hgvs_transcript_count
     if not sanity_check_annovar:
-        logger.debug(f"Failed sanity check 'sanity_check_annovar': {len(annovar_transcripts)} - {unmatched_annovar_transcript_count} - {annovar_splice_variant_transcript_count} != {matched_annovar_and_hgvs_transcript_count}")
+        logging.debug(f"Failed sanity check 'sanity_check_annovar': {len(annovar_transcripts)} - {unmatched_annovar_transcript_count} - {annovar_splice_variant_transcript_count} != {matched_annovar_and_hgvs_transcript_count}")
 
     # Essential sanity check:  
     # Sanity check is currently off by just a little bit. 
     if not sanity_check_hgvs or not sanity_check_annovar:
-        logger.info(f'Failed sanity check: Total number of transcripts does not equal sum of matched, and unmatched ({sanity_check_hgvs} and {sanity_check_annovar}).')
+        logging.info(f'Failed sanity check: Total number of transcripts does not equal sum of matched, and unmatched ({sanity_check_hgvs} and {sanity_check_annovar}).')
          
     # Non-essential sanity check: all variants from annovar have at least one transcript in the final output
     sanity_check_variant_coverage = merged_distinct_variant_count == results['annovar_distinct_variant_count']
     if not sanity_check_variant_coverage:
-        logger.warning(f"Not all of the Annovar variants made it into the list of variant-transcripts ({merged_distinct_variant_count}/{results['annovar_distinct_variant_count']})")
+        logging.warning(f"Not all of the Annovar variants made it into the list of variant-transcripts ({merged_distinct_variant_count}/{results['annovar_distinct_variant_count']})")
 
     sanity_check = sanity_check_hgvs and sanity_check_annovar and sanity_check_variant_coverage
     results['sanity_check'] = sanity_check
@@ -519,18 +521,18 @@ def _log_summary(results: dict):
     Display summary of updated transcripts
     ''' 
     
-    logger.info(f"Argument require_match: {results['arg_require_match']}")
-    logger.info(f"Number of annovar transcripts: {results['annovar_transcript_count']}")
-    logger.info(f"Number of Annovar transcripts that are splice variants: {results['annovar_splice_variant_transcript_count']}")
-    logger.info(f"Number of distinct variants from Annovar: {results['annovar_distinct_variant_count']}")    
-    logger.info(f"Number of HGVS transcripts: {results['hgvs_transcript_count']}")
-    logger.info(f"Number of distinct variants from HGVS: {results['hgvs_distinct_variant_count']}")
-    logger.info(f"Number of transcripts matched in Annovar and HGVS: {results['matched_annovar_and_hgvs_transcript_count']}")
-    logger.info(f"Number of Annovar transcripts not matched with HGVS transcripts: {results['unmatched_annovar_transcript_count']}")
-    logger.info(f"Number of HGVS transcripts not matched with Annovar transcripts: {results['unmatched_hgvs_transcript_count']}")
-    logger.info(f"Number of distinct variants in merged transcript list: {results['merged_distinct_variant_count']}")
-    logger.info(f"Total number of transcripts in final list: {results['merged_transcript_count']}")
-    logger.info(f"Sanity check: {'Passed' if results['sanity_check'] else 'Failed' }")
+    logging.info(f"Argument require_match: {results['arg_require_match']}")
+    logging.info(f"Number of annovar transcripts: {results['annovar_transcript_count']}")
+    logging.info(f"Number of Annovar transcripts that are splice variants: {results['annovar_splice_variant_transcript_count']}")
+    logging.info(f"Number of distinct variants from Annovar: {results['annovar_distinct_variant_count']}")    
+    logging.info(f"Number of HGVS transcripts: {results['hgvs_transcript_count']}")
+    logging.info(f"Number of distinct variants from HGVS: {results['hgvs_distinct_variant_count']}")
+    logging.info(f"Number of transcripts matched in Annovar and HGVS: {results['matched_annovar_and_hgvs_transcript_count']}")
+    logging.info(f"Number of Annovar transcripts not matched with HGVS transcripts: {results['unmatched_annovar_transcript_count']}")
+    logging.info(f"Number of HGVS transcripts not matched with Annovar transcripts: {results['unmatched_hgvs_transcript_count']}")
+    logging.info(f"Number of distinct variants in merged transcript list: {results['merged_distinct_variant_count']}")
+    logging.info(f"Total number of transcripts in final list: {results['merged_transcript_count']}")
+    logging.info(f"Sanity check: {'Passed' if results['sanity_check'] else 'Failed' }")
 
 def _parse_args():
     '''
@@ -567,14 +569,14 @@ def identify_hgvs_datasources():
     Check the environment for definitions of HGVS' datasources and log the findings 
     '''
     if os.environ.get('HGVS_SEQREPO_DIR') == None:
-        logger.warning("The HGVS_SEQREPO_DIR environment variable is not defined. The remote seqrepo database will be used.")
+        logging.warning("The HGVS_SEQREPO_DIR environment variable is not defined. The remote seqrepo database will be used.")
     else:
-        logger.info(f"Using SeqRepo {os.environ.get('HGVS_SEQREPO_DIR')}")
+        logging.info(f"Using SeqRepo {os.environ.get('HGVS_SEQREPO_DIR')}")
     
     if os.environ.get('UTA_DB_URL') == None:
-        logger.warning("The UTA_DB_URL environment variable is not defined. The remote UTA database will be used.")
+        logging.warning("The UTA_DB_URL environment variable is not defined. The remote UTA database will be used.")
     else:
-        logger.info(f"Using UTA Database at {os.environ.get('UTA_DB_URL')}")
+        logging.info(f"Using UTA Database at {os.environ.get('UTA_DB_URL')}")
 
 def get_updated_hgvs_transcritpts(annovar_transcripts: list, require_match: bool):    
     '''
@@ -583,10 +585,10 @@ def get_updated_hgvs_transcritpts(annovar_transcripts: list, require_match: bool
     '''
     disinct_variants = {Variant(x.chromosome, x.position, x.reference, x.alt) for x in annovar_transcripts}
     
-    logger.debug(f'{len(disinct_variants)} distinct variants')
+    logging.debug(f'{len(disinct_variants)} distinct variants')
     
     hgvs_transcripts = _lookup_hgvs_transcripts(disinct_variants)
-    logger.debug(f'{len(hgvs_transcripts)} transcripts from HGVS')
+    logging.debug(f'{len(hgvs_transcripts)} transcripts from HGVS')
     
     merged_transcripts = _merge_annovar_with_hgvs(annovar_transcripts, hgvs_transcripts, require_match = require_match)
     
@@ -599,15 +601,17 @@ def _main():
     '''
     main function
     '''
+    logging.config.dictConfig(TfxLogConfig().log_config)
+    
     args = _parse_args()
     
     txEffCsv = TxEffCsv()    
     annovar_transcripts = txEffCsv.read_transcripts(args.in_file.name)
-    logger.debug(f'Read {len(annovar_transcripts)} Annovar transcripts from {args.in_file.name}')
+    logging.debug(f'Read {len(annovar_transcripts)} Annovar transcripts from {args.in_file.name}')
     
     merged_transcripts = get_updated_hgvs_transcritpts(annovar_transcripts, args.require_match)
     
-    logger.info(f"Writing {args.out_file.name}")
+    logging.info(f"Writing {args.out_file.name}")
     txEffCsv.write_transcripts(args.out_file.name, merged_transcripts)
 
 if __name__ == '__main__':

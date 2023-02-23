@@ -6,22 +6,11 @@ Created on Jul 11, 2022
 @author: pleyte
 '''
 import argparse
-import logging
+import logging.config
 import csv
+from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
 VERSION = '0.0.1'
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-stream_handler = logging.StreamHandler()
-logging_format = '%(levelname)s: [%(filename)s:%(lineno)s - %(funcName)s()]: %(message)s'
-
-stream_format = logging.Formatter(logging_format)
-stream_handler.setFormatter(stream_format)
-stream_handler.setLevel(logging.DEBUG)
-logger.addHandler(stream_handler)
-
 
 def _parse_args():
     '''
@@ -47,6 +36,8 @@ def _main():
     '''
     main function
     '''
+    logging.config.dictConfig(TfxLogConfig().utility_config)
+    
     args = _parse_args()
 
     with open(args.csv.name) as csv_file, open(args.out_file.name, "w") as tsv_out_file:
@@ -63,7 +54,7 @@ def _main():
         for row in csv_reader:
             key = key_maker(row)
             if key in keys:
-                logger.debug(f"Skipping duplicate variant {key}")
+                logging.debug(f"Skipping duplicate variant {key}")
                 duplicates = duplicates + 1
             else:
                 tsv_writer.writerow([row['chromosome'], row['position_start'], row['position_end'], row['reference_base'], row['variant_base'],
@@ -74,10 +65,10 @@ def _main():
    
             total = total + 1
             
-    logger.info(f"duplicate count={duplicates}")
-    logger.info(f"unique count={rowId}")
-    logger.info(f"total={total}")
-    logger.info(f"Wrote {args.out_file.name}")
+    logging.info(f"duplicate count={duplicates}")
+    logging.info(f"unique count={rowId}")
+    logging.info(f"total={total}")
+    logging.info(f"Wrote {args.out_file.name}")
             
 if __name__ == '__main__':
     _main()
