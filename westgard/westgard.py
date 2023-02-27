@@ -59,16 +59,25 @@ def cellsearch(tma_input: str):
     return tma_oi
 
 
-# Reads positive control sheet and returns Ab:[TMA(s)] dictionary format // Not used currently
+# Reads positive control sheet and returns in dictionary format
 def get_pos_cntrls(sheet):
     df = pd.read_csv(sheet)
     tma = list(df['Marker'])
     ab = list(df['PositiveControls'])
 
-    pos_cntrls = {}
+    # Create Ab:[TMA(s)] relation dictionary
+    tmp_dict = {}
     for i in range(len(tma)):
         ab[i] = ab[i].replace(' ', '')
-        pos_cntrls[tma[i].replace('\xa0', '')] = ab[i].split(',')
+        tmp_dict[tma[i].replace('\xa0', '')] = ab[i].split(',')
+
+    # Inverse dictionary to TMA:[Ab(s)]
+    pos_cntrls = {}
+    for k, v in dic.items():
+        for i in v:
+            if i not in pos_cntrls.keys():
+                pos_cntrls[i] = []
+            pos_cntrls[i].append(k)
 
     return pos_cntrls
 
@@ -107,7 +116,7 @@ def tab_out(abcount_path, tma_oi, ab_oi, flagged):
 
     # Select rows of specified TMA and Ab combination
     df = df[(df['name'] == tma_oi) & (df['ProbeName'] == ab_oi)].reset_index()
-    df = df[['batch','name','ProbeName', 'abundance', 'year', 'monthday']]
+    df = df[['batch','name','ProbeName', 'abundance']]
     df['mean'] = [stats[0]] * df.shape[0]
     df['sd'] = [stats[1]] * df.shape[0]
     df['rules'] = [''] * df.shape[0]
@@ -404,7 +413,7 @@ def main():
 
     else:
         with open(args.combos) as f:
-            columns = ['batch', 'name', 'ProbeName', 'abundance', 'year', 'monthday','mean', 'sd', 'rules']
+            columns = ['batch', 'name', 'ProbeName', 'abundance','mean', 'sd', 'rules']
             tab_df = pd.DataFrame([[0]*len(columns)], columns=columns)
 
             for combo in f:
