@@ -57,6 +57,9 @@ class AnnovarVariantFunction(object):
         return f'[AnnovarVariantFunction: genotype={self.chromosome}-{self.position}-{self.reference}-{self.alt}, transcript={self.refseq_transcript}, variant_effect={self.variant_effect}, variant_type={self.variant_type}, aap={self.hgvs_amino_acid_position}, bpos={self.hgvs_base_position}, exon={self.exon}, gene={self.hgnc_gene}, c.={self.hgvs_c_dot}, p1.={self.hgvs_p_dot_one}, p3.={self.hgvs_p_dot_three}, splicing={self.splicing}]'
             
     def __eq__(self, obj):
+        if(obj == None):
+            return False
+        
         return self.chromosome == obj.chromosome \
             and self.position == obj.position \
             and self.reference == obj.reference \
@@ -72,7 +75,9 @@ class AnnovarVariantFunction(object):
             and self.hgvs_p_dot_three == obj.hgvs_p_dot_three \
             and self.splicing == obj.splicing \
             and self.refseq_transcript == obj.refseq_transcript
-            
+    
+    def get_label(self):
+        return "-".join([self.chromosome, str(self.position), self.reference, self.alt, self.refseq_transcript])
     
     
 class AnnovarParser(object):    
@@ -296,7 +301,6 @@ class AnnovarParser(object):
         '''
         Read an Annovar file and return a list of variants 
         '''
-
         annovar_recs = []
 
         if (os.path.getsize(file_name) == 0):
@@ -312,7 +316,6 @@ class AnnovarParser(object):
                     if len(row) != 18:
                         logging.info(f"Exonic variant function file is expected have 18 columns. Found {len(row)}. Make sure you run the annotate_variation.pl script with the '--otherinfo' parameter to include other information from the original VCF")
                     
-
                     # Parse a row in an exonic_variant_function file
                     annovar_recs.extend(self._parse_exonic_variant_function_row(row))
                 elif annovar_file_type == AnnovarFileType.VariantFunction:
