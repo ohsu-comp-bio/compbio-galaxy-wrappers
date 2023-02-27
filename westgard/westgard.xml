@@ -1,4 +1,4 @@
-<tool id="westgard" name="Westgard Multirule QC" version="1.1.0">
+<tool id="westgard" name="Westgard Multirule QC" version="1.2.0">
     <description>Performs Westgard Multirule QC on raw DSP data on specified TMA and Probe combo</description>
     <requirements>
       <requirement type="package" version="1.21.5">numpy</requirement>
@@ -10,9 +10,9 @@
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
     #if $combo.selector == "sheet"
-      python $__tool_directory__/westgard.py '${dsp_tma_results}' '${qc_report}' '${qc_stdout}' -c '${combo.dsp_tma_combos}'
+      python $__tool_directory__/westgard.py '${dsp_tma_results}' '${qc_report}' '${qc_tabout}' -c '${combo.dsp_tma_combos}'
     #else
-      python $__tool_directory__/westgard.py '${dsp_tma_results}' '${qc_report}' '${qc_stdout}' -t '${combo.tma_name}' -a '${combo.ab_name}'
+      python $__tool_directory__/westgard.py '${dsp_tma_results}' '${qc_report}' '${qc_tabout}' -t '${combo.tma_name}' -a '${combo.ab_name}'
     #end if
 ]]>
     </command>
@@ -36,7 +36,7 @@
 
     <outputs>
         <data format="pdf" name="qc_report" label="Levey-Jennings Plots"/>
-        <data format="txt" name="qc_stdout" label="Westgard Rules Report"/>
+        <data format="csv" name="qc_tabout" label="Abundance Counts QC Table"/>
     </outputs>
     <help></help>
 </tool>

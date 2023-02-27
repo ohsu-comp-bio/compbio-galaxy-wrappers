@@ -7,6 +7,7 @@
 # UPDATES:
 # 1.0.0 -- added 5 TMA cell lines (total 19)
 # 1.1.0 -- Add default plots in the event that no rules are broken for a combination
+# 1.2.0 --
 
 # By Benson Chong
 
@@ -20,16 +21,16 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import argparse
 
-VERSION = '1.0.1'
+VERSION = '1.2.0'
 
+# initialize placeholder PDf object to be filled in
 c = canvas.Canvas('placeholder.pdf', pagesize=letter)
-
 
 def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('dsp_tma_results', help='TMA melt of abundance counts from dsp_runner')
     parser.add_argument('qc_report', help='PDF of plots')
-    parser.add_argument('qc_stdout', help='Terminal printout outfile')
+    parser.add_argument('qc_tab', help='CSV sheet of QC report in tabular format')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     parser.add_argument('--combos', '-c')
     parser.add_argument('--tma', '-t')
@@ -58,6 +59,20 @@ def cellsearch(tma_input: str):
     return tma_oi
 
 
+# Reads positive control sheet and returns Ab:[TMA(s)] dictionary format // Not used currently
+def get_pos_cntrls(sheet):
+    df = pd.read_csv(sheet)
+    tma = list(df['Marker'])
+    ab = list(df['PositiveControls'])
+
+    pos_cntrls = {}
+    for i in range(len(tma)):
+        ab[i] = ab[i].replace(' ', '')
+        pos_cntrls[tma[i].replace('\xa0', '')] = ab[i].split(',')
+
+    return pos_cntrls
+
+
 # Extract count data from each initial batch dataset
 def parse_batches(abcount_path, tma_oi, ab_oi):
     df = pd.read_csv(abcount_path, header=0)
@@ -77,10 +92,34 @@ def parse_batches(abcount_path, tma_oi, ab_oi):
 
     # Checks if Ab name is valid ProbeName
     if counts == {}:
-        print('Ab not found in dataset.')
+        print(f'[ANTIBODY {ab_oi} WAS NOT FOUND IN DATASET.]\n')
         return
 
     return [counts, ids]
+
+
+# Write out results in tabular format
+def tab_out(abcount_path, tma_oi, ab_oi, flagged):
+    counts = parse_batches(abcount_path, tma_oi, ab_oi)[0]
+    y = get_counts(counts)
+    stats = get_stat(y)
+    df = pd.read_csv(abcount_path, header=0)
+
+    # Select rows of specified TMA and Ab combination
+    df = df[(df['name'] == tma_oi) & (df['ProbeName'] == ab_oi)].reset_index()
+    df = df[['batch','name','ProbeName', 'abundance', 'year', 'monthday']]
+    df['mean'] = [stats[0]] * df.shape[0]
+    df['sd'] = [stats[1]] * df.shape[0]
+    df['rules'] = [''] * df.shape[0]
+
+    # Iterate through dictionary
+    for k,v in flagged.items():
+        if v:
+            for batch in v:
+                batch = batch.split('_')[-1]
+                df.loc[df['batch'] == batch, 'rules'] = k
+
+    return df
 
 
 # For getting annotations, e.g., 'Reference'
@@ -320,15 +359,18 @@ def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
                       '7T | ' + list(ids.keys())[list(ids.values()).index(x[i - 5])] + plotname, f)
                 j += 1
 
-    y = 750  # starting y-position for PDF writing
     rule_broke = False
+    # Add dict of flagged batches to return
+    flagged = {}
+
     for k, v in ruleset.items():
         if v:
             rule_broke = True
-            print('Rule', k, ' is broken starting at batch(es): ', v, 'for ', tma_oi, '|', ab_oi)
-            y -= 15
+            print(f'Rule {k} is broken starting at batch(es): {v} for {tma_oi} | {ab_oi}\n')
+            flagged[k] = v
+            print(k,v)
 
-    return rule_broke
+    return [flagged, rule_broke]
 
 
 def main():
@@ -346,26 +388,26 @@ def main():
         raise Exception('Both TMA and Antibody name need to be provided')
 
     if args.combos is None:
-        output = open(args.qc_stdout, 'w')
-        sys.stdout = output
         batches = parse_batches(args.dsp_tma_results, args.tma, args.ab)
         counts, ids = batches[0], batches[1]
-        print(f'\nRunning Westgard QC for {args.tma}/{args.ab}...')
-        rule_broke = westgard_qc(counts, ids, args.tma, args.ab)
+        westgard_out = westgard_qc(counts, ids, args.tma, args.ab)
+        flagged, rule_broke = westgard_out[0], westgard_out[1]
+        tab_df = tab_out(args.dsp_tma_results, args.tma, args.ab, flagged)
 
         if rule_broke is False:
-            print(f'No rules broken for {args.tma}/{args.ab}!')
+            print(f'No rules broken for {args.tma}/{args.ab}\n')
 
+        tab_df = tab_df.iloc[1:]
+        tab_df.to_csv(args.qc_tab, index=False)
         c._filename = args.qc_report
         c.save()
 
     else:
         with open(args.combos) as f:
-            output = open(args.qc_stdout, 'w')
-            sys.stdout = output
+            columns = ['batch', 'name', 'ProbeName', 'abundance', 'year', 'monthday','mean', 'sd', 'rules']
+            tab_df = pd.DataFrame([[0]*len(columns)], columns=columns)
 
             for combo in f:
-
                 if combo.split(',')[0] == 'name':
                     continue
 
@@ -375,19 +417,19 @@ def main():
                 if batches is None:
                     continue
                 counts, ids = batches[0], batches[1]
-
                 y = get_counts(counts)
-                p = plot_lj_ax(y, counts)
-
-                print(f'\nRunning Westgard QC for {tma_oi}/{ab_oi}...')
-                rule_broke = westgard_qc(counts, ids, tma_oi, ab_oi)
+                westgard_out = westgard_qc(counts, ids, tma_oi, ab_oi)
+                flagged, rule_broke = westgard_out[0], westgard_out[1]
+                tab_df = pd.concat([tab_df, tab_out(args.dsp_tma_results, tma_oi, ab_oi, flagged)])
 
                 if rule_broke is False:
                     chart(y,0, f'TMA: {tma_oi} / Ab: {ab_oi}', f, False)
-                    print(f'No rules broken for {tma_oi}/{ab_oi}!')
+                    print(f'No rules broken for {tma_oi}/{ab_oi}\n')
                 else:
                     continue
 
+            tab_df = tab_df.iloc[1:]
+            tab_df.to_csv(args.qc_tab, index=False)
             c._filename = args.qc_report
             c.save()
 
