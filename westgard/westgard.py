@@ -117,6 +117,7 @@ def tab_out(abcount_path, tma_oi, ab_oi, flagged):
     # Select rows of specified TMA and Ab combination
     df = df[(df['name'] == tma_oi) & (df['ProbeName'] == ab_oi)].reset_index()
     df = df[['batch','name','ProbeName', 'abundance']]
+    df['batch'] = df['batch'].astype(str)
     df['mean'] = [stats[0]] * df.shape[0]
     df['sd'] = [stats[1]] * df.shape[0]
     df['rules'] = [''] * df.shape[0]
@@ -126,8 +127,7 @@ def tab_out(abcount_path, tma_oi, ab_oi, flagged):
         if v:
             for batch in v:
                 batch = batch.split('_')[-1]
-                df.loc[df['batch'] == batch, 'rules'] = k
-
+                df.loc[df['batch'] == str(batch), 'rules'] = k
     return df
 
 
