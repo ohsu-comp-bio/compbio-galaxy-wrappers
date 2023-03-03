@@ -5,22 +5,12 @@ Created on May 18, 2022
 '''
 
 import argparse
-import logging
+import logging.config
+from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
 from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
-VERSION = '0.2.2'
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-stream_handler = logging.StreamHandler()
-logging_format = '%(levelname)s: [%(filename)s:%(lineno)s - %(funcName)s()]: %(message)s'
-
-stream_format = logging.Formatter(logging_format)
-stream_handler.setFormatter(stream_format)
-stream_handler.setLevel(logging.DEBUG)
-logger.addHandler(stream_handler)
+VERSION = '0.2.5'
 
 def _parse_args():
     '''
@@ -66,7 +56,10 @@ def _parse_args():
 def _main():
     '''
     main function
-    '''            
+    '''
+    logging.config.dictConfig(TfxLogConfig().log_config)
+    logging.info("cgd_tx_eff is starting...")
+    
     args = _parse_args()
 
     # Use tx_eff_annovar to read annovar records 
@@ -85,7 +78,3 @@ def _main():
 
 if __name__ == '__main__':
     _main()
-    
-    
-    
-    

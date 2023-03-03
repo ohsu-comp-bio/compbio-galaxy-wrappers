@@ -9,6 +9,7 @@ import logging
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.refseq_to_ccds import RefseqToCcds
 from enum import Enum
+from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
 class CcdsMapFileType(Enum):
     '''
@@ -31,17 +32,7 @@ class TxEffCcds(object):
         self.refseq_to_ccds_file = refseq_to_ccds_file
         
         # Set up a logger for this class
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
-
-        stream_handler = logging.StreamHandler()
-        logging_format = '%(levelname)s: [%(filename)s:%(lineno)s - %(funcName)s()]: %(message)s'
-
-        stream_format = logging.Formatter(logging_format)
-        stream_handler.setFormatter(stream_format)
-        stream_handler.setLevel(logging.INFO)
-        logger.addHandler(stream_handler)
-        self.logger = logger
+        self.logger = logging.getLogger(__name__)
 
     def _get_refseq_to_ccds_mappings(self):
         '''
@@ -135,6 +126,8 @@ def _parse_args():
 def _main():
     '''
     '''
+    logging.config.dictConfig(TfxLogConfig().log_config)
+    
     args = _parse_args()
     
     # Read transcripts that have been written to csv

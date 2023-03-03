@@ -11,6 +11,7 @@ import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter, FileType
 from collections import defaultdict
 from BCBio import GFF
+from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
 __version__ = 0.1
 
@@ -25,18 +26,8 @@ class RefseqToCcds(object):
         '''
         Constructor
         '''
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
+        self.logger = logging.getLogger(__name__)
 
-        stream_handler = logging.StreamHandler()
-        logging_format = '%(levelname)s: [%(filename)s:%(lineno)s - %(funcName)s()]: %(message)s'
-
-        stream_format = logging.Formatter(logging_format)
-        stream_handler.setFormatter(stream_format)
-        stream_handler.setLevel(logging.INFO)
-        logger.addHandler(stream_handler)
-        self.logger = logger
-        
     def get_mappings_from_gff(self, gff_file_name: str):
         '''
         Read the GFF file and return all refseq-to-ccds mappings 
@@ -104,6 +95,8 @@ class RefseqToCcds(object):
         self.logger.info(f"Wrote {len(refSeq_to_ccds)} refseq-to-cccds mappings to {csv_file_name}")
 
 def main():
+    logging.config.dictConfig(TfxLogConfig().log_config)
+    
     parser = ArgumentParser(description='', formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-c", "--csv", help="CSV file to write out RefSeq-to-CCDS mappings", type=FileType('w'), required=True)
     parser.add_argument("-g", "--gff", help="GFF file to read RefSeq-to-CCDS mappings", type=FileType('r'), required=True)
