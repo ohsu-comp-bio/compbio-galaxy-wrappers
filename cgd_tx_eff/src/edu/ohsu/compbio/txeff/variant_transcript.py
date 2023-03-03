@@ -1,7 +1,8 @@
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
 
 class VariantTranscript(AnnovarVariantFunction):
-    
+    '''
+    '''
     def __init__(self, chromosome, position, ref, alt):
         '''
         Create new VariantTranscript using chromosome, position, ref, and alt.
@@ -17,6 +18,12 @@ class VariantTranscript(AnnovarVariantFunction):
             return self.protein_transcript == obj.protein_transcript
         else:           
             return False
+    
+    def __str__(self):
+        '''
+        String representation of the VariantTranscript object
+        '''
+        return f'[AnnovarVariantFunction: genotype={self.chromosome}-{self.position}-{self.reference}-{self.alt}-transcript={self.refseq_transcript}-{self.protein_transcript}'
     
     def get_copy(self):
         '''
@@ -47,15 +54,18 @@ class VariantTranscript(AnnovarVariantFunction):
     
     def __lt__(self, other):
         '''
-        Compare variant transcripts. Only objects that are the same variant with the same transcript may 
-        be compared (transcript versions may differ). Primary comparison is determined by score (see _get_self_score()).
-        When scores are the same then transcript version is compared.   
+        The overloaded ``__lt__`` function is used to compare variant transcripts by their score. This implementation is only 
+        intended for sorting variants by their quality score that is based on the number member fields that are non-null.  
+        
+        Only objects that  have the same variant genotype and transcript may be compared (transcript versions may differ). 
+        Primary comparison is determined by score (see _get_self_score()). When scores are the same then transcript version 
+        is compared.   
         '''
-        self_label, self_transcript_version = self.get_label().split('.')
-        other_label, other_transcript_version = other.get_label().split('.')
+        self_genotype, self_transcript_version = self.get_label().split('.')
+        other_genotype, other_transcript_version = other.get_label().split('.')
         
         # Comparison can only be between same variants with same transcript (minus the transcript version)
-        assert self_label == other_label
+        assert self_genotype == other_genotype, f"attempt to compare different variants: {self_genotype} and {other_genotype}"
                 
         self_score = self._get_self_score()
         other_score = other._get_self_score()

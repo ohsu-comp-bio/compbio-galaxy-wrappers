@@ -352,7 +352,9 @@ class AnnovarParser(object):
             left_rec = matching_genotypes[0]
             
             if left_rec.splicing == 'splicing':
-                # Splicing variants don't get merged 
+                # Splicing variants don't get merged, and as far as I know Annovar will only have one splicing
+                # variant per genotype.                  
+                assert len(matching_genotypes) == 1, "A genotype can only have one splicing variant"
                 pass
             elif len(matching_genotypes) > 2:
                 # Our current workflow only involves two annovar input files so there will only be a maximum of two matching transcripts; this exception ensures

@@ -246,20 +246,20 @@ def to_variant_transcript(annovar_transcript: AnnovarVariantFunction):
         
 def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list):
     '''
-    Given a list of merged_transcripts from Annovar and HGVS, find those with the same genotype and transcript, and merge them into a single record.
+    Given a list of transcripts from Annovar and HGVS, find those with the same genotype and transcript, and merge them into a single record.
     '''
     merged_transcripts = []
     
     # Collect annovar records into a map keyed by genotype and transcript 
     annovar_dict = defaultdict(VariantTranscript)
     for annovar_rec in annovar_transcripts:
-        assert annovar_rec.get_label() not in annovar_dict, 'A matching variant-transcript should not already be in the dictionary'
+        assert annovar_rec.get_label() not in annovar_dict, f'A matching annovar variant-transcript should not already be in the dictionary: {annovar_rec.get_label()}'
         annovar_dict[annovar_rec.get_label()] = annovar_rec
     
     # Collect hgvs records into a map keyed by genotype and transcript    
     hgvs_dict = defaultdict(VariantTranscript)
     for hgvs_rec in hgvs_transcripts:
-        assert hgvs_rec.get_label() not in hgvs_dict, 'A matching variant-transcript should not already be in the dictionary'
+        assert hgvs_rec.get_label() not in hgvs_dict, f'A matching hgvs variant-transcript should not already be in the dictionary: {hgvs_rec.get_label()}'
         hgvs_dict[hgvs_rec.get_label()] = hgvs_rec
 
     # Iterate over every HGVS variant-transcript and see if there is a matching Annovar transcript
@@ -271,8 +271,8 @@ def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list):
             logging.debug(f"Merging HGVS transcript with Annovar transcript having key {transcript_key}")
             merged_transcripts.append(_merge(transcript_key, hgvs_transcript, annovar_match))
 
-    # Not all the Asnnovar transcripts will get matched and merged with an HGVS transcript. They won't likely be useful
-    # but we keep them because they may end up being useful. 
+    # Not all the Annovar transcripts will get matched and merged with an HGVS transcript. They will likely be discarded
+    # when _get_the_best_transcripts is called.  
     unmerged_transcripts = _get_unmatched_annovar_transcripts(annovar_dict, hgvs_dict)
 
     return merged_transcripts, unmerged_transcripts
@@ -588,22 +588,34 @@ def get_updated_hgvs_transcripts(annovar_transcripts: list):
     
     return best_transcripts
     
+def __get_variant_transcript_key(transcript: VariantTranscript):
+    '''
+    This function returns a unique key that is used for a dict in the _get_the_best_transcripts function.
+    '''
+    # Take the version off of the transcript
+    unversioned_transcript = transcript.refseq_transcript.split('.')[0]
+    return f"{transcript.chromosome}-{transcript.position}-{transcript.reference}-{transcript.alt}-{unversioned_transcript}"
+        
 def _get_the_best_transcripts(merged_transcripts: list, unmerged_transcripts: list):
     '''
     When there is more than one version of a transcript this method picks the best one so that we only end up with one version of each. 
     The best transcript will be the one with the most information (ie the least sparse). When there is a tie, the transcript with the most 
     recent version is selected.
     '''
-    # add all transcripts to a list
+    # Create a dict where the key is the variant genotype and the unversioned transcript; and the value is a list 
+    # of all the transcripts with that prefix that are associated with that genotype. Example:
+    # 1-1-A-C-NM_001 --> [ NM_001.1, NM001.2]
+    # 1-1-C-T-NM_001 --> [ NM_002.2]
+    # 2-2-C-G-NM_001 --> [ NM_003.1, NM003.2, NM_004.5]
     transcript_dict = defaultdict(list)
-    key_maker = lambda x: x.split('.')[0]    
+         
     for transcript in merged_transcripts + unmerged_transcripts:
-        transcript_dict[key_maker(transcript.refseq_transcript)].append(transcript)
+        transcript_dict[__get_variant_transcript_key(transcript)].append(transcript)
     
     # Send each list of transcripts, that are grouped by version, to a function that returns the best one 
     best_transcripts = []
     for key in transcript_dict:
-        best_transcripts.append(__get_best_transcript(transcript_dict[key]))        
+        best_transcripts.append(__get_best_transcript(transcript_dict[key]))
     
     return best_transcripts    
     
@@ -611,7 +623,10 @@ def __get_best_transcript(transcripts: list):
     '''
     Take a list of transcripts and return the one that has the most fields filled in. If there is a tie, return the one with the latest version.     
     '''
+    # The VariantTranscript's ``__lt__`` function has been overloaded just for the purpose of scoring. 
     sorted_by_ascending_score = sorted(transcripts)
+    
+    # return the last item in the sorted list (the one with the highest score)
     return sorted_by_ascending_score[-1]
 
 def _main():
