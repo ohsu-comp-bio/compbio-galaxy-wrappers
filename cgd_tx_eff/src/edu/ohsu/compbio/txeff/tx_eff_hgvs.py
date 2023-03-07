@@ -253,8 +253,9 @@ def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list):
     # Collect annovar records into a map keyed by genotype and transcript 
     annovar_dict = defaultdict(VariantTranscript)
     for annovar_rec in annovar_transcripts:
-        assert annovar_rec.get_label() not in annovar_dict, f'A matching annovar variant-transcript should not already be in the dictionary: {annovar_rec.get_label()}'
-        annovar_dict[annovar_rec.get_label()] = annovar_rec
+        annovar_key = annovar_rec.get_label() if not annovar_rec.splicing else annovar_rec.get_label() + '-splicing'
+        assert annovar_key not in annovar_dict, f'A matching annovar variant-transcript should not already be in the dictionary: {annovar_rec.get_label()}'          
+        annovar_dict[annovar_key] = annovar_rec
     
     # Collect hgvs records into a map keyed by genotype and transcript    
     hgvs_dict = defaultdict(VariantTranscript)
@@ -264,7 +265,7 @@ def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list):
 
     # Iterate over every HGVS variant-transcript and see if there is a matching Annovar transcript
     for (transcript_key, hgvs_transcript) in hgvs_dict.items():
-        annovar_match = annovar_dict.get(transcript_key)
+        annovar_match = annovar_dict.get(transcript_key) or annovar_dict.get(transcript_key+'-splicing') 
         if not annovar_match:
             logging.debug(f"HGVS {transcript_key} does not match any Annovar merged_transcripts")
         else:
