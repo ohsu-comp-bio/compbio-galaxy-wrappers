@@ -6,22 +6,22 @@
 
 # UPDATES:
 # 1.0.0 -- added 5 TMA cell lines (total 19)
-# 1.1.0 -- Add default plots in the event that no rules are broken for a combination
-# 1.2.0 --
+# 1.1.0 -- added default plots in the event that no rules are broken for a combination
+# 1.2.0 -- removed stdout output file and added spreadsheet output of flagged batches
+# 1.2.1 -- added function to plot positive controls for each TMA:Ab combo
 
 # By Benson Chong
 
 import os
 import numpy as np
 import pandas as pd
-import sys
 import re
 import matplotlib.pyplot as plt
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import argparse
 
-VERSION = '1.2.0'
+VERSION = '1.2.1'
 
 # initialize placeholder PDf object to be filled in
 c = canvas.Canvas('placeholder.pdf', pagesize=letter)
@@ -29,8 +29,10 @@ c = canvas.Canvas('placeholder.pdf', pagesize=letter)
 def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('dsp_tma_results', help='TMA melt of abundance counts from dsp_runner')
+    parser.add_argument('pos_cntrls', help='Spreadsheet containing TMA:Ab combinations of positive controls')
     parser.add_argument('qc_report', help='PDF of plots')
     parser.add_argument('qc_tab', help='CSV sheet of QC report in tabular format')
+    parser.add_argument('qc_pc_plots', help='PDF of positive controls plotted per cell line')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     parser.add_argument('--combos', '-c')
     parser.add_argument('--tma', '-t')
@@ -59,27 +61,91 @@ def cellsearch(tma_input: str):
     return tma_oi
 
 
-# Reads positive control sheet and returns in dictionary format
-def get_pos_cntrls(sheet):
-    df = pd.read_csv(sheet)
-    tma = list(df['Marker'])
-    ab = list(df['PositiveControls'])
+#
+def plot_pos_cntrls(sheet, abcount_path, pos_out):
+    # initialize PDF
+    pc = canvas.Canvas(pos_out, pagesize=letter)
+
+    # Get positive controls from sheet
+    sheet = pd.read_csv(sheet)
+    tma = list(sheet['Marker'])
+    ab = list(sheet['PositiveControls'])
 
     # Create Ab:[TMA(s)] relation dictionary
     tmp_dict = {}
     for i in range(len(tma)):
         ab[i] = ab[i].replace(' ', '')
-        tmp_dict[tma[i].replace('\xa0', '')] = ab[i].split(',')
+        key = tma[i].strip().replace('\xa0', '')
+        tmp_dict[key] = ab[i].split(',')
 
     # Inverse dictionary to TMA:[Ab(s)]
     pos_cntrls = {}
-    for k, v in dic.items():
+    for k, v in tmp_dict.items():
         for i in v:
             if i not in pos_cntrls.keys():
                 pos_cntrls[i] = []
             pos_cntrls[i].append(k)
 
-    return pos_cntrls
+    # Iterate through TMA:Ab dict
+    for k, v in pos_cntrls.items():
+        df = pd.read_csv(abcount_path, header=0)
+
+        # Select rows of specified TMA and Ab combination
+        df = df[(df['name'] == k) & df['ProbeName'].isin(v)].reset_index()
+        df = df[['name', 'ProbeName', 'abundance', 'year', 'monthday', 'batch']]
+        df = df.sort_values(['year', 'monthday']).reset_index()
+
+        # Get Counts
+        for i in range(len(v)):
+            counts = {}
+            for j, row in df.iterrows():
+                if row['ProbeName'] == v[i]:
+                    counts[row['batch']] = row['abundance']
+            # Check if abundance for TMA:Ab combos were found
+            if len(counts) == 0:
+                continue
+
+            # Normalize
+            y = get_counts(counts)
+            y_zscore = []
+            y_stat = get_stat(y)
+            for ii in range(len(y)):
+                y_zscore.append((y[ii]-y_stat[0])/y_stat[1])
+
+            if i == 0:
+                # PLOTTING
+                x = np.arange(len(y))
+
+                fig, ax = plt.subplots()
+                plt.yticks([-3, -2, -1, 0, 1, 2, 3])
+                ax.set_xticks(x)
+                ax.set_yticklabels(['-3s', '-2s', '-1s', 'Mean', '1s', '2s', '3s'])
+                ax.set_xticklabels(counts.keys())
+                plt.xticks(fontsize=5, rotation=45, ha='right')
+
+                plt.axhline(y=0, color='blue')
+                plt.axhline(y=1, color='green', linestyle=':')
+                plt.axhline(y=2, color='gold', linestyle='--')
+                plt.axhline(y=3, color='red', linestyle='-')
+                plt.axhline(y=-1, color='green', linestyle=':')
+                plt.axhline(y=-2, color='gold', linestyle='--')
+                plt.axhline(y=-3, color='red', linestyle='-')
+                plt.title(k)
+
+                figure = plt.gcf()
+                figure.set_size_inches(8, 8)
+
+            if len(x) != len(y):
+                continue
+            else:
+                plt.plot(x, y_zscore, label=v[i])
+                plt.legend()
+                fig_name = str(i) + k
+                plt.savefig(fig_name + '.png', dpi=500)
+                pc.drawImage(fig_name + '.png', 30, 250, width=500, height=500)
+                os.remove(fig_name + '.png')
+                pc.showPage()
+    pc.save()
 
 
 # Extract count data from each initial batch dataset
@@ -142,16 +208,16 @@ def get_key(my_dict, val):
 
 # Obtain count values from dictionary
 def get_counts(counts):
-    x = []
+    y = []
     if not isinstance(counts, dict):
         raise TypeError('Please provide a dict')
 
     for k, v in counts.items():
-        x.append(v)
+        y.append(v)
 
-    x = pd.Series(x)
+    y = pd.Series(y)
 
-    return x
+    return y
 
 
 def get_stat(y):
@@ -377,7 +443,6 @@ def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
             rule_broke = True
             print(f'Rule {k} is broken starting at batch(es): {v} for {tma_oi} | {ab_oi}\n')
             flagged[k] = v
-            print(k,v)
 
     return [flagged, rule_broke]
 
@@ -393,8 +458,11 @@ def main():
         raise Exception('A control sheet and --tma and/or --ab cannot be entered at once.')
     elif args.combos is None and args.tma is not None and args.ab is None:
         raise Exception('Both TMA and Antibody name need to be provided.')
-    elif args. combos is None and args.tma is None and args.ab is not None:
+    elif args.combos is None and args.tma is None and args.ab is not None:
         raise Exception('Both TMA and Antibody name need to be provided')
+
+    # Plots positive controls by default
+    plot_pos_cntrls(args.pos_cntrls, args.dsp_tma_results, args.qc_pc_plots)
 
     if args.combos is None:
         batches = parse_batches(args.dsp_tma_results, args.tma, args.ab)

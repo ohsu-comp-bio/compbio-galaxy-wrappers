@@ -1,4 +1,4 @@
-<tool id="westgard" name="Westgard Multirule QC" version="1.2.0">
+<tool id="westgard" name="Westgard Multirule QC" version="1.2.1">
     <description>Performs Westgard Multirule QC on raw DSP data on specified TMA and Probe combo</description>
     <requirements>
       <requirement type="package" version="1.21.5">numpy</requirement>
@@ -10,15 +10,16 @@
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
     #if $combo.selector == "sheet"
-      python $__tool_directory__/westgard.py '${dsp_tma_results}' '${qc_report}' '${qc_tabout}' -c '${combo.dsp_tma_combos}'
+      python $__tool_directory__/westgard.py '${dsp_tma_results}' '${pos_cntrls}' '${qc_report}' '${qc_tabout}' '${qc_pc_plots}' -c '${combo.dsp_tma_combos}'
     #else
-      python $__tool_directory__/westgard.py '${dsp_tma_results}' '${qc_report}' '${qc_tabout}' -t '${combo.tma_name}' -a '${combo.ab_name}'
+      python $__tool_directory__/westgard.py '${dsp_tma_results}' '${pos_cntrls}' '${qc_report}' '${qc_tabout}' '${qc_pc_plots}' -t '${combo.tma_name}' -a '${combo.ab_name}'
     #end if
 ]]>
     </command>
 
     <inputs>
         <param type="data" name="dsp_tma_results" label="TMA abundance counts" format="csv"/>
+        <param type="data" name="pos_cntrls" label="Positive Controls meta" format="csv"/>
         <conditional name="combo">
             <param name="selector" type="select" label="Choose TMA/Ab selection format">
                 <option value="sheet" selected="True">Control Sheet</option>
@@ -37,6 +38,7 @@
     <outputs>
         <data format="pdf" name="qc_report" label="Levey-Jennings Plots"/>
         <data format="csv" name="qc_tabout" label="Abundance Counts QC Table"/>
+        <data format="pdf" name="qc_pc_plots" label="Positive Control Plots"/>
     </outputs>
     <help></help>
 </tool>
