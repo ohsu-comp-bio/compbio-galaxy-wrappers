@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # USAGE: python fusion_annotation.py [-f] <starfusion> <sample_level_metrics.txt> <genome_refpath>
 
+# 0.5.2 - remove single quotes in cheetah xml section for booleans
+
+
 import argparse
 import json
 import pysam
@@ -9,7 +12,7 @@ from collections import OrderedDict
 from ensembldb import EnsemblDbImport
 from gtf import Gtf
 
-VERSION = '0.5.1'
+VERSION = '0.5.2'
 
 
 def supply_args():
