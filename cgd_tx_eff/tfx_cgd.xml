@@ -19,7 +19,7 @@
         --annovar_variant_function "${annovar_variant_function}"
         --annovar_exonic_variant_function "${annovar_exonic_variant_function}"
     	--ccds_map "${ccds_map}"
-    	--out_vcf "${out_vcf}"; 	    
+    	--out_vcf "${out_vcf}";
   ]]></command>
   
  <environment_variables>
