@@ -129,18 +129,18 @@
     #end if
 
 
-    ## Create target directory structure based on <ROOT>, <YEAR>, <MONTH>, <RUNID>, <SAMPLEID>, <TEST>
+    ## Create target directory structure based on <ROOT>, <YEAR>, <MONTH>, <RUNID>, <SAMPLEID>, <SAMPLE>
     ## File extension is whatever Galaxy says it is, unless modified above.
     #if str($move_type.move_type_sel) == "year_month_run_sample_test":
       #if $move_type.auto_date.add_date == 'yes_auto_date':
         #import datetime
         #set $year = datetime.date.today().year
         #set $month = datetime.datetime.now().strftime("%m")
-        #set $move_dir = '/'.join([str($move_type.base_dir), str($year), str($month), str($move_type.runid), str($move_type.sampleid), str($move_type.test_name)])
-        #set $move_location = '/'.join([str($move_type.base_dir), str($year), str($month), str($move_type.runid), str($move_type.sampleid), str($move_type.test_name), str($move_type.sampleid)])
+        #set $move_dir = '/'.join([str($move_type.base_dir), str($year), str($month), str($move_type.runid), str($move_type.sampleid)])
+        #set $move_location = '/'.join([str($move_type.base_dir), str($year), str($month), str($move_type.runid), str($move_type.sampleid), str($move_type.sampleid)])
       #else
-        #set $move_dir = '/'.join([str($move_type.base_dir), str($move_type.auto_date.year), str($move_type.auto_date.month), str($move_type.runid), str($move_type.sampleid), str($move_type.test_name)])
-        #set $move_location = '/'.join([str($move_type.base_dir), str($move_type.auto_date.year), str($move_type.auto_date.month), str($move_type.runid), str($move_type.sampleid), str($move_type.test_name), str($move_type.sampleid)])
+        #set $move_dir = '/'.join([str($move_type.base_dir), str($move_type.auto_date.year), str($move_type.auto_date.month), str($move_type.runid), str($move_type.sampleid)])
+        #set $move_location = '/'.join([str($move_type.base_dir), str($move_type.auto_date.year), str($move_type.auto_date.month), str($move_type.runid), str($move_type.sampleid), str($move_type.sampleid)])
       #end if
 
       mkdir -p $move_dir &&
@@ -371,7 +371,6 @@
             </valid>
             </sanitizer>
         </param>
-        <param name="test_name" type="text" label="Test Name" help="Test name, will be used to create dest directory." />
         <param name="runid" type="text" label="Run ID" help="Run identifier to create subdirectory from." />
         <param name="sampleid" type="text" label="Sample ID" help="Run identifier to create subdirectory from." />
       </when>
