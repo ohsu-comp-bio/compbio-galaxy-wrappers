@@ -135,16 +135,16 @@ def plot_pos_cntrls(sheet, abcount_path, pos_out):
                 figure = plt.gcf()
                 figure.set_size_inches(8, 8)
 
-            if len(x) != len(y):
-                continue
-            else:
-                plt.plot(x, y_zscore, label=v[i])
-                plt.legend()
-                fig_name = str(i) + k
-                plt.savefig(fig_name + '.png', dpi=500)
-                pc.drawImage(fig_name + '.png', 30, 250, width=500, height=500)
-                os.remove(fig_name + '.png')
-                pc.showPage()
+                if len(x) != len(y):
+                    continue
+                else:
+                    plt.plot(x, y_zscore, label=v[i])
+                    plt.legend()
+                    fig_name = str(i) + k
+                    plt.savefig(fig_name + '.png', dpi=500)
+                    pc.drawImage(fig_name + '.png', 30, 250, width=500, height=500)
+                    os.remove(fig_name + '.png')
+                    pc.showPage()
     pc.save()
 
 
@@ -194,6 +194,10 @@ def tab_out(abcount_path, tma_oi, ab_oi, flagged):
             for batch in v:
                 batch = batch.split('_')[-1]
                 df.loc[df['batch'] == str(batch), 'rules'] = k
+
+    df.replace('', np.nan, inplace=True)
+    df.dropna(subset='rules', inplace=True)
+
     return df
 
 
@@ -265,6 +269,7 @@ def chart(y, segment, title, f, rule_broke=True):
 
     # Plots default LJ of counts
     if rule_broke is False:
+        plt.gcf()
         fig_name = re.sub(r'[^\w]', '', title)
         plt.title(title)
         plt.plot(x, y, color='black', marker='o', markersize=3)
@@ -275,6 +280,7 @@ def chart(y, segment, title, f, rule_broke=True):
 
     # Plots counts with highlighted flagged batches
     else:
+        plt.gcf()
         fig_name = re.sub(r'[^\w]', '', "_Rule:" + title).replace(" ", "")
         plt.title("Rule: " + title)
         plt.plot(x, y, color='blue', marker='o', markersize=3, linestyle='--')
@@ -290,7 +296,6 @@ def chart(y, segment, title, f, rule_broke=True):
 # multirule QC
 def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
     x = get_counts(counts)
-    f = plot_lj_ax(x, counts)
     stats = get_stat(x)
     mu, pos_1s, pos_2s, pos_3s, neg_1s, neg_2s, neg_3s = stats[0], stats[2], stats[3], stats[4], stats[5], stats[6], \
                                                          stats[7]
@@ -314,6 +319,7 @@ def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
     plotname = '_' + tma_oi + '_' + ab_oi
 
     for i in range(len(x)):
+        f = plot_lj_ax(x, counts)
 
         # 1_3s rule
         if x[i] >= pos_3s or x[i] <= neg_3s:
@@ -433,6 +439,7 @@ def westgard_qc(counts: dict, ids: dict, tma_oi: str, ab_oi: str):
                 chart(x, range((i - 6), (i + 1)),
                       '7T | ' + list(ids.keys())[list(ids.values()).index(x[i - 5])] + plotname, f)
                 j += 1
+        plt.close('all')
 
     rule_broke = False
     # Add dict of flagged batches to return
@@ -463,6 +470,7 @@ def main():
 
     # Plots positive controls by default
     plot_pos_cntrls(args.pos_cntrls, args.dsp_tma_results, args.qc_pc_plots)
+    plt.clf()
 
     if args.combos is None:
         batches = parse_batches(args.dsp_tma_results, args.tma, args.ab)
@@ -500,12 +508,12 @@ def main():
                 tab_df = pd.concat([tab_df, tab_out(args.dsp_tma_results, tma_oi, ab_oi, flagged)])
 
                 if rule_broke is False:
-                    chart(y,0, f'TMA: {tma_oi} / Ab: {ab_oi}', f, False)
+                    chart(y,0, f'TMA: {tma_oi} / Ab: {ab_oi}', plot_lj_ax(y, counts), False)
                     print(f'No rules broken for {tma_oi}/{ab_oi}\n')
                 else:
                     continue
 
-            tab_df = tab_df.iloc[1:]
+            #tab_df = tab_df.iloc[1:]
             tab_df.to_csv(args.qc_tab, index=False)
             c._filename = args.qc_report
             c.save()
