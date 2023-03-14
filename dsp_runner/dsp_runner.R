@@ -355,7 +355,7 @@ for (i in seq(1, length(clia_abs))){
 outlier_df = do.call(rbind, datalist)
 
 for (j in seq(1,nrow(outlier_df), by=35)){
-  g2 <- tableGrob(outlier_df[j:(j+34), 2:7], rows = NULL, theme = tt)
+  g2 <- tableGrob(na.omit(outlier_df[j:(j+34), 2:7]), rows = NULL, theme = tt)
   g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                         t = 2, b = nrow(g2), l = 1, r = ncol(g2))
   g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
