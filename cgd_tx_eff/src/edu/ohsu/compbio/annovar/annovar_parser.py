@@ -57,7 +57,7 @@ class AnnovarVariantFunction(object):
         return f'[AnnovarVariantFunction: genotype={self.chromosome}-{self.position}-{self.reference}-{self.alt}, transcript={self.refseq_transcript}, variant_effect={self.variant_effect}, variant_type={self.variant_type}, aap={self.hgvs_amino_acid_position}, bpos={self.hgvs_base_position}, exon={self.exon}, gene={self.hgnc_gene}, c.={self.hgvs_c_dot}, p1.={self.hgvs_p_dot_one}, p3.={self.hgvs_p_dot_three}, splicing={self.splicing}]'
             
     def __eq__(self, obj):
-        if(obj == None):
+        if obj is None:
             return False
         
         return self.chromosome == obj.chromosome \
