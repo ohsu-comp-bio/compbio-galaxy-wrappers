@@ -10,6 +10,7 @@
 # 1.0.3 - cleans up Ab plots to make x-axis legible and remove legends
 #       - fixed: corrected duplicate Ab plot pages
 #       - use good_tma again
+# 1.0.4 - add outlier detection by z-score
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -327,6 +328,42 @@ for (i in seq(1,length(clia_abs), by=4)){
     scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
   grid.arrange(q1.plot, q2.plot, q3.plot, q4.plot)
+}
+
+# Outlier detection -- Zscore method
+datalist = list()
+k <- 1
+for (i in seq(1, length(clia_abs))){
+  for (j in seq(1, length(unique(cur.batch$name)))){
+    ref <- ref.batches %>% filter(ProbeName==clia_abs[i] & name == unique(cur.batch$name)[j]) %>%
+      select(batch, ProbeName, name, abundance) %>%
+      group_by(name)
+    mu <- mean(ref$abundance)
+    sigma <- sd(ref$abundance)
+
+    cur <- cur.batch %>% filter(ProbeName==clia_abs[i] & name == unique(cur.batch$name)[j]) %>%
+      select(batch, ProbeName, name, abundance) %>%
+      group_by(name) %>%
+      mutate(mean = mu,
+             sd = sigma,
+            zscore = (abundance - mu)/sigma,
+             outlier = case_when(abs(zscore) >= 3 ~ 'rare'))
+    cur <- na.omit(cur)
+    datalist[[k]] <- cur
+    k <- k+1
+  }
+}
+outlier_df = do.call(rbind, datalist)
+
+for (j in seq(1,nrow(outlier_df), by=35)){
+  g2 <- tableGrob(na.omit(outlier_df[j:(j+34), 2:7]), rows = NULL, theme = tt)
+  g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
+                        t = 2, b = nrow(g2), l = 1, r = ncol(g2))
+  g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
+                        t = 1, l = 1, r = ncol(g2))
+
+  grid.newpage()
+  grid.draw(g2)
 }
 
 dev.off()
