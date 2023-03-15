@@ -9,6 +9,7 @@
 # 1.0.2 - groups Ab boxplots by 4 to a page, give args actual names
 # 1.0.3 - cleans up Ab plots to make x-axis legible and remove legends
 #       - fixed: corrected duplicate Ab plot pages
+#       - use good_tma again
 # 1.0.4 - add outlier detection by z-score
 
 suppressPackageStartupMessages(library(data.table))
@@ -60,7 +61,7 @@ exp.regex <- "[0-9]{8}-[0-9]{2}"
 #               "pan-RAS", "p44/42 MAPK ERK1/2", "Phospho-p90 RSK  (T359/S363)", "MET", "Phospho-MEK1 (S217/S221)", "Phospho-p44/42 MAPK ERK1/2 (T202/Y204)", "HER2_p1248", "Her2", "EGFR", "Phospho-c-RAF (S338)", "BRAF",
 #               "p53", "Phospho-p38 MAPK (T180/Y182)", "PR", "Phospho-JNK (T183/Y185)", "ER-alpha", "Androgen Receptor", "ARID1A",
 #               "PD-L1", "CD8", "CD68", "CD4", "CD3", "CD20", "Beta-2-microglobulin")
-#good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "01272023-01")
+good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "02032023-01", "02082023-01", "02102023-01", "02152023-01")
 
 # Load metadata
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
@@ -101,7 +102,7 @@ stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
 
 tma.meta <- merge(tma.meta, control.type[,.(lower_sample=lower_secondary, name, type)], by="lower_sample", all=F)
 stopifnot(tma.meta[,.N,by=batch][,all(N==19)])
-#tma.meta <- tma.meta[`batch` %in% good_tma | `batch` %in% runid]
+tma.meta <- tma.meta[`batch` %in% good_tma | `batch` %in% runid]
 tma.abund <- abund.mat[,tma.meta$barcode]
 
 ## QC of experimental samples with respect to ROI
