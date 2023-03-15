@@ -12,7 +12,7 @@ class VariantTranscript(AnnovarVariantFunction):
         self.protein_transcript = None
 
     def __eq__(self, obj):
-        if obj == None:
+        if obj is None:
             return False
         elif super.__eq__(self,obj):
             return self.protein_transcript == obj.protein_transcript
