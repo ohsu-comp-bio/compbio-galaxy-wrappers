@@ -27,7 +27,7 @@ from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
-VERSION = '0.3.3'
+VERSION = '0.3.4'
 ASSEMBLY_VERSION = "GRCh37"
 
 # These will need to be updated when we switch from GRCh37 to GRCh38
@@ -174,10 +174,14 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
             variant_transcript.hgvs_p_dot_three = var_p3
             variant_transcript.refseq_transcript = var_c.ac
             variant_transcript.variant_type = variant_type
-            variant_transcript.protein_transcript = var_p.ac
-            
+
+            # Sometimes the am.c_to_p function results the protein accession coming back as MD5 hash 
+            # of the amino acid sequence (see uta.get_acs_for_protein_seq)
+            if not var_p.ac.startswith('MD5'):
+                variant_transcript.protein_transcript = var_p.ac
+
             hgvs_transcripts.append(variant_transcript)
-                 
+
         except HGVSUsageError as e:
             if("non-coding transcript" in e.args[0]):
                 logging.info(f"Error caused by non-coding transcript {variant}. Transcript will have name and gene only: %s", str(e))

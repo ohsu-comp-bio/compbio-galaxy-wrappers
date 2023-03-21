@@ -15,6 +15,6 @@ repositories:
     include:
       - tfx_cgd_comparison.xml
       - src/**
-      - test-data/test_export.csv
-      - test-data/test_comparison.vcf
+      - test-data/test_export_in.csv
+      - test-data/test_comparison_in.vcf
   

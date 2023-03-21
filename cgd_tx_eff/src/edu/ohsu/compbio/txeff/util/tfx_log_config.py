@@ -8,8 +8,6 @@ class TfxLogConfig(object):
     '''
     classdocs
     '''
-
-
     def __init__(self):
         '''
         Constructor
@@ -26,11 +24,9 @@ class TfxLogConfig(object):
             'handlers': {
                 'default': {                     
                     'formatter': 'standard',
-                    'class': 'logging.handlers.RotatingFileHandler',
+                    'class': 'logging.FileHandler',
                     'filename': 'cgd_tx_eff.log', 
-                    'mode': 'a',
-                    'maxBytes': 10485760,
-                    'backupCount': 10
+                    'mode': 'a'
                 },
             },
             'loggers': { 
