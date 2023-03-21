@@ -513,7 +513,11 @@ def main():
                 else:
                     continue
 
+            # drop init zero row
             #tab_df = tab_df.iloc[1:]
+            tab_df = tab_df.loc[~(tab_df == 0).all(axis=1)]
+
+            # save files
             tab_df.to_csv(args.qc_tab, index=False)
             c._filename = args.qc_report
             c.save()
