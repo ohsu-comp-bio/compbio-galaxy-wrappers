@@ -1,4 +1,4 @@
-<tool id="tfx_cgd_comparison" name="Tfx Comparison with CGD" version="0.4.2" >
+<tool id="tfx_cgd_comparison" name="Tfx Comparison with CGD" version="0.4.3" >
   <description>
     Generate a CSV for comparison of transcripts and nomenclature in CGD with the values found in the VCF produced by tx_eff_control.py.
   </description>
