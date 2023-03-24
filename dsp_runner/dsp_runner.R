@@ -269,8 +269,10 @@ outlier_df = do.call(rbind, datalist)
 
 # Get failed antibodies (Ab combos with 5+ flagged outliers)
 failed_ab <- as.data.frame(table(outlier_df$ProbeName))
-failed_ab <- failed_ab %>% filter(Freq >= 5) %>% select(Var1)
-colnames(failed_ab) <- c('Failed Antibodies')
+if (nrow(failed_ab)>0){
+  failed_ab <- failed_ab %>% filter(Freq >= 5) %>% select(Var1)
+  colnames(failed_ab) <- c('Failed Antibodies')
+}
 
 # First, produce Cover Sheet
 tt1 <- ttheme_minimal(core=list(fg_params=list(fontface=3, fontsize=23)))
@@ -287,23 +289,28 @@ colnames(reference_batches) <- c('Reference Batches')
 
 gc1 <- tableGrob(summ_df, theme=tt_cover)
 gc2 <- tableGrob(reference_batches, theme=tt1)
-gc3 <- tableGrob(failed_ab, theme=tt1)
 
-haligned <- gtable_combine(gc2, gc3)
-cover_sheet<- grid.arrange(gc1, haligned, ncol=1)
-
+if (nrow(failed_ab)>0){
+  gc3 <- tableGrob(failed_ab, theme=tt1)
+  haligned <- gtable_combine(gc2, gc3)
+  cover_sheet<- grid.arrange(gc1, haligned, ncol=1)
+} else{
+  cover_sheet<- grid.arrange(gc1, gc2, ncol=1)
+}
 grid.draw(cover_sheet)
 
 # Draw outlier table
-for (j in seq(1,nrow(outlier_df), by=35)){
-  g2 <- tableGrob(na.omit(outlier_df[j:(j+34), 2:7]), rows = NULL, theme = tt)
-  g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
-                        t = 2, b = nrow(g2), l = 1, r = ncol(g2))
-  g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
-                        t = 1, l = 1, r = ncol(g2))
+if (nrow(outlier_df>0)){
+  for (j in seq(1,nrow(outlier_df), by=35)){
+    g2 <- tableGrob(na.omit(outlier_df[j:(j+34), 2:7]), rows = NULL, theme = tt)
+    g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
+                          t = 2, b = nrow(g2), l = 1, r = ncol(g2))
+    g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
+                          t = 1, l = 1, r = ncol(g2))
 
-  grid.newpage()
-  grid.draw(g2)
+    grid.newpage()
+    grid.draw(g2)
+  }
 }
 
 for (tums in names(plot.list)){
