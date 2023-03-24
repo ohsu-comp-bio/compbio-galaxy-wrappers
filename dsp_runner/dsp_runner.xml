@@ -1,4 +1,4 @@
-<tool id="dsp_runner" name="NanoString DSP RUV-III Normalization" version="1.0.4" >
+<tool id="dsp_runner" name="NanoString DSP RUV-III Normalization" version="1.0.5" >
     <description>NanoString GeoMx Digital Spatial Profiling</description>
 
     <requirements>
