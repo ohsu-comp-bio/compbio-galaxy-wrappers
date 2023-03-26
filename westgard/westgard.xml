@@ -10,8 +10,10 @@
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
     #if $combo.selector == "sheet"
+      ln -s "$pos_cntrls" pos_cntrls.xlsx &&
       python $__tool_directory__/westgard.py '${dsp_tma_results}' '${pos_cntrls}' '${qc_report}' '${qc_tabout}' '${qc_pc_plots}' -c '${combo.dsp_tma_combos}'
     #else
+      ln -s "$pos_cntrls" pos_cntrls.xlsx &&
       python $__tool_directory__/westgard.py '${dsp_tma_results}' '${pos_cntrls}' '${qc_report}' '${qc_tabout}' '${qc_pc_plots}' -t '${combo.tma_name}' -a '${combo.ab_name}'
     #end if
 ]]>
@@ -19,7 +21,7 @@
 
     <inputs>
         <param type="data" name="dsp_tma_results" label="TMA abundance counts" format="csv"/>
-        <param type="data" name="pos_cntrls" label="Positive Controls meta" format="csv"/>
+        <param type="data" name="pos_cntrls" label="Positive Controls meta" format="xlsx"/>
         <conditional name="combo">
             <param name="selector" type="select" label="Choose TMA/Ab selection format">
                 <option value="sheet" selected="True">Control Sheet</option>

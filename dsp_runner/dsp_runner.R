@@ -11,6 +11,7 @@
 #       - fixed: corrected duplicate Ab plot pages
 #       - use good_tma again
 # 1.0.4 - add outlier detection by z-score
+# 1.0.5 - add cover summary sheet and re-arrange displayed tables/plots
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -235,9 +236,82 @@ use.pal <- scales::hue_pal()(run_no)
 samp.scores <- my.scores[`sample_id` == my_samp]
 samp.scores$patient_ord <- droplevels(samp.scores$patient_ord, except=my_samp)
 
-# Overall Plots
+### WRITE TO PDF
+
+# Overall Plotting
 plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund, coh)
 pdf(file=paste0(report.out), width=16, height=16)
+
+# Outlier detection -- Zscore method
+datalist = list()
+k <- 1
+for (i in seq(1, length(clia_abs))){
+  for (j in seq(1, length(unique(cur.batch$name)))){
+    ref <- ref.batches %>% filter(ProbeName==clia_abs[i] & name == unique(cur.batch$name)[j]) %>%
+      select(batch, ProbeName, name, abundance) %>%
+      group_by(name)
+    mu <- mean(ref$abundance)
+    sigma <- sd(ref$abundance)
+
+    cur <- cur.batch %>% filter(ProbeName==clia_abs[i] & name == unique(cur.batch$name)[j]) %>%
+      select(batch, ProbeName, name, abundance) %>%
+      group_by(name) %>%
+      mutate(mean = mu,
+             sd = sigma,
+             zscore = (abundance - mu)/sigma,
+             outlier = case_when(abs(zscore) >= 3 ~ 'rare'))
+    cur <- na.omit(cur)
+    datalist[[k]] <- cur
+    k <- k+1
+  }
+}
+outlier_df = do.call(rbind, datalist)
+
+# Get failed antibodies (Ab combos with 5+ flagged outliers)
+failed_ab <- as.data.frame(table(outlier_df$ProbeName))
+if (nrow(failed_ab)>0){
+  failed_ab <- failed_ab %>% filter(Freq >= 5) %>% select(Var1)
+  colnames(failed_ab) <- c('Failed Antibodies')
+}
+
+# First, produce Cover Sheet
+tt1 <- ttheme_minimal(core=list(fg_params=list(fontface=3, fontsize=23)))
+tt_cover <- ttheme_minimal(core=list(bg_params = list(fill = blues9[1:4], col=NA),
+                                     fg_params=list(fontface=3, fontsize=23)),
+                           colhead=list(fg_params=list(col="darkblue", fontface=4L, fontsize=30)))
+
+summ_df <- as.data.frame(c(my_samp, runid, as.character(Sys.Date())), header=FALSE)
+rownames(summ_df) <- c('SAMPLE ID: ', 'RUN ID: ', 'RUN DATE: ')
+colnames(summ_df) <- c('Nanostring_DSP')
+
+reference_batches <- ref.batches %>% arrange(year, monthday) %>% select(batch) %>% distinct(batch)
+colnames(reference_batches) <- c('Reference Batches')
+
+gc1 <- tableGrob(summ_df, theme=tt_cover)
+gc2 <- tableGrob(reference_batches, theme=tt1)
+
+if (nrow(failed_ab)>0){
+  gc3 <- tableGrob(failed_ab, theme=tt1)
+  haligned <- gtable_combine(gc2, gc3)
+  cover_sheet<- grid.arrange(gc1, haligned, ncol=1)
+} else{
+  cover_sheet<- grid.arrange(gc1, gc2, ncol=1)
+}
+grid.draw(cover_sheet)
+
+# Draw outlier table
+if (nrow(outlier_df>0)){
+  for (j in seq(1,nrow(outlier_df), by=35)){
+    g2 <- tableGrob(na.omit(outlier_df[j:(j+34), 2:7]), rows = NULL, theme = tt)
+    g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
+                          t = 2, b = nrow(g2), l = 1, r = ncol(g2))
+    g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
+                          t = 1, l = 1, r = ncol(g2))
+
+    grid.newpage()
+    grid.draw(g2)
+  }
+}
 
 for (tums in names(plot.list)){
   show(plot.list[[tums]])
@@ -292,6 +366,7 @@ if (nrow(score_str) > 0) {
 
 }
 
+# Produce boxplots
 for (i in seq(1,length(clia_abs), by=4)){
 
   print(clia_abs[i])
@@ -302,68 +377,32 @@ for (i in seq(1,length(clia_abs), by=4)){
     scale_x_discrete(guide = guide_axis(n.dodge = 3))
 
   if ((i+1)<=length(clia_abs)){
-  print(clia_abs[i+1])
-  q2.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+1]], mapping=aes(x=name, y=abundance)) +
-    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
-    geom_jitter(data=cur.batch[ProbeName == clia_abs[i+1]], size=3, width=.15, height=0) +
-    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+1])) +
-    scale_x_discrete(guide = guide_axis(n.dodge = 3))
+    print(clia_abs[i+1])
+    q2.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+1]], mapping=aes(x=name, y=abundance)) +
+      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
+      geom_jitter(data=cur.batch[ProbeName == clia_abs[i+1]], size=3, width=.15, height=0) +
+      theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+1])) +
+      scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
 
   if ((i+2)<=length(clia_abs)){
-  print(clia_abs[i+2])
-  q3.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+2]], mapping=aes(x=name, y=abundance)) +
-    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
-    geom_jitter(data=cur.batch[ProbeName == clia_abs[i+2]], size=3, width=.15, height=0) +
-    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+2])) +
-    scale_x_discrete(guide = guide_axis(n.dodge = 3))
+    print(clia_abs[i+2])
+    q3.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+2]], mapping=aes(x=name, y=abundance)) +
+      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
+      geom_jitter(data=cur.batch[ProbeName == clia_abs[i+2]], size=3, width=.15, height=0) +
+      theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+2])) +
+      scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
 
   if ((i+3)<=length(clia_abs)){
-  print(clia_abs[i+3])
-  q4.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+3]], mapping=aes(x=name, y=abundance)) +
-    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
-    geom_jitter(data=cur.batch[ProbeName == clia_abs[i+3]], size=3, width=.15, height=0) +
-    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+3])) +
-    scale_x_discrete(guide = guide_axis(n.dodge = 3))
+    print(clia_abs[i+3])
+    q4.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+3]], mapping=aes(x=name, y=abundance)) +
+      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
+      geom_jitter(data=cur.batch[ProbeName == clia_abs[i+3]], size=3, width=.15, height=0) +
+      theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+3])) +
+      scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
   grid.arrange(q1.plot, q2.plot, q3.plot, q4.plot)
-}
-
-# Outlier detection -- Zscore method
-datalist = list()
-k <- 1
-for (i in seq(1, length(clia_abs))){
-  for (j in seq(1, length(unique(cur.batch$name)))){
-    ref <- ref.batches %>% filter(ProbeName==clia_abs[i] & name == unique(cur.batch$name)[j]) %>%
-      select(batch, ProbeName, name, abundance) %>%
-      group_by(name)
-    mu <- mean(ref$abundance)
-    sigma <- sd(ref$abundance)
-
-    cur <- cur.batch %>% filter(ProbeName==clia_abs[i] & name == unique(cur.batch$name)[j]) %>%
-      select(batch, ProbeName, name, abundance) %>%
-      group_by(name) %>%
-      mutate(mean = mu,
-             sd = sigma,
-            zscore = (abundance - mu)/sigma,
-             outlier = case_when(abs(zscore) >= 3 ~ 'rare'))
-    cur <- na.omit(cur)
-    datalist[[k]] <- cur
-    k <- k+1
-  }
-}
-outlier_df = do.call(rbind, datalist)
-
-for (j in seq(1,nrow(outlier_df), by=35)){
-  g2 <- tableGrob(na.omit(outlier_df[j:(j+34), 2:7]), rows = NULL, theme = tt)
-  g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
-                        t = 2, b = nrow(g2), l = 1, r = ncol(g2))
-  g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
-                        t = 1, l = 1, r = ncol(g2))
-
-  grid.newpage()
-  grid.draw(g2)
 }
 
 dev.off()
