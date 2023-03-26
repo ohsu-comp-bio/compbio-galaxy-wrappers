@@ -27,7 +27,7 @@ from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
-VERSION = '0.3.4'
+VERSION = '0.3.5'
 ASSEMBLY_VERSION = "GRCh37"
 
 # These will need to be updated when we switch from GRCh37 to GRCh38
@@ -596,6 +596,7 @@ def get_updated_hgvs_transcripts(annovar_transcripts: list):
 def __get_variant_transcript_key(transcript: VariantTranscript):
     '''
     This function returns a unique key that is used for a dict in the _get_the_best_transcripts function.
+    The key looks like '7-12345-C-G-NM_123' (the transcript's version is not included) 
     '''
     # Take the version off of the transcript
     unversioned_transcript = transcript.refseq_transcript.split('.')[0]
@@ -617,10 +618,19 @@ def _get_the_best_transcripts(merged_transcripts: list, unmerged_transcripts: li
     for transcript in merged_transcripts + unmerged_transcripts:
         transcript_dict[__get_variant_transcript_key(transcript)].append(transcript)
     
-    # Send each list of transcripts, that are grouped by version, to a function that returns the best one 
+    # Send each list of transcripts, that are grouped by genotype and transcript, to a function that returns the best one 
     best_transcripts = []
     for key in transcript_dict:
-        best_transcripts.append(__get_best_transcript(transcript_dict[key]))
+        #best_transcripts.append(__get_best_transcript(transcript_dict[key]))
+        best_transcript = __get_best_transcript(transcript_dict[key])
+        
+        # Annovar doesn't provide a gene for introns and UTR so when that happens lookup the transcript in UTA to see if we can get a gene for it.    
+        if best_transcript.hgnc_gene is None:
+            best_transcript.hgnc_gene = _get_gene_for_transcript(best_transcript.refseq_transcript)
+            if best_transcript.hgnc_gene is not None:
+                logging.debug(f"Found gene for transcript {best_transcript}: {best_transcript.hgnc_gene}")
+
+        best_transcripts.append(best_transcript)
     
     return best_transcripts    
     
@@ -633,6 +643,19 @@ def __get_best_transcript(transcripts: list):
     
     # return the last item in the sorted list (the one with the highest score)
     return sorted_by_ascending_score[-1]
+
+def _get_gene_for_transcript(transcript_accession: str):
+    '''
+    Use the HGVS lib to lookup a transcript's gene in UTA. 
+    ToDo: this method reconnects to UTA each time it is called. Performance can be improved by keeping the connection open.
+    '''
+    hdp = hgvs.dataproviders.uta.connect()
+    rec = hdp.get_tx_identity_info(transcript_accession)
+    if rec is not None:
+        assert type(rec[6]) == str, "Index six in object returned by hdp.get_tx_identity_info is supposed to the gene."
+        return rec[6]
+    else:
+        return None;
 
 def _main():
     '''
