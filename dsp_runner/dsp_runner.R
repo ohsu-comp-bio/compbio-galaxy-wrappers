@@ -62,7 +62,7 @@ exp.regex <- "[0-9]{8}-[0-9]{2}"
 #               "pan-RAS", "p44/42 MAPK ERK1/2", "Phospho-p90 RSK  (T359/S363)", "MET", "Phospho-MEK1 (S217/S221)", "Phospho-p44/42 MAPK ERK1/2 (T202/Y204)", "HER2_p1248", "Her2", "EGFR", "Phospho-c-RAF (S338)", "BRAF",
 #               "p53", "Phospho-p38 MAPK (T180/Y182)", "PR", "Phospho-JNK (T183/Y185)", "ER-alpha", "Androgen Receptor", "ARID1A",
 #               "PD-L1", "CD8", "CD68", "CD4", "CD3", "CD20", "Beta-2-microglobulin")
-good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "02032023-01", "02082023-01", "02102023-01", "02152023-01")
+good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "02032023-01", "02082023-01", "02102023-01", "02152023-01", "02282023-01", "03012023-01", "03082023-01", "03152023-01")
 
 # Load metadata
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
