@@ -9,6 +9,7 @@
 # 1.1.0 -- added default plots in the event that no rules are broken for a combination
 # 1.2.0 -- removed stdout output file and added spreadsheet output of flagged batches
 # 1.2.1 -- added function to plot positive controls for each TMA:Ab combo
+# 1.2.2 -- updated pos_cntrl read-in to accept new file version
 
 # By Benson Chong
 
@@ -21,7 +22,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import argparse
 
-VERSION = '1.2.1'
+VERSION = '1.2.2'
 
 # initialize placeholder PDf object to be filled in
 c = canvas.Canvas('placeholder.pdf', pagesize=letter)
@@ -61,30 +62,23 @@ def cellsearch(tma_input: str):
     return tma_oi
 
 
-#
+# Plot positive controls faceted by TMA
 def plot_pos_cntrls(sheet, abcount_path, pos_out):
     # initialize PDF
     pc = canvas.Canvas(pos_out, pagesize=letter)
 
     # Get positive controls from sheet
-    sheet = pd.read_csv(sheet)
-    tma = list(sheet['Marker'])
-    ab = list(sheet['PositiveControls'])
+    sheet = pd.read_csv(sheet, sep='\t')
 
-    # Create Ab:[TMA(s)] relation dictionary
-    tmp_dict = {}
-    for i in range(len(tma)):
-        ab[i] = ab[i].replace(' ', '')
-        key = tma[i].strip().replace('\xa0', '')
-        tmp_dict[key] = ab[i].split(',')
-
-    # Inverse dictionary to TMA:[Ab(s)]
+    tmas = sheet.iloc[:, 1].unique()
     pos_cntrls = {}
-    for k, v in tmp_dict.items():
-        for i in v:
-            if i not in pos_cntrls.keys():
-                pos_cntrls[i] = []
-            pos_cntrls[i].append(k)
+
+    for t in tmas:
+        sub = sheet.loc[sheet.iloc[:, 1] == t]
+        abs = []
+        for i, r in sub.iterrows():
+            abs.append(r[0])
+        pos_cntrls[t] = abs
 
     # Iterate through TMA:Ab dict
     for k, v in pos_cntrls.items():

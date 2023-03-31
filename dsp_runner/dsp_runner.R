@@ -13,6 +13,7 @@
 # 1.0.4 - add outlier detection by z-score
 # 1.0.5 - add cover summary sheet and re-arrange displayed tables/plots
 # 1.0.6 - restrict plots to only those included in the pos.cntrls input
+        - display 'no outlier' message in outlier plots
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -293,12 +294,19 @@ colnames(reference_batches) <- c('Reference Batches')
 gc1 <- tableGrob(summ_df, theme=tt_cover)
 gc2 <- tableGrob(reference_batches, theme=tt1)
 
+if (nrow(outlier_df)>0){
+  outlier_message <- ''
+} else{
+    outlier_message <- '[No outliers detected]'
+}
+
+g.outlier <- textGrob(outlier_message, gp = gpar(col = "blue", fontsize = 20))
 if (nrow(failed_ab)>0){
   gc3 <- tableGrob(failed_ab, theme=tt1)
   haligned <- gtable_combine(gc2, gc3)
-  cover_sheet<- grid.arrange(gc1, haligned, ncol=1)
+  cover_sheet<- grid.arrange(gc1, haligned, g.outlier, ncol=1)
 } else{
-  cover_sheet<- grid.arrange(gc1, gc2, ncol=1)
+  cover_sheet<- grid.arrange(gc1, gc2, g.outlier, ncol=1)
 }
 grid.draw(cover_sheet)
 
