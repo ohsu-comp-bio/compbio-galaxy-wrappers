@@ -1,12 +1,20 @@
-owner: "letaw"
+owner: "pleyte"
 remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff"
 type: "unrestricted"
 categories:
   - "CompBio Galaxy Wrappers"
 repositories:
-  cgd_tx_eff:
-    description: "Apply annotations from Annovar and HGVS/UTA to a VCF."
+  tfx_cgd:
+    description: "Update a VCF with transcript-effects and nomenclature from Annovar and HGVS."
     include:
-      - cgd_tx_eff.xml
+      - tfx_cgd.xml
       - src/**
       - test-data/*
+  tfx_cgd_comparison:
+    description: "Create comparison of Transcript Effects and CGD data export"
+    include:
+      - tfx_cgd_comparison.xml
+      - src/**
+      - test-data/test_export_in.csv
+      - test-data/test_comparison_in.vcf
+  

@@ -1,0 +1,72 @@
+<tool id="tfx_cgd_comparison" name="Tfx Comparison with CGD" version="0.4.3" >
+  <description>
+    Generate a CSV for comparison of transcripts and nomenclature in CGD with the values found in the VCF produced by tx_eff_control.py.
+  </description>
+  
+  <requirements>
+    <requirement type="package" version="0.13.3">vcfpy</requirement>
+    <requirement type="package" version="1.5.2">hgvs</requirement>
+    <requirement type="package" version="1.17">htslib</requirement>
+  </requirements>
+  
+  <version_command><![CDATA[
+    python $__tool_directory__/src/edu/ohsu/compbio/txeff/util/compare_cgd_tfx.py --version
+  ]]></version_command>
+  
+  <command detect_errors="exit_code">
+    <![CDATA[
+      bgzip -c "${in_vcf}" > sorted.vcf.gz &&
+      tabix -p vcf sorted.vcf.gz &&
+      python $__tool_directory__/src/edu/ohsu/compbio/txeff/util/compare_cgd_tfx.py
+             --vcf sorted.vcf.gz
+             --export_csv "${export_csv}"
+             --out_file "${comparison_out_csv}"
+    ]]>
+  </command>
+  
+   <environment_variables>
+    <environment_variable name="PYTHONPATH">$__tool_directory__/src</environment_variable>
+  </environment_variables>
+  
+  <inputs>
+    <param name="in_vcf" format="vcf" optional="false" type="data" label="Input VCF" />    
+    <param name="export_csv" format="csv" optional="false" type="data" label="CSV exported from CGD"/>
+  </inputs>
+
+  <outputs>
+    <data format="csv" name="comparison_out_csv" label="Comparison CSV"/>
+    <data format="txt" name="log_file" label="Log file" from_work_dir="cgd_tx_eff.log"/>
+  </outputs>
+
+  <tests>
+    <test>
+      <param name="in_vcf" value="test_comparison_in.vcf"/>      
+      <param name="export_csv" value="test_export_in.csv"/>
+        <output name="comparison_out_csv" ftype="csv">
+          <assert_contents>
+            <has_text text="NM_000416"/>
+                <has_text text="NM_000416.2"/>
+            <has_n_lines n="2"/>
+          </assert_contents>
+        </output>
+    </test>
+  </tests>
+    
+  <help><![CDATA[
+  usage: compare_cgd_tfx.py [-h] -v VCF -c EXPORT_CSV -o OUT_FILE [--version]  
+]]>
+  </help>  
+
+  <citations>
+    <citation type="bibtex">
+    @misc{compare_cgd_tfx.py,
+      author = {Pleyte, Jay},
+      year = {2023},
+      title = {Transcript Effects Comparison Tool},
+      publisher = {OHSU},
+      url = {https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff},
+    }
+    </citation>
+  </citations>
+  
+ </tool>

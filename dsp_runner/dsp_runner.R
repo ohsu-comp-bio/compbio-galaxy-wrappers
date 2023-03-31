@@ -1,4 +1,4 @@
-# Current Version: 1.0.3
+# Current Version: 1.0.6
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -11,7 +11,9 @@
 #       - fixed: corrected duplicate Ab plot pages
 #       - use good_tma again
 # 1.0.4 - add outlier detection by z-score
-# 1.0.5 // 1.0.6 - add cover summary sheet and re-arrange displayed tables/plots and display 'no outlier' message
+# 1.0.5 - add cover summary sheet and re-arrange displayed tables/plots
+# 1.0.6 - restrict plots to only those included in the pos.cntrls input
+        - display 'no outlier' message in outlier plots
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -54,15 +56,12 @@ seg.proc.out <- args[10]
 melt.tma.out <- args[11]
 report.out <- args[12]
 
+# positive cntrl file
+pos_cntrls <- args[13]
+
 # Set constants
 exp.regex <- "[0-9]{8}-[0-9]{2}"
-# clia_abs <- c("c-Myc", "Ki-67", "Cyclin E1", "Cyclin D1", "Cyclin B1", "ATR_pS428", "ATM (phospho S1981)",
-#               "PARP", "Cleaved Caspase 9", "CD95/Fas", "BIM", "BCLXL", "BCL6", "Bcl-2", "BAD",
-#               "Pan-AKT", "PTEN", "Phospho-PRAS40 (T246)", "PLCG1", "INPP4B", "Phospho-GSK3B (S9)", "Phospho-AKT1 (S473)",
-#               "pan-RAS", "p44/42 MAPK ERK1/2", "Phospho-p90 RSK  (T359/S363)", "MET", "Phospho-MEK1 (S217/S221)", "Phospho-p44/42 MAPK ERK1/2 (T202/Y204)", "HER2_p1248", "Her2", "EGFR", "Phospho-c-RAF (S338)", "BRAF",
-#               "p53", "Phospho-p38 MAPK (T180/Y182)", "PR", "Phospho-JNK (T183/Y185)", "ER-alpha", "Androgen Receptor", "ARID1A",
-#               "PD-L1", "CD8", "CD68", "CD4", "CD3", "CD20", "Beta-2-microglobulin")
-good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "02032023-01", "02082023-01", "02102023-01", "02152023-01")
+good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "02032023-01", "02082023-01", "02102023-01", "02152023-01", "02282023-01", "03012023-01", "03082023-01", "03152023-01")
 
 # Load metadata
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
@@ -70,6 +69,7 @@ exp.low <- data.table(openxlsx::read.xlsx(low_probes, colNames=F))
 control.type <- data.table(openxlsx::read.xlsx(control_type, startRow=2))
 stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
 dsp.meta <- data.table(read.xlsx(dsp_meta))
+pos.cntrls <- data.table(read.csv(pos_cntrls, sep = '\t', header=F))
 
 # Check to see if my_samp is in dsp.meta, stop if it's not.
 stopifnot(nrow(dsp.meta[`Specimen.ID` %in% my_samp]) > 0)
@@ -207,7 +207,6 @@ ref.abund <- merge(use.paths[,.(ab_ord, ProbeName, path_ord)], ref.abund, by="Pr
 melt.tma <- data.table(reshape2::melt(tma.abund, as.is=T))
 names(melt.tma) <- c("ProbeName", "barcode", "abundance")
 melt.tma <- merge(melt.tma, tma.meta[,.(barcode, name, batch)], by="barcode")
-clia_abs <- paths$ProbeName
 melt.tma <- merge(paths[,.(ProbeName, igg)], melt.tma, by="ProbeName", all=T)
 melt.tma[,fac_batch:=factor(batch)]
 #add in values for corresponding igg
@@ -242,18 +241,23 @@ samp.scores$patient_ord <- droplevels(samp.scores$patient_ord, except=my_samp)
 plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund, coh)
 pdf(file=paste0(report.out), width=16, height=16)
 
+# Restrict ab plots and outlier detection to those ab/cell line combos included in pos.cntrls
+ab.batches <- ref.batches[`name` %in% pos.cntrls$V2 & `ProbeName` %in% pos.cntrls$V1]
+ab.batches.cur <- cur.batch[`name` %in% pos.cntrls$V2 & `ProbeName` %in% pos.cntrls$V1]
+clia_abs <- unique(ab.batches$ProbeName)
+
 # Outlier detection -- Zscore method
 datalist = list()
 k <- 1
 for (i in seq(1, length(clia_abs))){
-  for (j in seq(1, length(unique(cur.batch$name)))){
-    ref <- ref.batches %>% filter(ProbeName==clia_abs[i] & name == unique(cur.batch$name)[j]) %>%
+  for (j in seq(1, length(unique(ab.batches.cur$name)))){
+    ref <- ab.batches %>% filter(ProbeName==clia_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
       select(batch, ProbeName, name, abundance) %>%
       group_by(name)
     mu <- mean(ref$abundance)
     sigma <- sd(ref$abundance)
 
-    cur <- cur.batch %>% filter(ProbeName==clia_abs[i] & name == unique(cur.batch$name)[j]) %>%
+    cur <- ab.batches.cur %>% filter(ProbeName==clia_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
       select(batch, ProbeName, name, abundance) %>%
       group_by(name) %>%
       mutate(mean = mu,
@@ -317,7 +321,7 @@ if (nrow(outlier_df>0)){
 
     grid.newpage()
     grid.draw(g2)
-  }
+    }
 }
 
 for (tums in names(plot.list)){
@@ -374,38 +378,39 @@ if (nrow(score_str) > 0) {
 }
 
 # Produce boxplots
+
 for (i in seq(1,length(clia_abs), by=4)){
 
   print(clia_abs[i])
-  q1.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i]], mapping=aes(x=name, y=abundance)) +
+  q1.plot <- ggplot(data=ab.batches[ProbeName == clia_abs[i]], mapping=aes(x=name, y=abundance)) +
     geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
-    geom_jitter(data=cur.batch[ProbeName == clia_abs[i]], size=3, width=.15, height=0) +
+    geom_jitter(data=ab.batches.cur[ProbeName == clia_abs[i]], size=3, width=.15, height=0) +
     theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i])) +
     scale_x_discrete(guide = guide_axis(n.dodge = 3))
 
   if ((i+1)<=length(clia_abs)){
     print(clia_abs[i+1])
-    q2.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+1]], mapping=aes(x=name, y=abundance)) +
+    q2.plot <- ggplot(data=ab.batches[ProbeName == clia_abs[i+1]], mapping=aes(x=name, y=abundance)) +
       geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
-      geom_jitter(data=cur.batch[ProbeName == clia_abs[i+1]], size=3, width=.15, height=0) +
+      geom_jitter(data=ab.batches.cur[ProbeName == clia_abs[i+1]], size=3, width=.15, height=0) +
       theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+1])) +
       scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
 
   if ((i+2)<=length(clia_abs)){
     print(clia_abs[i+2])
-    q3.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+2]], mapping=aes(x=name, y=abundance)) +
+    q3.plot <- ggplot(data=ab.batches[ProbeName == clia_abs[i+2]], mapping=aes(x=name, y=abundance)) +
       geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
-      geom_jitter(data=cur.batch[ProbeName == clia_abs[i+2]], size=3, width=.15, height=0) +
+      geom_jitter(data=ab.batches.cur[ProbeName == clia_abs[i+2]], size=3, width=.15, height=0) +
       theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+2])) +
       scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
 
   if ((i+3)<=length(clia_abs)){
     print(clia_abs[i+3])
-    q4.plot <- ggplot(data=ref.batches[ProbeName == clia_abs[i+3]], mapping=aes(x=name, y=abundance)) +
+    q4.plot <- ggplot(data=ab.batches[ProbeName == clia_abs[i+3]], mapping=aes(x=name, y=abundance)) +
       geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
-      geom_jitter(data=cur.batch[ProbeName == clia_abs[i+3]], size=3, width=.15, height=0) +
+      geom_jitter(data=ab.batches.cur[ProbeName == clia_abs[i+3]], size=3, width=.15, height=0) +
       theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+3])) +
       scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
