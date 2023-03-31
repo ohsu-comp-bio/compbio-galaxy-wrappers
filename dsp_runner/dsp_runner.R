@@ -13,7 +13,7 @@
 # 1.0.4 - add outlier detection by z-score
 # 1.0.5 - add cover summary sheet and re-arrange displayed tables/plots
 # 1.0.6 - restrict plots to only those included in the pos.cntrls input
-        - display 'no outlier' message in outlier plots
+#        - display 'no outlier' message in outlier plots
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
