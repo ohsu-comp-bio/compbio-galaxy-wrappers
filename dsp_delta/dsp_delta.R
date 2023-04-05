@@ -4,6 +4,7 @@
 # 1.0.2 - Use after_stat instead of stat(quantile) per deprecation msg, exclude comp samp from ref_samps
 # 1.0.3 - Added tabular representation (.csv) of pairwise deltas
 # 1.1.0 - Consolidated plots to one PDF file
+# 1.1.1 - changed positive control marker list to GeoMx ab_info file
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -37,14 +38,13 @@ runid_compare <- args[4]
 # Metadata filepaths
 ab_info <- args[5]
 selected_pos <- args[6]
-pos_cntrls <- args[7]
 
 # dsp_runner intermediates
-exp.out <- args[8]
-seg.proc.out <- args[9]
+exp.out <- args[7]
+seg.proc.out <- args[8]
 
 # Output files
-report.out <- args[10]
+report.out <- args[9]
 
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
 load(exp.out)
@@ -115,8 +115,8 @@ delta.ab.pos[,delta:=sample1_value-sample2_value]
 comb.deltas <- rbind(
   cbind(delta.ab.pos, type="Positive Cell Lines")
 )
-probe.mads <- data.table(openxlsx::read.xlsx(pos_cntrls))
-comb.deltas[,ab_fac:=factor(ProbeName, levels=rev(probe.mads$ProbeName), ordered=T)]
+
+comb.deltas[,ab_fac:=factor(ProbeName, levels=rev(paths$ab), ordered=T)]
 
 # Create pdf file to write to
 pdf(file=paste0(report.out), width=16, height=16)
