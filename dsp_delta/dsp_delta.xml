@@ -1,4 +1,4 @@
-<tool id="dsp_delta" name="Nanostring DSP Pairwise Comparisons" version="1.1.0" >
+<tool id="dsp_delta" name="Nanostring DSP Pairwise Comparisons" version="1.2.0" >
     <description>Performs pairwise comparisons between multiple DSP specimens for tumor/stromal regions</description>
 
     <requirements>
@@ -25,11 +25,9 @@
        ln -s $__tool_directory__/plots.R &&
        ln -s $__tool_directory__/summarization.R &&
        ln -s "$ab_info" ab_info.xlsx &&
-       ln -s "$selected_pos" selected_pos.xlsx &&
-       ln -s "$pos_cntrl" pos_cntrl.xlsx &&
        ln -s "$delta_report" report.pdf &&
 
-       Rscript $__tool_directory__/dsp_delta.R "$sample_id" "$sample_id_compare" "$run_id" "$run_id_compare" ab_info.xlsx  selected_pos.xlsx pos_cntrl.xlsx $dsp_abund_meta $dsp_proc_data report.pdf
+       Rscript $__tool_directory__/dsp_delta.R "$sample_id" "$sample_id_compare" "$run_id" "$run_id_compare" ab_info.xlsx  $dsp_abund_meta $dsp_proc_data report.pdf
     ]]></command>
 
     <inputs>
@@ -38,8 +36,6 @@
         <param name="run_id" type="text" label="Run ID" help=""/>
         <param name="run_id_compare" type="text" label="Run ID (Compare)" help=""/>
         <param name="ab_info" type="data" format="xlsx" label="GeoMx antibodies xlsx file" help=""/>
-        <param name="selected_pos" type="data" format="xlsx" label="Selected Positive Cell Lines" help=""/>
-        <param name="pos_cntrl" type="data" format="xlsx" label="Positive Controls" help=""/>
         <param name="dsp_abund_meta" type="data" format="rdata"/>
         <param name="dsp_proc_data" type="data" format="rdata"/>
     </inputs>

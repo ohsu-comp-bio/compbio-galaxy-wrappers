@@ -1,9 +1,11 @@
-# VERSION: 1.1.0
+# VERSION: 1.2.0
 # Version history
 # 1.0.1 - Named all arguments, reformatting, allow for reference to contain only segment 1
 # 1.0.2 - Use after_stat instead of stat(quantile) per deprecation msg, exclude comp samp from ref_samps
 # 1.0.3 - Added tabular representation (.csv) of pairwise deltas
 # 1.1.0 - Consolidated plots to one PDF file
+# 1.2.0 - Removed selected_pos and pos_cntrls files, read all antibodies from GeoMx input to ensure we are using
+#       - equivalent naming.  Split plots in to multiple pages for clarity and plot all antibodies.
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -36,15 +38,13 @@ runid_compare <- args[4]
 
 # Metadata filepaths
 ab_info <- args[5]
-selected_pos <- args[6]
-pos_cntrls <- args[7]
 
 # dsp_runner intermediates
-exp.out <- args[8]
-seg.proc.out <- args[9]
+exp.out <- args[6]
+seg.proc.out <- args[7]
 
 # Output files
-report.out <- args[10]
+report.out <- args[8]
 
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
 load(exp.out)
@@ -56,7 +56,7 @@ cl.repmat <- reshape2::acast(barcode~name, value.var="tmpval", data=tma.meta[typ
 #and then to line 202 to create cl.pcs
 cl.pcs <- compute_factors(tma.abund, cl.repmat)
 
-use.abs <- paths[Manuscript=='y' & ProbeName %in% c("ARID1A", "Cleaved Caspase 9") == F]
+use.abs <- paths[Manuscript=='y']
 
 #Apply RUV
 all.norm <- apply_norm(tma.abund, cl.pcs$pcs, k=2, controls=rownames(tma.abund))
@@ -71,24 +71,6 @@ batch.ord <- batch.ord[order(date)]
 tma.meta[,date_fac:=factor(as.character(date), levels=as.character(batch.ord$date), ordered=T)]
 melt.dsp <- merge(melt.dsp, tma.meta, by=c("barcode"))
 
-#Create variable for pos.cntrl.dt by going to line 415 and loading positive cell line file.
-pos.cntrls <- data.table(openxlsx::read.xlsx(selected_pos))
-pos.cntrl.dt <- rbindlist(lapply(split(pos.cntrls, by="Target"), function(x){
-  x.cl <- strsplit(x$`Low.CV.(Positive.cell.line./.tissue)`, ', ')[[1]]
-  data.table(ProbeName=x$Target, name=x.cl)
-}))
-
-pos.cntrl.dt[name == "MDA-MB-231",name:="231"]
-pos.cntrl.dt[name == "MDA-MB-453",name:="453"]
-pos.cntrl.dt[name == "MDA-MB-468+EGF",name:="MDA468+EGF"]
-pos.cntrl.dt[name == "OVCAR8+PARPi",name:="OvCar8+PARPi"]
-pos.cntrl.dt[name == "THP-1",name:="THP1"]
-pos.cntrl.dt[name == "MCF-7",name:="MCF7"]
-pos.cntrl.dt <- pos.cntrl.dt[ProbeName %in% intersect(rownames(all.norm), use.abs[pathway %in% c("Negative Controls", "Expression Controls")==F,ProbeName])]
-
-melt.dsp <- merge(melt.dsp, pos.cntrl.dt, by=c("ProbeName", "name"))
-
-
 by.ab <- split(melt.dsp, by="ProbeName")
 val.range <- range(melt.dsp$value)
 
@@ -97,6 +79,7 @@ cv.sum <- melt.dsp[,.(sd=sd(value), mean=mean(value), mad=mad(value),.N),by=.(Pr
 
 #looks like stats are calculated for all TMA-ab combos
 #But because more than one TMA per ab, MAD value for a given ab is taken from the worst of its associated tmas!!!!
+# where is max.mad used, I don't see it anywhere
 max.mad <- cv.sum[,.(max_mad=max(mad)),by=ProbeName][order(-max_mad)]
 
 cv.sum[,N:=NULL]
@@ -115,27 +98,10 @@ delta.ab.pos[,delta:=sample1_value-sample2_value]
 comb.deltas <- rbind(
   cbind(delta.ab.pos, type="Positive Cell Lines")
 )
-probe.mads <- data.table(openxlsx::read.xlsx(pos_cntrls))
-comb.deltas[,ab_fac:=factor(ProbeName, levels=rev(probe.mads$ProbeName), ordered=T)]
+comb.deltas[,ab_fac:=factor(ProbeName, levels=rev(paths$ProbeName), ordered=T)]
 
-# Create pdf file to write to
+# Create pdf file to write to: PLOTTING STARTS HERE
 pdf(file=paste0(report.out), width=16, height=16)
-
-#This is the first relevant image created
-delta.ridge <- ggplot(data=comb.deltas, mapping=aes(x=delta, y=ab_fac, fill = factor(after_stat(quantile)))) +
-  stat_density_ridges(
-    geom = "density_ridges_gradient",
-    calc_ecdf = TRUE,
-    quantiles = c(0.025, 0.975)
-  ) +
-  scale_fill_manual(
-    name = "Quantiles", values = c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"),
-    labels = c("(0, 0.05]", "(0.05, 0.95]", "(0.95, 1]")
-  ) +
-  facet_wrap(~type) +
-  theme_bw() + ylab("") + xlab("Delta")
-grid.draw(delta.ridge)
-
 
 # Form antibody scores as the quantiles relevant to reference cohort
 ref_samps <- my.meta[Best_Response == "Ref",unique(sample_id)]
@@ -166,14 +132,10 @@ my.scores <- merge(use.paths[,.(ab_ord, ProbeName, path_ord)], my.scores, by="Pr
 my.scores[,comb_id:=Specimen.ID]
 #at this point add in segment labels
 my.scores[,segment_label:=ifelse(`Segment (Name/ Label)` == "Segment 1", "tumor", "stroma")]
-
 my.scores[,sample_ord:=sample_id]
 
 ## Use the TMA Delta Distribution
-cntrls <- paths[analysis_pathway %in% c("Negative Controls", "Expression Controls")]
-
 delta.thresh <- comb.deltas[,.(low=quantile(delta, .05), high=quantile(delta, .95), distr=list(ecdf(delta))),by=.(ProbeName, type)]
-delta.thresh <- delta.thresh[ProbeName %in% cntrls$ProbeName == F]
 
 #For each specimen, need to only include data from one batch. In other words, specimens tested in replicates will give errors, when tested across multiple dates.
 #This prints out all the possible combinations
@@ -184,7 +146,6 @@ my.scores %>% dplyr::select(sample_id, num_batch) %>% distinct() %>% group_by(sa
 
 #For the filter option, one can select the specimen/batch combos
 t9.dt <- my.scores %>%
-  #filter((sample_id == "DN21-00153B" & num_batch !="10052021") | sample_id == "DN21-00163B") %>%
   filter((sample_id == my_samp & num_batch == runid) | sample_id == my_samp_compare & num_batch == runid_compare) %>%
   rename("avg_abund" = "norm") %>% mutate(use_roi = "avg") %>%
   dplyr::select("Segment (Name/ Label)", "segment_label", "sample_id", "use_roi", "ProbeName", "avg_abund", "num_batch") %>%
@@ -199,25 +160,14 @@ t9.cast[,`:=`(status="neither")]
 t9.cast[delta < low, status:="low"]
 t9.cast[delta > high, status:="high"]
 t9.cast[,perc:=mapply(function(d, x) d(x), distr, delta)]
-t9.delta <- t9.cast[status != "neither"]
-t9.cd <- comb.deltas[ProbeName %in% t9.delta[,ProbeName]]
+t9.cd <- comb.deltas[ProbeName %in% t9.cast[,ProbeName]]
 t9.cast[,fix_status:=ifelse(status=="neither", "neither", "high/low")]
 
 #Stop script if specimen(s) do not have both stromal tumor segments
 stopifnot(!any(is.na(t9.cast)))
 
-#Changed color from segment # to segment_label
-t9.plot <- ggplot(data=t9.cd, mapping=aes(x=delta)) +
-  geom_density() +
-  geom_vline(data=t9.cast[ProbeName %in% t9.delta[,ProbeName]], mapping=aes(xintercept=delta, color=`segment_label`, linetype=fix_status)) +
-  facet_grid(ProbeName~type) +
-  scale_linetype_manual(values=c(neither="dashed", `high/low`="solid")) +
-  geom_text_repel(data=t9.cast[ProbeName %in% t9.delta[,ProbeName]], mapping=aes(y=1, x=delta, label=paste0(round(delta, 2), " (", round(perc, 2), ")"))) +
-  theme_bw() + ylab("") + xlab("Delta (Bx2 - Bx1)") +
-  theme(strip.text.y=element_text(angle=0), axis.text.y=element_blank(), axis.ticks.y=element_blank())
-grid.draw(t9.plot)
-
 #Data table with results for each Probe
+# This stuff is for the table output, but we'll do it up here so the delta plots can also access the score_tum tables.
 tt <- ttheme_default(base_size = 12)
 score_out <- t9.cast %>% dplyr::select("ProbeName", "segment_label")
 score_out <- cbind(score_out, t9.cast$Specimen_ID, t9.cast$Specimen_ID_compare)
@@ -231,10 +181,104 @@ score_out<- score_out %>% mutate(across(3:6, round, 2)) %>%
 score_tum <- score_out[`Region` == 'tumor']
 score_str <- score_out[`Region` == 'stroma']
 
-g <- tableGrob(score_tum[1:44,1:7], rows = NULL, theme = tt)
+#Changed color from segment # to segment_label
+t9.cd.pg1 <- t9.cd[`ProbeName` %in% score_tum[1:17]$Protein]
+t9.cd.pg2 <- t9.cd[`ProbeName` %in% score_tum[18:34]$Protein]
+t9.cd.pg3 <- t9.cd[`ProbeName` %in% score_tum[35:51]$Protein]
+t9.cd.pg4 <- t9.cd[`ProbeName` %in% score_tum[52:68]$Protein]
+t9.cast.pg1 <- t9.cast[`ProbeName` %in% score_tum[1:17]$Protein]
+t9.cast.pg2 <- t9.cast[`ProbeName` %in% score_tum[18:34]$Protein]
+t9.cast.pg3 <- t9.cast[`ProbeName` %in% score_tum[35:51]$Protein]
+t9.cast.pg4 <- t9.cast[`ProbeName` %in% score_tum[52:68]$Protein]
+
+# Plot the first page of deltas
+t9.plot <- ggplot(data=t9.cd.pg1, mapping=aes(x=delta)) +
+  geom_density() +
+  geom_vline(data=t9.cast.pg1, mapping=aes(xintercept=delta, color=`segment_label`, linetype=fix_status)) +
+  facet_grid(ProbeName~type) +
+  scale_linetype_manual(values=c(neither="dashed", `high/low`="solid")) +
+  geom_text_repel(data=t9.cast.pg1, mapping=aes(y=1, x=delta, label=paste0(round(delta, 2), " (", round(perc, 2), ")"))) +
+  theme_bw() + ylab("") + xlab("Delta (Bx2 - Bx1)") +
+  theme(strip.text.y=element_text(angle=0), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+grid.draw(t9.plot)
+
+# Plot the second page of deltas
+t9.plot <- ggplot(data=t9.cd.pg2, mapping=aes(x=delta)) +
+  geom_density() +
+  geom_vline(data=t9.cast.pg2, mapping=aes(xintercept=delta, color=`segment_label`, linetype=fix_status)) +
+  facet_grid(ProbeName~type) +
+  scale_linetype_manual(values=c(neither="dashed", `high/low`="solid")) +
+  geom_text_repel(data=t9.cast.pg2, mapping=aes(y=1, x=delta, label=paste0(round(delta, 2), " (", round(perc, 2), ")"))) +
+  theme_bw() + ylab("") + xlab("Delta (Bx2 - Bx1)") +
+  theme(strip.text.y=element_text(angle=0), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+grid.draw(t9.plot)
+
+t9.plot <- ggplot(data=t9.cd.pg3, mapping=aes(x=delta)) +
+  geom_density() +
+  geom_vline(data=t9.cast.pg3, mapping=aes(xintercept=delta, color=`segment_label`, linetype=fix_status)) +
+  facet_grid(ProbeName~type) +
+  scale_linetype_manual(values=c(neither="dashed", `high/low`="solid")) +
+  geom_text_repel(data=t9.cast.pg3, mapping=aes(y=1, x=delta, label=paste0(round(delta, 2), " (", round(perc, 2), ")"))) +
+  theme_bw() + ylab("") + xlab("Delta (Bx2 - Bx1)") +
+  theme(strip.text.y=element_text(angle=0), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+grid.draw(t9.plot)
+
+t9.plot <- ggplot(data=t9.cd.pg4, mapping=aes(x=delta)) +
+  geom_density() +
+  geom_vline(data=t9.cast.pg4, mapping=aes(xintercept=delta, color=`segment_label`, linetype=fix_status)) +
+  facet_grid(ProbeName~type) +
+  scale_linetype_manual(values=c(neither="dashed", `high/low`="solid")) +
+  geom_text_repel(data=t9.cast.pg4, mapping=aes(y=1, x=delta, label=paste0(round(delta, 2), " (", round(perc, 2), ")"))) +
+  theme_bw() + ylab("") + xlab("Delta (Bx2 - Bx1)") +
+  theme(strip.text.y=element_text(angle=0), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+grid.draw(t9.plot)
+
+# delta.ridge plot
+delta.ridge <- ggplot(data=comb.deltas, mapping=aes(x=delta, y=ab_fac, fill = factor(after_stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = c(0.025, 0.975)
+  ) +
+  scale_fill_manual(
+    name = "Quantiles", values = c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"),
+    labels = c("(0, 0.05]", "(0.05, 0.95]", "(0.95, 1]")
+  ) +
+  facet_wrap(~type) +
+  theme_bw() + ylab("") + xlab("Delta")
+grid.draw(delta.ridge)
+
+# Plots the delta tables
+g <- tableGrob(score_tum[1:34,1:7], rows = NULL, theme = tt)
 g <- gtable_add_grob(g, grobs = rectGrob(gp = gpar(fill = NA, lwd = 1)),
                      t = 2, b = nrow(g), l = 1, r = ncol(g))
 g <- gtable_add_grob(g, grobs = rectGrob(gp = gpar(fill = NA, lwd = 1)),
                      t = 1, l = 1, r = ncol(g))
 grid.newpage()
 grid.draw(g)
+
+g <- tableGrob(score_tum[35:68,1:7], rows = NULL, theme = tt)
+g <- gtable_add_grob(g, grobs = rectGrob(gp = gpar(fill = NA, lwd = 1)),
+                     t = 2, b = nrow(g), l = 1, r = ncol(g))
+g <- gtable_add_grob(g, grobs = rectGrob(gp = gpar(fill = NA, lwd = 1)),
+                     t = 1, l = 1, r = ncol(g))
+grid.newpage()
+grid.draw(g)
+
+g <- tableGrob(score_str[1:34,1:7], rows = NULL, theme = tt)
+g <- gtable_add_grob(g, grobs = rectGrob(gp = gpar(fill = NA, lwd = 1)),
+                     t = 2, b = nrow(g), l = 1, r = ncol(g))
+g <- gtable_add_grob(g, grobs = rectGrob(gp = gpar(fill = NA, lwd = 1)),
+                     t = 1, l = 1, r = ncol(g))
+grid.newpage()
+grid.draw(g)
+
+g <- tableGrob(score_str[35:68,1:7], rows = NULL, theme = tt)
+g <- gtable_add_grob(g, grobs = rectGrob(gp = gpar(fill = NA, lwd = 1)),
+                     t = 2, b = nrow(g), l = 1, r = ncol(g))
+g <- gtable_add_grob(g, grobs = rectGrob(gp = gpar(fill = NA, lwd = 1)),
+                     t = 1, l = 1, r = ncol(g))
+grid.newpage()
+grid.draw(g)
+
+dev.off()
