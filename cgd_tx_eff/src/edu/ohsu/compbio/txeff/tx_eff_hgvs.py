@@ -60,14 +60,7 @@ def _correct_indel_coords(pos, ref, alt):
         change = '>'.join([ref, alt])
         new_pos = str(pos) + change
         return new_pos
-    elif lref == lalt:
-        # Multi-nucleotide substitution case
-        # NG_012232.1: g.12_13delinsTG
-        new_start = str(pos)
-        new_end = str(int(pos) + lref - 1)
-        new_pos = '_'.join([new_start, new_end]) + 'delins' + alt
-        return new_pos
-    elif lref > lalt:
+    elif lalt == 1 and lref > lalt:
         # Deletion case
         shift = lref - lalt
         if shift == 1:
@@ -78,15 +71,22 @@ def _correct_indel_coords(pos, ref, alt):
             new_end = str(int(pos) + shift)
             new_pos = '_'.join([new_start, new_end]) + 'del'
             return new_pos
-    elif lalt > lref:
+    elif lref == 1 and lalt > lref:
         # Insertion case
         new_start = str(pos)
         new_end = str(int(pos) + 1)
         new_pos = '_'.join([new_start, new_end]) + 'ins' + alt[1:]
         return new_pos
+    elif lref > 1 and lalt > 1:
+        # Multi-nucleotide substitution case
+        # NG_012232.1: g.12_13delinsTG
+        new_start = str(pos)
+        new_end = str(int(pos) + lref - 1)
+        new_pos = '_'.join([new_start, new_end]) + 'delins' + alt
+        return new_pos
     else:
         # OTHER case
-        raise Exception(f"Change type not supported: {pos}:{ref}>{alt}")
+        print("Change type not supported: " + pos + ':' + ref + '>' + alt + '\n')
         
 def _lookup_hgvs_transcripts(annovar_variants: list):
     '''
