@@ -1,4 +1,4 @@
-# Current Version: 1.0.6
+# Current Version: 1.0.7
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -13,7 +13,8 @@
 # 1.0.4 - add outlier detection by z-score
 # 1.0.5 - add cover summary sheet and re-arrange displayed tables/plots
 # 1.0.6 - restrict plots to only those included in the pos.cntrls input
-#        - display 'no outlier' message in outlier plots
+#       - display 'no outlier' message in outlier plots
+# 1.0.7 - place tma check after checking for good_tma runs
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
