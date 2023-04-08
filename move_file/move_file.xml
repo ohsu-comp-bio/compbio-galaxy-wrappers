@@ -1,4 +1,4 @@
-<tool id="move_file" name="Move Galaxy Dataset" version="0.4.5" >
+<tool id="move_file" name="Move Galaxy Dataset" version="0.4.7" >
   <description>Move a file (Galaxy dataset) to some location on the file system.</description>
 
   <requirements>
