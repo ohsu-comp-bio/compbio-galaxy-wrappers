@@ -27,7 +27,7 @@ from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
-VERSION = '0.3.5'
+VERSION = '0.3.8'
 ASSEMBLY_VERSION = "GRCh37"
 
 # These will need to be updated when we switch from GRCh37 to GRCh38
@@ -85,8 +85,7 @@ def _correct_indel_coords(pos, ref, alt):
         new_pos = '_'.join([new_start, new_end]) + 'delins' + alt
         return new_pos
     else:
-        # OTHER case
-        print("Change type not supported: " + pos + ':' + ref + '>' + alt + '\n')
+        raise Exception("Unknown change type: " + pos + ':' + ref + '>' + alt)
         
 def _lookup_hgvs_transcripts(annovar_variants: list):
     '''
