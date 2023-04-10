@@ -4,7 +4,7 @@ from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
 
 class TxEffHgvsTest(unittest.TestCase):
         
-    def test_merge_annovar_with_hgvs(self):
+    def test__merge_annovar_with_hgvs(self):
         '''
         Merge two lists of transcripts and get only those that are common to both lists
         '''
@@ -20,7 +20,7 @@ class TxEffHgvsTest(unittest.TestCase):
         self.assertEqual(len(unmerged_transcripts), 2, 'Two transcripts are common to both lists')
         
     
-    def test_get_unmatched_annovar_transcripts(self):
+    def test__get_unmatched_annovar_transcripts(self):
         '''
         Given two dictionary objects, create a list of values based on the the symmetric difference of the keys  
         '''        
@@ -53,7 +53,7 @@ class TxEffHgvsTest(unittest.TestCase):
         self.assertTrue(t5.get_label() in labels, 't5 is unmatched')
         self.assertTrue(t6.get_label() in labels, 't6 is unmatched')
         
-    def test_get_the_best_transcripts(self):
+    def test__get_the_best_transcripts(self):
         '''
         Given three versions of a transcript return then one with the most values and the latest version
         '''
@@ -65,6 +65,34 @@ class TxEffHgvsTest(unittest.TestCase):
         
         self.assertEqual(len(best), 1, 'Only one transcript expected')
         self.assertEqual(best[0].get_label(), '1-1-A-T-NM_000.2', 'Most complete, lastest version')
+    
+    def test__correct_indel_coords(self):
+        '''
+        Given a genotype the _correct_indel_coords function returns the nomenclature describing the variant change (the g., minus the g. prefix) 
+        ''' 
+        # Substitution 
+        genotype = '1-123-G-A'
+        chromosome, position, ref, alt = genotype.split('-')
+        pos_part = tx_eff_hgvs._correct_indel_coords(position, ref, alt)
+        self.assertEqual(pos_part, '123G>A', "g. is incorrect")
+
+        # Insertion 
+        genotype = '1-123-G-AC'
+        chromosome, position, ref, alt = genotype.split('-')
+        pos_part = tx_eff_hgvs._correct_indel_coords(position, ref, alt)
+        self.assertEqual(pos_part, '123_124insC', "g. is incorrect")
+
+        # Deletion
+        genotype = '1-123-AC-G'
+        chromosome, position, ref, alt = genotype.split('-')
+        pos_part = tx_eff_hgvs._correct_indel_coords(position, ref, alt)
+        self.assertEqual(pos_part, '124del', "g. is incorrect")
+        
+        # Indel        
+        genotype = '5-112175461-CAGTTCACTTGA-CGTC'
+        chromosome, position, ref, alt = genotype.split('-')
+        pos_part = tx_eff_hgvs._correct_indel_coords(position, ref, alt)
+        self.assertEqual(pos_part, '112175461_112175472delinsCGTC', "g. is incorrect")
         
     def _create_variant(self, chromosome, pos, ref, alt, transcript, gene=None, c_dot=None, p_dot_one=None, p_dot_three=None, variant_effect=None, variant_type=None, protein_transcript=None):
         '''
@@ -81,4 +109,3 @@ class TxEffHgvsTest(unittest.TestCase):
         variant_transcript.protein_transcript = protein_transcript
         
         return variant_transcript
-        
