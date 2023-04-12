@@ -95,7 +95,7 @@ def _write_vcf(vcf_file_name: str, variants: list):
         vcf_file.write('#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tabcd-123\n')
         
         for variant in variants:            
-            vcf_file.write(f"{variant.chromosome}\t{variant.startPos}\t{variant.dbSnpId}\t{variant.ref}\t{variant.alt}\t1.0\tPON\tx=y\tGT\t0/0\t\n")
+            vcf_file.write(f"{variant.chromosome}\t{variant.startPos}\t{variant.dbSnpId}\t{variant.ref}\t{variant.alt}\t1.0\tPON\tx=y\tGT\t0/0\n")
 
 def _main():
     '''
