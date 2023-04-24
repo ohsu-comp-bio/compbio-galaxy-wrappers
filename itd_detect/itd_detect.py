@@ -10,6 +10,7 @@
 # 1.0.0 - Remove hgvs from script, create vcf as output.
 # 1.0.2 - Added bcor and fgfr targets
 # 1.1.0 - Fixed error when read sequences are empty due to amplicon clipping.  Provide parameter to limit output size
+# 1.1.1 - Added BCOR and FGFR regions to support STP4 workflows
 # of potential ITDs.
 
 import argparse
@@ -19,7 +20,7 @@ from copy import deepcopy
 from itertools import groupby
 from operator import itemgetter
 
-VERSION = '1.1.0'
+VERSION = '1.1.1'
 
 def supply_args():
     """
@@ -33,9 +34,10 @@ def supply_args():
     parser.add_argument('--ref', required=True, help='Input Reference Sequence')
     parser.add_argument('--sample_id', required=True, help='Sample ID string to be added to the VCF.')
     parser.add_argument('--ref_build', choices=['hg19'], default='hg19', help='Which reference build to utilize')
-    parser.add_argument('--target', choices=['flt3', 'flt3_e13', 'flt3_e14', 'flt3_e15'], default='flt3_e14', help='Region to target')
+    parser.add_argument('--target', default='flt3_e14', help='Region to target')
     parser.add_argument('--coords', help='Coordinate range, in the format [chrom:start-stop], 1-based.')
     parser.add_argument('--paired', action='store_true', help='Data is paired-end data.')
+    parser.add_argument('--chr_prefix', action='store_true', help='Add chr prefix to all chromosome identifiers.')
     parser.add_argument('--min_size', type=int, default=12, help='Minimum size of ITD call to write to VCF.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
@@ -185,7 +187,8 @@ class GetSeq:
     """
     Retrieve the sequence we need to search through, utilizing the pysam package.
     """
-    def __init__(self, filename, region):
+    def __init__(self, filename, region, chr_prefix):
+        self.chr_prefix = chr_prefix
         self.coords = self._known_targets(region)
         self.coords = self._buffer_targets()
         self.fasta = pysam.FastaFile(filename)
@@ -207,13 +210,24 @@ class GetSeq:
         These have been pulled from the RefSeq GFF, and are 1-based.
         :return:
         """
-        known_targ = {'flt3': ('13', 28577411, 28682904),
-                      'flt3_e13': ('13', 28608438, 28608544),
-                      'flt3_e14': ('13', 28608219, 28608351),
-                      'flt3_e15': ('13', 28608024, 28608128),
-                      'bcor_e15': ('X', 39910499, 39911653),
-                      'fgfr1_e10': ('8', 38275746, 38275891),
-                      'fgfr1_e18': ('8', 38268656, 38271322)}
+        if self.chr_prefix:
+            known_targ = {'flt3': ('chr13', 28577411, 28682904),
+                          'flt3_e13': ('chr13', 28608438, 28608544),
+                          'flt3_e14': ('chr13', 28608219, 28608351),
+                          'flt3_e15': ('chr13', 28608024, 28608128),
+                          'bcor_e15': ('chrX', 39910499, 39911653),
+                          'fgfr1_e10': ('chr8', 38275746, 38275891),
+                          'fgfr1_e18': ('chr8', 38268656, 38271322),
+                          'kmt2a': ('chr11', 118307205, 118397539)}
+        else:
+            known_targ = {'flt3': ('13', 28577411, 28682904),
+                          'flt3_e13': ('13', 28608438, 28608544),
+                          'flt3_e14': ('13', 28608219, 28608351),
+                          'flt3_e15': ('13', 28608024, 28608128),
+                          'bcor_e15': ('X', 39910499, 39911653),
+                          'fgfr1_e10': ('8', 38275746, 38275891),
+                          'fgfr1_e18': ('8', 38268656, 38271322),
+                          'kmt2a': ('11', 118307205, 118397539)}
         return known_targ[target]
 
     def _get_ref_dups(self):
@@ -554,7 +568,7 @@ def main():
     # Original implementation horribly slow.  If I can find my original sa code, will replace with this.
 
     args = supply_args()
-    my_seq = GetSeq(args.ref, args.target)
+    my_seq = GetSeq(args.ref, args.target, args.chr_prefix)
     if args.paired:
         coll = SequenceCollection(args.sam, args.outfile, my_seq, True)
     else:
