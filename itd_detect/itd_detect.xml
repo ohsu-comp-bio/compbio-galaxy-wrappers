@@ -1,4 +1,4 @@
-<tool id="itd_detect" name="ITD Detect" version="1.1.1" >
+<tool id="itd_detect" name="ITD Detect" version="1.2.0" >
     <description>Detect ITD events in a BAM file.</description>
 
     <requirements>
@@ -10,7 +10,15 @@
     samtools index input.bam &&
     python $__tool_directory__/itd_detect.py
     --sam input.bam
-    --target '${target}'
+
+    #if $target:
+        #for $input in $target:
+            #if $input:
+                --target "${input}"
+            #end if
+        #end for
+    #end if
+
     --sample_id '${sample_id}'
     #if $reference_source.reference_source_selector != "no_ref"
         #if $reference_source.reference_source_selector != "history"
@@ -53,7 +61,7 @@
 
         <param name="input" type="data" format="bam" label="Input BAM" help="Input BAM file to assess." />
         <param name="sample_id" type="text" label="Sample ID" help="Sample ID to be added to the VCF." />
-        <param name="target" type="select" label="Target Region" help="Target region to assess." >
+        <param name="target" type="select" multiple="true" label="Target Region" help="Target region to assess." >
             <option value="flt3" selected="true">FLT3</option>
             <option value="flt3_e13">FLT3e13</option>
             <option value="flt3_e14">FLT3e14</option>
