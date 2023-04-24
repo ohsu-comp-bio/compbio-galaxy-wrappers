@@ -1,4 +1,4 @@
-<tool id="itd_detect" name="ITD Detect" version="1.1.0" >
+<tool id="itd_detect" name="ITD Detect" version="1.1.1" >
     <description>Detect ITD events in a BAM file.</description>
 
     <requirements>
@@ -21,6 +21,9 @@
     #end if
     #if $paired
         --paired
+    #end if
+    #if $chr_prefix
+        --chr_prefix
     #end if
     #if $min_size
         --min_size $min_size
@@ -55,8 +58,13 @@
             <option value="flt3_e13">FLT3e13</option>
             <option value="flt3_e14">FLT3e14</option>
             <option value="flt3_e15">FLT3e15</option>
+            <option value="bcor_e15">BCORe15</option>
+            <option value="fgfr1_e10">FGFR1e10</option>
+            <option value="fgfr1_e18">FGFR1e18</option>
+            <option value="kmt2a">KMT2A</option>
         </param>
         <param name="paired" type="boolean" checked="true" label="Paired-end?" help="Check if the BAM is paired-end." />
+        <param name="chr_prefix" type="boolean" checked="false" label="Add chr prefix to contigs?" help="Check if you need the targets to be prefixed with chr." />
         <param name="min_size" type="integer" value="12" min="0" label="Minimum Size" help="Minimum ITD size to write to VCF." />
     </inputs>
 
