@@ -10,6 +10,7 @@
 # 1.0.0 - Remove hgvs from script, create vcf as output.
 # 1.0.2 - Added bcor and fgfr targets
 # 1.1.0 - Fixed error when read sequences are empty due to amplicon clipping.  Provide parameter to limit output size
+# 1.1.1 - Added BCOR and FGFR regions to support STP4 workflows
 # of potential ITDs.
 
 import argparse
