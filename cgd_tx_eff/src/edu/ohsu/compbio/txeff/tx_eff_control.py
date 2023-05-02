@@ -11,7 +11,7 @@ from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
 from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
-VERSION = '0.3.8'
+VERSION = '0.3.9'
 
 def _parse_args():
     '''
@@ -55,8 +55,11 @@ def _main():
     '''
     main function
     '''
-    logging.config.dictConfig(TfxLogConfig().log_config)
     print("tfx_cgd is starting...")
+    
+    logging.config.dictConfig(TfxLogConfig().log_config)        
+    print(f"Log level={logging.root.getEffectiveLevel()}, file={logging.root.handlers[0].baseFilename}")
+    
     start_time = time.time()
     
     args = _parse_args()

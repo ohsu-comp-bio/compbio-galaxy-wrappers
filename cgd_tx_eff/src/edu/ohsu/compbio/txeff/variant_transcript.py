@@ -23,8 +23,8 @@ class VariantTranscript(AnnovarVariantFunction):
         '''
         String representation of the VariantTranscript object
         '''
-        return f'[AnnovarVariantFunction: genotype={self.chromosome}-{self.position}-{self.reference}-{self.alt}-transcript={self.refseq_transcript}-{self.protein_transcript}'
-    
+        return f'[AnnovarVariantFunction: genotype={self.chromosome}-{self.position}-{self.reference}-{self.alt}-transcript={self.refseq_transcript}-{self.protein_transcript}' + ('-splicing' if self.splicing else '') 
+
     def get_copy(self):
         '''
         Return a copy of this trancript 

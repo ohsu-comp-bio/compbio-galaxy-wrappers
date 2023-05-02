@@ -1,7 +1,7 @@
 '''
-Created on Jun 21, 2022
+Create a VCF by reading the variants from an annovar input file (*.avinput ). 
+This script does not sort the vcf so you should followup by running ``gatk SortVcf --INPUT unsorted.vcf --OUTPUT sorted.vcf``
 
-Convert an Annovar *.avinput file to VCF
 @author: pleyte
 '''
 import argparse
