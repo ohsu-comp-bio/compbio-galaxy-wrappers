@@ -7,7 +7,7 @@ joins the two so we can compare the nomenclature used in transcript effects with
 The output file is horribly un-normalised: 
 - Every line has one CGD variant and transcript. 
 - The variant will be repeated on as many lines as there are transcripts associated with that variant in CGD. 
-- The tfx INFO fields (from vcf) corresponding to the variant are also on the the line for each variant. 
+- The tfx INFO fields (from vcf) corresponding to the variant are also on the line for each variant. 
     - The tfx values are duplicated on each line 
 
 @author: pleyte

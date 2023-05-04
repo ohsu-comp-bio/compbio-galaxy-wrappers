@@ -26,6 +26,7 @@ from hgvs.exceptions import HGVSInvalidVariantError, HGVSUsageError, HGVSDataNot
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
+from edu.ohsu.compbio.annovar import annovar_parser
 
 VERSION = '0.3.9'
 ASSEMBLY_VERSION = "GRCh37"
@@ -390,7 +391,8 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
     # Variant Type 
     ## Variant type is only provided by Annovar, and the value will be empty in the case of splice variants. 
     assert hgvs_transcript.variant_type == None
-    if annovar_transcript.splicing != 'splicing':
+    
+    if not annovar_parser.is_annovar_splicing_type(annovar_transcript.splicing):
         assert _noneIfEmpty(annovar_transcript.variant_type) != None, f'Variant type must not be empty for non-splicing transcripts. See {transcript_key}'
 
     if _allow_merge(new_transcript.variant_type, annovar_transcript.variant_type, transcript_key, 'variant_type'):
@@ -441,7 +443,7 @@ def get_summary(annovar_transcripts: list, annovar_variants: set, hgvs_transcrip
     
     # Collect annovar records into a map keyed by genotype and transcript
     for annovar_rec in annovar_transcripts:
-        if annovar_rec.splicing == 'splicing' or annovar_rec.splicing == 'ncRNA_splicing':
+        if annovar_parser.is_annovar_splicing_type(annovar_rec.splicing):
             annovar_splice_variant_transcript_count += 1
         elif annovar_rec.splicing != None and annovar_rec.splicing != '':
             logging.warning(f"Invalid value in splicing column: {annovar_rec.splicing}")
