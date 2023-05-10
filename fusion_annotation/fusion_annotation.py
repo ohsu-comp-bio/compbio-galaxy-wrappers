@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # USAGE: python fusion_annotation.py [-f] <starfusion> <sample_level_metrics.txt> <genome_refpath>
 
-# 0.5.2 - Get all exons from GTF if there is an ENST supplied.
+# 0.5.3 - Get all exons from GTF if there is an ENST supplied.
 
 import argparse
 import json
@@ -11,7 +11,7 @@ from collections import OrderedDict
 from ensembldb import EnsemblDbImport
 from gtf import Gtf
 
-VERSION = '0.5.2'
+VERSION = '0.5.3'
 
 
 def supply_args():

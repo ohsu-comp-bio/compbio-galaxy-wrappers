@@ -1,4 +1,4 @@
-<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.5.2">
+<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.5.3">
   <description>Create annotated fusion output, based off of STAR-Fusion output.</description>
   <requirements>
     <requirement type="package" version="0.15.3">pysam</requirement>
