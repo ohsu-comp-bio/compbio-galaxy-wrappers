@@ -2,10 +2,7 @@ class Gtf:
     def __init__(self, filename, txs=None):
         self.filename = filename
         self.txs = txs
-        if self.txs:
-            self.raw = self._gather_txs()
-        else:
-            self.raw = None
+        self.raw = self._gather_txs()
 
     @staticmethod
     def _info_to_dict(line):
@@ -57,27 +54,40 @@ class Gtf:
     def _gather_txs(self):
         """
         Find records corresponding to the transcripts we care about.
+        {TX_ID: {FEAT: [rec, rec, ...]}}
         :return:
         """
-        gather = []
+        gtf_recs = {}
         with open(self.filename) as myfile:
             for rec in myfile:
                 if not rec.startswith('#'):
                     info = self._info_to_dict(rec)
                     tx_id = info['transcript_id']
-                    rec = rec.rstrip('\n').split('\t')
-                    this_rec = {'seqname': rec[0],
-                                'source': rec[1],
-                                'feature': rec[2],
-                                'start': rec[3],
-                                'end': rec[4],
-                                'score': rec[5],
-                                'strand': rec[6],
-                                'frame': rec[7],
-                                'info': info}
-                    if tx_id in self.txs:
-                        gather.append(this_rec)
-        return gather
+                    if self.txs:
+                        if tx_id in self.txs:
+                            rec = rec.rstrip('\n').split('\t')
+                            feat = rec[2]
+                            this_rec = {'seqname': rec[0],
+                                        'source': rec[1],
+                                        'feature': feat,
+                                        'start': rec[3],
+                                        'end': rec[4],
+                                        'score': rec[5],
+                                        'strand': rec[6],
+                                        'frame': rec[7],
+                                        'info': info}
+
+                            if tx_id not in gtf_recs:
+                                gtf_recs[tx_id] = {}
+                            if feat not in gtf_recs[tx_id]:
+                                gtf_recs[tx_id][feat] = []
+
+                            gtf_recs[tx_id][feat].append(this_rec)
+
+                    else:
+                        raise NotImplementedError("Functionality to provide records for complete GTF not currently "
+                                                  "implemented.")
+        return gtf_recs
 
     @staticmethod
     def exon_to_ccds(txs):
@@ -90,44 +100,14 @@ class Gtf:
             if 'ccdsid' in tx['info']:
                 return tx['info']['ccdsid']
 
-    @staticmethod
-    def exon_to_coord(exons, first=True):
-        """
-        Match coordinates to exon numbers.  Rules:
+    def exon_to_coord(self, chrom, coord, tx_id, trm='exon'):
+        if trm in self.raw[tx_id]:
+            for exon in self.raw[tx_id][trm]:
+                exon_chrom = exon['seqname']
+                start = int(exon['start'])
+                end = int(exon['end'])
+                exon_no = exon['info']['exon_number']
 
-        Only pass exon entries for a particular tx.
-        Must be an ONLY_REF_SPLICE entry.
-        If this is the first gene (left):
-            if plus:
-                get end coord
-            if minus:
-                get start coord+1
-        If it is the second gene (right):
-            if plus:
-                get start coord+1
-            if minus:
-                get end coord
-        :return:
-        """
-        exon_coord = {}
-        for exon in exons:
-            start = exon['start']
-            end = exon['end']
-            strand = exon['strand']
-            exon_no = exon['info']['exon_number']
-
-            if first:
-                if strand == '+':
-                    exon_coord[end] = exon_no
-                elif strand == '-':
-                    exon_coord[start] = exon_no
-                else:
-                    raise ValueError("Strand is not - or + in _exon_to_coord.")
-            else:
-                if strand == '+':
-                    exon_coord[start] = exon_no
-                elif strand == '-':
-                    exon_coord[end] = exon_no
-                else:
-                    raise ValueError("Strand is not - or + in _exon_to_coord.")
-        return exon_coord
+                if chrom == exon_chrom:
+                    if int(coord) >= start and int(coord) <= end:
+                        return exon_no
