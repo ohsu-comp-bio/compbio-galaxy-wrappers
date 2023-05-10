@@ -1,4 +1,4 @@
-<tool id="move_file" name="Move Galaxy Dataset" version="0.4.7" >
+<tool id="move_file" name="Move Galaxy Dataset" version="0.4.8" >
   <description>Move a file (Galaxy dataset) to some location on the file system.</description>
 
   <requirements>
@@ -129,6 +129,37 @@
     #end if
 
 
+    ## Create target directory structure based on <ROOT>, <YEAR>, <MONTH>, <RUNID>, <SAMPLEID>, <SAMPLE>
+    ## File extension is whatever Galaxy says it is, unless modified above.
+    #if str($move_type.move_type_sel) == "year_month_run_sample_test":
+      #if $move_type.auto_date.add_date == 'yes_auto_date':
+        #import datetime
+        #set $year = datetime.date.today().year
+        #set $month = datetime.datetime.now().strftime("%m")
+        #set $move_dir = '/'.join([str($move_type.base_dir), str($year), str($month), str($move_type.runid), str($move_type.sampleid)])
+        #set $move_location = '/'.join([str($move_type.base_dir), str($year), str($month), str($move_type.runid), str($move_type.sampleid), str($move_type.sampleid)])
+      #else
+        #set $move_dir = '/'.join([str($move_type.base_dir), str($move_type.auto_date.year), str($move_type.auto_date.month), str($move_type.runid), str($move_type.sampleid)])
+        #set $move_location = '/'.join([str($move_type.base_dir), str($move_type.auto_date.year), str($move_type.auto_date.month), str($move_type.runid), str($move_type.sampleid), str($move_type.sampleid)])
+      #end if
+
+      mkdir -p $move_dir &&
+
+      #if $move_type.do_set_ext.set_ext_sel == "yes_set_ext"
+        #if $move_type.do_set_ext.set_ext
+	      #set $file_ext = str($move_type.do_set_ext.set_ext)
+          #set $move_location += $file_ext
+	    #end if
+      #else
+        #set $move_location += $file_ext
+      #end if
+
+      echo rsync --chmod=ug-wx,o-rwx -iptv "${input_file}" "$move_location" &&
+      rsync --chmod=ug-wx,o-rwx -iptv "${input_file}" "$move_location"
+
+    #end if
+
+
     ## Create target directory structure based on <ROOT>, <TEST>, <GENDER>, <SAMPLEID>
     ## File extension is whatever Galaxy says it is, unless modified above.
     #if str($move_type.move_type_sel) == "test_gender_sample":
@@ -170,6 +201,7 @@
         <option value="test_run_sample_coh">Test, Run, Sample, and Cohort</option>
         <option value="test_gender_sample">Test, Gender, and Sample</option>
         <option value="year_month_run_sample">Year, Month, Run, and Sample</option>
+        <option value="year_month_run_sample_test">Year, Month, Run, Sample, and Test</option>
       </param>
 
       <when value="test_run">
@@ -278,6 +310,41 @@
       </when>
 
       <when value="year_month_run_sample">
+	    <conditional name="do_set_ext">
+	        <param name="set_ext_sel" type="select" label="Set file extension?" >
+	            <option value="no_set_ext" selected="true">Use Galaxy File Extension</option>
+	            <option value="yes_set_ext">Set File Extension</option>
+            </param>
+	        <when value="yes_set_ext">
+	            <param name="set_ext" type="text" label="File Extension" help="File extension to use for destination file." />
+	        </when>
+	    </conditional>
+	    <conditional name="auto_date">
+    	    <param name="add_date" type="select" label="Autofill YEAR and MONTH?" help="Answering yes will automatically fill year and date with the value from runtime." >
+	            <option value="no_auto_date" selected="true">Do not autofill Date</option>
+	            <option value="yes_auto_date">Autofill Date</option>
+            </param>
+	        <when value="no_auto_date">
+	            <param name="year" type="text" label="Year" help="Year to be used in directory structure.  Four digits preferred." />
+	            <param name="month" type="text" label="Month" help="Month to be used in directory structure.  Two digits preferred." />
+	        </when>
+	    </conditional>
+        <param name="base_dir" type="text" label="Directory Root" help="This directory root will be used to generate the full path that the file will be moved to." >
+            <sanitizer>
+            <valid initial="string.ascii_letters,string.digits">
+              <add value="/"/>
+              <add value="_"/>
+              <add value="-"/>
+              <add value="."/>
+              <add value="$"/>
+            </valid>
+            </sanitizer>
+        </param>
+        <param name="runid" type="text" label="Run ID" help="Run identifier to create subdirectory from." />
+        <param name="sampleid" type="text" label="Sample ID" help="Run identifier to create subdirectory from." />
+      </when>
+
+      <when value="year_month_run_sample_test">
 	    <conditional name="do_set_ext">
 	        <param name="set_ext_sel" type="select" label="Set file extension?" >
 	            <option value="no_set_ext" selected="true">Use Galaxy File Extension</option>
