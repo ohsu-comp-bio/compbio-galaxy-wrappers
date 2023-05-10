@@ -1,4 +1,4 @@
-# Current Version: 1.0.7
+# Current Version: 1.0.8
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -15,6 +15,7 @@
 # 1.0.6 - restrict plots to only those included in the pos.cntrls input
 #       - display 'no outlier' message in outlier plots
 # 1.0.7 - place tma check after checking for good_tma runs
+# 1.0.8 - add percentiles to antibody/segment table
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -332,6 +333,18 @@ for (tums in names(plot.list)){
 # Create and write table of normalized counts.
 tt <- ttheme_default(base_size = 16)
 score_out <- samp.scores %>% select(ProbeName,segment_label,norm)
+
+# INSERT PERCENTILE HERE
+percentiles <- sapply(unique(samp.scores$ProbeName), function(x){
+  v <- ref.abund %>% filter(ProbeName==x) %>% select(norm)
+  batch <- samp.scores %>% filter(ProbeName == x) %>% select(norm)
+  v <- rbind(v,batch)
+  v.sorted <- as.character(sort(c(v$norm)))
+  match <- as.character(batch$norm[1])
+  percentile <- round(which(v.sorted == match)/length(v.sorted) * 100, 2)
+})
+score_out <- cbind(score_out, percentiles)
+
 score_tum <- score_out[`segment_label` == 'tumor']
 score_str <- score_out[`segment_label` == 'stroma']
 
