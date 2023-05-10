@@ -79,7 +79,7 @@
 
       #if $move_type.do_set_ss.set_ss_sel == "yes_set_ss"
         #if $move_type.do_set_ss.add_samp_str
-            #set $samp_str = str($move_type.add_samp_str)
+            #set $samp_str = str($move_type.do_set_ss.add_samp_str)
             #set $move_location += $samp_str
         #end if
       #end if
@@ -282,7 +282,11 @@
                 <param name="add_samp_str" type="text" optional="true" label="Sample Suffix String" help="Include an additional string right after the sample id, ie. for FASTQ R1 and R2." >
                     <sanitizer>
                         <valid initial="string.ascii_letters,string.digits">
+                            <add value="/"/>
                             <add value="_"/>
+                            <add value="-"/>
+                            <add value="."/>
+                            <add value="$"/>
                         </valid>
                     </sanitizer>
                 </param>
