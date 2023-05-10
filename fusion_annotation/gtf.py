@@ -84,9 +84,6 @@ class Gtf:
 
                             gtf_recs[tx_id][feat].append(this_rec)
 
-                    else:
-                        raise NotImplementedError("Functionality to provide records for complete GTF not currently "
-                                                  "implemented.")
         return gtf_recs
 
     @staticmethod
