@@ -1,4 +1,4 @@
-<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.5.1">
+<tool id="fusion_annotation" name="Fusion Annotation Tool" version="0.5.2">
   <description>Create annotated fusion output, based off of STAR-Fusion output.</description>
   <requirements>
     <requirement type="package" version="0.15.3">pysam</requirement>
@@ -11,8 +11,8 @@
   <command><![CDATA[
     python $__tool_directory__/fusion_annotation.py
     --starfusion '${starfusion}'
-    '${filter}'
-    '${cr_rem}'
+    ${filter}
+    ${cr_rem}
     --json_sample_metrics '${json_sample_metrics}'
     #if $ensembl_mapping
         --ensembl_mapping '${ensembl_mapping}'
