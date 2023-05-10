@@ -11,8 +11,8 @@
   <command><![CDATA[
     python $__tool_directory__/fusion_annotation.py
     --starfusion '${starfusion}'
-    '${filter}'
-    '${cr_rem}'
+    ${filter}
+    ${cr_rem}
     --json_sample_metrics '${json_sample_metrics}'
     #if $ensembl_mapping
         --ensembl_mapping '${ensembl_mapping}'
