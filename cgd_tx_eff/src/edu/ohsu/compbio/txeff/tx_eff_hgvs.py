@@ -28,7 +28,7 @@ from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.annovar import annovar_parser
 
-VERSION = '0.3.9'
+VERSION = '0.4.2'
 ASSEMBLY_VERSION = "GRCh37"
 
 # These will need to be updated when we switch from GRCh37 to GRCh38
@@ -127,14 +127,15 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
     new_hgvs = hgvs_chrom + ':g.' + pos_part
 
     var_g = hgvs_parser.parse_hgvs_variant(new_hgvs)
-    
+
     tx_list = hdp.get_tx_for_region(str(var_g.ac), 'splign', str(var_g.posedit.pos.start), str(var_g.posedit.pos.end))
     
     hgvs_transcripts = []
     
     for hgvs_transcript in tx_list:
         try:
-            variant_transcript = VariantTranscript(variant.chromosome, variant.position, variant.reference, variant.alt)
+            variant_transcript = VariantTranscript(variant.chromosome, variant.position, variant.reference, variant.alt)            
+            variant_transcript.sequence_variant = var_g
             
             # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function. 
             transcript_detail = hdp.get_tx_info(hgvs_transcript[0], hgvs_transcript[1], 'splign')
@@ -166,9 +167,9 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
                 logging.debug(f"HGVS variant does not have a position: ref={var_p.posedit.ref}, alt={var_p.posedit.alt}, type={var_p.posedit.type}, str={str(var_p.posedit)}. Keeping.")
             else:
                 variant_transcript.hgvs_amino_acid_position = var_p.posedit.pos.start.pos
-            
+                        
             variant_transcript.hgvs_base_position = var_c.posedit.pos.start.base
-
+            
             variant_transcript.hgvs_c_dot = c_dot
             variant_transcript.hgvs_p_dot_one = var_p1
             variant_transcript.hgvs_p_dot_three = var_p3
@@ -391,8 +392,9 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
     # Variant Type 
     ## Variant type is only provided by Annovar, and the value will be empty in the case of splice variants. 
     assert hgvs_transcript.variant_type == None
-    
-    if not annovar_parser.is_annovar_splicing_type(annovar_transcript.splicing):
+
+    # Non-splicing transcripts from annovar are expected to have a variant type (ie exonic, intronic)
+    if not annovar_transcript.splicing:
         assert _noneIfEmpty(annovar_transcript.variant_type) != None, f'Variant type must not be empty for non-splicing transcripts. See {transcript_key}'
 
     if _allow_merge(new_transcript.variant_type, annovar_transcript.variant_type, transcript_key, 'variant_type'):

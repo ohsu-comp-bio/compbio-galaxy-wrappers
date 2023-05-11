@@ -10,6 +10,9 @@ class VariantTranscript(AnnovarVariantFunction):
         super().__init__(chromosome, position, ref, alt)
             
         self.protein_transcript = None
+        
+        # An hgvs.sequencevariant.SequenceVariant with g. notation 
+        self.sequence_variant = None
 
     def __eq__(self, obj):
         if obj is None:
