@@ -54,10 +54,8 @@ class HgvsLookup(object):
             print(f'Variant: {transcript.chromosome}-{transcript.position}-{transcript.reference}-{transcript.alt}')
             print(f'  Gene: {transcript.hgnc_gene}')
             print(f'  g.: {transcript.sequence_variant}')
-            print(f'  c.: {transcript.hgvs_c_dot}')
-            print(f'  p.: {transcript.hgvs_p_dot_three}')
-            print(f'  Transcript: {transcript.refseq_transcript}')
-            print(f'  Protein Transcript: {transcript.protein_transcript}')
+            print(f'  c.: {transcript.refseq_transcript}:{transcript.hgvs_c_dot}')
+            print(f'  p.: {transcript.protein_transcript}:{transcript.hgvs_p_dot_three}')
             print(f'  Splicing: {transcript.splicing if transcript.splicing else "No"}')
             print('--------')
         
