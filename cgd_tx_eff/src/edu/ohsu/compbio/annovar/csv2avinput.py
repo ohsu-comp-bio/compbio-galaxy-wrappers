@@ -50,10 +50,11 @@ def _main():
         keys = set()
         key_maker = lambda x: "-".join([x['chromosome'], str(x['position_start']), str(x['position_end']), x['reference_base'], x['variant_base']])
         
-        rowId = 1
+        rowId = 0
         for row in csv_reader:
             key = key_maker(row)
             if key in keys:
+                # The CSV has one line for each transcript so each variant will be listed multiple times. 
                 logging.debug(f"Skipping duplicate variant {key}")
                 duplicates = duplicates + 1
             else:

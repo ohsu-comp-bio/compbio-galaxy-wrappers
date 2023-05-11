@@ -13,6 +13,13 @@ import re
 import os
 from hgvs.location import BaseOffsetPosition
 
+def is_annovar_splicing_type(value: str):
+    '''
+    Return true if the string value matches one of variant types that Annovar uses for splicing variants.  
+    '''
+    return value in ['splicing', 'ncRNA_splicing']
+
+
 class AnnovarFileType(Enum):
     '''
     Annovar file types supported by this parser
@@ -241,8 +248,7 @@ class AnnovarParser(object):
             annovar_recs.append(avf)
 
         return annovar_recs
-        
-
+    
     def _parse_variant_function_row(self, annovar_row: list):
         '''
         Takes a single row from an Annovar variant_function file and returns one or more AnnovarVariantFunction objects.
@@ -259,7 +265,8 @@ class AnnovarParser(object):
         logging.debug(f"Parsing variant {chrom}-{pos}-{ref}-{alt}")
         
         # Handle special cases of splicing variants
-        if annovar_row[0] == 'splicing' or annovar_row[0] == 'ncRNA_splicing':            
+        
+        if is_annovar_splicing_type(annovar_row[0]):            
             variant_type = None
             variant_splicing = annovar_row[0]
         else:
@@ -351,7 +358,7 @@ class AnnovarParser(object):
         for matching_genotypes in annovar_dict.values():
             left_rec = matching_genotypes[0]
             
-            if left_rec.splicing == 'splicing':
+            if is_annovar_splicing_type(left_rec.splicing):
                 # Splicing variants don't get merged, and as far as I know Annovar will only have one splicing
                 # variant per genotype.                  
                 assert len(matching_genotypes) == 1, "A genotype can only have one splicing variant"

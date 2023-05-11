@@ -4,6 +4,12 @@ Created on Jul 1, 2022
 Takes as input a VCF that has been updated with transcript effects, and a variant export CSV, and 
 joins the two so we can compare the nomenclature used in transcript effects with what is currently in CGD. 
 
+The output file is horribly un-normalised: 
+- Every line has one CGD variant and transcript. 
+- The variant will be repeated on as many lines as there are transcripts associated with that variant in CGD. 
+- The tfx INFO fields (from vcf) corresponding to the variant are also on the line for each variant. 
+    - The tfx values are duplicated on each line 
+
 @author: pleyte
 '''
 import argparse
@@ -67,7 +73,7 @@ def process(vcf_filename: str, csv_export_filename: str, csv_out_filename: str):
         csv_out_writer = csv.writer(csv_out_file)
         csv_out_writer.writerow(out_fields)
         
-        # Iterate over each entry in the export file 
+        # Iterate over each entry in the export file
         for export_row in export_reader:
             logging.debug(f"Looking for {export_row['chromosome']}-{export_row['position_start']}-{export_row['reference_base']}-{export_row['variant_base']}")
             

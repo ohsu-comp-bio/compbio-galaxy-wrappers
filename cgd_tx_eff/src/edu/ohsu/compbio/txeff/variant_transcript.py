@@ -10,6 +10,9 @@ class VariantTranscript(AnnovarVariantFunction):
         super().__init__(chromosome, position, ref, alt)
             
         self.protein_transcript = None
+        
+        # An hgvs.sequencevariant.SequenceVariant with g. notation 
+        self.sequence_variant = None
 
     def __eq__(self, obj):
         if obj is None:
@@ -23,8 +26,8 @@ class VariantTranscript(AnnovarVariantFunction):
         '''
         String representation of the VariantTranscript object
         '''
-        return f'[AnnovarVariantFunction: genotype={self.chromosome}-{self.position}-{self.reference}-{self.alt}-transcript={self.refseq_transcript}-{self.protein_transcript}'
-    
+        return f'[AnnovarVariantFunction: genotype={self.chromosome}-{self.position}-{self.reference}-{self.alt}-transcript={self.refseq_transcript}-{self.protein_transcript}' + ('-splicing' if self.splicing else '') 
+
     def get_copy(self):
         '''
         Return a copy of this trancript 
