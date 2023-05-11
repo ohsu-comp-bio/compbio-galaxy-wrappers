@@ -1,6 +1,9 @@
 #!/usr/bin/env Rscript
 
-# Current Version: 0.1.0
+# Current Version: 0.1.1
+# Version history
+# 0.1.0 - initial commit
+# 0.1.1 - set output file names as args
 
 ### Load required packages
 
@@ -9,8 +12,6 @@ library(ggplot2)
 library(tidyverse)
 library(matrixStats)
 library(edgeR)
-library(dplyr)
-library(plotly)
 library(reshape)
 library(rrcov)
 library(ggfortify)
@@ -31,6 +32,8 @@ p <- add_argument(p, "new_sample_counts", help="kallisto output for new sample (
 p <- add_argument(p, "gene_set", help="list of cancer related genes of interest (.txt)")
 p <- add_argument(p, "target_map", help="file that maps genes to target_ids (.tsv)")
 p <- add_argument(p, "counts_matrix", help="Kallisto counts matrix with all UHR samples (.tsv)")
+p <- add_argument(p, "qc_report", help="file name for plots output (.pdf)")
+p <- add_argument(p, "stats_report", help="file name for statistics output (.txt)")
 
 # parse the command line arguments
 argv <- parse_args(p)
@@ -53,6 +56,8 @@ colnames(target_map) <- c("target_id","gene")
 
 raw_counts <- read_tsv(argv$counts_matrix, show_col_types=F)
 
+qc_report <- argv$qc_report
+stats_report <- argv$stats_report
 
 ### Build matrix of raw Kallisto counts data containing background cohort samples and new sample
 
@@ -169,7 +174,7 @@ for(name in validation_genes){
 }
 
 # build file to store text outputs
-sink("stats.txt")
+sink(stats_report)
 
 # calculate principle components
 trans <- data.frame(t(subset(sub_tmm, select = -c(gene, target_id))))
@@ -206,7 +211,7 @@ sink()
 
 ### Build PDF file with graphics and outputs
 
-pdf(file = "qc_report.pdf", width = 10, height = 7)
+pdf(file = qc_report, width = 10, height = 7)
 
 # add PCA plot to pdf
 autoplot(pca, data = sample, colour = "group", main = "PCA")
