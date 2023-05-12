@@ -8,6 +8,7 @@ import argparse
 import logging.config
 import time
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
+from edu.ohsu.compbio.txeff.util.tf_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
 from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
@@ -40,7 +41,12 @@ def _parse_args():
                         type=argparse.FileType('r'),
                         required=True)
 
-    parser.add_argument('-o', '--out_vcf', 
+    parser.add_argument('--reference_fasta',
+                        help='Reference genome, in FASTA format.  The associated index is expected to be in the same directory.',
+                        type=argparse.FileType('r'),
+                        required=True)
+
+    parser.add_argument('-o', '--out_vcf',
                     help='Output VCF', 
                     type=argparse.FileType('w'), 
                     required=True)
@@ -57,7 +63,7 @@ def _main():
     '''
     print(f"tfx_cgd {VERSION} is starting...")
     
-    logging.config.dictConfig(TfxLogConfig().log_config)        
+    logging.config.dictConfig(TfxLogConfig().log_config)
     print(f"Log level={logging.root.getEffectiveLevel()}, file={logging.root.handlers[0].baseFilename}")
     
     start_time = time.time()
@@ -67,18 +73,24 @@ def _main():
     # Use tx_eff_annovar to read annovar records 
     annovar_records = tx_eff_annovar.get_annovar_records(args.annovar_variant_function.name, args.annovar_exonic_variant_function.name)
 
+    # Load the reference genome with pysam.
+    pysam_file = PysamTxEff(args.reference_fasta)
+
     # Use tx_eff_hgvs to fix the nomenclature
     tx_eff_hgvs.identify_hgvs_datasources() 
-    selected_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records)
+
+    merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records, pysam_file)
+    # Close the reference FASTA
+    pysam_file.my_fasta.close()
 
     # Use tx_eff_ccds to add CCDS transcripts
     tx_eff_ccds = TxEffCcds(args.ccds_map.name)
-    tx_eff_ccds.add_ccds_transcripts(selected_transcripts)
+    tx_eff_ccds.add_ccds_transcripts(merged_transcripts)
      
     # Use tx_eff_vcf to write the transcript effects to a VCF
-    tx_eff_vcf.create_vcf_with_transcript_effects(args.in_vcf.name, args.out_vcf.name, selected_transcripts)
+    tx_eff_vcf.create_vcf_with_transcript_effects(args.in_vcf.name, args.out_vcf.name, merged_transcripts)
     
-    print(f"Wrote {len(selected_transcripts)} transcripts to {args.out_vcf.name}")
+    print(f"Wrote {len(merged_transcripts)} transcripts to {args.out_vcf.name}")
     
     end_time = time.time()
     total_time = end_time - start_time
