@@ -8,10 +8,11 @@ import argparse
 import logging.config
 import time
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
+from edu.ohsu.compbio.txeff.util.tf_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
 from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
-VERSION = '0.3.8'
+VERSION = '0.4.0'
 
 def _parse_args():
     '''
@@ -40,7 +41,12 @@ def _parse_args():
                         type=argparse.FileType('r'),
                         required=True)
 
-    parser.add_argument('-o', '--out_vcf', 
+    parser.add_argument('--reference_fasta',
+                        help='Reference genome, in FASTA format.  The associated index is expected to be in the same directory.',
+                        type=argparse.FileType('r'),
+                        required=True)
+
+    parser.add_argument('-o', '--out_vcf',
                     help='Output VCF', 
                     type=argparse.FileType('w'), 
                     required=True)
@@ -64,9 +70,14 @@ def _main():
     # Use tx_eff_annovar to read annovar records 
     annovar_records = tx_eff_annovar.get_annovar_records(args.annovar_variant_function.name, args.annovar_exonic_variant_function.name)
 
+    # Load the reference genome with pysam.
+    pysam_file = PysamTxEff(args.reference_fasta)
+
     # Use tx_eff_hgvs to fix the nomenclature
     tx_eff_hgvs.identify_hgvs_datasources() 
-    merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records)
+    merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records, pysam_file)
+    # Close the reference FASTA
+    pysam_file.my_fasta.close()
 
     # Use tx_eff_ccds to add CCDS transcripts
     tx_eff_ccds = TxEffCcds(args.ccds_map.name)

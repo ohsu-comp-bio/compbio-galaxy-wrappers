@@ -10,6 +10,7 @@ repositories:
       - tfx_cgd.xml
       - src/**
       - test-data/*
+      - tool-data/*
   tfx_cgd_comparison:
     description: "Create comparison of Transcript Effects and CGD data export"
     include:
@@ -17,4 +18,3 @@ repositories:
       - src/**
       - test-data/test_export_in.csv
       - test-data/test_comparison_in.vcf
-  

@@ -24,6 +24,7 @@ from hgvs.exceptions import HGVSInvalidVariantError, HGVSUsageError, HGVSDataNot
 
 # When we upgrade from python 3.8 to 3.9 this import needs to be changed to: "from collections.abc import Iterable"
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
+from edu.ohsu.compbio.txeff.util.tf_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
@@ -45,7 +46,36 @@ def _noneIfEmpty(value: str):
         return None
     return value
 
-def _correct_indel_coords(pos, ref, alt):
+
+class DupHandler:
+    def __init__(self, pysam_file: PysamTxEff, chrom: str, coord: int, alt: str):
+        self.pysam_file = pysam_file
+        self.chrom = chrom
+        self.coord = coord
+        self.alt = alt[1:]
+        self.size = self.pysam_file.size
+        self.seq = self.pysam_file.faidx_query(self.chrom, self.coord)
+        self.fasta_alt = self.seq[self.size + 1:self.size + len(self.alt) + 1]
+
+    def check_dup_status(self) -> bool:
+        return self.alt == self.fasta_alt
+
+    def find_dup_coords(self) -> (int, int):
+        start_size = self.size
+        end_size = self.size + len(self.alt)
+        coord = self.coord
+        fasta_alt = self.fasta_alt
+        while self.alt == fasta_alt:
+            coord += len(self.alt)
+            start_size += len(self.alt)
+            end_size += len(self.alt)
+            fasta_alt = self.seq[start_size:end_size]
+        new_start = coord - len(self.alt)
+        new_end = new_start + len(self.alt) - 1
+        return new_start, new_end
+
+
+def _correct_indel_coords(chrom, pos, ref, alt, pysam_file):
     """
     Using a VCF position, create coords that are compatible with HGVS nomenclature.
     Since we are already determining at this stage whether the event is an ins or del, also
@@ -72,10 +102,20 @@ def _correct_indel_coords(pos, ref, alt):
             new_pos = '_'.join([new_start, new_end]) + 'del'
             return new_pos
     elif lref == 1 and lalt > lref:
+        dups = DupHandler(pysam_file, chrom, pos, alt)
+        # Duplication case
+        if dups.check_dup_status():
+            new_start, new_end = dups.find_dup_coords()
+            if len(dups.alt) == 1:
+                new_pos = '_'.join([str(new_start)]) + 'dup'
+            else:
+                new_pos = '_'.join([str(new_start), str(new_end)]) + 'dup'
         # Insertion case
-        new_start = str(pos)
-        new_end = str(int(pos) + 1)
-        new_pos = '_'.join([new_start, new_end]) + 'ins' + alt[1:]
+        else:
+            new_start = str(pos)
+            new_end = str(int(pos) + 1)
+            new_pos = '_'.join([new_start, new_end]) + 'ins' + alt[1:]
+        print(new_pos)
         return new_pos
     elif lref > 1 and lalt > 1:
         # Multi-nucleotide substitution case
@@ -87,7 +127,7 @@ def _correct_indel_coords(pos, ref, alt):
     else:
         raise Exception("Unknown change type: " + pos + ':' + ref + '>' + alt)
         
-def _lookup_hgvs_transcripts(annovar_variants: list):
+def _lookup_hgvs_transcripts(annovar_variants: list, pysam_file):
     '''
     Return the HGVS transcripts associated with a list of variants  
     '''
@@ -98,7 +138,7 @@ def _lookup_hgvs_transcripts(annovar_variants: list):
     
     transcripts = []
     for variant in annovar_variants:
-        hgvs_variant_transcripts = __lookup_hgvs_transcripts(hgvs_parser, hdp, am, variant)
+        hgvs_variant_transcripts = __lookup_hgvs_transcripts(hgvs_parser, hdp, am, variant, pysam_file)
         logging.info(f"HGVS found {len(hgvs_variant_transcripts)} transcripts for {variant}")
         
         # HGVS might not find any transcripts even though Annovar did 
@@ -109,7 +149,7 @@ def _lookup_hgvs_transcripts(annovar_variants: list):
     
     return transcripts
 
-def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am: hgvs.assemblymapper.AssemblyMapper, variant: Variant):
+def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am: hgvs.assemblymapper.AssemblyMapper, variant: Variant, pysam_file):
     '''
     Use HGVS/UTA to return a list of the transcripts for a variant
     '''
@@ -122,7 +162,7 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
         return []
     
     # Look up the variant using HGVS            
-    pos_part = _correct_indel_coords(variant.position, variant.reference, variant.alt)
+    pos_part = _correct_indel_coords(variant.chromosome, variant.position, variant.reference, variant.alt, pysam_file)
     new_hgvs = hgvs_chrom + ':g.' + pos_part
 
     var_g = hgvs_parser.parse_hgvs_variant(new_hgvs)
@@ -567,7 +607,7 @@ def identify_hgvs_datasources():
     else:
         logging.info(f"Using UTA Database at {os.environ.get('UTA_DB_URL')}")
 
-def get_updated_hgvs_transcripts(annovar_transcripts: list):    
+def get_updated_hgvs_transcripts(annovar_transcripts: list, pysam_file):
     '''
     Take a list of transcripts from Annovar and use them to look up the corresponding variants using the HGVS python lib; and then 
     merge the annovar and hgvs info and return the results. 
@@ -577,7 +617,7 @@ def get_updated_hgvs_transcripts(annovar_transcripts: list):
     logging.debug(f'{len(disinct_variants)} distinct variants')
     
     # Lookup the variant in the HGVS/UTA database
-    hgvs_transcripts = _lookup_hgvs_transcripts(disinct_variants)
+    hgvs_transcripts = _lookup_hgvs_transcripts(disinct_variants, pysam_file)
     logging.debug(f'Received {len(hgvs_transcripts)} transcripts from HGVS')
     
     # Merge Annovar and HGVS/UTA transcripgs
