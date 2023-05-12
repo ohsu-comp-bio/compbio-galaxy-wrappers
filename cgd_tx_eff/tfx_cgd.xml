@@ -1,4 +1,4 @@
-<tool id="tfx_cgd" name="Transcript Effects for CGD" version="0.4.0" >
+<tool id="tfx_cgd" name="Transcript Effects for CGD" version="0.5.0" >
   <description>
   	Update a VCF with transcript-effects and nomenclature from Annovar and HGVS.
   </description>

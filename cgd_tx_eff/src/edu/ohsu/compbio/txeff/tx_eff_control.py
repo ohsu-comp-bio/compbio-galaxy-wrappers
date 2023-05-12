@@ -12,7 +12,7 @@ from edu.ohsu.compbio.txeff.util.tf_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
 from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
-VERSION = '0.4.0'
+VERSION = '0.5.0'
 
 def _parse_args():
     '''
