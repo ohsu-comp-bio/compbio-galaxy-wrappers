@@ -43,7 +43,6 @@ def _parse_args():
 
     parser.add_argument('--reference_fasta',
                         help='Reference genome, in FASTA format.  The associated index is expected to be in the same directory.',
-                        type=argparse.FileType('r'),
                         required=True)
 
     parser.add_argument('-o', '--out_vcf',
