@@ -21,7 +21,7 @@
     	--ccds_map "${ccds_map}"
         #if $reference_source.reference_source_selector != "no_ref"
             #if $reference_source.reference_source_selector != "history"
-                --referece_fasta ${reference_source.reference_sequence.fields.path}
+                --reference_fasta ${reference_source.reference_sequence.fields.path}
             #else
                 --reference_fasta ${reference_source.reference_sequence}
             #end if
