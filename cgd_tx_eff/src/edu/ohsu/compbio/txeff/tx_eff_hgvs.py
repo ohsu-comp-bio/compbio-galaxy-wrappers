@@ -24,7 +24,7 @@ from hgvs.exceptions import HGVSInvalidVariantError, HGVSUsageError, HGVSDataNot
 
 # When we upgrade from python 3.8 to 3.9 this import needs to be changed to: "from collections.abc import Iterable"
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
-from edu.ohsu.compbio.txeff.util.tf_eff_pysam import PysamTxEff
+from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 

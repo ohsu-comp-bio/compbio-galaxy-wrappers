@@ -8,7 +8,7 @@ import argparse
 import logging.config
 import time
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
-from edu.ohsu.compbio.txeff.util.tf_eff_pysam import PysamTxEff
+from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
 from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
