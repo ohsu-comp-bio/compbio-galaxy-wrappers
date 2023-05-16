@@ -28,7 +28,7 @@ from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
-VERSION = '0.3.8'
+VERSION = '0.5.1'
 ASSEMBLY_VERSION = "GRCh37"
 
 # These will need to be updated when we switch from GRCh37 to GRCh38
@@ -115,7 +115,6 @@ def _correct_indel_coords(chrom, pos, ref, alt, pysam_file):
             new_start = str(pos)
             new_end = str(int(pos) + 1)
             new_pos = '_'.join([new_start, new_end]) + 'ins' + alt[1:]
-        print(new_pos)
         return new_pos
     elif lref > 1 and lalt > 1:
         # Multi-nucleotide substitution case

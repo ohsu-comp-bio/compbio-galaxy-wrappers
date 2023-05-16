@@ -12,7 +12,7 @@ from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
 from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
-VERSION = '0.5.0'
+VERSION = '0.5.1'
 
 def _parse_args():
     '''
@@ -61,7 +61,7 @@ def _main():
     main function
     '''
     logging.config.dictConfig(TfxLogConfig().log_config)
-    print("tfx_cgd is starting...")
+    print(f"tfx_cgd {VERSION} is starting...")
     start_time = time.time()
     
     args = _parse_args()
