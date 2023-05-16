@@ -12,7 +12,7 @@ from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
 from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
-VERSION = '0.5.0'
+VERSION = '0.5.1'
 
 def _parse_args():
     '''
@@ -76,7 +76,7 @@ def _main():
     pysam_file = PysamTxEff(args.reference_fasta)
 
     # Use tx_eff_hgvs to fix the nomenclature
-    tx_eff_hgvs.identify_hgvs_datasources() 
+    tx_eff_hgvs.identify_hgvs_datasources()
 
     merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records, pysam_file)
     # Close the reference FASTA
@@ -90,7 +90,7 @@ def _main():
     tx_eff_vcf.create_vcf_with_transcript_effects(args.in_vcf.name, args.out_vcf.name, merged_transcripts)
     
     print(f"Wrote {len(merged_transcripts)} transcripts to {args.out_vcf.name}")
-    
+
     end_time = time.time()
     total_time = end_time - start_time
     time_str = time.strftime("%Mm:%Ss", time.gmtime(total_time))
