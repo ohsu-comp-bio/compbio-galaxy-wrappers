@@ -1,4 +1,4 @@
-<tool id="itd_detect" name="ITD Detect" version="1.2.0" >
+<tool id="itd_detect" name="ITD Detect" version="1.2.1" >
     <description>Detect ITD events in a BAM file.</description>
 
     <requirements>
@@ -35,6 +35,9 @@
     #end if
     #if $min_size
         --min_size $min_size
+    #end if
+    #if $min_depth
+        --min_depth $min_depth
     #end if
     --outfile '${outfile}'
     --outfile_vcf '${outfile_vcf}'
@@ -74,6 +77,7 @@
         <param name="paired" type="boolean" checked="true" label="Paired-end?" help="Check if the BAM is paired-end." />
         <param name="chr_prefix" type="boolean" checked="false" label="Add chr prefix to contigs?" help="Check if you need the targets to be prefixed with chr." />
         <param name="min_size" type="integer" value="12" min="0" label="Minimum Size" help="Minimum ITD size to write to VCF." />
+        <param name="min_depth" type="integer" value="1" min="0" label="Minimum Depth" help="Minimum number of ITD supporting reads needed to write to VCF." />
     </inputs>
 
     <outputs>
