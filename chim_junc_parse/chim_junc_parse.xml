@@ -1,0 +1,26 @@
+<tool id="chim_junc_parse" name="Chimeric Junction Parser" version="0.0.1" >
+    <description>From the STAR aligner chimeric junction output, find additional junctions of interest, as defined in the input BEDPE.</description>
+    <command detect_errors="exit_code"><![CDATA[
+        python $__tool_directory__/chim_junc_parse.py
+        '${raw_junc}' '${srch_junc}' '${bedpe_out}'
+    ]]></command>
+    <inputs>
+        <param name="raw_junc" type="data" format="interval" label="STAR Chimeric Junctions" help="Input chimeric junctions from STAR." />
+        <param name="srch_junc" type="data" format="bed" label="BEDPE Regions" help="Input BEDPE file describing regions of interest." />
+    </inputs>
+    <outputs>
+        <data format="txt" name="bedpe_out" label="${tool.name} on ${on_string}: TXT" />
+    </outputs>
+    <help><![CDATA[
+    usage: chim_junc_parse.py [-h] [--version] raw_junc srch_junc bedpe_out
+
+    positional arguments:
+      raw_junc    Input chimeric junctions from STAR.
+      srch_junc   Input BEDPE file describing regions of interest.
+      bedpe_out   Output containing sites of interest.
+
+    optional arguments:
+      -h, --help  show this help message and exit
+      --version   show program's version number and exit
+    ]]></help>
+</tool>
