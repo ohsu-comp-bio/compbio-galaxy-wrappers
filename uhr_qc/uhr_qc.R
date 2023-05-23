@@ -1,9 +1,11 @@
 #!/usr/bin/env Rscript
 
-# Current Version: 0.1.1
+# Current Version: 0.1.3
 # Version history
 # 0.1.0 - initial commit
 # 0.1.1 - set output file names as args
+# 0.1.2 - added sequencer type to PCA plot
+# 0.1.3 - added summary page to pdf output
 
 ### Load required packages
 
@@ -33,7 +35,6 @@ p <- add_argument(p, "gene_set", help="list of cancer related genes of interest 
 p <- add_argument(p, "target_map", help="file that maps genes to target_ids (.tsv)")
 p <- add_argument(p, "counts_matrix", help="Kallisto counts matrix with all UHR samples (.tsv)")
 p <- add_argument(p, "qc_report", help="file name for plots output (.pdf)")
-p <- add_argument(p, "stats_report", help="file name for statistics output (.txt)")
 
 # parse the command line arguments
 argv <- parse_args(p)
@@ -57,7 +58,7 @@ colnames(target_map) <- c("target_id","gene")
 raw_counts <- read_tsv(argv$counts_matrix, show_col_types=F)
 
 qc_report <- argv$qc_report
-stats_report <- argv$stats_report
+
 
 ### Build matrix of raw Kallisto counts data containing background cohort samples and new sample
 
@@ -69,6 +70,10 @@ target_id <- colsplit(raw_counts$target_id, split = "\\|", names = c("target_id"
 
 # add target coordinate and new sample to finalize raw Kallisto counts matrix
 raw_counts <- cbind(target_id, coh_raw, new_sample)
+
+# get sequencer type for each sample
+all_samples <- append(background_samples, new_run)
+sequencer <- sapply(all_samples, function(x) if(grepl('_VH', x)){"NextSeq2000"} else{"NextSeq500"})
 
 
 ### Subset raw data to cancer genes of interest
@@ -173,21 +178,19 @@ for(name in validation_genes){
 
 }
 
-# build file to store text outputs
-sink(stats_report)
-
 # calculate principle components
 trans <- data.frame(t(subset(sub_tmm, select = -c(gene, target_id))))
 sample <- data.frame(as.factor(rownames(trans)))
 colnames(sample) <- "sample"
 sample["group"] <- "background cohort"
 sample$group[length(sample$group)] <- "new sample"
+sample["sequencer"] <- sequencer
 pca <- prcomp(trans, scale = T)
 
 # calculate Spearman correlation coefficient between new sample and background cohort median values
 background <- sub_tmm[-c(1,2,ncol(sub_tmm))]
 background["median"] <- rowMedians(as.matrix(background))
-cor.test(background[["median"]], sub_tmm[[new_run]], method = "spearman")
+spearman_cor <- cor.test(background[["median"]], sub_tmm[[new_run]], method = "spearman")
 
 # calculate pairwise Spearman correlation coefficients between all UHRs
 cor_matrix <- cor(as.matrix(subset(sub_tmm, select = -c(gene, target_id))), method = "spearman")
@@ -195,26 +198,54 @@ cor_matrix <- cor(as.matrix(subset(sub_tmm, select = -c(gene, target_id))), meth
 # calculate Pearson correlation coefficient between new sample and background cohort median values
 dat <- data.frame(background[["median"]], sub_tmm[[new_run]])
 colnames(dat) <- c("median", "new")
-cor.test(background[["median"]], sub_tmm[[new_run]])
+pearson_cor <- cor.test(background[["median"]], sub_tmm[[new_run]])
 
 # proportion of validation targets in the 95% CI (median +/- 1.96 * SD)
 prop <- round(sum(ci_test)/length(ci_test),3)
-cat("\nProportion of new sample validation targets within the 95% CI: ", prop)
+conf <- paste("Proportion of new sample validation targets within the 95% CI: ", prop)
 
 # calculate mean and sd of z-scores
 z_scores <- data.frame(z_scores)
 z_mean <- round(mean(z_scores$z_scores),3)
 z_sd <- round(abs(sd(z_scores$z_scores)),3)
-cat("\nZ-score Mean: ", z_mean)
-cat("\nZ-score SD", z_sd, "\n")
-sink()
+
 
 ### Build PDF file with graphics and outputs
 
 pdf(file = qc_report, width = 10, height = 7)
 
+# create summary page
+
+# build title
+header_df <- data.frame(new_run)
+rownames(header_df) <- c('SEQUENCING RUN ID: ')
+colnames(header_df) <- c('TRANSCRIPTOME UHR QC REPORT')
+thm_title <- ttheme_minimal(core=list(bg_params = list(fill = blues9[2], col=NA),
+                                      fg_params=list(fontsize=18)),
+                            colhead=list(fg_params=list(col="darkblue", fontsize=24)))
+title <- tableGrob(header_df, theme = thm_title)
+
+# build tables
+spearman_table <- rbind(round(spearman_cor$estimate[["rho"]],3), round(spearman_cor$p.value,4))
+colnames(spearman_table) <- c("Spearman Rank Correlation Test")
+rownames(spearman_table) <- c("Correlation Estimate: ", "P-Value: ")
+
+pearson_table <- rbind(round(pearson_cor$estimate[["cor"]],3), round(pearson_cor$p.value,4))
+colnames(pearson_table) <- c("Pearson Correlation Test")
+
+cor_tables <- cbind(spearman_table, pearson_table)
+t1 <- tableGrob(cor_tables)
+
+z_table <- rbind(round(prop,3), z_mean, z_sd)
+colnames(z_table) <- c("Validation Target Z-Score Statistics")
+rownames(z_table) <- c("Proportion Within Confidence Interval:", "Z-score Mean:", "Z-score SD:")
+t2 <- tableGrob(z_table)
+
+# add title and tables to pdf summary page
+grid.arrange(title, t1, t2, ncol=1)
+
 # add PCA plot to pdf
-autoplot(pca, data = sample, colour = "group", main = "PCA")
+autoplot(pca, data = sample, colour = "group", shape = "sequencer", main = "PCA")
 
 # add pairwise Spearman correlation heatmap to pdf
 melted_cor_mat <- melt(cor_matrix)
