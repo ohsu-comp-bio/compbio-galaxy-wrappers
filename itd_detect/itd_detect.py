@@ -13,6 +13,7 @@
 #       - of potential ITDs.
 # 1.1.1 - Added BCOR and FGFR regions to support STP4 workflows
 # 1.2.0 - Allow for multiple targets to be selected.
+# 1.2.1 - Added min_depth argument
 
 import argparse
 import pysam
@@ -21,7 +22,7 @@ from copy import deepcopy
 from itertools import groupby
 from operator import itemgetter
 
-VERSION = '1.2.0'
+VERSION = '1.2.1'
 
 def supply_args():
     """
@@ -40,6 +41,8 @@ def supply_args():
     parser.add_argument('--paired', action='store_true', help='Data is paired-end data.')
     parser.add_argument('--chr_prefix', action='store_true', help='Add chr prefix to all chromosome identifiers.')
     parser.add_argument('--min_size', type=int, default=12, help='Minimum size of ITD call to write to VCF.')
+    parser.add_argument('--min_depth', type=int, default=1, help='Minimum number of ITD supporting reads needed '
+                                                                 'to write to VCF.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
 
@@ -528,19 +531,21 @@ class ItdCallVcf(ItdCall):
 
 
 class VcfWrite:
-    def __init__(self, filename, sample_id, sample_data, min_size):
+    def __init__(self, filename, sample_id, sample_data, min_size, min_depth=1):
         self.filename = filename
         self.sample_id = sample_id
         self.sample_data = sample_data
         self.min_size = min_size
+        self.min_depth = min_depth
 
     def write_me(self):
         with open(self.filename, 'w') as self.myfile:
             self._write_header()
             for vrnt in self.sample_data:
                 if len(vrnt.alt) > self.min_size:
-                    self.myfile.write(vrnt.to_write)
-                    self.myfile.write('\n')
+                    if vrnt.itd_cnt >= self.min_depth:
+                        self.myfile.write(vrnt.to_write)
+                        self.myfile.write('\n')
         self.myfile.close()
 
     def _write_header(self):
@@ -581,7 +586,7 @@ def main():
         for entry in coll.sample_data:
             all_sample_data.append(entry)
 
-    VcfWrite(args.outfile_vcf, args.sample_id, all_sample_data, args.min_size).write_me()
+    VcfWrite(args.outfile_vcf, args.sample_id, all_sample_data, args.min_size, args.min_depth).write_me()
     handle_out.close()
 
 

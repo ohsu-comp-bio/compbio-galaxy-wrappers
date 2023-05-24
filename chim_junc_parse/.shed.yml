@@ -9,3 +9,5 @@ repositories:
     include:
       - chim_junc_parse.xml
       - chim_junc_parse.py
+      - tool_data_table_conf.xml.sample
+      - tool-data/*
