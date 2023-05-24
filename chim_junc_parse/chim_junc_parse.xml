@@ -1,12 +1,41 @@
 <tool id="chim_junc_parse" name="Chimeric Junction Parser" version="0.0.1" >
     <description>From the STAR aligner chimeric junction output, find additional junctions of interest, as defined in the input BEDPE.</description>
+    <requirements>
+        <requirement type="package" version="0.15.3">pysam</requirement>
+    </requirements>
     <command detect_errors="exit_code"><![CDATA[
         python $__tool_directory__/chim_junc_parse.py
-        '${raw_junc}' '${srch_junc}' '${bedpe_out}'
+        '${raw_junc}'
+        '${srch_junc}'
+        #if $refGenomeSource.genomeSource == "history"
+            '${refGenomeSource.ownFile}'
+        #else
+            '${refGenomeSource.index.fields.path}'
+        #end if
+        '${json_sample_metrics}'
+        '${bedpe_out}'
     ]]></command>
     <inputs>
         <param name="raw_junc" type="data" format="interval" label="STAR Chimeric Junctions" help="Input chimeric junctions from STAR." />
         <param name="srch_junc" type="data" format="bed" label="BEDPE Regions" help="Input BEDPE file describing regions of interest." />
+        <conditional name="refGenomeSource">
+          <param name="genomeSource" type="select" label="Will you select a reference genome from your history or use a built-in index?" help="Built-ins were indexed using default options">
+              <option value="indexed">Use a built-in index</option>
+              <option value="history">Use one from the history</option>
+          </param>
+          <when value="indexed">
+              <param name="index" type="select" label="Select a reference genome" help="If your genome of interest is not listed, contact the Galaxy team">
+              <options from_data_table="starfusion_indexes">
+                  <filter type="sort_by" column="2"/>
+                  <validator type="no_options" message="No indexes are available for the selected input dataset"/>
+              </options>
+              </param>
+          </when>
+          <when value="history">
+              <param name="ownFile" type="data" format="fasta" label="Select the reference genome" />
+          </when>  <!-- history -->
+        </conditional>  <!-- refGenomeSource -->
+        <param name="json_sample_metrics" type="data" format="txt" label="Sample metrics output in JSON format." />
     </inputs>
     <outputs>
         <data format="txt" name="bedpe_out" label="${tool.name} on ${on_string}: TXT" />
