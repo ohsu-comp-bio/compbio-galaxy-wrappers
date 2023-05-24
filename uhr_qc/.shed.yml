@@ -1,0 +1,13 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/uhr_qc"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/uhr_qc"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  uhr_qc:
+    description: "Transcriptome UHR Quality Control"
+    include:
+      - uhr_qc.xml
+      - uhr_qc.R
+      - test-data/*
