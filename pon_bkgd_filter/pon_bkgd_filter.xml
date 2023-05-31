@@ -1,4 +1,4 @@
-<tool id="pon_bkgd_filter" name="PON BKGD Filter" version="1.0.0" >
+<tool id="pon_bkgd_filter" name="PON BKGD Filter" version="1.1.0" >
   <description>
       Filter variants in a VCF based on PON background allele frequencies
   </description>
@@ -35,12 +35,14 @@
   <inputs>
       <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
       <param name="filter_id" type="text" label="FILTER ID to add to VCF record" />
-      <param name="fc_bkgd_metrics" type="data" format="tsv,tabular,txt"
+
+      <param name="fc_bkgd_metrics" type="data" format="tsv,tabular,txt" optional="true"
              label="Text file containing freq stats for forced call" />
-      <param name="fc_label" type="text" label="Forced call label" />
+      <param name="fc_label" type="text" label="Forced call label" optional="true" />
 
       <param name="per_base_bkgd_metrics" type="data" format="tsv,tabular,txt" optional="true"
              label="Text file containing freq stats of locus in panel" />
+
       <param name="vaf_threshold" type="float" value="0.1" min="0" max="1.0" optional="true"
            label="VAF threshold" help="VAF threshold under to perform filtering"/>
       <param name="alt_specific" type="boolean" truevalue="--alt_specific" falsevalue="" optional="true"

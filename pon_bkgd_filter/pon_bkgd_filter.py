@@ -8,13 +8,15 @@ python pon_bkgd_filter/pon_bkgd_filter.py "input.vcf" "output.vcf"
     "BKGD" "Below Background"
     "fc_bkgd_metrics.txt" "fc"
     --per_base_bkgd_metrics "per_base_bkgd_metrics.txt" --vaf_threshold 0.1
+
+1.1.0 - make both forced call and per bases metrics inputs optional
 """
 
 import argparse
 import vcfpy
 
 
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 
 
 def supply_args():
@@ -26,10 +28,12 @@ def supply_args():
     parser.add_argument('input_vcf', help='Input VCF')
     parser.add_argument('output_vcf', help='Output VCF')
     parser.add_argument('filter_id', help='FILTER ID to add to VCF record')
+
     parser.add_argument('--fc_bkgd_metrics', help='Text file containing freq stats for forced call')
     parser.add_argument('--fc_label', help='Forced call label')
 
     parser.add_argument('--per_base_bkgd_metrics', help='Text file containing freq stats of locus in panel')
+
     parser.add_argument('--vaf_threshold', help='VAF threshold under to perform filtering')
     parser.add_argument('--alt_specific', action='store_true', help='Use ALT allele threshold to filter')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
@@ -80,13 +84,15 @@ def main():
     # add header info
     prefix = 'BE'
     metrics = ['mean', 'std', 'median', 'threshold', 'zscore', 'pval']
+
     for metric in metrics:
         add_metrics_header('INFO', prefix, metric, 1, 'Float',
                            'Descriptive stats of locus allele frequencies from PON samples', header)
     add_metrics_header('INFO', '', args.filter_id, 1, 'Float',
                        'Below background', header)
-    add_metrics_header('INFO', 'fc', args.filter_id, 1, 'Float',
-                       'Below background for forced calls', header)
+    if fc_mets:
+        add_metrics_header('INFO', 'fc', args.filter_id, 1, 'Float',
+                           'Below background for forced calls', header)
     writer = vcfpy.Writer.from_path(args.output_vcf, header=header)
 
     # add info to VCF records
