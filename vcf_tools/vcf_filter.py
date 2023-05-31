@@ -18,7 +18,7 @@ Given a merged VCF, this will filter out variants that contain the exclude argum
 import argparse
 import vcfpy
 
-VERSION = '2.1.0'
+VERSION = '2.1.1'
 
 
 def get_args():
@@ -82,7 +82,7 @@ class RecordKeeper:
 
     def exclude_record(self, exclude, threshold):
         exclude = RecordFilters(exclude, self.callers)
-        if self.record.calls[0].data['AF'] < float(threshold):
+        if self.record.calls[0].data['AF'] <= float(threshold):
             # if only given a caller check that it is the only caller present
             if exclude.callers and not (exclude.flags or exclude.info):
                 if exclude.callers == self.rec_filters.callers:
