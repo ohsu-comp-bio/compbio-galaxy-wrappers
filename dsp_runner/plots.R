@@ -29,7 +29,7 @@
 #' @import stats
 #' @import scales
 #' @export
-loli_plot <- function(score.dt, ref.dt=NULL, no.median=c("Tumor Markers", "Other Markers", "IO CLIA", "IO RUO")){
+loli_plot <- function(score.dt, ref.dt=NULL, coh, no.median=c("Tumor Markers", "Other Markers", "IO CLIA", "IO RUO")){
 
   avg_barcode=`.`=path_ord=quant=sample_ord=ab_ord=med=segment_label=patient_ord=N=med_diff=NULL # due to NSE notes in R CMD check
   
@@ -62,7 +62,7 @@ loli_plot <- function(score.dt, ref.dt=NULL, no.median=c("Tumor Markers", "Other
           facet_grid(path_ord~segment_label, scales="free", space="free_y", labeller=.uc.labs) +
           theme_bw() + xlab("Abundance") + ylab("") +  
 #          theme(axis.text.y=element_text(size=14), strip.background.y = element_blank(), strip.text.y = element_blank()) +
-          ggtitle(samp.dt[1,paste(patient_ord, '|', num_batch)])
+          ggtitle(samp.dt[1,paste(patient_ord, '|', num_batch, '|', coh)])
 
          }
 

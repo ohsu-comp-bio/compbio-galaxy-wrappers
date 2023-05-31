@@ -1,1 +1,4 @@
 **/*.*.pyc
+src/**/__pycache__
+/tool_test_output.html
+/tool_test_output.json

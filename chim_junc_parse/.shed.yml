@@ -1,0 +1,13 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/chim_junc_parse"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/chim_junc_parse"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  chim_junc_parse:
+    description: "From the STAR aligner chimeric junction output, find additional junctions of interest, as defined in the input BEDPE."
+    include:
+      - chim_junc_parse.xml
+      - chim_junc_parse.py
+      - tool_data_table_conf.xml.sample
+      - tool-data/*

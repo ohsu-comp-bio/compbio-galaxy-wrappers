@@ -1,10 +1,11 @@
 <tool id="y_ploidy_check" name="Y Ploidy Check" version="2.0.0">
 	<description>Checks the ploidy of the y chromosome from DetermineGermlineContigPloidy to confirm specification in samplesheet</description>
 	<command detect_errors="exit_code"><![CDATA[
-        grep "^Y" $input > $output &&
+	grep "^Y" $input > $output &&
 	echo "ATTENTION - THE BIOLOGICAL SEX OF THIS SAMPLE IS DIFFERENT FROM WHAT WAS SPECIFIED ON THE SAMPLESHEET" > email.txt &&
 	grep "SM:" $input >> email.txt &&
 	grep "Y" $input >> email.txt &&
+<<<<<<< HEAD:xy_check/y_ploidy_check.xml
         BIOSEX_NUM=\$(grep -P "^Y\t1" $input | wc -l) &&
         echo \$BIOSEX_NUM &&
         echo $biosex &&
@@ -19,8 +20,24 @@
 	   echo "{\"y_ploidy_check\": 0}" > $json_output;
            exit 1; fi
         
+=======
+	BIOSEX_NUM=\$(grep -P "^Y\t1" $input | wc -l) &&
+	if [ \$BIOSEX_NUM -eq $biosex ]; then
+		echo "{\"y_ploidy_check\": 1}" > $json_output;
+		exit 0;
+	else
+		if [ -z ${5} ]; then
+			echo "Biological sex does not match Samplesheet";
+		else
+			cat email.txt | mailx -s "\$(hostname) Biological Sex Check Tool Error" "${email}";
+		fi;
+	echo "{\"y_ploidy_check\": 0}" > $json_output;
+	exit 1; fi
+>>>>>>> 7f9748a191c879be708946923d5ccc720562fc4b:gender_check/y_ploidy_check.xml
 ]]>	</command>
+
 	<inputs>
+<<<<<<< HEAD:xy_check/y_ploidy_check.xml
 	<param name="biosex" type="select" label="Reported Sex">
             <option value="0">Female</option>
             <option value="1">Male</option>
@@ -30,11 +47,21 @@
 	<param name="email" type="text" label="Admin Email" help="Send failure reports to this email address">
 	  <sanitizer sanitize='False'/>
 	</param>
+=======
+		<param name="biosex" type="select" label="Reported Sex">
+			<option value="0">Female</option>
+			<option value="1">Male</option>
+			<option value="2">Unspecified</option>
+		</param>
+		<param name="input" type="data" format="tsv" label="DetermineGermlineContigPloidy"/>
+		<param name="email" type="text" label="Admin Email" help="Send failure reports to this email address">
+			<sanitizer sanitize='False'/>
+		</param>
+>>>>>>> 7f9748a191c879be708946923d5ccc720562fc4b:gender_check/y_ploidy_check.xml
 	</inputs>
+
 	<outputs>
 		<data format="vcf" name="output" label="${tool.name} on ${on_string}"/>
 		<data format="json" name="json_output" label="${tool.name} on ${on_string}:JSON"/>
 	</outputs>
-	
-	
 </tool>

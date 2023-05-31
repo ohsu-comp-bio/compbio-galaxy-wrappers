@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # USAGE: python fusion_annotation.py [-f] <starfusion> <sample_level_metrics.txt> <genome_refpath>
 
+# 0.5.2 - remove single quotes in cheetah xml section for booleans
+# 0.5.3 - Get all exons from GTF if there is an ENST supplied.
+
 import argparse
 import json
 import pysam
@@ -9,7 +12,7 @@ from collections import OrderedDict
 from ensembldb import EnsemblDbImport
 from gtf import Gtf
 
-VERSION = '0.5.1'
+VERSION = '0.5.3'
 
 
 def supply_args():
@@ -38,21 +41,20 @@ class StarFusionOutput:
             self.header, self.fusions = self.out_create_cr_rm(self.remove_cr())
         else:
             self.header, self.fusions = self.out_create()
-        self.cds_left = self._get_tx_list(left=True)
-        self.cds_right = self._get_tx_list(left=False)
+        self.my_txs = self._get_tx_list()
 
-    def _get_tx_list(self, left=True):
+    def _get_tx_list(self):
         """
         Get a list of all ENST IDs in output.
         :return:
         """
         tx_list = []
         for fuse in self.fusions:
-            if left:
+            if fuse.cds_left_id not in tx_list:
                 tx_list.append(fuse.cds_left_id)
-            else:
+            if fuse.cds_right_id not in tx_list:
                 tx_list.append(fuse.cds_right_id)
-        return tx_list
+        return [x for x in tx_list if x != '.' and x]
 
     def remove_cr(self):
         """
@@ -326,21 +328,6 @@ def get_nucleotides_with_samtools(mafline, genome_refpath, fusionside):
     seq = pysam.FastaFile(filename=genome_refpath).fetch(region=interval)
     return [interval, seq]
 
-
-def collect_exon_coords(txs, gencode, left):
-    """
-    Get the exon-coordinate mappings.
-    :return:
-    """
-    exons = {}
-    mygtf = Gtf(gencode, txs=txs)
-    for entry in txs:
-        tx_only = mygtf.filt_tx(mygtf.raw, entry)
-        feat_only = mygtf.filt_feature(tx_only)
-        exons[entry] = mygtf.exon_to_coord(feat_only, left)
-    return exons
-
-
 def collect_ccds(txs, gencode):
     """
     Get CCDS values from the GENCODE GTF.
@@ -391,14 +378,7 @@ def main():
 
     sf = StarFusionOutput(args.starfusion, args.cr_rem)
     my_sf = sf.fusions
-
-    # Get the transcript list from the star-fusion file, so we can then create exon-coord mappings from gencode.
-    if args.gencode_gtf:
-        left_exons = collect_exon_coords(sf.cds_left, args.gencode_gtf, left=True)
-        right_exons = collect_exon_coords(sf.cds_right, args.gencode_gtf, left=False)
-        ccds = collect_ccds(sf.cds_left + sf.cds_right, args.gencode_gtf)
-    else:
-        left_exons, right_exons, ccds = None, None, None
+    my_gtf = Gtf(args.gencode_gtf, sf.my_txs)
 
     cols = False
     # If there are no results, we need at least a header to send to the CGD...
@@ -468,29 +448,18 @@ def main():
             if enst_r in enst_refseq:
                 linebedpe['REFSEQ_RIGHT_ID'] = enst_refseq[enst_r]
 
-        if left_exons:
-            enst_l = linebedpe['ENST_LEFT_ID']
-            coord = linebedpe['end1']
-            if enst_l in left_exons:
-                if coord in left_exons[enst_l]:
-                    linebedpe['EXON_LEFT'] = left_exons[enst_l][coord]
-
-        if right_exons:
-            enst_r = linebedpe['ENST_RIGHT_ID']
-            coord = linebedpe['end2']
-            if enst_r in right_exons:
-                if coord in right_exons[enst_r]:
-                    linebedpe['EXON_RIGHT'] = right_exons[enst_r][coord]
-
-        if ccds:
-            enst_l = linebedpe['ENST_LEFT_ID']
-            enst_r = linebedpe['ENST_RIGHT_ID']
-            if enst_l in ccds:
-                if ccds[enst_l]:
-                    linebedpe['CCDS_LEFT_ID'] = ccds[enst_l]
-            if enst_r in ccds:
-                if ccds[enst_r]:
-                    linebedpe['CCDS_RIGHT_ID'] = ccds[enst_r]
+        chroml = linebedpe['chrom1']
+        chromr = linebedpe['chrom2']
+        endl = linebedpe['end1']
+        endr = linebedpe['end2']
+        if enst_l in my_gtf.txs:
+            linebedpe['EXON_LEFT'] = my_gtf.exon_to_coord(chroml, endl, enst_l)
+            if 'ccdsid' in my_gtf.raw[enst_l]['transcript'][0]['info']:
+                linebedpe['CCDS_LEFT_ID'] = my_gtf.raw[enst_l]['transcript'][0]['info']['ccdsid']
+        if enst_r in my_gtf.txs:
+            linebedpe['EXON_RIGHT'] = my_gtf.exon_to_coord(chromr, endr, enst_r)
+            if 'ccdsid' in my_gtf.raw[enst_r]['transcript'][0]['info']:
+                linebedpe['CCDS_RIGHT_ID'] = my_gtf.raw[enst_r]['transcript'][0]['info']['ccdsid']
 
         # Writing section.
         filter_me = False

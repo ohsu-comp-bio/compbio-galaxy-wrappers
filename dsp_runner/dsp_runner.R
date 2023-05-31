@@ -1,8 +1,20 @@
-# Current Version: 0.9.6
+# Current Version: 1.0.7
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
 #       - limit normalization tmas to batches in good_tma
+# 0.9.7 - BC: edit intermediate .RData filenames for general usage
+# 1.0.0 - edits to support new TMA, removed extra igg_info input, fixed table output
+# 1.0.1 - handle situations where there are only segment 1 segements for reference comp
+# 1.0.2 - groups Ab boxplots by 4 to a page, give args actual names
+# 1.0.3 - cleans up Ab plots to make x-axis legible and remove legends
+#       - fixed: corrected duplicate Ab plot pages
+#       - use good_tma again
+# 1.0.4 - add outlier detection by z-score
+# 1.0.5 - add cover summary sheet and re-arrange displayed tables/plots
+# 1.0.6 - restrict plots to only those included in the pos.cntrls input
+#       - display 'no outlier' message in outlier plots
+# 1.0.7 - place tma check after checking for good_tma runs
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -38,33 +50,32 @@ ab_info <- args[5]
 low_probes <- args[6]
 control_type <- args[7]
 dsp_meta <- args[8]
-igg_info <- args[9]
+
+# Output options
+exp.out <- args[9]
+seg.proc.out <- args[10]
+melt.tma.out <- args[11]
+report.out <- args[12]
+
+# positive cntrl file
+pos_cntrls <- args[13]
 
 # Set constants
 exp.regex <- "[0-9]{8}-[0-9]{2}"
-clia_abs <- c("c-Myc", "Ki-67", "Cyclin E1", "Cyclin D1", "Cyclin B1", "ATR_pS428", "ATM (phospho S1981)",
-              "PARP", "Cleaved Caspase 9", "CD95/Fas", "BIM", "BCLXL", "BCL6", "Bcl-2", "BAD",
-              "Pan-AKT", "PTEN", "Phospho-PRAS40 (T246)", "PLCG1", "INPP4B", "Phospho-GSK3B (S9)", "Phospho-AKT1 (S473)",
-              "pan-RAS", "p44/42 MAPK ERK1/2", "Phospho-p90 RSK  (T359/S363)", "MET", "Phospho-MEK1 (S217/S221)", "Phospho-p44/42 MAPK ERK1/2 (T202/Y204)", "HER2_p1248", "Her2", "EGFR", "Phospho-c-RAF (S338)", "BRAF",
-              "p53", "Phospho-p38 MAPK (T180/Y182)", "PR", "Phospho-JNK (T183/Y185)", "ER-alpha", "Androgen Receptor", "ARID1A",
-              "PD-L1", "CD8", "CD68", "CD4", "CD3", "CD20", "Beta-2-microglobulin")
-good_tma <- c("08182021-01", "08192021-01", "08272021-01", "09032021-01", "09282021-01", "09292021-01", "10052021-01", "10272021-01",
-              "11052021-01", "11102021-01", "12082021-01", "01072022-01", "01262022-01", "02102022-01", "03072022-01", "03142022-01",
-              "03152022-01", "04072022-01", "05052022-01", "05112022-01", "05182022-01", "06282022-01", "07072022-01", "07292022-01",
-              "08032022-01", "09022022-01", "09232022-01", "11182022-01", "11292022-01", "11302022-01")
+good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "02032023-01", "02082023-01", "02102023-01", "02152023-01", "02282023-01", "03012023-01", "03082023-01", "03152023-01", "04052023-01")
 
 # Load metadata
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
-igg.info <- data.table(openxlsx::read.xlsx(igg_info))
 exp.low <- data.table(openxlsx::read.xlsx(low_probes, colNames=F))
 control.type <- data.table(openxlsx::read.xlsx(control_type, startRow=2))
 stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
 dsp.meta <- data.table(read.xlsx(dsp_meta))
+pos.cntrls <- data.table(read.csv(pos_cntrls, sep = '\t', header=F))
 
 # Check to see if my_samp is in dsp.meta, stop if it's not.
 stopifnot(nrow(dsp.meta[`Specimen.ID` %in% my_samp]) > 0)
 
-batch.dt <- data.table(files=list.files(datadir, pattern="[-0-9A-Za-z_ ]*nit[-0-9A-Za-z_ ]*ataset[-0-9A-Za-z_ ]*[0-9]{8}-[0-9]{2}.xlsx", recursive = T, full.names=T))
+batch.dt <- data.table(files=list.files(datadir, pattern="[-0-9A-Za-z]_[0-9]{8}-[0-9]{2}.xlsx", recursive = T, full.names=T))
 batch.dt[,batch:=str_extract(files, exp.regex)]
 
 res.list <- process_batches(batch.dt, sheet='Exported dataset')
@@ -92,8 +103,8 @@ tma.meta[,lower_sample:=tolower(sample_id)]
 stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
 
 tma.meta <- merge(tma.meta, control.type[,.(lower_sample=lower_secondary, name, type)], by="lower_sample", all=F)
-stopifnot(tma.meta[,.N,by=batch][,all(N==14)])
 tma.meta <- tma.meta[`batch` %in% good_tma | `batch` %in% runid]
+stopifnot(tma.meta[,.N,by=batch][,all(N==19)])
 tma.abund <- abund.mat[,tma.meta$barcode]
 
 ## QC of experimental samples with respect to ROI
@@ -110,7 +121,7 @@ exp.meta[rm_croi == T,.(`Segment (Name/ Label)`, batch, sample_id, croi, max_cor
 exp.meta <- exp.meta[rm_croi == F]
 exp.abund <- abund.mat[, exp.meta$barcode]
 #at this point save the metadata and raw abundance
-save(exp.meta, exp.abund, tma.abund, tma.meta, file="tmp_dsp_batch1_11_expt_abund.RData")
+save(exp.meta, exp.abund, tma.abund, tma.meta, file=paste0(exp.out))
 
 ### Normalization and summarization of cohort
 # Determine relevant samples / batches and compute normalization factors
@@ -123,7 +134,7 @@ tma.meta <- tma.meta[batch %in% relevant.meta$batch]
 tma.meta[,num_batch:=batch]
 tma.abund <- abund.mat[,tma.meta$barcode]
 cntrl.abs <- setdiff(rownames(tma.abund), exp.low[[1]])
-segment.proc <- preprocess_dsp_tma(tma.meta, tma.abund, relevant.meta, relevant.abund, igg.map=igg.info, bg.method=c('none'), controls=cntrl.abs, use.type='quant', k=2, num.roi.avg=1)
+segment.proc <- preprocess_dsp_tma(tma.meta, tma.abund, relevant.meta, relevant.abund, igg.map=paths, bg.method=c('none'), controls=cntrl.abs, use.type='quant', k=2, num.roi.avg=1)
 #can save here
 
 # Use the summarized metadata to deal with replicates and form groups
@@ -151,23 +162,29 @@ sapply(names(segment.proc), function(x){
 my.meta <- my.meta[!duplicated(cbind(`Segment (Name/ Label)`, Specimen.ID, num_batch, code)),]
 #Here define reference vs experimental
 my.meta[cohort==coh,Best_Response:="Ref"]
-save(my.meta, segment.proc, file="tmp_proc_data.RData")
+save(my.meta, segment.proc, file=paste0(seg.proc.out))
 
 # Form antibody scores as the quantiles relevant to reference cohort
 ref_samps <- my.meta[Best_Response == "Ref",unique(sample_id)]
 ref_samps <- ref_samps[!ref_samps %in% my_samp]
-quant.list <- score_abs(segment.proc, ref.samples=ref_samps ,score.type="quant")
-#combine
-pat.quants <- rbindlist(lapply(quant.list, "[[", "scores"), idcol="Segment (Name/ Label)")
+# If there is no ref data for segment 3 (sarcomas) then we'll just look at segment 1.
+if (all(unique(my.meta[`sample_id` %in% ref_samps]$`Segment (Name/ Label)`) == "Segment 1")) {
+  quant.list <- score_abs(segment.proc$`Segment 1`, ref.samples=ref_samps, stroma=F,score.type="quant")
+  pat.quants <- quant.list$scores[,"Segment (Name/ Label)":="Segment 1"]
+}else{
+  quant.list <- score_abs(segment.proc, ref.samples=ref_samps, stroma=T,score.type="quant")
+  #combine
+  pat.quants <- rbindlist(lapply(quant.list, "[[", "scores"), idcol="Segment (Name/ Label)")
+}
 my.scores <- merge(my.meta, pat.quants, by=c("Segment (Name/ Label)", "avg_barcode"))
 # JHL: In the case of identical sample id's, get rid of the one that we are not currently analyzing.
 my.scores <- my.scores[!(`sample_id` == my_samp & `num_batch` != runid)]
 
 #getting pathways in order
-use.paths <- paths[analysis_pathway %in% c("Expression Controls", "N/A")==F]
-use.paths[analysis_pathway == "Tumor Markers", analysis_pathway:="Other Markers"]
-use.paths <- use.paths[order(ab)]
-path.ord <- c("Cell Cycle", "Cell Death", "PI3K/AKT pathway", "RAS/MAPK pathway", "Other Markers", "IO CLIA", "IO RUO")
+#use.paths <- paths[analysis_pathway %in% c("Expression Controls", "N/A")==F]
+#use.paths[analysis_pathway == "Tumor Markers", analysis_pathway:="Other Markers"]
+use.paths <- paths
+path.ord <- c("Cell Cycle", "PI3K/AKT pathway", "RAS/MAPK pathway", "Tumor Markers", "Cell Death", "Immune Markers")
 use.paths[,`:=`(path_ord=factor(analysis_pathway, levels=path.ord, ordered=T),
                 ab_ord=factor(ab, levels=ab, ordered=T))]
 
@@ -179,17 +196,19 @@ my.scores[,sample_ord:=sample_id]
 pt.ord <- my.scores[,.N,by=.(comb_id, Best_Response)][order(Best_Response)]
 my.scores[,patient_ord:=factor(comb_id, levels=pt.ord$comb_id, ordered=T)]
 #output abundance for reference samples
-ref.abund <- rbindlist(lapply(quant.list, "[[", "ref_abund"), idcol="Segment (Name/ Label)")
+if (all(unique(my.meta[`sample_id` %in% ref_samps]$`Segment (Name/ Label)`) == "Segment 1")) {
+  ref.abund <- quant.list$ref_abund[,"Segment (Name/ Label)":="Segment 1"]
+}else{
+  ref.abund <- rbindlist(lapply(quant.list, "[[", "ref_abund"), idcol="Segment (Name/ Label)")
+}
 ref.abund[,segment_label:=ifelse(`Segment (Name/ Label)` == "Segment 1", "tumor", "stroma")]
 ref.abund <- merge(use.paths[,.(ab_ord, ProbeName, path_ord)], ref.abund, by="ProbeName", all=F)
-save(my.scores, ref.abund, file="tmp_results.RData")
 
 # Steps used to provide data for antibody plots.
 melt.tma <- data.table(reshape2::melt(tma.abund, as.is=T))
 names(melt.tma) <- c("ProbeName", "barcode", "abundance")
 melt.tma <- merge(melt.tma, tma.meta[,.(barcode, name, batch)], by="barcode")
-stopifnot(length(setdiff(melt.tma$ProbeName, igg.info$ProbeName)) == 0)
-melt.tma <- merge(igg.info[,.(ProbeName, igg)], melt.tma, by="ProbeName", all=T)
+melt.tma <- merge(paths[,.(ProbeName, igg)], melt.tma, by="ProbeName", all=T)
 melt.tma[,fac_batch:=factor(batch)]
 #add in values for corresponding igg
 melt.tma[ProbeName %in% c("Ms IgG1",  "Ms IgG2a", "Rb IgG"), igg:=ProbeName]
@@ -205,7 +224,7 @@ melt.tma$year<- substr(melt.tma$batch, 5, 8)
 # Create combined name_ProbeName column
 melt.tma$name_ProbeName<- str_c(melt.tma$name,'_',melt.tma$ProbeName)
 # Write out csv for Westgard rules script in Galaxy wf
-write.csv(melt.tma, file=paste0(args[10]), row.names=F)
+write.csv(melt.tma, file=paste0(melt.tma.out), row.names=F)
 
 ref.batches <- melt.tma[batch != runid]
 cur.batch <- melt.tma[batch == runid]
@@ -217,9 +236,94 @@ use.pal <- scales::hue_pal()(run_no)
 samp.scores <- my.scores[`sample_id` == my_samp]
 samp.scores$patient_ord <- droplevels(samp.scores$patient_ord, except=my_samp)
 
-# Overall Plots
-plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund)
-pdf(file=paste0(args[11]), width=16, height=16)
+### WRITE TO PDF
+
+# Overall Plotting
+plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund, coh)
+pdf(file=paste0(report.out), width=16, height=16)
+
+# Restrict ab plots and outlier detection to those ab/cell line combos included in pos.cntrls
+ab.batches <- ref.batches[`name` %in% pos.cntrls$V2 & `ProbeName` %in% pos.cntrls$V1]
+ab.batches.cur <- cur.batch[`name` %in% pos.cntrls$V2 & `ProbeName` %in% pos.cntrls$V1]
+clia_abs <- unique(ab.batches$ProbeName)
+
+# Outlier detection -- Zscore method
+datalist = list()
+k <- 1
+for (i in seq(1, length(clia_abs))){
+  for (j in seq(1, length(unique(ab.batches.cur$name)))){
+    ref <- ab.batches %>% filter(ProbeName==clia_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
+      select(batch, ProbeName, name, abundance) %>%
+      group_by(name)
+    mu <- mean(ref$abundance)
+    sigma <- sd(ref$abundance)
+
+    cur <- ab.batches.cur %>% filter(ProbeName==clia_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
+      select(batch, ProbeName, name, abundance) %>%
+      group_by(name) %>%
+      mutate(mean = mu,
+             sd = sigma,
+             zscore = (abundance - mu)/sigma,
+             outlier = case_when(abs(zscore) >= 3 ~ 'rare'))
+    cur <- na.omit(cur)
+    datalist[[k]] <- cur
+    k <- k+1
+  }
+}
+outlier_df = do.call(rbind, datalist)
+
+# Get failed antibodies (Ab combos with 5+ flagged outliers)
+failed_ab <- as.data.frame(table(outlier_df$ProbeName))
+if (nrow(failed_ab)>0){
+  failed_ab <- failed_ab %>% filter(Freq >= 5) %>% select(Var1)
+  colnames(failed_ab) <- c('Failed Antibodies')
+}
+
+# First, produce Cover Sheet
+tt1 <- ttheme_minimal(core=list(fg_params=list(fontface=3, fontsize=23)))
+tt_cover <- ttheme_minimal(core=list(bg_params = list(fill = blues9[1:4], col=NA),
+                                     fg_params=list(fontface=3, fontsize=23)),
+                           colhead=list(fg_params=list(col="darkblue", fontface=4L, fontsize=30)))
+
+summ_df <- as.data.frame(c(my_samp, runid, as.character(Sys.Date())), header=FALSE)
+rownames(summ_df) <- c('SAMPLE ID: ', 'RUN ID: ', 'RUN DATE: ')
+colnames(summ_df) <- c('Nanostring_DSP')
+
+reference_batches <- ref.batches %>% arrange(year, monthday) %>% select(batch) %>% distinct(batch)
+colnames(reference_batches) <- c('Reference Batches')
+
+gc1 <- tableGrob(summ_df, theme=tt_cover)
+gc2 <- tableGrob(reference_batches, theme=tt1)
+
+if (nrow(outlier_df)>0){
+  outlier_message <- ''
+} else{
+    outlier_message <- '[No outliers detected]'
+}
+
+g.outlier <- textGrob(outlier_message, gp = gpar(col = "blue", fontsize = 20))
+if (nrow(failed_ab)>0){
+  gc3 <- tableGrob(failed_ab, theme=tt1)
+  haligned <- gtable_combine(gc2, gc3)
+  cover_sheet<- grid.arrange(gc1, haligned, g.outlier, ncol=1)
+} else{
+  cover_sheet<- grid.arrange(gc1, gc2, g.outlier, ncol=1)
+}
+grid.draw(cover_sheet)
+
+# Draw outlier table
+if (nrow(outlier_df>0)){
+  for (j in seq(1,nrow(outlier_df), by=35)){
+    g2 <- tableGrob(na.omit(outlier_df[j:(j+34), 2:7]), rows = NULL, theme = tt)
+    g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
+                          t = 2, b = nrow(g2), l = 1, r = ncol(g2))
+    g2 <- gtable_add_grob(g2, grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
+                          t = 1, l = 1, r = ncol(g2))
+
+    grid.newpage()
+    grid.draw(g2)
+    }
+}
 
 for (tums in names(plot.list)){
   show(plot.list[[tums]])
@@ -231,7 +335,7 @@ score_out <- samp.scores %>% select(ProbeName,segment_label,norm)
 score_tum <- score_out[`segment_label` == 'tumor']
 score_str <- score_out[`segment_label` == 'stroma']
 
-g <- tableGrob(score_tum[1:38,1:3], rows = NULL, theme = tt)
+g <- tableGrob(score_tum[1:34,1:3], rows = NULL, theme = tt)
 g <- gtable_add_grob(g,
                      grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                      t = 2, b = nrow(g), l = 1, r = ncol(g))
@@ -239,7 +343,7 @@ g <- gtable_add_grob(g,
                      grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                      t = 1, l = 1, r = ncol(g))
 
-g1 <- tableGrob(score_tum[39:76,1:3], rows = NULL, theme = tt)
+g1 <- tableGrob(score_tum[35:68,1:3], rows = NULL, theme = tt)
 g1 <- gtable_add_grob(g1,
                       grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                       t = 2, b = nrow(g1), l = 1, r = ncol(g1))
@@ -252,7 +356,7 @@ grid.newpage()
 grid.draw(haligned)
 
 if (nrow(score_str) > 0) {
-  g <- tableGrob(score_str[1:38,1:3], rows = NULL, theme = tt)
+  g <- tableGrob(score_str[1:34,1:3], rows = NULL, theme = tt)
   g <- gtable_add_grob(g,
                        grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                        t = 2, b = nrow(g), l = 1, r = ncol(g))
@@ -260,7 +364,7 @@ if (nrow(score_str) > 0) {
                        grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                        t = 1, l = 1, r = ncol(g))
 
-  g1 <- tableGrob(score_str[39:76,1:3], rows = NULL, theme = tt)
+  g1 <- tableGrob(score_str[35:68,1:3], rows = NULL, theme = tt)
   g1 <- gtable_add_grob(g1,
                         grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                         t = 2, b = nrow(g1), l = 1, r = ncol(g1))
@@ -274,17 +378,44 @@ if (nrow(score_str) > 0) {
 
 }
 
-for (ab in clia_abs){
+# Produce boxplots
 
-  print(ab)
-  q.plot <- ggplot(data=ref.batches[ProbeName == ab], mapping=aes(x=name, y=abundance)) +
-    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),linewidth=3, height=0, width=.15) +
-    geom_jitter(data=cur.batch[ProbeName == ab], linewidth=3, width=.15, height=0) +
-    scale_color_manual(values=setNames(use.pal, unique(dsp.meta$batch)), name="Previous Batches") +
-    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", ab, "                Run ID: ", runid))
+for (i in seq(1,length(clia_abs), by=4)){
 
-  plot(q.plot)
+  print(clia_abs[i])
+  q1.plot <- ggplot(data=ab.batches[ProbeName == clia_abs[i]], mapping=aes(x=name, y=abundance)) +
+    geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
+    geom_jitter(data=ab.batches.cur[ProbeName == clia_abs[i]], size=3, width=.15, height=0) +
+    theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i])) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 3))
 
+  if ((i+1)<=length(clia_abs)){
+    print(clia_abs[i+1])
+    q2.plot <- ggplot(data=ab.batches[ProbeName == clia_abs[i+1]], mapping=aes(x=name, y=abundance)) +
+      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
+      geom_jitter(data=ab.batches.cur[ProbeName == clia_abs[i+1]], size=3, width=.15, height=0) +
+      theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+1])) +
+      scale_x_discrete(guide = guide_axis(n.dodge = 3))
+  }
+
+  if ((i+2)<=length(clia_abs)){
+    print(clia_abs[i+2])
+    q3.plot <- ggplot(data=ab.batches[ProbeName == clia_abs[i+2]], mapping=aes(x=name, y=abundance)) +
+      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
+      geom_jitter(data=ab.batches.cur[ProbeName == clia_abs[i+2]], size=3, width=.15, height=0) +
+      theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+2])) +
+      scale_x_discrete(guide = guide_axis(n.dodge = 3))
+  }
+
+  if ((i+3)<=length(clia_abs)){
+    print(clia_abs[i+3])
+    q4.plot <- ggplot(data=ab.batches[ProbeName == clia_abs[i+3]], mapping=aes(x=name, y=abundance)) +
+      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
+      geom_jitter(data=ab.batches.cur[ProbeName == clia_abs[i+3]], size=3, width=.15, height=0) +
+      theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+3])) +
+      scale_x_discrete(guide = guide_axis(n.dodge = 3))
+  }
+  grid.arrange(q1.plot, q2.plot, q3.plot, q4.plot)
 }
 
 dev.off()

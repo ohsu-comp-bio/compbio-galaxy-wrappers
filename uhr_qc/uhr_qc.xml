@@ -1,0 +1,52 @@
+<tool id="uhr_qc" name="Transcriptome UHR Quality Control" version="0.1.3" >
+    <description>Quality Control Assessment of New Transcriptome UHR Sample Against Background Cohort</description>
+
+    <requirements>
+        <requirement type="package" version="0.7.1">r-argparser</requirement>
+        <requirement type="package" version="3.4.2">r-ggplot2</requirement>
+        <requirement type="package" version="2.0.0">r-tidyverse</requirement>
+        <requirement type="package" version="0.63.0">r-matrixStats</requirement>
+        <requirement type="package" version="3.40.0">bioconductor-edgeR</requirement>
+        <requirement type="package" version="0.8.9">r-reshape</requirement>
+        <requirement type="package" version="1.7-2">r-rrcov</requirement>
+        <requirement type="package" version="0.4.16">r-ggfortify</requirement>
+        <requirement type="package" version="4.2.4">r-ggthemes</requirement>
+        <requirement type="package" version="2.3">r-gridExtra</requirement>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+        Rscript "$__tool_directory__/uhr_qc.R" "$background_cohort" "$validation_targets" "$new_sample_run" "$new_sample_counts" "$gene_set" "$targets_to_genes_bed" "$kallisto_matrix" "$qc_report"
+    ]]></command>
+
+     <inputs>
+         <param name="background_cohort" type="data" format="txt" label="Background Cohort" help="text file defining background cohort samples"/>
+         <param name="validation_targets" type="data" format="tsv" label="Validation Targets" help="file defining list of validation targets for cancer related genes of interest"/>
+         <param name="new_sample_run" type="text" label="New sample run ID" help=""/>
+         <param name="new_sample_counts" type="data" format="tsv" label="New sample counts data" help="Kallisto counts output for new sample"/>
+         <param name="gene_set" type="data" format="txt" label="Gene Set" help="List of cancer related genes of interest"/>
+         <param name="targets_to_genes_bed" type="data" format="tsv" label="Target Map" help="File that maps genes to target IDs (bed coordinates)"/>
+         <param name="kallisto_matrix" type="data" format="tsv" label="Kallisto Counts Matrix" help="Kallisto counts matrix for all UHR samples"/>
+    </inputs>
+
+    <outputs>
+        <data name="qc_report" format="pdf" label="Quality Control Report"/>
+    </outputs>
+
+    <tests>
+        <test>
+            <param name="background_cohort" value="test_samples.txt"/>
+            <param name="new_sample_run" value="test_data"/>
+            <param name="validation_targets" value="test_targets.tsv"/>
+            <param name="new_sample_counts" value="test_abundance.tsv"/>
+            <param name="gene_set" value="test_genes.txt"/>
+            <param name="targets_to_genes_bed" value="test_target_map.tsv"/>
+            <param name="kallisto_matrix" value="test_matrix.tsv"/>
+            <output name="qc_report" file="test_report.pdf"/>
+        </test>
+    </tests>
+
+    <help><![CDATA[
+    This tool performs a quality control assessment of a new UHR sample against a pre-defined background cohort.
+    ]]></help>
+
+</tool>

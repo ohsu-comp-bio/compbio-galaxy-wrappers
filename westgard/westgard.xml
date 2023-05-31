@@ -1,4 +1,4 @@
-<tool id="westgard" name="Westgard Multirule QC" version="0.3.2">
+<tool id="westgard" name="Westgard Multirule QC" version="1.2.2">
     <description>Performs Westgard Multirule QC on raw DSP data on specified TMA and Probe combo</description>
     <requirements>
       <requirement type="package" version="1.21.5">numpy</requirement>
@@ -9,18 +9,38 @@
       <requirement type="package" version="3.5.68">reportlab</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
-    ln -s $dsp_tma_results tma_results.csv &&
-    ln -s $dsp_tma_combos tma_combos.csv &&
-    python $__tool_directory__/westgard.py tma_results.csv tma_combos.csv $qc_report $qc_stdout
+    #if $combo.selector == "sheet"
+      ln -s "$pos_cntrls" pos_cntrls.xlsx &&
+      python $__tool_directory__/westgard.py '${dsp_tma_results}' '${pos_cntrls}' '${qc_report}' '${qc_tabout}' '${qc_pc_plots}' -c '${combo.dsp_tma_combos}'
+    #else
+      ln -s "$pos_cntrls" pos_cntrls.xlsx &&
+      python $__tool_directory__/westgard.py '${dsp_tma_results}' '${pos_cntrls}' '${qc_report}' '${qc_tabout}' '${qc_pc_plots}' -t '${combo.tma_name}' -a '${combo.ab_name}'
+    #end if
 ]]>
     </command>
+
     <inputs>
         <param type="data" name="dsp_tma_results" label="TMA abundance counts" format="csv"/>
-        <param type="data" name="dsp_tma_combos" label="TMA/Ab combinations" format="csv"/>
+        <param type="data" name="pos_cntrls" label="Positive Controls meta" format="xlsx"/>
+        <conditional name="combo">
+            <param name="selector" type="select" label="Choose TMA/Ab selection format">
+                <option value="sheet" selected="True">Control Sheet</option>
+                <option value="single" selected="True">Single Manual Entry</option>
+            </param>
+            <when value="sheet">
+                 <param type="data" name="dsp_tma_combos" label="TMA/Ab combinations" format="csv"/>
+            </when>
+            <when value="single">
+                <param type="text" name="tma_name" argument="--tma" label="TMA Name"/>
+                <param type="text" name="ab_name" argument="--ab" label="Antibody Probe Name"/>
+            </when>
+        </conditional>
     </inputs>
+
     <outputs>
         <data format="pdf" name="qc_report" label="Levey-Jennings Plots"/>
-        <data format="txt" name="qc_stdout" label="Westgard Rules Report"/>
+        <data format="csv" name="qc_tabout" label="Abundance Counts QC Table"/>
+        <data format="pdf" name="qc_pc_plots" label="Positive Control Plots"/>
     </outputs>
     <help></help>
 </tool>

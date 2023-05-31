@@ -1,0 +1,18 @@
+owner: "chongbe"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/dsp_delta"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/dsp_delta"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  dsp_delta:
+    description: "Nanostring DSP Pairwise Comparisons"
+    include:
+      - dsp_delta.xml
+      - dsp_delta.R
+      - dsp_inputs.R
+      - evaluation.R
+      - helpers.R
+      - normalization.R
+      - plots.R
+      - summarization.R

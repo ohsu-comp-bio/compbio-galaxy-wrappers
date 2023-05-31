@@ -1,23 +1,13 @@
 '''
-Created on Jun 21, 2022
+Create a VCF by reading the variants from an annovar input file (*.avinput ). 
+This script does not sort the vcf so you should followup by running ``gatk SortVcf --INPUT unsorted.vcf --OUTPUT sorted.vcf``
 
-Convert an Annovar *.avinput file to VCF
 @author: pleyte
 '''
 import argparse
-import logging
+import logging.config
 import csv
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-stream_handler = logging.StreamHandler()
-logging_format = '%(levelname)s: [%(filename)s:%(lineno)s - %(funcName)s()]: %(message)s'
-
-stream_format = logging.Formatter(logging_format)
-stream_handler.setFormatter(stream_format)
-stream_handler.setLevel(logging.DEBUG)
-logger.addHandler(stream_handler)
+from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
 class Variant(object):
     def __init__(self):        
@@ -49,7 +39,7 @@ def _parse_args():
     return args
 
 def _read_avinput_variants(avinput_file_name: str):
-    variants = list()
+    variants = []
     
     with open(avinput_file_name) as tsv_file:
         reader = csv.reader(tsv_file, delimiter = '\t')
@@ -105,21 +95,23 @@ def _write_vcf(vcf_file_name: str, variants: list):
         vcf_file.write('#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tabcd-123\n')
         
         for variant in variants:            
-            vcf_file.write(f"{variant.chromosome}\t{variant.startPos}\t{variant.dbSnpId}\t{variant.ref}\t{variant.alt}\t1.0\tPON\tx=y\tGT\t0/0\t\n")
+            vcf_file.write(f"{variant.chromosome}\t{variant.startPos}\t{variant.dbSnpId}\t{variant.ref}\t{variant.alt}\t1.0\tPON\tx=y\tGT\t0/0\n")
 
 def _main():
     '''
     main function
     '''
+    logging.config.dictConfig(TfxLogConfig().utility_config)
+
     args = _parse_args()
     
     variants = _read_avinput_variants(args.in_file.name)
     
-    logger.info(f"Read {len(variants)} variants from {args.in_file.name}")
+    logging.info(f"Read {len(variants)} variants from {args.in_file.name}")
     
     _write_vcf(args.out_file.name, variants)
     
-    logger.info(f"Wrote VCF {args.out_file.name}")
+    logging.info(f"Wrote VCF {args.out_file.name}")
     
 if __name__ == '__main__':
     _main()

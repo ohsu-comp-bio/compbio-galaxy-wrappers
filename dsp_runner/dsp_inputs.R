@@ -46,7 +46,7 @@
 #' @import data.table
 #' @import openxlsx
 #' @export
-process_batches <- function(batch.dt, exp.regex="Initial", sheet="Exported dataset"){
+process_batches <- function(batch.dt, sheet="Exported dataset"){
   
   ProbeName=tmp_roi=sample_id=barcode=NULL # due to NSE notes in R CMD check
   
@@ -54,13 +54,10 @@ process_batches <- function(batch.dt, exp.regex="Initial", sheet="Exported datas
   
   res.list <- lapply(split.batch, function(x){
     
-    init.file <- grepl(exp.regex,x$files)
     qc.file <- grepl("qc",x$files)
     
-    stopifnot(sum(init.file)==1)
-
     # JHL: added parameter for sheet name
-    init.res <- .parse.table(data.table(openxlsx::read.xlsx(x$files[init.file], sheet=sheet)))
+    init.res <- .parse.table(data.table(openxlsx::read.xlsx(x$files, sheet=sheet)))
     
     #initial geomean scaling relative to the HYB-POS per the QC data output by the machine
     

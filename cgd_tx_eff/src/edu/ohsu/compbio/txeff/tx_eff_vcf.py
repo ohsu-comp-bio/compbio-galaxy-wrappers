@@ -6,8 +6,8 @@ Created on Apr 29, 2022
 Update a VCF with the variant-transcript details.  
 '''
 
+import logging.config
 import argparse
-import logging
 import sys
 import vcfpy
 from collections import defaultdict
@@ -15,19 +15,9 @@ from enum import Enum
 from edu.ohsu.compbio.txeff.variant import Variant
 
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
+from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-stream_handler = logging.StreamHandler()
-logging_format = '%(levelname)s: [%(filename)s:%(lineno)s - %(funcName)s()]: %(message)s'
-
-stream_format = logging.Formatter(logging_format)
-stream_handler.setFormatter(stream_format)
-stream_handler.setLevel(logging.DEBUG)
-logger.addHandler(stream_handler)
-
-VERSION = '0.0.1'
+VERSION = '0.2.4'
 
 class TranscriptEffect(Enum):
     '''
@@ -81,15 +71,15 @@ def _read_vcf(vcf_filename: str):
     Read each variant from the VCF file and return a map of Variant[vcf-record]. Each variant must be unique and have only one ALT allele.  
     '''
     vcf_reader = vcfpy.Reader.from_path(vcf_filename)
-    variant_dict = dict()
+    variant_dict = {}
     
     for vcf_record in vcf_reader:
         if len(vcf_record.ALT) > 1:
-            raise Exception(f'VCF variants must have just one ALT allel: {vcf_record.CHROM}-{vcf_record.POS}-{vcf_record.REF}-{vcf_record.ALT}')
+            raise Exception(f'VCF variants must have just one ALT allele: {vcf_record.CHROM}-{vcf_record.POS}-{vcf_record.REF}-{vcf_record.ALT}')
         
         variant = Variant(vcf_record.CHROM, vcf_record.POS, vcf_record.REF, vcf_record.ALT[0].value)
 
-        if variant_dict.get(variant):
+        if variant in variant_dict:
             raise Exception(f"Duplicate variant in {vcf_filename}: {variant}")
         else:
             variant_dict[variant] = vcf_record
@@ -116,7 +106,7 @@ def _get_transcripts_dict(transcripts: list):
     for transcript in transcripts:        
         variant = Variant(transcript.chromosome, transcript.position, transcript.reference, transcript.alt)
         transcript_dict[variant].append(transcript)
-        logger.debug(f"{variant} has {len(transcript_dict[variant])} transcripts")
+        logging.debug(f"{variant} has {len(transcript_dict[variant])} transcripts")
 
     return transcript_dict
 
@@ -124,28 +114,28 @@ def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
     '''
     Transform the transcript details into parallel arrays and add them to each VCF row.  
     '''
-    vcf_records = list()
+    vcf_records = []
         
     for (variant, vcf_record) in vcf_variant_dict.items():
         transcripts = transcript_dict.get(variant)
         
         if not transcripts:
-            logger.warning(f"No transcripts found for VCF variant {variant}")
+            logging.warning(f"No transcripts found for VCF variant {variant}")
             vcf_records.append(vcf_record)
             continue
             
-        tfx_base_positions = list()
-        tfx_exons = list()
-        tfx_genes = list()
-        tfx_c_dots = list()
-        tfx_p1 = list()
-        tfx_p3 = list()
-        tfx_splice = list()
-        tfx_refseq_transcripts = list()
-        tfx_variant_effects = list()
-        tfx_variant_types = list()
-        tfx_protein_transcripts = list()
-        tfx_amino_acid_positions = list()
+        tfx_base_positions = []
+        tfx_exons = []
+        tfx_genes = []
+        tfx_c_dots = []
+        tfx_p1 = []
+        tfx_p3 = []
+        tfx_splice = []
+        tfx_refseq_transcripts = []
+        tfx_variant_effects = []
+        tfx_variant_types = []
+        tfx_protein_transcripts = []
+        tfx_amino_acid_positions = []
         
         for transcript in transcripts:
             tfx_base_positions.append(transcript.hgvs_base_position)
@@ -261,11 +251,11 @@ def create_vcf_with_transcript_effects(in_vcf_filename: str, out_vcf_filename: s
 
     # Transform the transcript list into a dictionary 
     transcript_dict = _get_transcripts_dict(transcripts)
-    logger.info(f'There are {len(transcript_dict)} distinct variants among {len(transcripts)} transcripts')
+    logging.info(f'There are {len(transcript_dict)} distinct variants among {len(transcripts)} transcripts')
     
     # Read all variant rows from the VCF
     vcf_variant_dict, vcf_header = _read_vcf(in_vcf_filename)
-    logger.info(f'Read {len(vcf_variant_dict)} distinct variants from {in_vcf_filename}')
+    logging.info(f'Read {len(vcf_variant_dict)} distinct variants from {in_vcf_filename}')
     
     # Combine VCF variants with transcript effects      
     vcf_transcript_records = _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict)
@@ -274,7 +264,7 @@ def create_vcf_with_transcript_effects(in_vcf_filename: str, out_vcf_filename: s
     # Add new INFO fields to VCF header
     _update_header(vcf_header)
     
-    logger.info(f"Writing {len(vcf_transcript_records)} variants with transcript effects to VCF file {out_vcf_filename}")
+    logging.info(f"Writing {len(vcf_transcript_records)} variants with transcript effects to VCF file {out_vcf_filename}")
     _write_vcf(out_vcf_filename, vcf_header, vcf_transcript_records)
 
 
@@ -282,9 +272,11 @@ def _main():
     '''
     main function
     '''
+    logging.config.dictConfig(TfxLogConfig().log_config)
+    
     args = _parse_args()
     
-    logger.info(f"Reading transcripts from {args.in_csv.name}")
+    logging.info(f"Reading transcripts from {args.in_csv.name}")
     txEffCsv = TxEffCsv()    
     transcripts = txEffCsv.read_transcripts(args.in_csv.name)
     

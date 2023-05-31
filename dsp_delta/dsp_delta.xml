@@ -1,0 +1,58 @@
+<tool id="dsp_delta" name="Nanostring DSP Pairwise Comparisons" version="1.2.0" >
+    <description>Performs pairwise comparisons between multiple DSP specimens for tumor/stromal regions</description>
+
+    <requirements>
+        <requirement type="package" version="3.4.0">r-ggplot2</requirement>
+        <requirement type="package" version="1.4.1">r-stringr</requirement>
+        <requirement type="package" version="1.14.6">r-data.table</requirement>
+        <requirement type="package" version="3.50.0">bioconductor-limma</requirement>
+        <requirement type="package" version="4.2.5.1">r-openxlsx</requirement>
+        <requirement type="package" version="0.59.0">r-matrixStats</requirement>
+        <requirement type="package" version="1.4.4">r-reshape2</requirement>
+        <requirement type="package" version="1.0.10">r-dplyr</requirement>
+        <requirement type="package" version="0.5.4">r-ggridges</requirement>
+        <requirement type="package" version="1.9.0">r-lubridate</requirement>
+        <requirement type="package" version="0.9.2">r-ggrepel</requirement>
+        <requirement type="package" version="3.1.6">r-testthat</requirement>
+        <requirement type="package" version="2.3">r-gridExtra</requirement>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+       ln -s $__tool_directory__/dsp_inputs.R &&
+       ln -s $__tool_directory__/evaluation.R &&
+       ln -s $__tool_directory__/helpers.R &&
+       ln -s $__tool_directory__/normalization.R &&
+       ln -s $__tool_directory__/plots.R &&
+       ln -s $__tool_directory__/summarization.R &&
+       ln -s "$ab_info" ab_info.xlsx &&
+       ln -s "$delta_report" report.pdf &&
+
+       Rscript $__tool_directory__/dsp_delta.R "$sample_id" "$sample_id_compare" "$run_id" "$run_id_compare" ab_info.xlsx  $dsp_abund_meta $dsp_proc_data report.pdf
+    ]]></command>
+
+    <inputs>
+        <param name="sample_id" type="text" label="Sample ID" help=""/>
+        <param name="sample_id_compare" type="text" label="Sample ID (Compare)" help=""/>
+        <param name="run_id" type="text" label="Run ID" help=""/>
+        <param name="run_id_compare" type="text" label="Run ID (Compare)" help=""/>
+        <param name="ab_info" type="data" format="xlsx" label="GeoMx antibodies xlsx file" help=""/>
+        <param name="dsp_abund_meta" type="data" format="rdata"/>
+        <param name="dsp_proc_data" type="data" format="rdata"/>
+    </inputs>
+
+    <outputs>
+        <data name="delta_report" format="pdf" label="${sample_id}_delta_report: pdf"/>
+    </outputs>
+
+    <tests>
+      <test>
+      </test>
+    </tests>
+
+    <help><![CDATA[
+    This tool performs pairwise comparisons of multiple specimens and plots the delta distributions of abundance counts.
+    ]]></help>
+
+    <citations>
+    </citations>
+</tool>

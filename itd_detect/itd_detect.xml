@@ -1,4 +1,4 @@
-<tool id="itd_detect" name="ITD Detect" version="1.1.0" >
+<tool id="itd_detect" name="ITD Detect" version="1.2.1" >
     <description>Detect ITD events in a BAM file.</description>
 
     <requirements>
@@ -10,7 +10,15 @@
     samtools index input.bam &&
     python $__tool_directory__/itd_detect.py
     --sam input.bam
-    --target '${target}'
+
+    #if $target:
+        #for $input in $target:
+            #if $input:
+                --target "${input}"
+            #end if
+        #end for
+    #end if
+
     --sample_id '${sample_id}'
     #if $reference_source.reference_source_selector != "no_ref"
         #if $reference_source.reference_source_selector != "history"
@@ -22,8 +30,14 @@
     #if $paired
         --paired
     #end if
+    #if $chr_prefix
+        --chr_prefix
+    #end if
     #if $min_size
         --min_size $min_size
+    #end if
+    #if $min_depth
+        --min_depth $min_depth
     #end if
     --outfile '${outfile}'
     --outfile_vcf '${outfile_vcf}'
@@ -50,14 +64,20 @@
 
         <param name="input" type="data" format="bam" label="Input BAM" help="Input BAM file to assess." />
         <param name="sample_id" type="text" label="Sample ID" help="Sample ID to be added to the VCF." />
-        <param name="target" type="select" label="Target Region" help="Target region to assess." >
+        <param name="target" type="select" multiple="true" label="Target Region" help="Target region to assess." >
             <option value="flt3" selected="true">FLT3</option>
             <option value="flt3_e13">FLT3e13</option>
             <option value="flt3_e14">FLT3e14</option>
             <option value="flt3_e15">FLT3e15</option>
+            <option value="bcor_e15">BCORe15</option>
+            <option value="fgfr1_e10">FGFR1e10</option>
+            <option value="fgfr1_e18">FGFR1e18</option>
+            <option value="kmt2a">KMT2A</option>
         </param>
         <param name="paired" type="boolean" checked="true" label="Paired-end?" help="Check if the BAM is paired-end." />
+        <param name="chr_prefix" type="boolean" checked="false" label="Add chr prefix to contigs?" help="Check if you need the targets to be prefixed with chr." />
         <param name="min_size" type="integer" value="12" min="0" label="Minimum Size" help="Minimum ITD size to write to VCF." />
+        <param name="min_depth" type="integer" value="1" min="0" label="Minimum Depth" help="Minimum number of ITD supporting reads needed to write to VCF." />
     </inputs>
 
     <outputs>

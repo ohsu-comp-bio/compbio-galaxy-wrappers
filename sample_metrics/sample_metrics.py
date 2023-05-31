@@ -7,6 +7,7 @@ VERSION HISTORY
     Add uniformity_of_coverage, cnv_median_segment_mad_cn metrics
 0.8.8
     Add QIAseq_V4_STP4
+    Revert xy_check to bio_sex_check to maintain CGD compatibility
 0.8.7
     Rename metric bio_sex_check to y_ploidy_check for AgilentCRE_V1 and TruSightOneV2_5
     Rename metric bio_sex_check to xy_check for QIAseq_V4_MINI
@@ -26,7 +27,6 @@ import json
 # User libraries
 from inputs import ProbeQcRead, PerLocusRead, AlignSummaryMetrics, GatkDepthOfCoverageRead, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
-from inputs import VcfRead
 
 VERSION = '0.8.9'
 
@@ -190,22 +190,10 @@ class RawMetricCollector:
         else:
             self.blia_post = {'blia': None, 'blis': None, 'lar': None, 'mes': None}
 
-        # if args.calls_forced_above:
-        #     self.fc_above_count = args.calls_forced_above.count
-        # else:
-        #     self.fc_above_count = None
-        #
-        # if args.calls_forced_below:
-        #     self.fc_below_count = args.calls_forced_below.count
-        # else:
-        #     self.fc_below_count = None
-
         if args.json_in:
             self.json_mets = self._json_in(args.json_in)
         else:
             self.json_mets = None
-
-        # self._params_stdout()
 
     @staticmethod
     def _json_in(json_in):
@@ -499,7 +487,7 @@ class MetricPrep(SampleMetrics):
                 'gatk_pct_correct_strand_reads': self._reduce_sig_pct(self.gatk_pct_correct_strand_reads),
                 'gc_pct_r1': self.raw_mets.gc_pct_1,
                 'gc_pct_r2': self.raw_mets.gc_pct_2,
-                'xy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='xy_check'),
+                'bio_sex_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='bio_sex_check'),
                 'homozygosity_flag': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='homozygosity_flag'),
                 'parentage_binom': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_binom'),
                 'parentage_disc': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_disc'),
@@ -658,16 +646,6 @@ class MetricPrep(SampleMetrics):
                                    'uniformity_of_coverage', 'cnv_median_segment_mad_cn'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
                                           'gatk_pct_correct_strand_reads'],
-                # 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
-                #                           'gatk_pct_correct_strand_reads', 'rna_count_zero', 'rna_count_one',
-                #                           'rna_count_ten', 'rna_count_onehundred', 'rna_count_onethousand',
-                #                           'rna_count_tenthousand', 'rna_count_hundredthousand', 'rna_tpm_zero',
-                #                           'rna_tpm_hundredth', 'rna_tpm_tenth', 'rna_tpm_one', 'rna_tpm_ten',
-                #                           'rna_tpm_onehundred', 'rna_tpm_onethousand', 'blia_pre_best',
-                #                           'blia_pre_second', 'blia_pre_diff', 'blia_post_best', 'blia_post_second',
-                #                           'blia_post_diff', 'blia_reportable', 'blia_raw_pre', 'blis_raw_pre',
-                #                           'lar_raw_pre', 'mes_raw_pre', 'blia_raw_post', 'blis_raw_post',
-                #                           'lar_raw_post', 'mes_raw_post'],
                 'QIAseq_V3_HOP': ['allele_balance', 'allele_balance_het_count'],
                 'QIAseq_V3_HOP2': ['allele_balance', 'allele_balance_het_count'],
                 'QIAseq_V3_HOP3': ['allele_balance', 'allele_balance_het_count']
