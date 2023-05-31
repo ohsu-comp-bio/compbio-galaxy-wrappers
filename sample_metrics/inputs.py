@@ -290,3 +290,24 @@ class VcfRead:
             if var_id not in records:
                 records[var_id] = record
         return len(records)
+
+
+class GatkDepthOfCoverageRead:
+    """
+    Ingest a GATK DepthofCoverage sample type file
+    """
+
+    def __init__(self, infile):
+        self.infile = csv.DictReader(open(infile, 'r'), delimiter='\t')
+        self.headers = self.infile.fieldnames
+        self.sample_mets = self._sample_fill()
+
+    def _sample_fill(self):
+        """
+        Put information from per locus file in to dict of dicts.
+        :return:
+        """
+        for entry in self.infile:
+            for e in entry:
+                if e == 'sample':
+                    return entry
