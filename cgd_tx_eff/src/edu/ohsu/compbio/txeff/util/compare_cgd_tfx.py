@@ -19,7 +19,7 @@ import vcfpy
 from edu.ohsu.compbio.txeff.tx_eff_vcf import TranscriptEffect
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
-VERSION = '0.4.3'
+VERSION = '0.4.4'
 
 def find_in_vcf(chromosome: str, position_start: int, position_end: int, ref: str, alt: str, vcf_reader: vcfpy.reader.Reader):
     '''
