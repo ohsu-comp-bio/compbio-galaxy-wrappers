@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 <tool id="sample_metrics" name="Sample Level Metrics" version="0.8.9" >
-=======
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.8.8" >
->>>>>>> 7f9748a191c879be708946923d5ccc720562fc4b
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
 
   <requirements>
