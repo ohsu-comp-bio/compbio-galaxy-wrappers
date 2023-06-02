@@ -132,7 +132,7 @@ segment_log2rawCopies_mad <- cnvPointsSegments %>%
 
 sample_log2rawCopies_mad <- round(median(segment_log2rawCopies_mad$log2rawCopies_mad_segment), digits = 2)
 print(paste0('Sample Median MAD ("Median of the segment-level MADD values of log2 raw copies per sample"): ', sample_log2rawCopies_mad))
-write(paste0('{{\"cnv_median_segment_mad_cn\": ', sample_log2rawCopies_mad, '}}'), "output_metrics.txt")
+write(paste0('{\"cnv_median_segment_mad_cn\": ', sample_log2rawCopies_mad, '}'), "output_metrics.txt")
 
 
 plotCNV <- function(data, copyratioCol, copyratioPerSegmentCol, panelGeneCol, segments,
