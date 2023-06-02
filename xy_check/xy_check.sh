@@ -2,6 +2,12 @@
 
 VERSION='2.0.0'
 
+"""
+Predict allosomes based on existence of Y chromosome marker counts
+
+author: JL
+"""
+
 gatk CollectReadCounts -I $1 -L Y -O output.tsv -imr OVERLAPPING_ONLY -format TSV
 
 COUNT=$(
@@ -19,13 +25,13 @@ END
 echo $COUNT > "log.txt"
 
 if [ $COUNT -lt $2 ]; then
-    echo "{\"xy_check\": 0}" > "output.txt";
+    echo "{\"bio_sex_check\": 0}" > "output.txt";
     XY="FEMALE"
 elif [ $COUNT -gt $3 ]; then
-    echo "{\"xy_check\": 1}" > "output.txt";
+    echo "{\"bio_sex_check\": 1}" > "output.txt";
     XY="MALE"
 else
-    echo "{\"xy_check\": 999}" > "output.txt";
+    echo "{\"bio_sex_check\": 999}" > "output.txt";
     XY="UNSPECIFIED"
 fi
 echo $XY >> "log.txt"

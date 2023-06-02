@@ -1,5 +1,11 @@
 #!/bin/bash
 
+"""
+Check the heterozygosity of X to confirm specification in samplesheet
+
+author: JL
+"""
+
 gatk IndexFeatureFile -F $1
 
 gatk SelectVariants -V $1 -O selected.vcf --select-type-to-include SNP --exclude-filtered true -L X -sample-name $2 -select "vc.getGenotype(\"$2\").isHet()"
