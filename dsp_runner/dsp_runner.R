@@ -71,7 +71,7 @@ paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
 exp.low <- data.table(openxlsx::read.xlsx(low_probes, colNames=F))
 control.type <- data.table(openxlsx::read.xlsx(control_type, startRow=2))
 #stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
-if(!(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)]){
+if(!(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])){
   message("Error: check control type input file")
   quit(status=5)
 }
