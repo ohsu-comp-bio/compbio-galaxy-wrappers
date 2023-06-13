@@ -1,7 +1,9 @@
 import pysam
 
-
 class PysamTxEff:
+    '''
+    Class used to query reference genome fasta file.    
+    '''
     def __init__(self, filename, size=2000):
         self.filename = filename
         self.my_fasta = pysam.FastaFile(self.filename)
