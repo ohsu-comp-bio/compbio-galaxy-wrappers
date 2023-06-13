@@ -189,6 +189,7 @@ class AnnovarParser(object):
                 # Sometimes basepair position is an integer, but it can also be an offset (eg c.371-3C>T)
                 if hgvs_basep and type(hgvs_basep) is BaseOffsetPosition:
                     logging.debug(f"Converting base pair position to string because it is an offset: {full_c}")
+                    # base position is a string because offsets are like "1135-4"
                     hgvs_basep = str(hgvs_basep)
 
             except hgvs.exceptions.HGVSParseError:

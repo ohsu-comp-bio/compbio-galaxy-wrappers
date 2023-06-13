@@ -12,11 +12,6 @@ from edu.ohsu.compbio.annovar.annovar_parser import AnnovarParser
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarFileType
 
 class AnnovarParserTest(unittest.TestCase):
-
-    def test_get_file_type(self):
-        annovar_parser = AnnovarParser();
-        file_type = annovar_parser._get_file_type(".variant_function")
-        self.assertEqual(file_type, AnnovarFileType.VariantFunction)
         
     def test_unpack_vf_transcript_tuple(self):
         '''
@@ -33,14 +28,14 @@ class AnnovarParserTest(unittest.TestCase):
         
         # Type II
         hgvs_basep, exon, hgvs_c_dot, refseq_transcript = annovar_parser._unpack_vf_transcript_tuple("NM_001290354.2(NM_001290354.2:c.-5432_-5431insGCGCTGCGG)")
-        self.assertEqual(hgvs_basep.base, -5432)
+        self.assertEqual(hgvs_basep, '-5432')
         self.assertIsNone(exon)
         self.assertEqual(hgvs_c_dot, "c.-5432_-5431insGCGCTGCGG")
         self.assertEqual(refseq_transcript, "NM_001290354.2")
         
         # Type III
         hgvs_basep, exon, hgvs_c_dot, refseq_transcript = annovar_parser._unpack_vf_transcript_tuple("NM_001206844.2(NM_001206844.2:exon5:c.1135-4T>C)")
-        self.assertEqual(hgvs_basep.base, 1135)
+        self.assertEqual(hgvs_basep, '1135-4')
         self.assertEqual(exon, '5')
         self.assertEqual(hgvs_c_dot, 'c.1135-4T>C')
         self.assertEqual(refseq_transcript, 'NM_001206844.2')

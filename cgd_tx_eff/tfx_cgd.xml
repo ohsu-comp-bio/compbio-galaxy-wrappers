@@ -1,4 +1,4 @@
-<tool id="tfx_cgd" name="Transcript Effects for CGD" version="0.4.3" >
+<tool id="tfx_cgd" name="Transcript Effects for CGD" version="0.5.4" >
   <description>
   	Update a VCF with transcript-effects and nomenclature from Annovar and HGVS.
   </description>
@@ -19,7 +19,15 @@
         --annovar_variant_function "${annovar_variant_function}"
         --annovar_exonic_variant_function "${annovar_exonic_variant_function}"
     	--ccds_map "${ccds_map}"
-    	--out_vcf "${out_vcf}";
+        #if $reference_source.reference_source_selector != "no_ref"
+            #if $reference_source.reference_source_selector != "history"
+                --reference_fasta ${reference_source.reference_sequence.fields.path}
+            #else
+                --reference_fasta ${reference_source.reference_sequence}
+            #end if
+        #end if
+    	--out_vcf "${out_vcf}"
+
   ]]></command>
   
  <environment_variables>
@@ -37,6 +45,23 @@
     <param name="ccds_map" format="csv,gff" optional="false" type="data" label="Input CSV or GFF with Annovar-to-CCDS mappings. Use refseq_to_ccds.py to convert GFF to CSV."/>
     <param name="annovar_variant_function" format="tsv" optional="false" type="data" label="Annovar variant_function file" />
     <param name="annovar_exonic_variant_function" format="tsv" optional="false" type="data" label="Annovar exonic_variant_function file" />
+    <conditional name="reference_source">
+            <param name="reference_source_selector" type="select" label="Choose the source for the reference list">
+                <option value="cached">Locally cached</option>
+                <option value="history">History</option>
+                <option value="no_ref" selected="true">Do not pass</option>
+            </param>
+            <when value="cached">
+                <param name="reference_sequence" type="select" label="Reference" help="Reference sequence file." >
+                    <options from_data_table="all_fasta" >
+                        <validator type="no_options" message="A built-in reference genome is not available for the build associated with the selected input file" />
+                    </options>
+                </param>
+            </when>
+            <when value="history">
+                <param name="reference_sequence" type="data" format="fasta" label="Reference" help="Reference sequence file." />
+            </when>
+    </conditional>
   </inputs>
  
   <outputs>
@@ -51,6 +76,8 @@
   		<param name="ccds_map" value="test_GRCh37_minimal_genomic.csv"/>
   		<param name="annovar_variant_function" value="test_annovar.variant_function"/>
   		<param name="annovar_exonic_variant_function" value="test_annovar.exonic_variant_function"/>
+        <param name="reference_source_selector" value="history" />
+        <param name="reference_sequence" ftype="fasta" value="test_chr1.fa"/>
         <output name="out_vcf" ftype="vcf">
         	<assert_contents>
         		<has_text text="CCDS30551.1"/>
@@ -68,6 +95,7 @@ usage: tx_eff_control.py [-h]
 						 --ccds_map CCDS_MAP 
 						 --annovar_variant_function ANNOVAR_VARIANT_FUNCTION 
 						 --annovar_exonic_variant_function ANNOVAR_EXONIC_VARIANT_FUNCTION 
+                         --reference_fasta REFERENCE_FASTA
 						 --out_vcf OUT_VCF
 ]]>
   </help>

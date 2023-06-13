@@ -17,4 +17,3 @@ repositories:
       - src/**
       - test-data/test_export_in.csv
       - test-data/test_comparison_in.vcf
-  
