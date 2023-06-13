@@ -19,7 +19,6 @@ def _parse_args():
     Validate and return command line arguments.
     '''
     parser = argparse.ArgumentParser(description='Read variants from a VCF, add Annovar variant effects, correct nomenclature using HGVS, and write out a new VCF.')
-    
 
     parser.add_argument('-i', '--in_vcf', 
                 help='Input VCF', 
