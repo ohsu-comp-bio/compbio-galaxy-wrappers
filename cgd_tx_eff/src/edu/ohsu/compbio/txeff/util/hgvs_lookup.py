@@ -14,6 +14,7 @@ import hgvs.dataproviders.uta
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff import tx_eff_hgvs
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
+from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 
 class HgvsLookup(object):
     def __init__(self):
@@ -32,14 +33,18 @@ class HgvsLookup(object):
         else:
             logging.info(f"Using UTA Database at {os.environ.get('UTA_DB_URL')}")
 
-    def find_genotype(self, genotype: str):
+    def find_genotype(self, genotype: str, reference_fasta):
         '''
         Search UTA for transcripts associated with the genotype (e.g. 7-12345-C-G)
         '''
         chromosome, position, ref, alt = genotype.split('-')
         variant = VariantTranscript(chromosome, position, ref, alt)
+
+        # Reference file   
+        pysam_file = PysamTxEff(reference_fasta)
         
-        transcripts = tx_eff_hgvs._lookup_hgvs_transcripts([variant])
+        transcripts = tx_eff_hgvs._lookup_hgvs_transcripts([variant], pysam_file)
+
         logging.info(f"Found {len(transcripts)} transcripts associated with {genotype}")
         
         self.print_result_transcripts(transcripts)
@@ -64,13 +69,16 @@ if __name__ == '__main__':
     parser = ArgumentParser(description='Use the HGVS python library to lookup a single variant')
     parser.add_argument("-v", "--variant_genotype", help="Variant genotype (e.g. 7-123456-C-G)", type=str, required=False)
     parser.add_argument("-g", "--gene", help="Gene name", type=str, required=False)
-
+    parser.add_argument('--reference_fasta',
+                        help='Reference genome, in FASTA format.  The associated index is expected to be in the same directory.',
+                        required=True)
+    
     args = parser.parse_args()
     
     hgvs_lookup = HgvsLookup()
     
     if args.variant_genotype is not None:
-        hgvs_lookup.find_genotype(args.variant_genotype)
+        hgvs_lookup.find_genotype(args.variant_genotype, args.reference_fasta)
     elif args.gene is not None:
         hgvs_lookup.find_gene(args.gene)
     else:

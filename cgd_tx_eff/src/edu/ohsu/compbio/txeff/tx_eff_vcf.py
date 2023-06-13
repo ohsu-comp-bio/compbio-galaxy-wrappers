@@ -17,7 +17,7 @@ from edu.ohsu.compbio.txeff.variant import Variant
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
-VERSION = '0.2.4'
+VERSION = '0.5.3'
 
 class TranscriptEffect(Enum):
     '''
@@ -25,6 +25,7 @@ class TranscriptEffect(Enum):
     ''' 
     TFX_GENE = 'TFX_GENE'
     TFX_TRANSCRIPT = 'TFX_TRANSCRIPT'
+    TFX_G_DOT = 'TFX_G_DOT'
     TFX_HGVSC = 'TFX_HGVSC'
     TFX_HGVSP1 = 'TFX_HGVSP1'
     TFX_HGVSP3 = 'TFX_HGVSP3'
@@ -127,6 +128,7 @@ def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
         tfx_base_positions = []
         tfx_exons = []
         tfx_genes = []
+        tfx_g_dots = []
         tfx_c_dots = []
         tfx_p1 = []
         tfx_p3 = []
@@ -141,6 +143,7 @@ def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
             tfx_base_positions.append(transcript.hgvs_base_position)
             tfx_exons.append(transcript.exon)
             tfx_genes.append(transcript.hgnc_gene)
+            tfx_g_dots.append(transcript.sequence_variant)
             tfx_c_dots.append(transcript.hgvs_c_dot)
             tfx_p1.append(transcript.hgvs_p_dot_one)
             tfx_p3.append(transcript.hgvs_p_dot_three)
@@ -153,7 +156,8 @@ def _add_transcripts_to_vcf(vcf_variant_dict, transcript_dict):
 
         vcf_record.INFO[TranscriptEffect.TFX_BASE_POSITION.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_base_positions])]
         vcf_record.INFO[TranscriptEffect.TFX_EXON.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_exons])]
-        vcf_record.INFO[TranscriptEffect.TFX_GENE.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_genes])]        
+        vcf_record.INFO[TranscriptEffect.TFX_GENE.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_genes])]
+        vcf_record.INFO[TranscriptEffect.TFX_G_DOT.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_g_dots])]
         vcf_record.INFO[TranscriptEffect.TFX_HGVSC.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_c_dots])]
         vcf_record.INFO[TranscriptEffect.TFX_HGVSP1.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_p1])]
         vcf_record.INFO[TranscriptEffect.TFX_HGVSP3.value] = [':'.join([_replaceNoneWithEmpty(x) for x in tfx_p3])]
@@ -207,6 +211,10 @@ def _update_header(header):
                                                             ('Number', '.'),
                                                             ('Type', 'String'),
                                                             ('Description', 'HGNC gene symbol.')]))
+    header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_G_DOT.value),
+                                                            ('Number', '.'),
+                                                            ('Type', 'String'),
+                                                            ('Description', 'HGVS g-dot nomenclature.')]))    
     header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_HGVSC.value),
                                                             ('Number', '.'),
                                                             ('Type', 'String'),

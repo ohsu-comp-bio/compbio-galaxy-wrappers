@@ -28,8 +28,9 @@ from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.annovar import annovar_parser
+from hgvs.sequencevariant import SequenceVariant
 
-VERSION = '0.5.1'
+VERSION = '0.5.4'
 ASSEMBLY_VERSION = "GRCh37"
 
 # These will need to be updated when we switch from GRCh37 to GRCh38
@@ -174,7 +175,7 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
     for hgvs_transcript in tx_list:
         try:
             variant_transcript = VariantTranscript(variant.chromosome, variant.position, variant.reference, variant.alt)            
-            variant_transcript.sequence_variant = var_g
+            variant_transcript.sequence_variant = __to_g_dot(var_g)
             
             # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function. 
             transcript_detail = hdp.get_tx_info(hgvs_transcript[0], hgvs_transcript[1], 'splign')
@@ -242,6 +243,11 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
     
     return hgvs_transcripts
 
+def __to_g_dot(var_g: SequenceVariant):
+    '''
+    Convert the SequenceVariant object to a g-dot. The string 'NC_000002.11:g.48033742_48033759dup' is split and just the g. is returned.  
+    '''
+    return str(var_g).split(':')[1]
 
 def _get_unmatched_annovar_transcripts(annovar_dict: defaultdict(AnnovarVariantFunction), hgvs_dict: defaultdict(VariantTranscript)):
     '''
@@ -382,6 +388,10 @@ def _merge_into(transcript_key: str, new_transcript: VariantTranscript, hgvs_tra
     if _allow_merge(new_transcript.hgnc_gene, transcript_gene, transcript_key, 'hgnc_gene'):
         new_transcript.hgnc_gene = transcript_gene
     
+    # g-dot
+    ## Always comes from hgvs/uta
+    new_transcript.sequence_variant = hgvs_transcript.sequence_variant
+
     # c-dot
     ## Use HGVS's c. because Annovar's is not always correct. Non-coding transcripts don't have a c. 
     assert hgvs_transcript.hgvs_c_dot != None or hgvs_transcript.refseq_transcript.startswith('NR_'), "The HGVS c. value is not supposed to be empty"

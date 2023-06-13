@@ -39,6 +39,7 @@ class VariantTranscript(AnnovarVariantFunction):
         transcript.hgvs_base_position = self._noneIfEmpty(self.hgvs_base_position)
         transcript.exon = self._noneIfEmpty(self.exon)
         transcript.hgnc_gene = self._noneIfEmpty(self.hgnc_gene)
+        transcript.sequence_variant = self._noneIfEmpty(self.sequence_variant)
         transcript.hgvs_c_dot = self._noneIfEmpty(self.hgvs_c_dot)
         transcript.hgvs_p_dot_one = self._noneIfEmpty(self.hgvs_p_dot_one)
         transcript.hgvs_p_dot_three = self._noneIfEmpty(self.hgvs_p_dot_three)
@@ -84,7 +85,7 @@ class VariantTranscript(AnnovarVariantFunction):
         '''
         Return a score based on how many the fields are filled in. This method can be improved in the following ways
         - Give p_dot and c_dot  a higher score when the values come from HGVS/UTA rather than Annovar
-        - Scoring some fields (e.g. protein protein script, exon) may not be relevent for non coding variants. 
+        - Scoring some fields (e.g. g-dot, protein protein script, exon) may not be relevent for non coding variants. 
         '''
         score = 0
         

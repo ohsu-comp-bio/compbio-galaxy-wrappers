@@ -19,7 +19,7 @@ import vcfpy
 from edu.ohsu.compbio.txeff.tx_eff_vcf import TranscriptEffect
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
-VERSION = '0.4.4'
+VERSION = '0.4.6'
 
 def find_in_vcf(chromosome: str, position_start: int, position_end: int, ref: str, alt: str, vcf_reader: vcfpy.reader.Reader):
     '''
@@ -57,7 +57,7 @@ def process(vcf_filename: str, csv_export_filename: str, csv_out_filename: str):
                   'cgd_exon', 'cgd_hgnc_gene', 'cgd_primary_gene', 'cgd_hgvs_c_dot', 'cgd_hgvs_p_dot_one', 'cgd_hgvs_p_dot_three', 
                   'cgd_splicing', 'cgd_refseq_transcript', 'cgd_protein_transcript',
                   'tfx_variant_effect', 'tfx_variant_type', 'tfx_hgvs_amino_acid_position', 'tfx_hgvs_base_position', 
-                  'tfx_exon', 'tfx_hgnc_gene', 'tfx_hgvs_c_dot', 'tfx_hgvs_p_dot_one', 'tfx_hgvs_p_dot_three', 
+                  'tfx_exon', 'tfx_hgnc_gene', 'tfx_hgvs_g_dot', 'tfx_hgvs_c_dot', 'tfx_hgvs_p_dot_one', 'tfx_hgvs_p_dot_three', 
                   'tfx_splicing', 'tfx_refseq_transcript', 'tfx_protein_transcript']
     
     logging.info(f"Reading {vcf_filename}")
@@ -115,7 +115,8 @@ def write(csv_writer, export_row, vc: vcfpy.record.Record):
                         ' / '.join([x for x in vc.INFO[TranscriptEffect.TFX_AMINO_ACID_POSITION.value]]),    # 'tfx_hgvs_amino_acid_position', 
                         ' / '.join([x for x in vc.INFO[TranscriptEffect.TFX_BASE_POSITION.value]]),          # 'tfx_hgvs_base_position', 
                         ' / '.join([x for x in vc.INFO[TranscriptEffect.TFX_EXON.value]]),                   # 'tfx_exon', 
-                        ' / '.join([x for x in vc.INFO[TranscriptEffect.TFX_GENE.value]]),                   # 'tfx_hgnc_gene', 
+                        ' / '.join([x for x in vc.INFO[TranscriptEffect.TFX_GENE.value]]),                   # 'tfx_hgnc_gene',
+                        ' / '.join([x for x in vc.INFO[TranscriptEffect.TFX_G_DOT.value]]),                  # 'tfx_hgvs_g_dot', 
                         ' / '.join([x for x in vc.INFO[TranscriptEffect.TFX_HGVSC.value]]),                  # 'tfx_hgvs_c_dot', 
                         ' / '.join([x for x in vc.INFO[TranscriptEffect.TFX_HGVSP1.value]]),                 # 'tfx_hgvs_p_dot_one', 
                         ' / '.join([x for x in vc.INFO[TranscriptEffect.TFX_HGVSP3.value]]),                 # 'tfx_hgvs_p_dot_three', 
