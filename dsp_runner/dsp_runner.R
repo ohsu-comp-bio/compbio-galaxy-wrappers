@@ -1,4 +1,4 @@
-# Current Version: 1.0.7
+# Current Version: 1.0.9
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -15,6 +15,8 @@
 # 1.0.6 - restrict plots to only those included in the pos.cntrls input
 #       - display 'no outlier' message in outlier plots
 # 1.0.7 - place tma check after checking for good_tma runs
+# 1.0.8 - add percentiles to antibody/segment table
+# 1.0.9 - changed stopifnot() to if(){quit()} for error handling and added error messaging
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -68,12 +70,20 @@ good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
 exp.low <- data.table(openxlsx::read.xlsx(low_probes, colNames=F))
 control.type <- data.table(openxlsx::read.xlsx(control_type, startRow=2))
-stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
+#stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
+if(!(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])){
+  message("Error: check control type input file")
+  quit(status=5)
+}
 dsp.meta <- data.table(read.xlsx(dsp_meta))
 pos.cntrls <- data.table(read.csv(pos_cntrls, sep = '\t', header=F))
 
 # Check to see if my_samp is in dsp.meta, stop if it's not.
-stopifnot(nrow(dsp.meta[`Specimen.ID` %in% my_samp]) > 0)
+#stopifnot(nrow(dsp.meta[`Specimen.ID` %in% my_samp]) > 0)
+if(nrow(dsp.meta[`Specimen.ID` %in% my_samp]) == 0){
+  message("Sample ID invalid.")
+  quit(status=5)
+}
 
 batch.dt <- data.table(files=list.files(datadir, pattern="[-0-9A-Za-z]_[0-9]{8}-[0-9]{2}.xlsx", recursive = T, full.names=T))
 batch.dt[,batch:=str_extract(files, exp.regex)]
@@ -91,8 +101,12 @@ all.abund <- Reduce(function(x,y){
   merge(x,y, by=c("ProbeName"))
 
 }, lapply(res.list$data, function(x) x$qc[,-c(1:3)]))
-stopifnot(nrow(all.abund) == res.list$data[[1]]$qc[,.N])
-stopifnot((ncol(all.abund)-1) == sum(sapply(res.list$data, function(x) ncol(x$qc)-4 )))
+#stopifnot(nrow(all.abund) == res.list$data[[1]]$qc[,.N])
+#stopifnot((ncol(all.abund)-1) == sum(sapply(res.list$data, function(x) ncol(x$qc)-4 )))
+if((nrow(all.abund) != res.list$data[[1]]$qc[,.N])|| (ncol(all.abund)-1) != sum(sapply(res.list$data, function(x) ncol(x$qc)-4 ))){
+    message("Dimension error with processed batch data")
+    quit(status=5)
+}
 abund.mat <- log2(as.matrix(all.abund[,-1,with=F]))
 rownames(abund.mat) <- all.abund[,ProbeName]
 
@@ -100,11 +114,19 @@ rownames(abund.mat) <- all.abund[,ProbeName]
 tma.meta <- qc.meta[`Segment (Name/ Label)`=="Full ROI" | `Segment (Name/ Label)`=="Geometric Segment"]
 tma.meta[,lower_sample:=tolower(sample_id)]
 
-stopifnot(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])
+#stopifnot(]control.type[,.N,by=.(lower_secondary, name, type)[,all(N==1)])
+if(!(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])){
+    message("Ambiguous and/or duplicate alternate TMA names -- check control type input file.")
+    quit(status=5)
+}
 
 tma.meta <- merge(tma.meta, control.type[,.(lower_sample=lower_secondary, name, type)], by="lower_sample", all=F)
 tma.meta <- tma.meta[`batch` %in% good_tma | `batch` %in% runid]
-stopifnot(tma.meta[,.N,by=batch][,all(N==19)])
+#stopifnot(tma.meta[,.N,by=batch][,all(N==19)])
+if(tma.meta[,.N,by=batch][,all(N!=19)]){
+    message("Incorrect number of TMA rows.")
+    quit(status=5)
+}
 tma.abund <- abund.mat[,tma.meta$barcode]
 
 ## QC of experimental samples with respect to ROI
@@ -238,6 +260,12 @@ samp.scores$patient_ord <- droplevels(samp.scores$patient_ord, except=my_samp)
 
 ### WRITE TO PDF
 
+# Check if current sample is in score table
+if(!(nrow(samp.scores)>0)){
+  message("No data found for current sample ID.")
+  quit(status=5)
+}
+
 # Overall Plotting
 plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund, coh)
 pdf(file=paste0(report.out), width=16, height=16)
@@ -298,7 +326,7 @@ gc2 <- tableGrob(reference_batches, theme=tt1)
 if (nrow(outlier_df)>0){
   outlier_message <- ''
 } else{
-    outlier_message <- '[No outliers detected]'
+  outlier_message <- '[No outliers detected]'
 }
 
 g.outlier <- textGrob(outlier_message, gp = gpar(col = "blue", fontsize = 20))
@@ -322,7 +350,7 @@ if (nrow(outlier_df>0)){
 
     grid.newpage()
     grid.draw(g2)
-    }
+  }
 }
 
 for (tums in names(plot.list)){
@@ -332,10 +360,22 @@ for (tums in names(plot.list)){
 # Create and write table of normalized counts.
 tt <- ttheme_default(base_size = 16)
 score_out <- samp.scores %>% select(ProbeName,segment_label,norm)
+
+# Insert percentile in counts table
+percentiles <- sapply(unique(samp.scores$ProbeName), function(x){
+  v <- ref.abund %>% filter(ProbeName==x) %>% select(norm)
+  batch <- samp.scores %>% filter(ProbeName == x) %>% select(norm)
+  v <- rbind(v,batch)
+  z <- (batch$norm[1]-mean(v$norm)) /sd(v$norm)
+  percentile <- round(pnorm(z)*100)
+})
+score_out <- cbind(score_out, percentiles)
+
+# Separate scores by tumor/stroma segments
 score_tum <- score_out[`segment_label` == 'tumor']
 score_str <- score_out[`segment_label` == 'stroma']
 
-g <- tableGrob(score_tum[1:34,1:3], rows = NULL, theme = tt)
+g <- tableGrob(score_tum[1:34,1:4], rows = NULL, theme = tt)
 g <- gtable_add_grob(g,
                      grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                      t = 2, b = nrow(g), l = 1, r = ncol(g))
@@ -343,7 +383,7 @@ g <- gtable_add_grob(g,
                      grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                      t = 1, l = 1, r = ncol(g))
 
-g1 <- tableGrob(score_tum[35:68,1:3], rows = NULL, theme = tt)
+g1 <- tableGrob(score_tum[35:68,1:4], rows = NULL, theme = tt)
 g1 <- gtable_add_grob(g1,
                       grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                       t = 2, b = nrow(g1), l = 1, r = ncol(g1))
@@ -356,7 +396,7 @@ grid.newpage()
 grid.draw(haligned)
 
 if (nrow(score_str) > 0) {
-  g <- tableGrob(score_str[1:34,1:3], rows = NULL, theme = tt)
+  g <- tableGrob(score_str[1:34,1:4], rows = NULL, theme = tt)
   g <- gtable_add_grob(g,
                        grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                        t = 2, b = nrow(g), l = 1, r = ncol(g))
@@ -364,7 +404,7 @@ if (nrow(score_str) > 0) {
                        grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                        t = 1, l = 1, r = ncol(g))
 
-  g1 <- tableGrob(score_str[35:68,1:3], rows = NULL, theme = tt)
+  g1 <- tableGrob(score_str[35:68,1:4], rows = NULL, theme = tt)
   g1 <- gtable_add_grob(g1,
                         grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                         t = 2, b = nrow(g1), l = 1, r = ncol(g1))
