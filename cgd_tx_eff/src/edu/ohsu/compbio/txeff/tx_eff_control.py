@@ -12,7 +12,7 @@ from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
 from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
-VERSION = '0.5.5'
+VERSION = '0.5.6'
 
 def _parse_args():
     '''
@@ -62,7 +62,13 @@ def _main():
     print(f"tfx_cgd {VERSION} is starting...")
     
     logging.config.dictConfig(TfxLogConfig().log_config)
-    print(f"Log level={logging.root.getEffectiveLevel()}, file={logging.root.handlers[0].baseFilename}")
+    
+    if logging.root.handlers[0].stream: 
+        output = str(logging.root.handlers[0].stream.name)
+    else:
+        output = logging.root.handlers[0].baseFilename
+        
+    print(f"Log level={logging.root.getEffectiveLevel()}, output={output}")
 
     start_time = time.time()
     

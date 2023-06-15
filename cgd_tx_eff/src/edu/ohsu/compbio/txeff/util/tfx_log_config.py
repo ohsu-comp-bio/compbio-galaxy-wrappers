@@ -73,5 +73,32 @@ class TfxLogConfig(object):
             } 
         }
         
-        
-        
+        # Configuration for when you want to see logging on stdout 
+        self.stdout_config = { 
+            'version': 1,
+            'disable_existing_loggers': False,
+            'formatters': {
+                'standard': { 
+                    'format': '%(levelname)s: %(name)s::%(module)s:%(lineno)s: %(message)s'
+                },
+            },
+            'handlers': {
+                'default': {                     
+                    'formatter': 'standard',
+                    'class': 'logging.StreamHandler',
+                    'stream': 'ext://sys.stdout'
+                },
+            },
+            'loggers': { 
+                '': {  # root logger
+                    'handlers': ['default'],
+                    'level': 'DEBUG',
+                    'propagate': False
+                },
+                'edu.ohsu.compbio.txeff': { 
+                    'level': 'DEBUG',
+                    'propagate': False,
+                    'handlers': ['default'],
+                },
+            }
+        }

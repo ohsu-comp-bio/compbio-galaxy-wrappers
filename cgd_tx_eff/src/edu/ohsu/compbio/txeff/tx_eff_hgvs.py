@@ -30,7 +30,7 @@ from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.annovar import annovar_parser
 from hgvs.sequencevariant import SequenceVariant
 
-VERSION = '0.5.4'
+VERSION = '0.5.6'
 ASSEMBLY_VERSION = "GRCh37"
 
 # These will need to be updated when we switch from GRCh37 to GRCh38
@@ -299,14 +299,14 @@ def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list):
     Given a list of transcripts from Annovar and HGVS, find those with the same genotype and transcript, and merge them into a single record.
     '''
     merged_transcripts = []
-    SPLICING_SUFFIX = '-splicing'
+
     # Collect annovar records into a map keyed by genotype and transcript 
     annovar_dict = defaultdict(VariantTranscript)
     for annovar_rec in annovar_transcripts:
-        annovar_key = annovar_rec.get_label() + (SPLICING_SUFFIX if annovar_rec.splicing else '')
+        annovar_key = annovar_rec.get_label()
         assert annovar_key not in annovar_dict, f'A matching annovar variant-transcript should not already be in the dictionary: {annovar_rec.get_label()}'          
         annovar_dict[annovar_key] = annovar_rec
-    
+
     # Collect hgvs records into a map keyed by genotype and transcript    
     hgvs_dict = defaultdict(VariantTranscript)
     for hgvs_rec in hgvs_transcripts:
@@ -315,16 +315,12 @@ def _merge_annovar_with_hgvs(annovar_transcripts: list, hgvs_transcripts: list):
 
     # Iterate over every HGVS variant-transcript and see if there is a matching Annovar transcript
     for (transcript_key, hgvs_transcript) in hgvs_dict.items():
-        # Each annovar transcript may also exist as a splicing transcript
-        for k in [transcript_key, transcript_key + SPLICING_SUFFIX]:
-            annovar_match = annovar_dict.get(k) 
-            if not annovar_match:
-                # no need to double the number of log messages by mentioning every time a splice variant doesn't exist.
-                if not k.endswith(SPLICING_SUFFIX):
-                    logging.debug(f"HGVS {transcript_key} does not match any Annovar transcripts")
-            else:
-                logging.debug(f"Merging HGVS transcript with Annovar transcript having key {transcript_key}")
-                merged_transcripts.append(_merge(transcript_key, hgvs_transcript, annovar_match))
+        annovar_match = annovar_dict.get(transcript_key) 
+        if not annovar_match:
+            logging.debug(f"HGVS {transcript_key} does not match any Annovar transcripts")
+        else:
+            logging.debug(f"Merging HGVS transcript with Annovar transcript having key {transcript_key}")
+            merged_transcripts.append(_merge(transcript_key, hgvs_transcript, annovar_match))
 
     # Not all the Annovar transcripts will get matched and merged with an HGVS transcript. They will likely be discarded
     # when _get_the_best_transcripts is called but we want one version of every known transcript so we need to keep the unmerged ones.  
@@ -474,7 +470,7 @@ def _allow_merge(existing_value, new_value, variant_id, field_name):
         return True
 
 
-def get_summary(annovar_transcripts: list, annovar_variants: set, hgvs_transcripts: list, merged_transcripts: list, best_splicing_transcripts: list, best_non_splicing_transcripts: list):
+def get_summary(annovar_transcripts: list, annovar_variants: set, hgvs_transcripts: list, merged_transcripts: list, best_transcripts: list):
     '''
     Return a collection of summary statistics after processing completes. 
     '''
@@ -482,8 +478,7 @@ def get_summary(annovar_transcripts: list, annovar_variants: set, hgvs_transcrip
     results['annovar_transcript_count'] = len(annovar_transcripts)
     results['annovar_distinct_variant_count'] = len(annovar_variants)
     results['hgvs_transcript_count'] = len(hgvs_transcripts)
-    results['best_splicing_transcripts'] = len(best_splicing_transcripts)
-    results['best_non_splicing_transcripts'] = len(best_non_splicing_transcripts)
+    results['best_transcripts'] = len(best_transcripts)
     
     results['hgvs_distinct_variant_count'] = len(set(map(lambda x: Variant(x.chromosome, x.position, x.reference, x.alt), hgvs_transcripts)))
     
@@ -585,9 +580,7 @@ def _log_summary(results: dict):
     logging.info(f"Number of Annovar transcripts not matched with HGVS transcripts: {results['unmatched_annovar_transcript_count']}")
     logging.info(f"Number of HGVS transcripts not matched with Annovar transcripts: {results['unmatched_hgvs_transcript_count']}")
     logging.info(f"Number of distinct variants in merged transcript list: {results['merged_distinct_variant_count']}")
-    logging.info(f"Number of non splicing variants to be saved: {results['best_splicing_transcripts']}") 
-    logging.info(f"Number of splicing variants to be saved: {results['best_non_splicing_transcripts']}")
-    logging.info(f"Total number of transcripts in final list: {results['best_splicing_transcripts'] + results['best_non_splicing_transcripts']}")
+    logging.info(f"Number of best transcripts in final list: {results['best_transcripts']}")
     logging.info(f"Sanity check: {'Passed' if results['sanity_check'] else 'Failed' }")
 
 def _parse_args():
@@ -648,61 +641,19 @@ def get_updated_hgvs_transcripts(annovar_transcripts: list, pysam_file):
     logging.debug(f"Merged {len(merged_transcripts)} Annovar and HGVS transcripts")
     logging.debug(f"Found {len(unmerged_transcripts)} unmerged transcripts")
 
-    # To avoid confusion, the list of splicing transcripts and non-splicing are kept separate
-    splicing_transcripts, non_splicing_transcripts = _get_splicing_separated_from_non_splicing(merged_transcripts + unmerged_transcripts)
+    all_transcripts = merged_transcripts + unmerged_transcripts
     
     # Because we have two sources of transcripts (annovar and hgvs/uta) we may have more than one version of a transcript but we only want one
     # version of each transcript.
-    best_non_splicing_transcripts = _get_the_best_non_splicing_transcripts(non_splicing_transcripts)
+    best_transcripts = _get_the_best_transcripts(all_transcripts)
     
-    # Instead of returning all splicing transcripts, only return the the ones that correspond to one found in the list of best_non_splicing_transcripts
-    best_splicing_transcripts = _get_the_best_splicing_transcripts(best_non_splicing_transcripts, splicing_transcripts)
-
     _log_summary(get_summary(annovar_transcripts, 
                              disinct_variants, 
                              hgvs_transcripts, 
-                             merged_transcripts, 
-                             best_splicing_transcripts, 
-                             best_non_splicing_transcripts))
+                             merged_transcripts,
+                             best_transcripts))
 
-    return best_non_splicing_transcripts + best_splicing_transcripts
-
-def _get_the_best_splicing_transcripts(best_non_splicing_transcripts: list, splicing_transcripts: list):
-    '''
-    Find and return the splicing transcript corresponding to of of the best_non_splicing_transcripts. Not all 
-    of the best_non_splicing_transcripts have a splicing conterpart. 
-    '''
-    # Create a dict of all splicing transcripts, keyed by their variant genotype and transcript
-    splicing_transcript_dict = defaultdict(list)
-    for transcript in splicing_transcripts:        
-        splicing_transcript_dict[__get_variant_transcript_key(transcript)].append(transcript)
-        
-    best_splicing_transcripts = []
-    
-    for non_splicing_transcript in best_non_splicing_transcripts:
-        transcript_key = __get_variant_transcript_key(non_splicing_transcript)
-        matched_splicing_transcripts = splicing_transcript_dict[transcript_key]        
-        if matched_splicing_transcripts:
-            best_splicing_transcript = __get_best_transcript(matched_splicing_transcripts)
-            best_splicing_transcripts.append(best_splicing_transcript)
-    
-    return best_splicing_transcripts
-        
-    
-def _get_splicing_separated_from_non_splicing(transcripts: list):
-    '''
-    Take a list of transcripts and split them into two lists where one is the splicing and the other is the non-splicing
-    '''
-    splicing_transcripts = []
-    non_splicing_transcripts = []
-    
-    for transcript in transcripts:
-        if transcript.splicing:
-            splicing_transcripts.append(transcript)
-        else:
-            non_splicing_transcripts.append(transcript)
-    
-    return splicing_transcripts, non_splicing_transcripts
+    return best_transcripts
 
 def __get_variant_transcript_key(transcript: VariantTranscript):
     '''
@@ -713,7 +664,7 @@ def __get_variant_transcript_key(transcript: VariantTranscript):
     unversioned_transcript = transcript.refseq_transcript.split('.')[0]
     return f"{transcript.chromosome}-{transcript.position}-{transcript.reference}-{transcript.alt}-{unversioned_transcript}"
         
-def _get_the_best_non_splicing_transcripts(non_splicingtranscripts: list):
+def _get_the_best_transcripts(transcripts: list):
     '''
     When there is more than one version of a transcript this method picks the best one so that we only end up with one version of each. 
     The best transcript will be the one with the most information (ie the least sparse). When there is a tie, the transcript with the most 
@@ -726,7 +677,7 @@ def _get_the_best_non_splicing_transcripts(non_splicingtranscripts: list):
     # 2-2-C-G-NM_001 --> [ NM_003.1, NM003.2, NM_004.5]
     transcript_dict = defaultdict(list)
 
-    for transcript in non_splicingtranscripts:        
+    for transcript in transcripts:        
         transcript_dict[__get_variant_transcript_key(transcript)].append(transcript)
     
     # Send each list of transcripts, that are grouped by genotype and transcript, to a function that returns the best one 
