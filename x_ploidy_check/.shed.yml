@@ -1,0 +1,11 @@
+owner: "onwuzu"
+remote_repository_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/xy_check"
+homepage_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/xy_check"
+categories:
+  - "KDL Tools"
+repositories:
+  x_ploidy_check:
+    description: "Check the heterozygosity of X to confirm specification in samplesheet"
+    include:
+      - x_ploidy_check.xml
+      - x_ploidy_check.sh

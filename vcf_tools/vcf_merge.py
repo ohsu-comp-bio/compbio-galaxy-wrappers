@@ -4,14 +4,10 @@
 Merge VCFs produced by various variant callers.
 
 Usage:
-<<<<<<< HEAD
-    vcf_merge.py  --input_vcfs input1.vcf input2.vcf --caller_labels m2 fb --output_vcf output.vcf
-=======
     python vcf_merge.py
         --input_vcf input1.vcf --caller_label m2
         --input_vcf input2.vcf --caller_label fb
         --output_vcf output.vcf
->>>>>>> 6e72adcd42eea3d7770a11504877ed90fb589e10
 
 Details:
 Given multiple VCFs produced by various variant callers, this will merge all vcfs into one.

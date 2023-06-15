@@ -8,13 +8,15 @@ python pon_bkgd_filter/pon_bkgd_filter.py "input.vcf" "output.vcf"
     "BKGD" "Below Background"
     "fc_bkgd_metrics.txt" "fc"
     --per_base_bkgd_metrics "per_base_bkgd_metrics.txt" --vaf_threshold 0.1
+
+1.1.0 - make both forced call and per bases metrics inputs optional
 """
 
 import argparse
 import vcfpy
 
 
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 
 
 def supply_args():
@@ -26,10 +28,12 @@ def supply_args():
     parser.add_argument('input_vcf', help='Input VCF')
     parser.add_argument('output_vcf', help='Output VCF')
     parser.add_argument('filter_id', help='FILTER ID to add to VCF record')
+
     parser.add_argument('--fc_bkgd_metrics', help='Text file containing freq stats for forced call')
     parser.add_argument('--fc_label', help='Forced call label')
 
     parser.add_argument('--per_base_bkgd_metrics', help='Text file containing freq stats of locus in panel')
+
     parser.add_argument('--vaf_threshold', help='VAF threshold under to perform filtering')
     parser.add_argument('--alt_specific', action='store_true', help='Use ALT allele threshold to filter')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
@@ -39,11 +43,11 @@ def supply_args():
 
 def add_metrics_header(field, prefix, metric, field_number, field_type, field_desc, header):
     if field == 'INFO':
-        header.add_info_line(vcfpy.OrderedDict([('ID', '{}_{}'.format(prefix, metric)),
+        header.add_info_line(vcfpy.OrderedDict([('ID', '{}{}'.format(prefix, metric)),
                                                 ('Number', field_number), ('Type', field_type),
                                                 ('Description', field_desc)]))
     else:
-        header.add_format_line(vcfpy.OrderedDict([('ID', '{}_{}'.format(prefix, metric)),
+        header.add_format_line(vcfpy.OrderedDict([('ID', '{}{}'.format(prefix, metric)),
                                                  ('Number', field_number), ('Type', field_type),
                                                  ('Description', field_desc)]))
     return header
@@ -80,11 +84,15 @@ def main():
     # add header info
     prefix = 'BE'
     metrics = ['mean', 'std', 'median', 'threshold', 'zscore', 'pval']
+
     for metric in metrics:
         add_metrics_header('INFO', prefix, metric, 1, 'Float',
                            'Descriptive stats of locus allele frequencies from PON samples', header)
     add_metrics_header('INFO', '', args.filter_id, 1, 'Float',
                        'Below background', header)
+    if fc_mets:
+        add_metrics_header('INFO', 'fc', args.filter_id, 1, 'Float',
+                           'Below background for forced calls', header)
     writer = vcfpy.Writer.from_path(args.output_vcf, header=header)
 
     # add info to VCF records
@@ -93,7 +101,7 @@ def main():
         if args.fc_label in record.FILTER:
             if fc_mets:
                 for metric in metrics:
-                    record.INFO['{}_{}'.format(prefix, metric)] = fc_mets[roi_id][metric]
+                    record.INFO['{}{}'.format(prefix, metric)] = fc_mets[roi_id][metric]
                 if record.calls[0].data['AF'] < float(fc_mets[roi_id]['threshold']):
                     record.add_filter('{}{}'.format(args.fc_label, args.filter_id))
         else:
@@ -105,7 +113,7 @@ def main():
                         roi_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.ALT[0].value, record.ALT[0].value)
                     if roi_id in per_base_mets:
                         for metric in metrics:
-                            record.INFO['{}_{}'.format(prefix, metric)] = per_base_mets[roi_id]['threshold']
+                            record.INFO['{}{}'.format(prefix, metric)] = per_base_mets[roi_id]['threshold']
                         if record.calls[0].data['AF'] < float(per_base_mets[roi_id]['threshold']):
                             record.add_filter(args.filter_id)
                     else:

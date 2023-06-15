@@ -1,0 +1,23 @@
+<tool id='XY_check' name="XY Check" version='2.0.0'>
+    <description>Predict allosome type based on existence of Y chromosome marker counts.</description>
+    <requirements>
+        <requirement type="package" version="4.0.5.1">gatk4</requirement>
+        <requirement type="package" version="1.9">samtools</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+        ln -s $input input.bam &&
+        samtools index input.bam &&
+        bash $__tool_directory__/xy_check.sh input.bam $xx_max $xy_min
+    ]]>
+    </command>
+    <inputs>
+        <param type="data" name="input" label="BAM Input File" format="bam"/>
+        <param type="integer" name="xx_max" label="XX Max Counts" value="40000"/>
+        <param type="integer" name="xy_min" label="XY Minimum Counts" value="80000"/>
+    </inputs>
+    <outputs>
+        <data format="txt" name="output" label="XY Metric: JSON" from_work_dir="output.txt"/>
+        <data format="txt" name="output_log" label="XY Metric: Log" from_work_dir="log.txt"/>
+    </outputs>
+
+</tool>

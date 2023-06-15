@@ -1,19 +1,13 @@
-<tool id="stpv3_cnv_plotter_nt" name="STPv3 CNV Plotter (NT)" version="1.0.2">
+<tool id="stpv3_cnv_plotter_nt" name="STPv3 CNV Plotter (NT)" version="2.0.0">
   <description>Creates two plots of CNVs using gtrellis (Does not use tidyverse).</description>
   <requirements>
     <requirement type="package" version="1.14.0">bioconductor-gtrellis</requirement>
-    <requirement type="package" version="1.2.0">bioconductor-genomeinfodbdata</requirement>
-    <requirement type="package" version="3.5.1">r</requirement>
+    <requirement type="package" version="0.8.5">r-dplyr</requirement>
+    <requirement type="package" version="0.1.5">r-fuzzyjoin</requirement>
   </requirements>
   <command detect_errors="exit_code"><![CDATA[
-    Rscript $__tool_directory__/gtrellis_CNV_NT.R 
-    #if $tumor_percent:
-      $tumor_percent
-    #else:
-      100
-    #end if
-
-    $count_file $segment_file $sample_name $gene_file 
+    Rscript $__tool_directory__/gtrellis_CNV_NT.R
+    $count_file $segment_file '${sample_name}' $gene_file
 
     #if $seqdict_source.seqdict_source_selector != "no_seq_dict"
         #if $seqdict_source.seqdict_source_selector != "history"
@@ -22,6 +16,12 @@
         #else
             ${seqdict_source.seqdict_sequence}
         #end if
+    #end if
+
+    #if $tumor_percent:
+      $tumor_percent
+    #else:
+      100
     #end if
 
     $upper $lower
@@ -56,6 +56,9 @@
   <outputs>
     <data name="plot1" format="png" from_work_dir="plot1.png" label="${tool.name} on ${on_string}: Plot 1"/>
     <data name="plot2" format="png" from_work_dir="plot2.png" label="${tool.name} on ${on_string}: Plot 2"/>
+    <data name="plot3" format="png" from_work_dir="plot3.png" label="${tool.name} on ${on_string}: Plot 3"/>
+    <data name="plot4" format="png" from_work_dir="plot4.png" label="${tool.name} on ${on_string}: Plot 4"/>
+    <data name="output_metrics" format="txt" from_work_dir="output_metrics.txt" label="${tool.name} on ${on_string} metrics: JSON"/>
   </outputs>
   <citations>
     <citation type="doi">10.18129/B9.bioc.gtrellis</citation>

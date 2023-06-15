@@ -1,0 +1,11 @@
+owner: "onwuzu"
+remote_repository_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/xy_check"
+homepage_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/xy_check"
+categories:
+  - "KDL Tools"
+repositories:
+  xy_check:
+    description: "Predict allosomes based on existence of Y chromosome marker counts"
+    include:
+      - xy_check.xml
+      - xy_check.sh

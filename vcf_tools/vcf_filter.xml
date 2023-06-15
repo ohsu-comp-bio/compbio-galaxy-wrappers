@@ -1,4 +1,4 @@
-<tool id="vcf_filter" name="VCF Filter" version="2.0.0" >
+<tool id="vcf_filter" name="VCF Filter" version="2.1.1" >
   <description>Filter VCF based on FILTER column</description>
 
   <requirements>
@@ -17,6 +17,7 @@
     #for $i, input in enumerate( $inputs ):
       --exclude "${input.exclude}"
       --include "${input.include}"
+      --inc_multicalled "${input.inc_multicalled}"
       --snp_threshold "${input.snp_threshold}"
       --indel_threshold "${input.indel_threshold}"
     #end for
@@ -29,6 +30,7 @@
     <repeat name="inputs" title="Filtering inputs and conditions" help="">
       <param name="exclude" type="text" label="Filters to use to exclude VCF records" />
       <param name="include" type="text" label="Filters to use to include VCF records" />
+      <param name="inc_multicalled" type="boolean" checked="false" truevalue="True" falsevalue="False" label="Include multicalled variants" />
       <param name="snp_threshold" type="float" optional="true" value="1.0" min="0" max="1.0"
            label="For SNPs, only perform filtering if VAF is below this threshold"/>
       <param name="indel_threshold" type="float" optional="true" value="1.0" min="0" max="1.0"

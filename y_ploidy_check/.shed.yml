@@ -1,0 +1,10 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/xy_check"
+homepage_url: "https://github.com/NEleanor/compbio-galaxy-wrappers/tree/master/xy_check"
+categories:
+  - "KDL Tools"
+repositories:
+  y_ploidy_check:
+    description: "Checks the ploidy of the y chromosome from DetermineGermlineContigPloidy to confirm specification in samplesheet"
+    include:
+      - y_ploidy_check.xml

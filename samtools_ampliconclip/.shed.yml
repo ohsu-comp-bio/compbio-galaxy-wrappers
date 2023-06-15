@@ -1,0 +1,11 @@
+name: "samtools_ampliconclip"
+owner: onwuzu
+remote_repository_url: https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/samtools_ampliconclip
+categories:
+  - "CompBio Galaxy Wrappers"
+description: Soft clips read alignments where they match BED file defined regions.
+repositories:
+  samtools_ampliconclip:
+    include:
+      - macros.xml
+      - samtools_ampliconclip.xml

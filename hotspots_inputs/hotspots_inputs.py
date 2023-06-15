@@ -20,8 +20,8 @@ VERSION = '1.0.0'
 class Roi:
     def __init__(self, line, header):
         self.chrom = line[header.index('chrom')]
-        self.start = line[header.index('pos')]
-        self.end = int(line[header.index('pos')]) + 1
+        self.start = int(line[header.index('pos')]) - 1
+        self.end = line[header.index('pos')]
         self.pos = line[header.index('pos')]
         self.id = '.'
         self.ref = line[header.index('ref')]

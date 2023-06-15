@@ -3,7 +3,10 @@
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
 VERSION HISTORY
+0.8.9
+    Add uniformity_of_coverage, cnv_median_segment_mad_cn metrics
 0.8.8
+    Add QIAseq_V4_STP4
     Revert xy_check to bio_sex_check to maintain CGD compatibility
 0.8.7
     Rename metric bio_sex_check to y_ploidy_check for AgilentCRE_V1 and TruSightOneV2_5
@@ -22,11 +25,10 @@ VERSION HISTORY
 import argparse
 import json
 # User libraries
-from inputs import ProbeQcRead, AlignSummaryMetrics, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
+from inputs import ProbeQcRead, PerLocusRead, AlignSummaryMetrics, GatkDepthOfCoverageRead, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
 
-VERSION = '0.8.8'
-
+VERSION = '0.8.9'
 
 def supply_args():
     """
@@ -39,17 +41,26 @@ def supply_args():
                         help='Probe coverage QC after UMI deduplication metrics.')
     parser.add_argument('--probeqc_before', required=False, type=ProbeQcRead,
                         help='Probe coverage QC before UMI deduplication metrics.')
+
     parser.add_argument('--fastqc_r1', type=FastQcRead, help='FastQC stats for read 1.')
     parser.add_argument('--fastqc_r2', type=FastQcRead, help='FastQC stats for read 2.')
-    parser.add_argument('--picard_summary', type=AlignSummaryMetrics, help='Picard alignment summary metrics file.')
+
+    parser.add_argument('--picard_summary', type=AlignSummaryMetrics,
+                        help='Picard alignment summary metrics file.')
     parser.add_argument('--picard_summary_umi', type=AlignSummaryMetrics,
                         help='Picard alignment summary metrics file taken after umi deduplication.')
+
+    parser.add_argument('--gatk_depth_cov_prop', type=GatkDepthOfCoverageRead,
+                        help='GATK DepthOfCoverage file.')
+    parser.add_argument('--gatk_depth_cov_cnts', type=PerLocusRead,
+                        help='GATK DepthOfCoverage locus file.')
     parser.add_argument('--gatk_coll_rnaseq_mets', type=GatkCollectRnaSeqMetrics,
                         help='GATK CollectRnaSeqMetrics file.')
     parser.add_argument('--gatk_count_reads_total', type=GatkCountReads,
                         help='Output from GATK4 CountReads with total read count.')
     parser.add_argument('--gatk_count_reads_ints', type=GatkCountReads,
                         help='Output from GATK4 CountReads with read count for reads overlapping targets.')
+
     parser.add_argument('--msi', type=MsiSensor, help='TSV file containing MSI results')
 
     parser.add_argument('--primers_bam', help='BAM file to calculate primer reads on target.')
@@ -117,6 +128,16 @@ class RawMetricCollector:
             self.picard_summary_umi = args.picard_summary_umi.metrics
         else:
             self.picard_summary_umi = None
+
+        if args.gatk_depth_cov_prop:
+            self.gatk_depth_cov_prop = args.gatk_depth_cov_prop
+        else:
+            self.gatk_depth_cov_prop = None
+
+        if args.gatk_depth_cov_cnts:
+            self.gatk_depth_cov_cnts = args.gatk_depth_cov_cnts
+        else:
+            self.gatk_depth_cov_cnts = None
 
         if args.gatk_coll_rnaseq_mets:
             self.gatk_coll_rnaseq_mets = args.gatk_coll_rnaseq_mets.metrics
@@ -235,6 +256,16 @@ class SampleMetrics:
             self.total_cov_after = None
             self.total_bp_after = None
             self.header_mets_before = None
+
+        try:
+            self.gatk_depth_cov_prop = self.raw_mets.gatk_depth_cov_prop
+        except:
+            self.gatk_depth_cov_prop = None
+
+        try:
+            self.gatk_depth_cov_cnts = self.raw_mets.gatk_depth_cov_cnts
+        except:
+            self.gatk_depth_cov_cnts = None
 
         try:
             self.pumi = self._pumi()
@@ -444,6 +475,7 @@ class MetricPrep(SampleMetrics):
                 'depthOneThousand': self._get_avg_probeqc('D1000'),
                 'depthTwelveHundredFifty': self._get_avg_probeqc('D1250'),
                 'depthTwoThousand': self._get_avg_probeqc('D2000'),
+                'uniformity_of_coverage': self._get_cov_uniformity(self._get_avg_probeqc('AVGD')),
                 'allele_balance': self._reduce_sig(self._add_json_mets(lookin=self.raw_mets.json_mets,
                                                                        metric='allele_balance')),
                 'allele_balance_het_count': self._add_json_mets(lookin=self.raw_mets.json_mets,
@@ -501,7 +533,8 @@ class MetricPrep(SampleMetrics):
                 'total_on_target_transcripts_pct': self.on_primer_frag_count_pct,
                 'forced_calls_above': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_above'),
                 'forced_calls_below': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_below'),
-                'y_ploidy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='y_ploidy_check')
+                'y_ploidy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='y_ploidy_check'),
+                'cnv_median_segment_mad_cn': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='cnv_median_segment_mad_cn')
                 }
 
         return mets
@@ -550,6 +583,19 @@ class MetricPrep(SampleMetrics):
         except:
             return None
 
+    def _get_cov_uniformity(self, average_depth):
+        """
+        Calculate the uniformity of coverage
+        The percentage of targeted base positions in which the read depth is greater than 0.2 times the mean region target coverage depth.
+        :return:
+        """
+        try:
+            # return float(self.gatk_depth_cov_prop.sample_mets['gte_'+str(round(float(average_depth)*0.2))])*100
+            # calculate using perlocusread instead to get decimal places
+            return "{:.1f}".format(float(sum(float(i) > float(average_depth)*0.2 for i in list(self.gatk_depth_cov_cnts.perlocus.values())) / len(list(self.gatk_depth_cov_cnts.perlocus.values())) * 100))
+        except:
+            return None
+
     @staticmethod
     def _req_old():
         """
@@ -569,6 +615,8 @@ class MetricPrep(SampleMetrics):
                 'QIAseq_V4_MINI': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                    'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'QIAseq_V3_STP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
+                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
+                'QIAseq_V4_STP4': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                    'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'TruSeq_RNA_Exome_V1-2': ['qthirty'],
                 'QIAseq_V3_HOP': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
@@ -594,6 +642,8 @@ class MetricPrep(SampleMetrics):
                 'QIAseq_V3_HEME2': [],
                 'QIAseq_V4_MINI': ['forced_calls_above', 'forced_calls_below', 'bio_sex_check'],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
+                'QIAseq_V4_STP4': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb', 'bio_sex_check',
+                                   'uniformity_of_coverage', 'cnv_median_segment_mad_cn'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
                                           'gatk_pct_correct_strand_reads'],
                 'QIAseq_V3_HOP': ['allele_balance', 'allele_balance_het_count'],

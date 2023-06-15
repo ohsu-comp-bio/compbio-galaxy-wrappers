@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.8.8" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.8.9" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
 
   <requirements>
@@ -19,6 +19,12 @@
     #end if
     #if $picard_metrics
       --picard_summary '${picard_metrics}'
+    #end if
+    #if $gatk_depth_cov_prop
+      --gatk_depth_cov_prop '${gatk_depth_cov_prop}'
+    #end if
+    #if $gatk_depth_cov_cnts
+      --gatk_depth_cov_cnts '${gatk_depth_cov_cnts}'
     #end if
     --outfile '${output}'
     --outfile_new '${output_new}'
@@ -69,6 +75,8 @@
   <inputs>
       <param name="probeqc" type="data" format="txt" optional="true" label="ProbeQC Metrics" help="ProbeQC metrics file, as produced by the intervalqc_v2 script.  If you intend on producing UMI metrics, this would be the coverage QC AFTER UMI deduplication." />
       <param name="picard_metrics" type="data" format="txt" optional="true" label="Picard Alignment Summary Metrics" help="Alignment summary metrics produced by the Picard CollectAlignmentSummaryMetrics tool." />
+      <param name="gatk_depth_cov_prop" type="data" format="txt" optional="true" label="GATK4 Depth Of Coverage sample file" help="GATK4 Depth Of Coverage sample file" />
+      <param name="gatk_depth_cov_cnts" type="data" format="txt" optional="true" label="GATK4 Depth Of Coverage locus file" help="GATK4 Depth Of Coverage locus file" />
       <param name="primers_bed" type="data" format="bed" optional="true" label="Primers BED" help="BED file containing primer coordinates only." />
       <param name="primers_bam" type="data" format="bam" optional="true" label="Primers BAM" help="BAM file to calculate primer reads on target." />
       <param name="fastqc_one" type="data" format="txt" optional="true" label="FastQC R1" help="FastQC text stats for R1 reads." />
