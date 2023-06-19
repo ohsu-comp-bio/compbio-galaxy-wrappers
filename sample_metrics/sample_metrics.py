@@ -3,6 +3,8 @@
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
 VERSION HISTORY
+0.8.10
+    Switched before and after picard metric source in _pumi
 0.8.9
     Add uniformity_of_coverage, cnv_median_segment_mad_cn metrics
 0.8.8
@@ -28,7 +30,7 @@ import json
 from inputs import ProbeQcRead, PerLocusRead, AlignSummaryMetrics, GatkDepthOfCoverageRead, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
 
-VERSION = '0.8.9'
+VERSION = '0.8.10'
 
 def supply_args():
     """
@@ -437,7 +439,10 @@ class SampleMetrics:
             pf_bases_aligned = None
 
         if pf_bases_aligned and total_cov:
-            on_target = str("{:.4}".format(pf_bases_aligned / (int(total_cov)) * 100.0))
+            if total_lbl == 'PF_HQ_ALIGNED_READS':
+                on_target = str("{:.4}".format((int(total_cov) / pf_bases_aligned) * 100.0))
+            else:
+                on_target = str("{:.4}".format(pf_bases_aligned / (int(total_cov)) * 100.0))
         else:
             on_target = None
 
@@ -536,7 +541,6 @@ class MetricPrep(SampleMetrics):
                 'y_ploidy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='y_ploidy_check'),
                 'cnv_median_segment_mad_cn': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='cnv_median_segment_mad_cn')
                 }
-
         return mets
 
     @staticmethod
