@@ -345,7 +345,7 @@ class AnnovarParser(object):
         # Collect annovar records into a map keyed by genotype and transcript 
         annovar_dict = defaultdict(list)
         
-        key_maker = lambda x: "-".join([x.chromosome, str(x.position), x.reference, x.alt, x.refseq_transcript, (x.splicing or '')])
+        key_maker = lambda x: "-".join([x.chromosome, str(x.position), x.reference, x.alt, x.refseq_transcript])
         for annovar_rec in annovar_records:
             if annovar_rec.chromosome == None or annovar_rec.position == None or annovar_rec.reference == None or annovar_rec.alt == None or annovar_rec.refseq_transcript == None:
                 logging.error(f"There is going to be a problem with {annovar_rec}")
@@ -359,21 +359,33 @@ class AnnovarParser(object):
         for matching_genotypes in annovar_dict.values():
             left_rec = matching_genotypes[0]
             
-            if is_annovar_splicing_type(left_rec.splicing):
-                # Splicing variants don't get merged, and as far as I know Annovar will only have one splicing
-                # variant per genotype.                  
-                assert len(matching_genotypes) == 1, "A genotype can only have one splicing variant"
+            if len(matching_genotypes) == 1:
+                # Nothing to merge with
                 pass
-            elif len(matching_genotypes) > 2:
-                # Our current workflow only involves two annovar input files so there will only be a maximum of two matching transcripts; this exception ensures
-                # that is the case. Once we are through development and testing, this condition can be removed.
-                  
-                # This function can only merge two records. If you need to merge more than two than two then the code needs to be updated.                  
-                raise Exception(f"This transcript has more than 2 instances, which is not supported; see code comment. rec={left_rec}")
             elif len(matching_genotypes) == 2:
+                # There will be two records for a transcript:
+                #  - The transcript is exonic so we get one record in annovar.variant_function and one in annovar.exonic_variant_function 
+                #  - The transcript is intronic, and it is splicing so we get two records from annovar.variant_function
                 right_rec = matching_genotypes[1]
                 logging.debug(f"Merging left={left_rec} and right={right_rec}")
                 self._merge(left_rec, right_rec)
+            elif len(matching_genotypes) == 3:
+                # There will be three matches when the transcript is exonic and splicing: One record from annovar.exonic_variant_function 
+                # and two records from annovar.variant_function where one is the splicing line.
+                right1_rec = matching_genotypes[1]
+                right2_rec = matching_genotypes[2]  
+
+                # The two records from annovar.variant_function will label one of the records as exonic and one as splicing   
+                assert left_rec.variant_type == 'exonic' or right1_rec.variant_type == 'exonic' or right2_rec.variant_type == 'exonic'
+                assert left_rec.splicing or right1_rec.splicing or right2_rec.splicing
+
+                logging.debug(f"Merging three records left={left_rec} and right1={right1_rec}, right2={right2_rec}")
+                self._merge(left_rec, right1_rec)
+                self._merge(left_rec, right2_rec)
+            else:
+                # Our current workflow only involves two annovar input files and there will only be a maximum of three matching transcripts.
+                # This exception ensures our expectation is true. 
+                raise Exception(f"This transcript has more than 3 annovar records, which is not supported; see code comment. rec={left_rec}")
             
             annovar_records.append(left_rec)
         
