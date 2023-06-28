@@ -30,7 +30,8 @@ from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.annovar import annovar_parser
 from hgvs.sequencevariant import SequenceVariant
 
-VERSION = '0.5.6'
+VERSION = '0.5.7'
+
 ASSEMBLY_VERSION = "GRCh37"
 
 # These will need to be updated when we switch from GRCh37 to GRCh38
@@ -39,6 +40,7 @@ CHROM_MAP = {'1': 'NC_000001.10', '2': 'NC_000002.11', '3': 'NC_000003.11', '4':
              '11': 'NC_000011.9', '12': 'NC_000012.11', '13': 'NC_000013.10', '14': 'NC_000014.8', '15': 'NC_000015.9',
              '16': 'NC_000016.9', '17': 'NC_000017.10', '18': 'NC_000018.9', '19': 'NC_000019.9', '20': 'NC_000020.10',
              '21': 'NC_000021.8', '22': 'NC_000022.10', 'X': 'NC_000023.10', 'Y': 'NC_000024.9', 'MT': 'NC_012920.1'}
+
 
 def _noneIfEmpty(value: str):
     '''
@@ -49,35 +51,57 @@ def _noneIfEmpty(value: str):
     return value
 
 
-class DupHandler:
-    def __init__(self, pysam_file: PysamTxEff, chrom: str, coord: int, alt: str):
-        self.pysam_file = pysam_file
+class RptHandler:
+    """
+    Handle coordinate changes due to repetitive sequences in both deletions and duplications.  HGVS requires
+    alignment to the 3' side, whereas VCF is 5'.
+    """
+    def __init__(self, pysamtxeff: PysamTxEff, chrom: str, coord: int, allele: str):
+        """
+        Window search size given by self.size (from PysamTxEff).  Sequence constructed based on location of variant
+        and given search window size.  FASTA alt contains the sequence at the position of the potential rpt seq,
+        matching the allele size.
+        :param pysamtxeff: Pysam faidx coordinate search object
+        :param chrom: chromosome for search
+        :param coord: coordinate for search
+        :param allele: the allele that contains the potentially repetitive del or dup
+        """
+        self.pysamtxeff = pysamtxeff
         self.chrom = chrom
         self.coord = coord
-        self.alt = alt[1:]
-        self.size = self.pysam_file.size
-        self.seq = self.pysam_file.faidx_query(self.chrom, self.coord)
-        self.fasta_alt = self.seq[self.size + 1:self.size + len(self.alt) + 1]
+        self.allele = allele[1:]
+        self.size = self.pysamtxeff.size
+        self.seq = self.pysamtxeff.faidx_query(self.chrom, self.coord)
+        self.fasta_alt = self.seq[self.size + 1:self.size + len(self.allele) + 1]
 
-    def check_dup_status(self) -> bool:
-        return self.alt == self.fasta_alt
+    def check_rpt_status(self) -> bool:
+        """
+        Check to see if the del/dup allele and sequence at the current search position match.
+        :return:
+        """
+        return self.allele == self.fasta_alt
 
-    def find_dup_coords(self) -> (int, int):
+    def find_rpt_coords(self) -> (int, int):
+        """
+        Search for a repetitive allele in the reference, until there are no more.  Then return the start/stop
+        coordinates associated with the updated 3' position.
+        :return:
+        """
         start_size = self.size
-        end_size = self.size + len(self.alt)
+        end_size = self.size + len(self.allele)
         coord = self.coord
         fasta_alt = self.fasta_alt
-        while self.alt == fasta_alt:
-            coord += len(self.alt)
-            start_size += len(self.alt)
-            end_size += len(self.alt)
+        while self.allele == fasta_alt:
+            coord += len(self.allele)
+            start_size += len(self.allele)
+            end_size += len(self.allele)
             fasta_alt = self.seq[start_size:end_size]
-        new_start = coord - len(self.alt)
-        new_end = new_start + len(self.alt) - 1
+        new_start = coord - len(self.allele)
+        new_end = new_start + len(self.allele) - 1
         return new_start, new_end
 
 
-def _correct_indel_coords(chrom, pos, ref, alt, pysam_file):
+def _correct_indel_coords(chrom, pos, ref, alt, pysamtxeff):
     """
     Using a VCF position, create coords that are compatible with HGVS nomenclature.
     Since we are already determining at this stage whether the event is an ins or del, also
@@ -93,22 +117,33 @@ def _correct_indel_coords(chrom, pos, ref, alt, pysam_file):
         new_pos = str(pos) + change
         return new_pos
     elif lalt == 1 and lref > lalt:
+        dels = RptHandler(pysamtxeff, chrom, pos, ref)
         # Deletion case
-        shift = lref - lalt
-        if shift == 1:
-            new_pos = str(int(pos) + 1) + 'del'
-            return new_pos
+        if dels.check_rpt_status():
+            new_start, new_end = dels.find_rpt_coords()
+            if len(dels.allele) == 1:
+                new_pos = '_'.join([str(new_start)]) + 'del'
+            else:
+                new_pos = '_'.join([str(new_start), str(new_end)]) + 'del'
         else:
-            new_start = str(int(pos) + 1)
-            new_end = str(int(pos) + shift)
-            new_pos = '_'.join([new_start, new_end]) + 'del'
-            return new_pos
+            shift = lref - lalt
+            if shift == 1:
+                new_pos = str(int(pos) + 1) + 'del'
+            else:
+                new_start = str(int(pos) + 1)
+                new_end = str(int(pos) + shift)
+                new_pos = '_'.join([new_start, new_end]) + 'del'
+        return new_pos
     elif lref == 1 and lalt > lref:
-        dups = DupHandler(pysam_file, chrom, pos, alt)
+        dups = RptHandler(pysamtxeff, chrom, pos, alt)
         # Duplication case
-        if dups.check_dup_status():
-            new_start, new_end = dups.find_dup_coords()
-            if len(dups.alt) == 1:
+        if dups.check_rpt_status():
+            new_start, new_end = dups.find_rpt_coords()
+            # Check if there is a padding base, then adjust accordingly.
+            if alt[0] == ref[0]:
+                new_start += 1
+                new_end += 1
+            if len(dups.allele) == 1:
                 new_pos = '_'.join([str(new_start)]) + 'dup'
             else:
                 new_pos = '_'.join([str(new_start), str(new_end)]) + 'dup'
@@ -121,13 +156,18 @@ def _correct_indel_coords(chrom, pos, ref, alt, pysam_file):
     elif lref > 1 and lalt > 1:
         # Multi-nucleotide substitution case
         # NG_012232.1: g.12_13delinsTG
-        new_start = str(pos)
+        new_start = pos
         new_end = str(int(pos) + lref - 1)
-        new_pos = '_'.join([new_start, new_end]) + 'delins' + alt
+        # If there is a common padding base, like ATG>ACC, make sure we are taking this in to account.
+        if alt[0] == ref[0]:
+            new_start += 1
+            alt = alt[1:]
+        new_pos = '_'.join([str(new_start), new_end]) + 'delins' + alt
         return new_pos
     else:
         raise Exception("Unknown change type: " + pos + ':' + ref + '>' + alt)
-        
+
+
 def _lookup_hgvs_transcripts(annovar_variants: list, pysam_file):
     '''
     Return the HGVS transcripts associated with a list of variants  
