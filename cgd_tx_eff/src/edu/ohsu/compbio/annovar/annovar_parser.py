@@ -105,10 +105,10 @@ class AnnovarParser(object):
         raw_exon = transcript_parts[2]
 
         if raw_exon == 'wholegene':
-            logging.debug(f'This transcript\'s raw_exon value is \'wholegene\' and is of no use: {transcript_parts}')
+            logging.debug(f"This transcript's raw_exon value is 'wholegene' which means it is a Stop Loss: {transcript_parts}")
             amino_acid_position = None 
             hgvs_basep = None
-            exon = None
+            exon = raw_exon
             hgvs_c_dot = None
             hgvs_p = None
             hgvs_three = None
@@ -245,6 +245,14 @@ class AnnovarParser(object):
             avf.hgvs_p_dot_three,         \
             avf.refseq_transcript = self._unpack_evf_transcript_tuple(transcript_tuple)
 
+            # Annovar sets the exon to "wholegene" to indicate a start loss. The 
+            # annotation "startloss" isn't a term Annovar uses, it is our own custom 
+            # type and it replaces whater the current value is (eg 'frameshift deletion').  
+            if avf.exon == "wholegene":
+                logging.info(f"Start loss (aka wholegene) detected, substituting variant_effect overwriting '{avf.variant_effect}' with 'startloss': {avf}")
+                avf.exon = None                
+                avf.variant_effect = 'startloss'
+                
             logging.debug(f"Parsed exonic_variant_function with transcript: {avf}")
             annovar_recs.append(avf)
 
