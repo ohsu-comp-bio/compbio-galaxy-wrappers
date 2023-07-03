@@ -67,7 +67,7 @@ class TxEffHgvsTest(unittest.TestCase):
                               self._create_variant('1', 1, 'A', 'T', 'NM_000.3', gene='AAA'),
                               self._create_variant('1', 1, 'A', 'T', 'NM_000.2', gene='AAA', p_dot_one='p.(L1P)', variant_effect='Y')]
 
-        best = tx_eff_hgvs._get_the_best_non_splicing_transcripts(merged_transcripts)
+        best = tx_eff_hgvs._get_the_best_transcripts(merged_transcripts)
         
         self.assertEqual(len(best), 1, 'Only one transcript expected')
         self.assertEqual(best[0].get_label(), '1-1-A-T-NM_000.2', 'Most complete, lastest version')
@@ -94,11 +94,17 @@ class TxEffHgvsTest(unittest.TestCase):
         pos_part = tx_eff_hgvs._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
         self.assertEqual(pos_part, '124del', "g. is incorrect")
         
-        # Indel        
+        # Indel
         genotype = '5-112175461-CAGTTCACTTGA-CGTC'
         chromosome, position, ref, alt = genotype.split('-')
         pos_part = tx_eff_hgvs._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
-        self.assertEqual(pos_part, '112175461_112175472delinsCGTC', "g. is incorrect")
+        self.assertEqual(pos_part, '112175462_112175472delinsGTC', "g. is incorrect")
+        
+        # Repeat
+        genotype = '1-153924029-AG-A'
+        chromosome, position, ref, alt = genotype.split('-')
+        pos_part = tx_eff_hgvs._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
+        self.assertEqual(pos_part, '153924033del', "g. is incorrect")
         
     def _create_variant(self, chromosome, pos, ref, alt, transcript, gene=None, c_dot=None, p_dot_one=None, p_dot_three=None, variant_effect=None, variant_type=None, protein_transcript=None):
         '''
