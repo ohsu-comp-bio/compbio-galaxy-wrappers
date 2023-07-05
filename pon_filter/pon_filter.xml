@@ -1,0 +1,54 @@
+<tool id="pon_filt" name="PON Filter" version="1.0.0" >
+    <description>Given a panel of normals VCF, as created by panel_of_normals.py, annotate entries in a sample VCF.</description>
+
+    <requirements>
+      <requirement type="package" version="0.13.3">vcfpy</requirement>
+    </requirements>
+
+    <command><![CDATA[
+    python $__tool_directory__/pon_filter.py
+
+    "${input_vcf}" "${pon_vcf}" "${output_vcf}"
+    #if $min_cnt
+        --min_cnt "${min_cnt}"
+    #end if
+    #if $pon_flag
+        --pon_flag "${pon_flag}"
+    #end if
+    #if $pon_flag_filtered
+        --pon_flag_filtered "${pon_flag_filtered}"
+    #end if
+
+    #if $bkgd_avg
+        --bkgd_avg "${bkgd_avg}"
+    #end if
+    #if $bkgd_std
+        --bkgd_std "${bkgd_std}"
+    #end if
+    #if $bkgd_min_cnt
+        --bkgd_min_cnt "${bkgd_min_cnt}"
+    #end if
+    #if $pon_flag_above_bkgd
+        --pon_flag_above_bkgd "${pon_flag_above_bkgd}"
+    #end if
+    ]]></command>
+
+    <inputs>
+        <param name="input_vcf" type="data" format="vcf" label="Input VCF" help="Input VCF." />
+        <param name="pon_vcf" type="data" format="vcf" label="Panel of Normals" help="Panel of normals VCF." />
+        <param name="min_cnt" type="integer" optional="true" value="4" label="Min count" help="A variant seen at least this many times in the PON will be removed, unless it is bkgd assessed and found to be above background." />
+        <param name="pon_flag" type="text" optional="true" label="PON found flag" help="A variant will have this flag if seen in the PON but is below min_cnt and is not bkgd accessed." />
+        <param name="pon_flag_filtered" type="text" optional="true" label="PON filtered flag" help="A variant will have this flag if seen in the PON, and should be removed because it is (1)either above min_cnt and not bkgd assessed or (2)bkgd assessed and below bkgd." />
+        <param name="bkgd_avg" type="float" optional="true" value="0.2" label="Max background mean" help="AVG_AF value at and under which we will assess whether variant rises above background. If specified, bkgd_std must also be specified." />
+        <param name="bkgd_std" type="float" optional="true" value="0.06" label="Max background standard deviation" help="STDEV_AF value at and under which we will assess whether variant rises above background. If specified, bkgd_std must also be specified." />
+        <param name="bkgd_min_cnt" type="integer" optional="true" value="4" label="Background Min Count" help="SEEN value at and under which we will assess whether variant rises above background. If specified, bkgd_std must also be specified." />
+        <param name="pon_flag_above_bkgd" type="text" optional="true" label="PON above background flag" help="A variant will have this flag if below filtering thresholds specified by bkgd_avg, bkgd_std, bkgd_min_cnt and VAF is above the calculated bkgd threshold." />
+    </inputs>
+
+    <outputs>
+        <data name="output_vcf" format="vcf" label="${tool.name} on ${on_string}: VCF" />
+    </outputs>
+
+    <help>Given a panel of normals VCF, as created by panel_of_normals.py, annotate entries in a sample VCF.</help>
+
+</tool>

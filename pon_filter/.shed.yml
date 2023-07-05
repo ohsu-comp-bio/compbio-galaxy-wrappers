@@ -1,0 +1,12 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/pon_filter"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  pon_filt:
+    description: "Given a panel of normals VCF, as created by panel_of_normals.py, annotate entries in a sample VCF."
+    include:
+      - pon_filter.xml
+      - pon_filter.py
+
