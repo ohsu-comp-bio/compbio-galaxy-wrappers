@@ -1,4 +1,4 @@
-<tool id="move_file" name="Move Galaxy Dataset" version="0.4.8" >
+<tool id="move_file" name="Move Galaxy Dataset" version="0.4.9" >
   <description>Move a file (Galaxy dataset) to some location on the file system.</description>
 
   <requirements>
@@ -76,6 +76,7 @@
       #set $move_location = '/'.join([str($move_type.base_dir), str($move_type.test_name), str($move_type.sampleid), $fname])
 
       mkdir -p $move_dir &&
+      chmod -f 775 $move_dir &&
 
       #if $move_type.do_set_ss.set_ss_sel == "yes_set_ss"
         #if $move_type.do_set_ss.add_samp_str
@@ -93,8 +94,8 @@
         #set $move_location += $file_ext
       #end if
 
-      echo rsync --chmod=ug-wx,o-rwx -iptv "${input_file}" "$move_location" &&
-      rsync --chmod=ug-wx,o-rwx -iptv "${input_file}" "$move_location"
+      echo rsync --chmod=ugo-wx -iptv "${input_file}" "$move_location" &&
+      rsync --chmod=ugo-wx -iptv "${input_file}" "$move_location"
 
     #end if
 
