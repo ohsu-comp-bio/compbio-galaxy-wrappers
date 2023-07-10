@@ -18,7 +18,8 @@
 # 1.0.8 - add percentiles to antibody/segment table
 # 1.0.9 - changed stopifnot() to if(){quit()} for error handling and added error messaging
 # 1.0.10 - corrected percentiles bug and added additional quartile values
-# 1.0.11 -
+# 1.0.11 - modified dsp_meta to include 'use_tma' column to replace good_tma list
+#        - change recursive batch reading to False
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -89,7 +90,7 @@ if(nrow(dsp.meta[`Specimen.ID` %in% my_samp]) == 0){
   quit(status=5)
 }
 
-batch.dt <- data.table(files=list.files(datadir, pattern="[-0-9A-Za-z]_[0-9]{8}-[0-9]{2}.xlsx", recursive = T, full.names=T))
+batch.dt <- data.table(files=list.files(datadir, pattern="[-0-9A-Za-z]_[0-9]{8}-[0-9]{2}.xlsx", recursive = F, full.names=T))
 batch.dt[,batch:=str_extract(files, exp.regex)]
 
 res.list <- process_batches(batch.dt, sheet='Exported dataset')
