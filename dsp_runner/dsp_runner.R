@@ -1,4 +1,4 @@
-# Current Version: 1.0.11
+# Current Version: 1.0.11b
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -18,8 +18,8 @@
 # 1.0.8 - add percentiles to antibody/segment table
 # 1.0.9 - changed stopifnot() to if(){quit()} for error handling and added error messaging
 # 1.0.10 - corrected percentiles bug and added additional quartile values
-# 1.0.11 - modified dsp_meta to include 'use_tma' column to replace good_tma list
-#        - change recursive batch reading to False
+# 1.0.11 - change recursive batch reading to False
+#        - write out antibody table as Excel file
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -61,14 +61,15 @@ exp.out <- args[9]
 seg.proc.out <- args[10]
 melt.tma.out <- args[11]
 report.out <- args[12]
+excel.out.tum <- args[13]
+excel.out.str <- args[14]
 
 # positive cntrl file
-pos_cntrls <- args[13]
+pos_cntrls <- args[15]
 
 # Set constants
 exp.regex <- "[0-9]{8}-[0-9]{2}"
-#good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "02032023-01", "02082023-01", "02102023-01", "02152023-01", "02282023-01", "03012023-01", "03082023-01", "03152023-01", "04052023-01")
-#good_tma <- as.vector(read.csv('/Users/chongbe/Downloads/tma_list_v3.txt'))[[1]]
+good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "02032023-01", "02082023-01", "02102023-01", "02152023-01", "02282023-01", "03012023-01", "03082023-01", "03152023-01", "04052023-01")
 
 # Load metadata
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
@@ -80,7 +81,7 @@ if(!(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])){
   quit(status=5)
 }
 dsp.meta <- data.table(read.xlsx(dsp_meta))
-good_tma <- unique(as.vector(dsp.meta %>% filter(use_tma=='y') %>% select(Date_run))[[1]])
+#good_tma <- unique(as.vector(dsp.meta %>% filter(use_tma=='y') %>% select(Date_run))[[1]])
 pos.cntrls <- data.table(read.csv(pos_cntrls, sep = '\t', header=F))
 
 # Check to see if my_samp is in dsp.meta, stop if it's not.
@@ -405,6 +406,10 @@ percentiles <- t(percentiles)
 colnames(percentiles) <- c('percentile', 'Q1', 'Q2', 'Q3', 'Q4')
 score_str <- cbind(score_str, percentiles)
 
+# Write out to Excel file
+write.xlsx(score_tum, excel.out.tum)
+write.xlsx(score_str, excel.out.str)
+
 g <- tableGrob(score_tum[1:34,1:8], rows = NULL, theme = tt)
 g <- gtable_add_grob(g,
                      grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
@@ -413,7 +418,6 @@ g <- gtable_add_grob(g,
                      grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                      t = 1, l = 1, r = ncol(g))
 
-#haligned <- gtable_combine(g,g1, along=1)
 grid.newpage()
 grid.draw(g)
 
