@@ -12,6 +12,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter, FileType
 from collections import defaultdict
 from BCBio import GFF
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
+import Bio
 
 __version__ = 0.1
 
@@ -39,34 +40,54 @@ class RefseqToCcds(object):
         with open(gff_file_name, 'r') as gff_file:
             for rec in GFF.parse(gff_file, limit_info=limit_info):
                 for feature in rec.features:
-                    # There are two types of records that provide refseq to CCDS mappings:
-                    if feature.id.startswith('rna-'):                        
-                        # Remove the 'rna-' prefix and the occasional "-n" suffix (eg rna-NM_123.2-1)
-                        ref_seq_id_parts = feature.id.split('-')                    
-                        ref_seq_id = ref_seq_id_parts[1]
-                        
-                        if feature.sub_features:
-                            for sub_feature in feature.sub_features:        
-                                # jDebug: change this; use   _getDbxrefCcds(l) instead                      
-                                dbXrefs = sub_feature.qualifiers.get('Dbxref')
-                                for dbxref in dbXrefs:
-                                    if(dbxref.startswith('CCDS')):
-                                        ccds_id = dbxref.split(':')[1]
-                                        refseq_ccds_map[ref_seq_id].add(ccds_id)
+                    # There are two types of records that provide refseq to CCDS mappings. 
+                    if feature.id.startswith('rna-'):
+                        ref_seq_id, ccds_id = self._get_ids_from_rna_record(feature)
+                        if ref_seq_id and ccds_id:
+                            refseq_ccds_map[ref_seq_id].add(ccds_id)
 
                     elif feature.id.startswith('cds-'):
-                        assert len(feature.qualifiers.get('Parent')) == 1
-                        parent = feature.qualifiers.get('Parent')[0]
-                        if parent.startswith('rna-'):
-                            ref_seq_id = self._get_ref_seq_id(parent)
-                            if ref_seq_id:
-                                dbxrefs = feature.qualifiers.get('Dbxref')
-                                dbxref_ccds_id = self._get_ccds_id(dbxrefs) 
-                                if dbxref_ccds_id:
-                                    refseq_ccds_map[ref_seq_id].add(dbxref_ccds_id)
-                                                
+                        ref_seq_id, ccds_id = self._get_ids_from_cds_record(feature)
+                        if ref_seq_id and ccds_id:
+                            refseq_ccds_map[ref_seq_id].add(ccds_id)
         return refseq_ccds_map
     
+    def _get_ids_from_cds_record(self, feature: Bio.SeqFeature.SeqFeature):
+        '''
+        Return the refseq and corresponding CCDS id when the gff feature has an id starting with 'cds-'. 
+        For this type of feature teh CCDS id is in feature.qualifiers['Dbxref'].
+        '''
+        ref_seq_id = None
+        dbxref_ccds_id = None
+        
+        parent = feature.qualifiers.get('Parent')[0]
+        if parent.startswith('rna-'):
+            ref_seq_id = self._get_ref_seq_id(parent)
+            if ref_seq_id:
+                dbxrefs = feature.qualifiers.get('Dbxref')
+                dbxref_ccds_id = self._get_ccds_id(dbxrefs)
+
+        return ref_seq_id, dbxref_ccds_id
+    
+    def _get_ids_from_rna_record(self, feature: Bio.SeqFeature.SeqFeature):
+        '''
+        Return the refseq and corresponding CCDS id when the gff feature has an id starting with 'rna' (eg rna-NM_001005484.2).
+        For this type of feature the CCDS id is in feature.sub_features[].qualifiers['Dbxref']
+        '''
+        ref_seq_id = None
+        ccds_id = None
+        dbxref_ccds_ids = set()
+        
+        if feature.sub_features:
+            ref_seq_id = self._get_ref_seq_id(feature.id)
+            for sub_feature in feature.sub_features:
+                dbxrefs = sub_feature.qualifiers.get('Dbxref')
+                dbxref_ccds_ids.add(self._get_ccds_id(dbxrefs))
+        
+        assert len(dbxref_ccds_ids) == 1, f"Refseq {ref_seq_id} has more than one CCDS: {dbxref_ccds_ids}"
+        ccds_id = dbxref_ccds_ids.pop()
+        return ref_seq_id, ccds_id
+
     def _get_ref_seq_id(self, s: str):        
         '''
         Extract the refseq id from a string like "rna-NM_001005484.2". Sometimes the refseq id is the GFF row id and there is an 
