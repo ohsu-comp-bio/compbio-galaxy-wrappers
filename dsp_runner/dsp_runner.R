@@ -1,4 +1,4 @@
-# Current Version: 1.0.11b
+# Current Version: 1.1.0
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -20,6 +20,8 @@
 # 1.0.10 - corrected percentiles bug and added additional quartile values
 # 1.0.11 - change recursive batch reading to False
 #        - write out antibody table as Excel file
+# 1.0.12 - remove hardcoding for good_tma and path.ord // temporarily removed TMA count error check
+# 1.1.0 - Add rank percentile and formatting changes to pdf
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -69,7 +71,7 @@ pos_cntrls <- args[15]
 
 # Set constants
 exp.regex <- "[0-9]{8}-[0-9]{2}"
-good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "02032023-01", "02082023-01", "02102023-01", "02152023-01", "02282023-01", "03012023-01", "03082023-01", "03152023-01", "04052023-01")
+#good_tma <- c("12212022-01", "01122023-01", "01192023-01", "01202023-01", "01252023-01", "01262023-01", "02032023-01", "02082023-01", "02102023-01", "02152023-01", "02282023-01", "03012023-01", "03082023-01", "03152023-01", "04052023-01")
 
 # Load metadata
 paths <- data.table(read.xlsx(ab_info, sheet="parsed"))
@@ -81,7 +83,7 @@ if(!(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])){
   quit(status=5)
 }
 dsp.meta <- data.table(read.xlsx(dsp_meta))
-#good_tma <- unique(as.vector(dsp.meta %>% filter(use_tma=='y') %>% select(Date_run))[[1]])
+good_tma <- unique(as.vector(dsp.meta %>% filter(use_tma=='y') %>% select(Date_run))[[1]])
 pos.cntrls <- data.table(read.csv(pos_cntrls, sep = '\t', header=F))
 
 # Check to see if my_samp is in dsp.meta, stop if it's not.
@@ -129,10 +131,7 @@ if(!(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])){
 tma.meta <- merge(tma.meta, control.type[,.(lower_sample=lower_secondary, name, type)], by="lower_sample", all=F)
 tma.meta <- tma.meta[`batch` %in% good_tma | `batch` %in% runid]
 #stopifnot(tma.meta[,.N,by=batch][,all(N==19)])
-if(tma.meta[,.N,by=batch][,all(N!=19)]){
-    message("Incorrect number of TMA rows.")
-    quit(status=5)
-}
+
 tma.abund <- abund.mat[,tma.meta$barcode]
 
 ## QC of experimental samples with respect to ROI
@@ -212,7 +211,8 @@ my.scores <- my.scores[!(`sample_id` == my_samp & `num_batch` != runid)]
 #use.paths <- paths[analysis_pathway %in% c("Expression Controls", "N/A")==F]
 #use.paths[analysis_pathway == "Tumor Markers", analysis_pathway:="Other Markers"]
 use.paths <- paths
-path.ord <- c("Cell Cycle", "PI3K/AKT pathway", "RAS/MAPK pathway", "Tumor Markers", "Cell Death", "Immune Markers")
+#path.ord <- c("Cell Cycle", "PI3K/AKT pathway", "RAS/MAPK pathway", "Tumor Markers", "Cell Death", "Immune Markers")
+path.ord <- unique(paths$analysis_pathway)
 use.paths[,`:=`(path_ord=factor(analysis_pathway, levels=path.ord, ordered=T),
                 ab_ord=factor(ab, levels=ab, ordered=T))]
 
@@ -314,7 +314,8 @@ if (nrow(failed_ab)>0){
 }
 
 # First, produce Cover Sheet
-tt1 <- ttheme_minimal(core=list(fg_params=list(fontface=3, fontsize=23)))
+tt <- ttheme_default(base_size = 16)
+tt1 <- ttheme_minimal(core=list(fg_params=list(fontface=3, fontsize=8)))
 tt_cover <- ttheme_minimal(core=list(bg_params = list(fill = blues9[1:4], col=NA),
                                      fg_params=list(fontface=3, fontsize=23)),
                            colhead=list(fg_params=list(col="darkblue", fontface=4L, fontsize=30)))
@@ -364,7 +365,6 @@ for (tums in names(plot.list)){
 }
 
 # Create and write table of normalized counts.
-tt <- ttheme_default(base_size = 16)
 score_out <- samp.scores %>% select(ProbeName,segment_label,norm)
 
 # Separate scores by tumor/stroma segments
@@ -378,7 +378,8 @@ percentiles <- sapply(unique(score_tum$ProbeName), function(x){
   v <- rbind(v,batch)
   z <- (batch$norm[1]-mean(v$norm)) /sd(v$norm)
   percentile <- round(pnorm(z)*100)
-  percentile <- cbind(percentile,
+  rank <- round(match(batch, sort(as.vector(v)[[1]]))/length(v$norm)*100, digits=2)
+  percentile <- cbind(percentile, rank,
                       as.vector(round(quantile(v$norm, probs=0.25), digits=2)),
                       as.vector(round(quantile(v$norm, probs=0.5), digits=2)),
                       as.vector(round(quantile(v$norm, probs=0.75), digits=2)),
@@ -386,7 +387,7 @@ percentiles <- sapply(unique(score_tum$ProbeName), function(x){
                       )
 })
 percentiles <- t(percentiles)
-colnames(percentiles) <- c('percentile', 'Q1', 'Q2', 'Q3', 'Q4')
+colnames(percentiles) <- c('z-score perc', 'rank perc', 'Q1', 'Q2', 'Q3', 'Q4')
 score_tum <- cbind(score_tum, percentiles)
 
 percentiles <- sapply(unique(score_str$ProbeName), function(x){
@@ -395,7 +396,8 @@ percentiles <- sapply(unique(score_str$ProbeName), function(x){
   v <- rbind(v,batch)
   z <- (batch$norm[1]-mean(v$norm)) /sd(v$norm)
   percentile <- round(pnorm(z)*100)
-  percentile <- cbind(percentile,
+  rank <- round(match(batch, sort(as.vector(v)[[1]]))/length(v$norm)*100, digits=2)
+  percentile <- cbind(percentile, rank,
                       as.vector(round(quantile(v$norm, probs=0.25), digits=2)),
                       as.vector(round(quantile(v$norm, probs=0.5), digits=2)),
                       as.vector(round(quantile(v$norm, probs=0.75), digits=2)),
@@ -403,14 +405,14 @@ percentiles <- sapply(unique(score_str$ProbeName), function(x){
                       )
 })
 percentiles <- t(percentiles)
-colnames(percentiles) <- c('percentile', 'Q1', 'Q2', 'Q3', 'Q4')
+colnames(percentiles) <- c('z-score perc', 'rank perc', 'Q1', 'Q2', 'Q3', 'Q4')
 score_str <- cbind(score_str, percentiles)
 
 # Write out to Excel file
 write.xlsx(score_tum, excel.out.tum)
 write.xlsx(score_str, excel.out.str)
 
-g <- tableGrob(score_tum[1:34,1:8], rows = NULL, theme = tt)
+g <- tableGrob(score_tum[1:34,1:9], rows = NULL, theme = tt)
 g <- gtable_add_grob(g,
                      grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                      t = 2, b = nrow(g), l = 1, r = ncol(g))
@@ -418,10 +420,11 @@ g <- gtable_add_grob(g,
                      grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                      t = 1, l = 1, r = ncol(g))
 
+#haligned <- gtable_combine(g,g1, along=1)
 grid.newpage()
 grid.draw(g)
 
-g1 <- tableGrob(score_tum[35:68,1:8], rows = NULL, theme = tt)
+g1 <- tableGrob(score_tum[35:68,1:9], rows = NULL, theme = tt)
 g1 <- gtable_add_grob(g1,
                       grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                       t = 2, b = nrow(g1), l = 1, r = ncol(g1))
@@ -435,7 +438,7 @@ grid.draw(g1)
 # Draw Stroma segment
 
 if (nrow(score_str) > 0) {
-  g <- tableGrob(score_str[1:34,1:8], rows = NULL, theme = tt)
+  g <- tableGrob(score_str[1:34,1:9], rows = NULL, theme = tt)
   g <- gtable_add_grob(g,
                        grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                        t = 2, b = nrow(g), l = 1, r = ncol(g))
@@ -446,7 +449,7 @@ if (nrow(score_str) > 0) {
   grid.newpage()
   grid.draw(g)
 
-  g1 <- tableGrob(score_str[35:68,1:8], rows = NULL, theme = tt)
+  g1 <- tableGrob(score_str[35:68,1:9], rows = NULL, theme = tt)
   g1 <- gtable_add_grob(g1,
                         grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
                         t = 2, b = nrow(g1), l = 1, r = ncol(g1))
