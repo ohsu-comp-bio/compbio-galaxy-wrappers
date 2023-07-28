@@ -30,7 +30,7 @@ from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.annovar import annovar_parser
 from hgvs.sequencevariant import SequenceVariant
 
-VERSION = '0.5.7'
+VERSION = '0.5.9'
 
 ASSEMBLY_VERSION = "GRCh37"
 
@@ -693,8 +693,30 @@ def get_updated_hgvs_transcripts(annovar_transcripts: list, pysam_file):
                              merged_transcripts,
                              best_transcripts))
 
-    return best_transcripts
+    
+    # HGVS convention is to place predicted consequences in parenthesis but our users don't care for the parenthesis so they are removed. 
+    return _strip_pdot_parenthesis(best_transcripts)
+    # return best_transcripts
 
+def __strip_pdot_parenthesis(transcript: VariantTranscript):
+    '''
+    Remove the parenthesis from p3 and p1 in a transcript 
+    '''
+
+    if transcript.hgvs_p_dot_one is not None:
+        transcript.hgvs_p_dot_one = transcript.hgvs_p_dot_one.replace('(','').replace(')','')
+
+    if transcript.hgvs_p_dot_three is not None:
+        transcript.hgvs_p_dot_three = transcript.hgvs_p_dot_three.replace('(','').replace(')','')
+    
+    return transcript
+
+def _strip_pdot_parenthesis(transcripts: list):
+    '''
+    Remove the parenthesis from p. values in every transcript. 
+    '''
+    return list(map(lambda x:__strip_pdot_parenthesis(x), transcripts))
+        
 def __get_variant_transcript_key(transcript: VariantTranscript):
     '''
     This function returns a unique key that is used for a dict in the _get_the_best_transcripts function.
