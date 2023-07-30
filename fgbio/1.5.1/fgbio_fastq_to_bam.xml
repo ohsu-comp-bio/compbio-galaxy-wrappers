@@ -32,9 +32,6 @@
         #if $bam_header.platform_model
             --platform-model='$bam_header.platform_model'
         #end if
-        #if $bam_header.platform_model
-            --platform-model='$bam_header.platform_model'
-        #end if
         #if $bam_header.platform_unit
             --platform-unit='$bam_header.platform_unit'
         #end if
