@@ -13,8 +13,11 @@ from collections import defaultdict
 from BCBio import GFF
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 import Bio
+import pandas as pd
 
-__version__ = 0.1
+__version__ = '0.6.0'
+GFF_RELEASE_105 = '105'
+GFF_RELEASE_105_20220307 = '105.20220307'
 
 class RefseqToCcds(object):
     '''
@@ -29,29 +32,82 @@ class RefseqToCcds(object):
         '''
         self.logger = logging.getLogger(__name__)
 
-    def get_mappings_from_gff(self, gff_file_name: str):
+    def get_mappings_from_gff(self, source_release: str, gff_file_name: str):
         '''
         Read the GFF file and return all refseq-to-ccds mappings 
         '''
         self.logger.info(f"Reading {gff_file_name}")
         refseq_ccds_map = defaultdict(set)
         
-        limit_info = dict(gff_type=['CDS'])
+        # There are two versions of the GFF and and they have to be parsed slightly differently 
+        if source_release == GFF_RELEASE_105_20220307:
+            limit_info = dict(gff_type=['CDS'])
+        elif source_release == GFF_RELEASE_105:
+            limit_info = dict(gff_type=['exon', 'CDS'])  
+        else: 
+            raise Exception(f"Unknown source_release version: '{source_release}")
+        
         with open(gff_file_name, 'r') as gff_file:
-            for rec in GFF.parse(gff_file, limit_info=limit_info):
+            for rec in GFF.parse(gff_file, limit_info=limit_info):                
                 for feature in rec.features:
-                    # There are two types of records that provide refseq to CCDS mappings. 
-                    if feature.id.startswith('rna-'):
-                        ref_seq_id, ccds_id = self._get_ids_from_rna_record(feature)
-                        if ref_seq_id and ccds_id:
-                            refseq_ccds_map[ref_seq_id].add(ccds_id)
-
-                    elif feature.id.startswith('cds-'):
-                        ref_seq_id, ccds_id = self._get_ids_from_cds_record(feature)
-                        if ref_seq_id and ccds_id:
-                            refseq_ccds_map[ref_seq_id].add(ccds_id)
+                    ref_seq_id, ccds_id = self._get_ids_from_record(source_release, feature)
+                    if ref_seq_id and ccds_id:
+                        if ref_seq_id in refseq_ccds_map and refseq_ccds_map[ref_seq_id] != ccds_id:
+                            raise Exception(f"Duplicate mapping encountered: {ref_seq_id} to {refseq_ccds_map[ref_seq_id]} and {ccds_id}")
+                        
+                        refseq_ccds_map[ref_seq_id] = ccds_id
+                    
         return refseq_ccds_map
     
+    def _get_ids_from_record(self, source_release:str, feature: Bio.SeqFeature.SeqFeature):
+        '''
+        There are mutliple GFF file versions and various record types that can be parse, and this 
+        function figures out to handle each line. If the feature contains a RefSeq-to-CCDS mapping then the
+        Refseq and CCDS ids are returned. If the line is not of any use then a Null-Null tuple is returned.   
+        ''' 
+        # The different types of features in the GFF can be identified by the prefix of their ids
+
+        if source_release == GFF_RELEASE_105 and (feature.id.startswith('rna')): 
+            return self._get_ids_from_rel105_rna_record(feature)
+
+        elif source_release == GFF_RELEASE_105_20220307 and feature.id.startswith('rna-'):
+            return self._get_ids_from_rna_record(feature)
+
+        elif source_release == GFF_RELEASE_105_20220307 and feature.id.startswith('cds-'):
+            return self._get_ids_from_cds_record(feature)
+    
+        else:
+            return None, None
+
+    def _get_ids_from_rel105_rna_record(self, feature: Bio.SeqFeature.SeqFeature):
+        '''      
+        Parse refseq and ccds ids from the older (release 105 GFF) feature.  
+        '''
+        refseq_ids = set()
+        ccds_ids = set()
+        
+        # Collect all the refseq and ccds ids from each of the sub-features. 
+        for sub_feature in feature.sub_features:
+            if sub_feature.qualifiers['gbkey'][0] == 'mRNA':
+                # There should only be one, but it is stored in a list
+                refseq_ids.update(sub_feature.qualifiers['transcript_id'])
+            elif sub_feature.qualifiers['gbkey'][0] == 'CDS':
+                ccds_ids.add(self._get_ccds_id(sub_feature.qualifiers['Dbxref']))
+                    
+        # It is possible for a feature to have a refseq id and not a ccds id.
+        if len(refseq_ids) == 1 and len(ccds_ids) == 0:
+            self.logger.debug(f"Refseq {refseq_ids.pop()} does not have a corresponding CCDS id")
+            return None, None
+        elif len(ccds_ids) == 1 and len(refseq_ids) == 0:
+            raise Exception(f"CCDS {ccds_ids.pop()} does not have a corresponding RefSeq id")
+        if len(refseq_ids) > 0 and len(ccds_ids) > 0:
+            assert len(refseq_ids) == 1, f"More than one RefSeq id found for feature {feature.id}"
+            assert len(ccds_ids) == 1, f"More than one CCDS id found for feature {feature.id}"
+            return refseq_ids.pop(), ccds_ids.pop()
+        else:
+            # No RefSeq or CCDS ids found
+            return None, None
+
     def _get_ids_from_cds_record(self, feature: Bio.SeqFeature.SeqFeature):
         '''
         Return the refseq and corresponding CCDS id when the gff feature has an id starting with 'cds-'. 
@@ -59,7 +115,7 @@ class RefseqToCcds(object):
         '''
         ref_seq_id = None
         dbxref_ccds_id = None
-        
+
         parent = feature.qualifiers.get('Parent')[0]
         if parent.startswith('rna-'):
             ref_seq_id = self._get_ref_seq_id(parent)
@@ -75,7 +131,6 @@ class RefseqToCcds(object):
         For this type of feature the CCDS id is in feature.sub_features[].qualifiers['Dbxref']
         '''
         ref_seq_id = None
-        ccds_id = None
         dbxref_ccds_ids = set()
         
         if feature.sub_features:
@@ -83,7 +138,7 @@ class RefseqToCcds(object):
             for sub_feature in feature.sub_features:
                 dbxrefs = sub_feature.qualifiers.get('Dbxref')
                 dbxref_ccds_ids.add(self._get_ccds_id(dbxrefs))
-        
+
         assert len(dbxref_ccds_ids) == 1, f"Refseq {ref_seq_id} has more than one CCDS: {dbxref_ccds_ids}"
         ccds_id = dbxref_ccds_ids.pop()
         return ref_seq_id, ccds_id
@@ -121,7 +176,7 @@ class RefseqToCcds(object):
                 
     def get_mappings_from_csv(self, csv_file_name: str):
         '''
-            Read the csv file created by write_mappings, and return thm in a map object.
+            Read the csv file created by write_mappings, and return them in a map object.
         '''
         refseq_ccds_map = defaultdict()
         
@@ -136,26 +191,72 @@ class RefseqToCcds(object):
         self.logger.info(f"Read RefSeq-CCDS map of size {len(refseq_ccds_map)} from CSV")
         
         return refseq_ccds_map
-        
-        
-    def write_mappings(self, refSeq_to_ccds: map, csv_file_name: str):
+
+    def write_mappings(self, refSeq_to_ccds: dict, csv_file_name: str):
         '''
         Write the RefSeq-to-CCDS map to CSV file. The map seems to be a RefSeq id mapped to a list containing exactly one CCDS id. 
         '''
         self.logger.info(f"Writing to {csv_file_name}")
         
         fields = ['refseq_id', 'ccds_id']
-        with open(csv_file_name, 'w') as csvfile:
-            csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(fields)
-            
-            for refseq_id, ccds_ids in refSeq_to_ccds.items():
-                if(len(ccds_ids) != 1):
-                    raise Exception(f"RefSeq ids are expected to map to exactly one CCDS id, but {len(ccds_ids)} found: {ccds_ids}")
-                for value in refSeq_to_ccds.get(refseq_id):
-                    csv_writer.writerow([refseq_id, value])
+        df = pd.DataFrame(refSeq_to_ccds.items(), columns = fields)
+        df.to_csv(csv_file_name, index=False)
+        
+        self.logger.info(f"Wrote {len(df)} refseq-to-cccds mappings")
+    
+    def _merge_maps(self, older_mapping:dict, newer_mapping:dict):
+        '''
+        Combine the two dicts by adding all the entries in newer_mapping to older_mapping, overwriting any that are already there. 
+        '''
+        older_size = len(older_mapping)
+        newer_size = len(newer_mapping)
+        
+        older_mapping.update(newer_mapping)
+        newest_size = len(older_mapping)
+        self.logger.info(f"Combined older map (size {older_size}) with newer map (size {newer_size}) creating new map with (size {newest_size})")
 
-        self.logger.info(f"Wrote {len(refSeq_to_ccds)} refseq-to-cccds mappings")
+        return older_mapping
+
+def _get_app_operation(args):
+    if args.gff and args.source_release and args.csv and not args.merge_old_csv and not args.merge_new_csv:
+        logging.debug("Parameters indicate user wants to load GFF and create a CSV file")
+        return 'CREATE_MAPPINGS'
+    elif args.merge_old_csv and args.merge_new_csv and args.csv and not args.gff and not args.source_release:
+        logging.debug("Parameters indicate user wants to merge two CSV files")
+        return 'COMBINE_CSV'
+    else:
+        print("This script can export RefSeq to CCDS mappings, or it can combine two CSV files that contain mappings. The parameters you used do not make it clear which operation is desired.")
+        print("To read a GFF and create CSV use: --gff GFF_FILE --source_release (105|105.20220307) --csv OUTPUT_CSV_FILE")
+        print("To merge two CSV files use: --merge_old_csv OLD_CSV --merge_new_csv NEW_CSV --CSV OUTPUT_CSV_FILE")
+        return None
+        
+def _create_mappings(source_release, gff_file, csv_file):
+    '''
+    Parse the GFF and write out all the RefSeq-to-CCDS mappings
+    '''
+    refSeqToCcds = RefseqToCcds()
+    
+    # Read mappings from gff
+    refSeq_to_ccds_map = refSeqToCcds.get_mappings_from_gff(source_release, gff_file)
+        
+    # Write mappings to csv 
+    refSeqToCcds.write_mappings(refSeq_to_ccds_map, csv_file)
+        
+    # Read mappings from csv for validation
+    csv_mappings = refSeqToCcds.get_mappings_from_csv(csv_file)
+    assert len(refSeq_to_ccds_map.keys()) == len(csv_mappings.keys()), f"The size of the GFF and CSV maps should be the same but {len(refSeq_to_ccds_map.keys())} != {len(csv_mappings.keys())}" 
+     
+def _combine_csv_files(older_csv_file, newer_csv_file, output_csv_file):
+    '''
+    Take all the mappings from two csv files and combine them into one. Sometimes the old source and the new source have different CCDS id for 
+    a RefSeq id, when that happens the CCDS from the newer source is seleted.    
+    '''
+    refSeqToCcds = RefseqToCcds()
+    older_mapping = refSeqToCcds.get_mappings_from_csv(older_csv_file)
+    newer_mapping = refSeqToCcds.get_mappings_from_csv(newer_csv_file)
+    merged_mapping = refSeqToCcds._merge_maps(older_mapping, newer_mapping)
+    refSeqToCcds.write_mappings(merged_mapping, output_csv_file)
+
 
 def _main():
     logging.config.dictConfig(TfxLogConfig().stdout_config)
@@ -168,25 +269,27 @@ def _main():
     
     parser = ArgumentParser(description='', formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-c", "--csv", help="CSV file to write out RefSeq-to-CCDS mappings", type=FileType('w'), required=True)
-    parser.add_argument("-g", "--gff", help="GFF file from which to read RefSeq-to-CCDS mappings", type=FileType('r'), required=True)
+ 
+    # These parameters are used when converting GFF to CSV
+    parser.add_argument("-g", "--gff", help="GFF file from which to read RefSeq-to-CCDS mappings", type=FileType('r'), required=False)
+    parser.add_argument("-r", "--source_release", help="Specify the GFF release version (found in the GFF's header annotation-source value)", action="store", required=False)
+ 
+    # These parameters are used when merging two CSVs
+    parser.add_argument("-m0", "--merge_old_csv", help="Previous revision of mappings in CSV", type=FileType('r'), required=False)
+    parser.add_argument("-m1", "--merge_new_csv", help="", type=FileType('r'), required=False)
+    
     parser.add_argument('-V', '--version', action='version', version=__version__)
 
     # Process arguments
     args = parser.parse_args()
+    operation = _get_app_operation(args)
     
-    refSeqToCcds = RefseqToCcds()
-    
-    # Read mappings from gff
-    refSeq_to_ccds_map = refSeqToCcds.get_mappings_from_gff(args.gff.name)
-    
-    # Write mappings to csv 
-    refSeqToCcds.write_mappings(refSeq_to_ccds_map, args.csv.name)
-    
-    # Read mappings from csv for validation
-    csv_mappings = refSeqToCcds.get_mappings_from_csv(args.csv.name)
-    assert len(refSeq_to_ccds_map.keys()) == len(csv_mappings.keys()), f"The size of the GFF and CSV maps should be the same but {len(refSeq_to_ccds_map.keys())} != {len(csv_mappings.keys())}" 
-    
-    return
+    if operation == 'CREATE_MAPPINGS':
+        _create_mappings(args.source_release, args.gff.name, args.csv.name)
+    elif operation == 'COMBINE_CSV':
+        _combine_csv_files(args.merge_old_csv.name, args.merge_new_csv.name, args.csv.name)
+    else:
+        return 0
     
 if __name__ == "__main__":    
     sys.exit(_main())
