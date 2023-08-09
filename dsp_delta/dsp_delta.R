@@ -1,4 +1,4 @@
-# VERSION: 1.2.0
+# VERSION: 1.2.1
 # Version history
 # 1.0.1 - Named all arguments, reformatting, allow for reference to contain only segment 1
 # 1.0.2 - Use after_stat instead of stat(quantile) per deprecation msg, exclude comp samp from ref_samps
@@ -6,6 +6,7 @@
 # 1.1.0 - Consolidated plots to one PDF file
 # 1.2.0 - Removed selected_pos and pos_cntrls files, read all antibodies from GeoMx input to ensure we are using
 #       - equivalent naming.  Split plots in to multiple pages for clarity and plot all antibodies.
+# 1.2.1 - removed delta ridge plots and added cover sheet
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -166,6 +167,25 @@ t9.cast[,fix_status:=ifelse(status=="neither", "neither", "high/low")]
 #Stop script if specimen(s) do not have both stromal tumor segments
 stopifnot(!any(is.na(t9.cast)))
 
+# WRITE TO PDF
+
+# Produce Cover Sheet
+tt1 <- ttheme_minimal(core=list(fg_params=list(fontface=3, fontsize=23)))
+tt_cover <- ttheme_minimal(core=list(bg_params = list(fill = blues9[1:4], col=NA),
+                                     fg_params=list(fontface=3, fontsize=23)),
+                           colhead=list(fg_params=list(col="darkblue", fontface=4L, fontsize=30)))
+
+summ_df <- as.data.frame(c(my_samp, my_samp_compare, runid, runid_compare, as.character(Sys.Date())), header=FALSE)
+rownames(summ_df) <- c('SAMPLE ID: ', 'COMPARATOR SAMPLE ID: ', 'RUN ID: ', 'COMPARATOR RUN ID: ','RUN DATE: ')
+colnames(summ_df) <- c('Nanostring_DSP')
+
+reference_batches <- ref.batches %>% arrange(year, monthday) %>% select(batch) %>% distinct(batch)
+colnames(reference_batches) <- c('Reference Batches')
+
+gc1 <- tableGrob(summ_df, theme=tt_cover)
+
+grid.draw(gc1)
+
 #Data table with results for each Probe
 # This stuff is for the table output, but we'll do it up here so the delta plots can also access the score_tum tables.
 tt <- ttheme_default(base_size = 12)
@@ -232,21 +252,6 @@ t9.plot <- ggplot(data=t9.cd.pg4, mapping=aes(x=delta)) +
   theme_bw() + ylab("") + xlab("Delta (Bx2 - Bx1)") +
   theme(strip.text.y=element_text(angle=0), axis.text.y=element_blank(), axis.ticks.y=element_blank())
 grid.draw(t9.plot)
-
-# delta.ridge plot
-delta.ridge <- ggplot(data=comb.deltas, mapping=aes(x=delta, y=ab_fac, fill = factor(after_stat(quantile)))) +
-  stat_density_ridges(
-    geom = "density_ridges_gradient",
-    calc_ecdf = TRUE,
-    quantiles = c(0.025, 0.975)
-  ) +
-  scale_fill_manual(
-    name = "Quantiles", values = c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"),
-    labels = c("(0, 0.05]", "(0.05, 0.95]", "(0.95, 1]")
-  ) +
-  facet_wrap(~type) +
-  theme_bw() + ylab("") + xlab("Delta")
-grid.draw(delta.ridge)
 
 # Plots the delta tables
 g <- tableGrob(score_tum[1:34,1:7], rows = NULL, theme = tt)
