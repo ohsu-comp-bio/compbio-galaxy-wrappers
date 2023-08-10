@@ -13,9 +13,8 @@ from collections import defaultdict
 from BCBio import GFF
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 import Bio
-import pandas as pd
 
-__version__ = '0.6.0'
+__version__ = '0.6.4'
 GFF_RELEASE_105 = '105'
 GFF_RELEASE_105_20220307 = '105.20220307'
 
@@ -199,10 +198,14 @@ class RefseqToCcds(object):
         self.logger.info(f"Writing to {csv_file_name}")
         
         fields = ['refseq_id', 'ccds_id']
-        df = pd.DataFrame(refSeq_to_ccds.items(), columns = fields)
-        df.to_csv(csv_file_name, index=False)
         
-        self.logger.info(f"Wrote {len(df)} refseq-to-cccds mappings")
+        # Using python csv results in a file with dos line endings and then galaxy doesn't recognise the file as a CSV.        
+        with open(csv_file_name, 'w') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerow(fields)
+            
+            for refseq_id, ccds_id in refSeq_to_ccds.items():
+                csv_writer.writerow([refseq_id, ccds_id])
     
     def _merge_maps(self, older_mapping:dict, newer_mapping:dict):
         '''
