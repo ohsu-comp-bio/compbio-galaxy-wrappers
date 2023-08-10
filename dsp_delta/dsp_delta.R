@@ -179,11 +179,7 @@ summ_df <- as.data.frame(c(my_samp, my_samp_compare, runid, runid_compare, as.ch
 rownames(summ_df) <- c('SAMPLE ID: ', 'COMPARATOR SAMPLE ID: ', 'RUN ID: ', 'COMPARATOR RUN ID: ','RUN DATE: ')
 colnames(summ_df) <- c('Nanostring_DSP')
 
-reference_batches <- ref.batches %>% arrange(year, monthday) %>% select(batch) %>% distinct(batch)
-colnames(reference_batches) <- c('Reference Batches')
-
 gc1 <- tableGrob(summ_df, theme=tt_cover)
-
 grid.draw(gc1)
 
 #Data table with results for each Probe
