@@ -1,4 +1,4 @@
-# Current Version: 1.1.0
+# Current Version: 1.1.1
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -22,6 +22,7 @@
 #        - write out antibody table as Excel file
 # 1.0.12 - remove hardcoding for good_tma and path.ord // temporarily removed TMA count error check
 # 1.1.0 - Add rank percentile and formatting changes to pdf
+# 1.1.1 - added conditions to bypass percentile table generation if tumor or stroma segments are absent
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -315,7 +316,7 @@ if (nrow(failed_ab)>0){
 
 # First, produce Cover Sheet
 tt <- ttheme_default(base_size = 16)
-tt1 <- ttheme_minimal(core=list(fg_params=list(fontface=3, fontsize=8)))
+tt1 <- ttheme_minimal(core=list(fg_params=list(fontface=3, fontsize=12)))
 tt_cover <- ttheme_minimal(core=list(bg_params = list(fill = blues9[1:4], col=NA),
                                      fg_params=list(fontface=3, fontsize=23)),
                            colhead=list(fg_params=list(col="darkblue", fontface=4L, fontsize=30)))
@@ -328,7 +329,15 @@ reference_batches <- ref.batches %>% arrange(year, monthday) %>% select(batch) %
 colnames(reference_batches) <- c('Reference Batches')
 
 gc1 <- tableGrob(summ_df, theme=tt_cover)
-gc2 <- tableGrob(reference_batches, theme=tt1)
+
+if (nrow(reference_batches>20)){
+  rb1 <- tableGrob(reference_batches[1:20,1], theme=tt1)
+  rb2 <- tableGrob(reference_batches[21:nrow(reference_batches),1], theme=tt1)
+  gc2 <- gtable_combine(rb1, rb2)
+} else{
+  gc2 <- tableGrob(reference_batches, theme=tt1)
+}
+
 
 if (nrow(outlier_df)>0){
   outlier_message <- ''
@@ -372,72 +381,69 @@ score_tum <- score_out[`segment_label` == 'tumor']
 score_str <- score_out[`segment_label` == 'stroma']
 
 # Insert percentile in counts table
-percentiles <- sapply(unique(score_tum$ProbeName), function(x){
-  v <- ref.abund[`segment_label` == 'tumor'] %>% filter(ProbeName==x) %>% select(norm)
-  batch <- score_tum %>% filter(ProbeName == x) %>% select(norm)
-  v <- rbind(v,batch)
-  z <- (batch$norm[1]-mean(v$norm)) /sd(v$norm)
-  percentile <- round(pnorm(z)*100)
-  rank <- round(match(batch, sort(as.vector(v)[[1]]))/length(v$norm)*100, digits=2)
-  percentile <- cbind(percentile, rank,
-                      as.vector(round(quantile(v$norm, probs=0.25), digits=2)),
-                      as.vector(round(quantile(v$norm, probs=0.5), digits=2)),
-                      as.vector(round(quantile(v$norm, probs=0.75), digits=2)),
-                      as.vector(round(quantile(v$norm, probs=1), digits=2))
-                      )
-})
-percentiles <- t(percentiles)
-colnames(percentiles) <- c('z-score perc', 'rank perc', 'Q1', 'Q2', 'Q3', 'Q4')
-score_tum <- cbind(score_tum, percentiles)
 
-percentiles <- sapply(unique(score_str$ProbeName), function(x){
-  v <- ref.abund[`segment_label` == 'stroma'] %>% filter(ProbeName==x) %>% select(norm)
-  batch <- score_str %>% filter(ProbeName == x) %>% select(norm)
-  v <- rbind(v,batch)
-  z <- (batch$norm[1]-mean(v$norm)) /sd(v$norm)
-  percentile <- round(pnorm(z)*100)
-  rank <- round(match(batch, sort(as.vector(v)[[1]]))/length(v$norm)*100, digits=2)
-  percentile <- cbind(percentile, rank,
-                      as.vector(round(quantile(v$norm, probs=0.25), digits=2)),
-                      as.vector(round(quantile(v$norm, probs=0.5), digits=2)),
-                      as.vector(round(quantile(v$norm, probs=0.75), digits=2)),
-                      as.vector(round(quantile(v$norm, probs=1), digits=2))
-                      )
-})
-percentiles <- t(percentiles)
-colnames(percentiles) <- c('z-score perc', 'rank perc', 'Q1', 'Q2', 'Q3', 'Q4')
-score_str <- cbind(score_str, percentiles)
+if (nrow(score_tum)>0){
+  percentiles <- sapply(unique(score_tum$ProbeName), function(x){
+    v <- ref.abund[`segment_label` == 'tumor'] %>% filter(ProbeName==x) %>% select(norm)
+    batch <- score_tum %>% filter(ProbeName == x) %>% select(norm)
+    v <- rbind(v,batch)
+    z <- (batch$norm[1]-mean(v$norm)) /sd(v$norm)
+    percentile <- round(pnorm(z)*100)
+    rank <- round(match(batch, sort(as.vector(v)[[1]]))/length(v$norm)*100, digits=2)
+    percentile <- cbind(percentile, rank,
+                        as.vector(round(quantile(v$norm, probs=0.25), digits=2)),
+                        as.vector(round(quantile(v$norm, probs=0.5), digits=2)),
+                        as.vector(round(quantile(v$norm, probs=0.75), digits=2)),
+                        as.vector(round(quantile(v$norm, probs=1), digits=2))
+                        )
+  })
+  percentiles <- t(percentiles)
+  colnames(percentiles) <- c('z-score perc', 'rank perc', 'Q1', 'Q2', 'Q3', 'Q4')
+  score_tum <- cbind(score_tum, percentiles)
 
-# Write out to Excel file
-write.xlsx(score_tum, excel.out.tum)
-write.xlsx(score_str, excel.out.str)
+  g <- tableGrob(score_tum[1:34,1:9], rows = NULL, theme = tt)
+  g <- gtable_add_grob(g,
+                       grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
+                       t = 2, b = nrow(g), l = 1, r = ncol(g))
+  g <- gtable_add_grob(g,
+                       grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
+                       t = 1, l = 1, r = ncol(g))
 
-g <- tableGrob(score_tum[1:34,1:9], rows = NULL, theme = tt)
-g <- gtable_add_grob(g,
-                     grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
-                     t = 2, b = nrow(g), l = 1, r = ncol(g))
-g <- gtable_add_grob(g,
-                     grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
-                     t = 1, l = 1, r = ncol(g))
+  grid.newpage()
+  grid.draw(g)
 
-#haligned <- gtable_combine(g,g1, along=1)
-grid.newpage()
-grid.draw(g)
+  g1 <- tableGrob(score_tum[35:68,1:9], rows = NULL, theme = tt)
+  g1 <- gtable_add_grob(g1,
+                        grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
+                        t = 2, b = nrow(g1), l = 1, r = ncol(g1))
+  g1 <- gtable_add_grob(g1,
+                        grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
+                        t = 1, l = 1, r = ncol(g1))
 
-g1 <- tableGrob(score_tum[35:68,1:9], rows = NULL, theme = tt)
-g1 <- gtable_add_grob(g1,
-                      grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
-                      t = 2, b = nrow(g1), l = 1, r = ncol(g1))
-g1 <- gtable_add_grob(g1,
-                      grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
-                      t = 1, l = 1, r = ncol(g1))
+  grid.newpage()
+  grid.draw(g1)
+}
 
-grid.newpage()
-grid.draw(g1)
+if(nrow(score_str>0)){
+  percentiles <- sapply(unique(score_str$ProbeName), function(x){
+    v <- ref.abund[`segment_label` == 'stroma'] %>% filter(ProbeName==x) %>% select(norm)
+    batch <- score_str %>% filter(ProbeName == x) %>% select(norm)
+    v <- rbind(v,batch)
+    z <- (batch$norm[1]-mean(v$norm)) /sd(v$norm)
+    percentile <- round(pnorm(z)*100)
+    rank <- round(match(batch, sort(as.vector(v)[[1]]))/length(v$norm)*100, digits=2)
+    percentile <- cbind(percentile, rank,
+                        as.vector(round(quantile(v$norm, probs=0.25), digits=2)),
+                        as.vector(round(quantile(v$norm, probs=0.5), digits=2)),
+                        as.vector(round(quantile(v$norm, probs=0.75), digits=2)),
+                        as.vector(round(quantile(v$norm, probs=1), digits=2))
+                        )
+  })
+  percentiles <- t(percentiles)
+  colnames(percentiles) <- c('z-score perc', 'rank perc', 'Q1', 'Q2', 'Q3', 'Q4')
+  score_str <- cbind(score_str, percentiles)
 
-# Draw Stroma segment
-
-if (nrow(score_str) > 0) {
+  # Draw to PDF
   g <- tableGrob(score_str[1:34,1:9], rows = NULL, theme = tt)
   g <- gtable_add_grob(g,
                        grobs = rectGrob(gp = gpar(fill = NA, lwd = 2)),
@@ -460,6 +466,10 @@ if (nrow(score_str) > 0) {
   grid.newpage()
   grid.draw(g1)
 }
+
+# Write out to Excel file
+write.xlsx(score_tum, excel.out.tum)
+write.xlsx(score_str, excel.out.str)
 
 # Produce boxplots
 
