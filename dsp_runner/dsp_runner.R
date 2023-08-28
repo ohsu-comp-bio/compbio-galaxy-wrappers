@@ -23,6 +23,7 @@
 # 1.0.12 - remove hardcoding for good_tma and path.ord // temporarily removed TMA count error check
 # 1.1.0 - Add rank percentile and formatting changes to pdf
 # 1.1.1 - added conditions to bypass percentile table generation if tumor or stroma segments are absent
+# 1.1.2 - changed 'Exported dataset' to 1 when reading Excel sheets
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -96,8 +97,11 @@ if(nrow(dsp.meta[`Specimen.ID` %in% my_samp]) == 0){
 
 batch.dt <- data.table(files=list.files(datadir, pattern="[-0-9A-Za-z]_[0-9]{8}-[0-9]{2}.xlsx", recursive = F, full.names=T))
 batch.dt[,batch:=str_extract(files, exp.regex)]
+batch.dt <- batch.dt[1:19,]
+print(batch.dt)
 
-res.list <- process_batches(batch.dt, sheet='Exported dataset')
+res.list <- process_batches(batch.dt, sheet=1)
+
 qc.meta <- res.list$meta
 
 #clean up sample labeling if necessary
