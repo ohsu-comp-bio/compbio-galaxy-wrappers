@@ -1,4 +1,4 @@
-<tool id="dsp_runner" name="NanoString DSP RUV-III Normalization" version="1.0.9" >
+<tool id="dsp_runner" name="NanoString DSP RUV-III Normalization" version="1.1.1" >
     <description>NanoString GeoMx Digital Spatial Profiling</description>
 
     <requirements>
@@ -27,7 +27,7 @@
        ln -s "$control_type" control_type.xlsx &&
        ln -s "$dsp_meta" dsp_meta.xlsx &&
        ln -s "$pos_cntrls" pos_cntrls.txt &&
-       Rscript $__tool_directory__/dsp_runner.R "$sample_id" "$run_id" "$coh" "$datadir" ab_info.xlsx low_probes.xlsx control_type.xlsx dsp_meta.xlsx $dsp_abund_meta $dsp_proc_data $dsp_tma_results $dsp_report pos_cntrls.txt
+       Rscript $__tool_directory__/dsp_runner.R "$sample_id" "$run_id" "$coh" "$datadir" ab_info.xlsx low_probes.xlsx control_type.xlsx dsp_meta.xlsx $dsp_abund_meta $dsp_proc_data $dsp_tma_results $dsp_report $dsp_report_norm_table_tum $dsp_report_norm_table_str pos_cntrls.txt
     ]]></command>
 
     <inputs>
@@ -47,6 +47,8 @@
         <data name="dsp_proc_data" format="rdata" label="${sample_id}_dsp_proc_data: RData"/>
         <data name="dsp_tma_results" format="csv" label="${sample_id}_tma_results: csv"/>
         <data name="dsp_report" format="pdf" label="${sample_id}_${coh}_${run_id}: pdf"/>
+        <data name="dsp_report_norm_table_tum" format="xlsx" label="${sample_id}_${coh}_${run_id}_normabund_TUMOR: xlsx"/>
+        <data name="dsp_report_norm_table_str" format="xlsx" label="${sample_id}_${coh}_${run_id}_normabund_STROMA: xlsx"/>
     </outputs>
 
     <tests>
