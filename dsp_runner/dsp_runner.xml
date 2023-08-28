@@ -34,7 +34,17 @@
         <param name="sample_id" type="text" label="Sample ID" help=""/>
         <param name="run_id" type="text" label="Run ID" help=""/>
         <param name="coh" type="text" label="Cohort" help=""/>
-        <param name="datadir" type="text" label="Nanostring GeoMx Validation cohort data directory" help=""/>
+        <param name="datadir" type="text" label="Nanostring GeoMx Validation cohort data directory" help="">
+            <sanitizer>
+                <valid initial="string.ascii_letters,string.digits">
+                    <add value="/"/>
+                    <add value="_"/>
+                    <add value="-"/>
+                    <add value="."/>
+                    <add value="$"/>
+                </valid>
+            </sanitizer>
+        </param>
         <param name="ab_info" type="data" format="xlsx" label="GeoMx antibodies xlsx file" help=""/>
         <param name="low_probes" type="data" format="xlsx" label="Low probes xlsx file" help=""/>
         <param name="control_type" type="data" format="xlsx" label="Control type xlsx file" help=""/>
