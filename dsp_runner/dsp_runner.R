@@ -335,7 +335,7 @@ colnames(reference_batches) <- c('Reference Batches')
 
 gc1 <- tableGrob(summ_df, theme=tt_cover)
 
-if (nrow(reference_batches>20)){
+if (nrow(reference_batches)>20){
   rb1 <- tableGrob(reference_batches[1:20,1], theme=tt1)
   rb2 <- tableGrob(reference_batches[21:nrow(reference_batches),1], theme=tt1)
   gc2 <- gtable_combine(rb1, rb2)
