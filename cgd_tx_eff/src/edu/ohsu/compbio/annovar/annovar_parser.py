@@ -114,7 +114,7 @@ class AnnovarParser(object):
             hgvs_three = None
         else:
             # Remove the prefix 'exon' prefix from the raw exon string like "exon4"
-            exon = raw_exon.replace('exon','')
+            exon = int(raw_exon.replace('exon',''))
             
             hgvs_c_dot = transcript_parts[3]
             full_c = ':'.join([refseq_transcript, hgvs_c_dot])
@@ -137,9 +137,9 @@ class AnnovarParser(object):
                     hgvs_three = 'p.' + str(parsed_p_dot.posedit)
                     amino_acid_position = parsed_p_dot.posedit.pos.start.pos                
                 except hgvs.exceptions.HGVSParseError as e:
-                    logging.warning(f"Unable to parse {full_p}: {e}")
+                    logging.debug(f"Unable to parse {full_p} because Annovar uses non-standard nomenclature. That's ok, HGVS will fill it in: {e}")
                     hgvs_three = None
-                    amino_acid_position = None                
+                    amino_acid_position = None
             else:
                 logging.debug(f"This transcript is missing the p. but that's ok, HGVS will fill it in: {transcript_parts}")
                 amino_acid_position = None
@@ -152,35 +152,41 @@ class AnnovarParser(object):
         '''
         Takes the transcript tuple (index 1 in the tsv) from a variant_function file and parses out the values.
         '''
+        if not delimited_transcript.strip():
+            raise ValueError("Transcript definition is empty")
+        
         exon = None
         hgvs_c_dot = None
 
-        # There are three different types of information that may be in annovar_row[1]. The types are determined by the number of ':' separated values. 
+        # There are four different ways that information can be packaged that may in and annovar_row[. 
+        # The format can be are determined by the number of ':' separated values. 
         tuple_type = len(delimited_transcript.split(':'))
         
         if tuple_type == 1:
-            # Don't use the intergenic transcripts that are labeled with "dist=nnn"
-            if delimited_transcript.find('(dist=') > 0:
-                logging.debug(f'Found intergenic transcript that will be thrown out: {delimited_transcript}')
-                refseq_transcript = None
-            else:
-                refseq_transcript = delimited_transcript
+            # type I is just a transcript: "NM_000791.4"
+            refseq_transcript = self._parse_transcript_tuple_type1(delimited_transcript)
         elif tuple_type == 2:
-            # Looks like "NM_000791.4(NM_000791.4:c.-417_-416insGCGCTGCGG)"
-            refseq_transcript = delimited_transcript.split('(')[0]
-            hgvs_c_dot = delimited_transcript.split(':')[1].rstrip(')')
+            # type II looks like (NM_000791.4:c.-417_-416insGCGCTGCGG)"
+            refseq_transcript, hgvs_c_dot = self._parse_transcript_tuple_type2(delimited_transcript)
         elif tuple_type == 3:
-            # Looks like "NM_001206844.2(NM_001206844.2:exon5:c.1135-4T>C)"
-            refseq_transcript = delimited_transcript.split('(')[0]
-            exon = delimited_transcript.split(':')[1][4:]
-            hgvs_c_dot = delimited_transcript.split(':')[2].rstrip(')')
-            
-            # Handle the special case of a UTR that doesn't actually have a c. (eg "NM_001324237.2(NM_001324237.2:exon2:UTR5)" or "...:r.spl)"
-            if hgvs_c_dot and hgvs_c_dot.endswith('UTR3') or hgvs_c_dot.endswith('UTR5') or hgvs_c_dot.endswith('r.spl'):
-                hgvs_c_dot = None
+            # type III looks like "NM_001206844.2(NM_001206844.2:exon5:c.1135-4T>C)"
+            refseq_transcript, exon, hgvs_c_dot  = self._parse_transcript_tuple_type3(delimited_transcript)
+        elif tuple_type == 5:
+            # type IV defines the transcript at two different exons and 
+            # looks like "NM_001077690.1(NM_001077690.1:exon1:c.60+1C>-,NM_001077690.1:exon2:c.61-1C>-)"
+            refseq_transcript, exon, hgvs_c_dot = self._parse_transcript_tuple_type5(delimited_transcript)
         else:
-            raise Exception("Tuple format not recognized: " + str(delimited_transcript))
-                
+            raise ValueError("Tuple format not recognized: " + str(delimited_transcript))
+                    
+        # Strip the 'exon' prefix from 'exon5'
+        if(exon):
+            exon = int(exon.replace('exon',''))
+        
+        # Handle the special case of a UTR that doesn't actually have a c. (eg "NM_001324237.2(NM_001324237.2:exon2:UTR5)" or "...:r.spl)"
+        if hgvs_c_dot and (hgvs_c_dot.endswith('UTR3') or hgvs_c_dot.endswith('UTR5') or hgvs_c_dot.endswith('r.spl')):            
+            hgvs_c_dot = None    
+        
+        # Extract base position from c. 
         if hgvs_c_dot:
             try:
                 full_c = ':'.join([refseq_transcript, hgvs_c_dot])
@@ -192,16 +198,18 @@ class AnnovarParser(object):
                     # base position is a string because offsets are like "1135-4"
                     hgvs_basep = str(hgvs_basep)
 
-            except hgvs.exceptions.HGVSParseError:
+            except hgvs.exceptions.HGVSParseError as e:
+                # This doesn't matter because we use the c. from HGVS/UTA not this one from Annovar
                 hgvs_basep = None
                 c_dot_alt = re.search(r"c\..*\>([\w]+)", hgvs_c_dot)            
                 if c_dot_alt and len(c_dot_alt.group(1)) > 1:
-                    # This doesn't matter because we use the c. from HGVS/UTA not this one from Annovar
-                    logging.debug(f"HGVS parser failed to determine c. because the parser expects the c. alt to be just one base, but is {len(c_dot_alt.group(1))}: {hgvs_c_dot}")
+                    logging.debug(f"HGVS parser failed to determine base position because the parser expects the c. alt to be just one base, but is {len(c_dot_alt.group(1))}: {hgvs_c_dot}")
+                else:
+                    logging.debug(f"HGVS parser failed to determine base position from {full_c}: {e}")
         else:
             hgvs_basep = None
 
-        return hgvs_basep, exon, hgvs_c_dot, refseq_transcript
+        return refseq_transcript, exon, hgvs_c_dot, hgvs_basep 
 
     def _parse_exonic_variant_function_row(self, annovar_row: list):
         '''
@@ -282,7 +290,8 @@ class AnnovarParser(object):
             variant_type = annovar_row[0]
             variant_splicing = None
            
-        transcript_tuples = annovar_row[1].split(',')
+        # The second column has a list of transcripts and related values
+        transcript_tuples = self._split_variant_function_transcript_tuples(annovar_row[1])
         
         if(len(transcript_tuples) == 0):
             raise Exception(f"Variant does not have any transcript tuples: {chrom}-{pos}-{ref}-{alt}")
@@ -298,10 +307,10 @@ class AnnovarParser(object):
             avf.variant_type = variant_type
             avf.splicing = variant_splicing
             
-            avf.hgvs_base_position, \
+            avf.refseq_transcript,  \
             avf.exon,               \
             avf.hgvs_c_dot,         \
-            avf.refseq_transcript = self._unpack_vf_transcript_tuple(transcript_tuple)
+            avf.hgvs_base_position = self._unpack_vf_transcript_tuple(transcript_tuple)
             
             if avf.refseq_transcript == None:
                 logging.debug("Ignoring transcript. Probably because it was intergenic and didn't have any useful tfx.")
@@ -312,7 +321,64 @@ class AnnovarParser(object):
         
         return annovar_recs
 
+    def _split_variant_function_transcript_tuples(self, unparsed):
+        '''
+        Take an annovar variant_function field that has delimited information about transcripts 
+        and split it into chunks for each transcript. The resulting string need to be further 
+        parsed by the _unpack_vf_transcript_tuple function
+        '''
+        p = re.compile('(?<=,)?([^\\(,]+(\\([^\\)]+\\))?)')
+        matches = p.findall(unparsed)
+        
+        # The first item in the tuple is the broadest match
+        return [i[0] for i in matches]
+        
 
+    def _parse_transcript_tuple_type5(self, unparsed):
+        '''
+        Return the values of the left transcript definition in a string like "NM_001077690.1(NM_001077690.1:exon1:c.60+1C>-,NM_001077690.1:exon2:c.61-1C>-)" 
+        ''' 
+        p = re.compile('\((.*:.*:.*)(?=,.*:.*:.*\))')
+        matches = p.findall(unparsed)
+        assert len(matches) == 1, "Unrecognised variant function delimited transcript definition"
+        
+        refseq_transcript, exon, hgvs_c_dot  = matches[0].split(':')
+        return refseq_transcript, exon, hgvs_c_dot
+    
+    def _parse_transcript_tuple_type3(self, unparsed):
+        '''
+        Return the values of the transcript definition in a string like "NM_001206844.2(NM_001206844.2:exon5:c.1135-4T>C)"
+        '''
+        p = re.compile('(?<=\().*:.*:.*(?=\)$)')
+        matches = p.findall(unparsed)
+        assert len(matches) == 1, "Unrecognised variant function delimited transcript definition"
+        
+        refseq_transcript, exon, hgvs_c_dot = matches[0].split(':')
+        return refseq_transcript, exon, hgvs_c_dot
+    
+    def _parse_transcript_tuple_type2(self, unparsed):
+        '''
+        Return the values of a transcript definition like "NM_000791.4(NM_000791.4:c.-417_-416insGCGCTGCGG)"
+        ''' 
+        p = re.compile('(?<=\().*:.*(?=\)$)')
+        matches = p.findall(unparsed)
+        
+        assert len(matches) == 1, "Unrecognised variant function delimited transcript definition"
+        
+        refseq_transcript, hgvs_c_dot = matches[0].split(':')
+        return refseq_transcript, hgvs_c_dot
+    
+    def _parse_transcript_tuple_type1(self, transcript):
+        '''
+        Return the transcript in a definition like "NM_000791.4"
+        '''
+        # Don't use the intergenic transcripts that are labeled with "dist=nnn"
+        if transcript.find('(dist=') > 0:
+            logging.debug(f'Found intergenic transcript that will be thrown out: {transcript}')
+            return None
+        else:
+            return transcript
+                
     def parse_file(self, annovar_file_type: AnnovarFileType, file_name:str, delimiter = '\t'):
         '''
         Read an Annovar file and return a list of variants 

@@ -208,13 +208,15 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
 
     var_g = hgvs_parser.parse_hgvs_variant(new_hgvs)
 
+    # Retrieve transcripts that are in a genomic region
     tx_list = hdp.get_tx_for_region(str(var_g.ac), 'splign', str(var_g.posedit.pos.start), str(var_g.posedit.pos.end))
     
     hgvs_transcripts = []
     
     for hgvs_transcript in tx_list:
         try:
-            variant_transcript = VariantTranscript(variant.chromosome, variant.position, variant.reference, variant.alt)            
+            variant_transcript = VariantTranscript(variant.chromosome, variant.position, variant.reference, variant.alt)
+
             variant_transcript.sequence_variant = __to_g_dot(var_g)
             
             # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function. 
@@ -247,7 +249,7 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
                 logging.debug(f"HGVS variant does not have a position: ref={var_p.posedit.ref}, alt={var_p.posedit.alt}, type={var_p.posedit.type}, str={str(var_p.posedit)}. Keeping.")
             else:
                 variant_transcript.hgvs_amino_acid_position = var_p.posedit.pos.start.pos
-                        
+
             variant_transcript.hgvs_base_position = var_c.posedit.pos.start.base
             
             variant_transcript.hgvs_c_dot = c_dot
@@ -775,6 +777,7 @@ def _get_gene_for_transcript(transcript_accession: str):
     '''
     hdp = hgvs.dataproviders.uta.connect()
     rec = hdp.get_tx_identity_info(transcript_accession)
+
     if rec is not None:
         assert type(rec[6]) == str, "Index six in object returned by hdp.get_tx_identity_info is supposed to the gene."
         return rec[6]
