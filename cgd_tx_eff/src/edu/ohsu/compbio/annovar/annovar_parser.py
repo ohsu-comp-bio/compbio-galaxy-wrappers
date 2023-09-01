@@ -336,7 +336,8 @@ class AnnovarParser(object):
 
     def _parse_transcript_tuple_type5(self, unparsed):
         '''
-        Return the values of the left transcript definition in a string like "NM_001077690.1(NM_001077690.1:exon1:c.60+1C>-,NM_001077690.1:exon2:c.61-1C>-)" 
+        Return the transcript from a definition that has two exons, like "NM_001077690.1(NM_001077690.1:exon1:c.60+1C>-,NM_001077690.1:exon2:c.61-1C>-)" 
+        Users want to use the lower exon number, which we assume will always be the one on the left. 
         ''' 
         p = re.compile('\((.*:.*:.*)(?=,.*:.*:.*\))')
         matches = p.findall(unparsed)
