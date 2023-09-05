@@ -117,7 +117,6 @@ all.abund <- Reduce(function(x,y){
 #stopifnot((ncol(all.abund)-1) == sum(sapply(res.list$data, function(x) ncol(x$qc)-4 )))
 if((nrow(all.abund) != res.list$data[[1]]$qc[,.N])|| (ncol(all.abund)-1) != sum(sapply(res.list$data, function(x) ncol(x$qc)-4 ))){
     message("Dimension error with processed batch data")
-    quit(status=5)
 }
 abund.mat <- log2(as.matrix(all.abund[,-1,with=F]))
 rownames(abund.mat) <- all.abund[,ProbeName]
