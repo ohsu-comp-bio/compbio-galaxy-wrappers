@@ -1,6 +1,7 @@
 # VERSION:
 # 1.1.1 - added sanitizer to segmentsDir input in xml; only grab gene symbols when refseq symbol prefixed by NC
 # 1.2.0 - write entries with NA as gene to different output
+# 1.2.1 - assign integer class values to MinReadCount and MaxReadCount
 
 args <- commandArgs(TRUE)
 cnvvcf <- args[1]
@@ -125,8 +126,8 @@ for( segment_row in 1:nrow(cnvData) ) {
 		}
 	}
 	cnvData[segment_row, "AvgReadCount"] <- round(sum/as.integer(cnvData$Probes[[segment_row]]), digits=0)
-	cnvData[segment_row, "MaxReadCount"] <- max
-	cnvData[segment_row, "MinReadCount"] <- min
+	cnvData[segment_row, "MaxReadCount"] <- as.integer(max)
+	cnvData[segment_row, "MinReadCount"] <- as.integer(min)
 	print(paste0("Progress: ", cnvData[segment_row, "ID"], " : ", Sys.time()))
 
 	#get the local freqs
