@@ -2,6 +2,7 @@
 # 1.1.1 - added sanitizer to segmentsDir input in xml; only grab gene symbols when refseq symbol prefixed by NC
 # 1.2.0 - write entries with NA as gene to different output
 # 1.2.1 - assign integer class values to MinReadCount and MaxReadCount
+# 1.2.2 - ensure only unique gene names are added to gene column
 
 args <- commandArgs(TRUE)
 cnvvcf <- args[1]
@@ -97,8 +98,8 @@ for( segment_row in 1:nrow(cnvData) ) {
 				#if it is the first gene overlap in this cnv segment, just add the gene
 				} else if(is.na(cnvData[segment_row, "GENE"])){
 					cnvData[segment_row, "GENE"] = toString(geneData[gene_row, "GeneSymbol"])
-				} else {
-					#if there is already a gene present, add it to the current list
+				} else if(!(toString(geneData[gene_row, "GeneSymbol"]) %in% unlist(strsplit(cnvData[segment_row, "GENE"], split = ", ")))){
+					#if there is already a gene present, add it to the current list if not a duplicate gene name
 					cnvData[segment_row, "GENE"] = paste0(geneData[gene_row, "GeneSymbol"], ", ", cnvData[segment_row, "GENE"])
 				}
 			}
