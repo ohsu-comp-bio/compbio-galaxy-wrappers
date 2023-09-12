@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
+# 0.1.3 - set bad_vaf to -1 if the sample is not in af_dict (no variant calls in VCF)
+
 from file_types import vcfreader
 import argparse
 import json
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 
 
 def supply_args():
@@ -87,7 +89,10 @@ def main():
     outfile = open(args.outfile, 'w')
     if len(sample_list) == 1:
         try:
-            bad_vaf = (af_dict[sample_list[0]]['BAD_VAF'] / (af_dict[sample_list[0]]['TOTAL'] + 0.0)) * 100
+            if sample_list[0] in af_dict:
+                bad_vaf = (af_dict[sample_list[0]]['BAD_VAF'] / (af_dict[sample_list[0]]['TOTAL'] + 0.0)) * 100
+            else:
+                bad_vaf = '-1'
         except ZeroDivisionError:
             bad_vaf = '-1'
 
