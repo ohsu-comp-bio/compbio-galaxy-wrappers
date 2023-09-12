@@ -17,7 +17,7 @@ from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarFileType
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
-VERSION = '0.2.4'
+VERSION = '0.6.5'
 
 def _parse_args():
     '''

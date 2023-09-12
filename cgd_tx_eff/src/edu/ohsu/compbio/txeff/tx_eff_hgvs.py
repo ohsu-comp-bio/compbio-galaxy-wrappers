@@ -30,7 +30,7 @@ from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.annovar import annovar_parser
 from hgvs.sequencevariant import SequenceVariant
 
-VERSION = '0.5.9'
+VERSION = '0.6.5'
 
 ASSEMBLY_VERSION = "GRCh37"
 
@@ -208,8 +208,8 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
 
     var_g = hgvs_parser.parse_hgvs_variant(new_hgvs)
 
-    # Retrieve transcripts that are in a genomic region
-    tx_list = hdp.get_tx_for_region(str(var_g.ac), 'splign', str(var_g.posedit.pos.start), str(var_g.posedit.pos.end))
+    # Retrieve transcripts that are in a genomic region    
+    tx_list = hdp.get_tx_for_region(str(var_g.ac), 'splign', var_g.posedit.pos.start.base, var_g.posedit.pos.end.base)
     
     hgvs_transcripts = []
     
