@@ -8,20 +8,21 @@ import csv
 import logging.config
 import sys
 
+from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from argparse import ArgumentParser, RawDescriptionHelpFormatter, FileType
 from collections import defaultdict
 from BCBio import GFF
-from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
+
 import Bio
 
-__version__ = '0.6.4'
+__version__ = '0.6.6'
 GFF_RELEASE_105 = '105'
 GFF_RELEASE_105_20220307 = '105.20220307'
 
 class RefseqToCcds(object):
     '''
     This class handles operations related to mapping from a RefSeq id to a CCDS id.
-    The mappings can be found in NCBI's gff file: https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh37_latest/refseq_identifiers/GRCh37_latest_genomic.gff.gz
+    The mappings can be found in NCBI's gff3 file: https://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh37_latest/refseq_identifiers/GRCh37_latest_genomic.gff.gz
     
     Running the refseq_to_ccdcs.py module from the command line takes the NCBI gff file and writes out a csv file with only the mappings, which significantly improves performance.      
     '''
@@ -252,7 +253,7 @@ def _create_mappings(source_release, gff_file, csv_file):
 def _combine_csv_files(older_csv_file, newer_csv_file, output_csv_file):
     '''
     Take all the mappings from two csv files and combine them into one. Sometimes the old source and the new source have different CCDS id for 
-    a RefSeq id, when that happens the CCDS from the newer source is seleted.    
+    a RefSeq id, when that happens the CCDS from the newer source is selected.    
     '''
     refSeqToCcds = RefseqToCcds()
     older_mapping = refSeqToCcds.get_mappings_from_csv(older_csv_file)

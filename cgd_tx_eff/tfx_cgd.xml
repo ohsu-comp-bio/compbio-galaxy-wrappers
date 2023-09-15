@@ -1,4 +1,4 @@
-<tool id="tfx_cgd" name="Transcript Effects for CGD" version="0.6.5" >
+<tool id="tfx_cgd" name="Transcript Effects for CGD" version="0.6.6" >
   <description>
   	Update a VCF with transcript-effects and nomenclature from Annovar and HGVS.
   </description>
@@ -42,7 +42,7 @@
  
   <inputs>
     <param name="in_vcf" format="vcf" optional="false" type="data" label="Input VCF" />    
-    <param name="ccds_map" format="csv,gff" optional="false" type="data" label="Input CSV or GFF with Annovar-to-CCDS mappings. Use refseq_to_ccds.py to convert GFF to CSV."/>
+    <param name="ccds_map" format="csv,gff" optional="false" type="data" label="Input CSV or GFF with RefSeq-to-CCDS mappings. Use refseq_to_ccds.py to convert GFF to CSV."/>
     <param name="annovar_variant_function" format="tsv" optional="false" type="data" label="Annovar variant_function file" />
     <param name="annovar_exonic_variant_function" format="tsv" optional="false" type="data" label="Annovar exonic_variant_function file" />
     <conditional name="reference_source">
