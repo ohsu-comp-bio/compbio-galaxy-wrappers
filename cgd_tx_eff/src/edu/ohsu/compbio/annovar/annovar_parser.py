@@ -172,7 +172,7 @@ class AnnovarParser(object):
             # type III looks like "NM_001206844.2(NM_001206844.2:exon5:c.1135-4T>C)"
             refseq_transcript, exon, hgvs_c_dot  = self._parse_transcript_tuple_type3(delimited_transcript)
         elif self._is_multi_exon_transcript_tuple(delimited_transcript):
-            # type IV defines the transcript at two or more different exons and 
+            # type V defines the transcript at two or more different exons and 
             # looks like "NM_001077690.1(NM_001077690.1:exon1:c.60+1C>-,NM_001077690.1:exon2:c.61-1C>-)"
             refseq_transcript, exon, hgvs_c_dot = self._parse_transcript_tuple_type5(delimited_transcript)
         else:
