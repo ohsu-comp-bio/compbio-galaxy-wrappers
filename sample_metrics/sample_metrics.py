@@ -3,6 +3,8 @@
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
 VERSION HISTORY
+0.8.11
+    Add QIAseq_XP_RNA_STP
 0.8.10
     Switched before and after picard metric source in _pumi
 0.8.9
@@ -608,6 +610,7 @@ class MetricPrep(SampleMetrics):
         """
         return {'QIAseq_V3_RNA': ['qthirty', 'averageDepth', 'percentUmi'],
                 'QIAseq_XP_RNA_HEME': ['qthirty', 'averageDepth', 'percentUmi'],
+                'QIAseq_XP_RNA_STP': ['qthirty', 'averageDepth', 'percentUmi'],
                 'TruSightOne': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
                                 'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
                 'TruSightOneV2_5': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
@@ -639,6 +642,7 @@ class MetricPrep(SampleMetrics):
         """
         return {'QIAseq_V3_RNA': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
                 'QIAseq_XP_RNA_HEME': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
+                'QIAseq_XP_RNA_STP': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
                 'TruSightOne': ['gc_pct_r1', 'gc_pct_r2', 'y_ploidy_check'],
                 'TruSightOneV2_5': ['gc_pct_r1', 'gc_pct_r2', 'y_ploidy_check', 'homozygosity_flag'],
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
