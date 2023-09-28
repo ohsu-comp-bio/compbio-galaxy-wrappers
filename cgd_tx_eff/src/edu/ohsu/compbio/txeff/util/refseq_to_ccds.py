@@ -14,6 +14,7 @@ from collections import defaultdict
 from BCBio import GFF
 
 import Bio
+from sys import getsizeof
 
 __version__ = '0.6.6'
 GFF_RELEASE_105 = '105'
@@ -174,7 +175,7 @@ class RefseqToCcds(object):
         else:
             raise Exception(f"More than one CCDS id found when only zero or one expected: {dbxrefs}")
                 
-    def get_mappings_from_csv(self, csv_file_name: str):
+    def get_mappings_from_csv(self, csv_file_name: str) -> dict:
         '''
             Read the csv file created by write_mappings, and return them in a map object.
         '''
@@ -228,10 +229,14 @@ def _get_app_operation(args):
     elif args.merge_old_csv and args.merge_new_csv and args.csv and not args.gff and not args.source_release:
         logging.debug("Parameters indicate user wants to merge two CSV files")
         return 'COMBINE_CSV'
+    elif args.summarize:
+        logging.debug(f"Parameter indicate user wants to see summary of {args.summarize.name}")
+        return 'SUMMARIZE'
     else:
         print("This script can export RefSeq to CCDS mappings, or it can combine two CSV files that contain mappings. The parameters you used do not make it clear which operation is desired.")
         print("To read a GFF and create CSV use: --gff GFF_FILE --source_release (105|105.20220307) --csv OUTPUT_CSV_FILE")
         print("To merge two CSV files use: --merge_old_csv OLD_CSV --merge_new_csv NEW_CSV --CSV OUTPUT_CSV_FILE")
+        print("To print a summary of a CSV use: --summary --csv CSV_FILE")
         return None
         
 def _create_mappings(source_release, gff_file, csv_file):
@@ -261,6 +266,15 @@ def _combine_csv_files(older_csv_file, newer_csv_file, output_csv_file):
     merged_mapping = refSeqToCcds._merge_maps(older_mapping, newer_mapping)
     refSeqToCcds.write_mappings(merged_mapping, output_csv_file)
 
+def _print_summary(csv_file: str):
+    refSeqToCcds = RefseqToCcds()
+    d = refSeqToCcds.get_mappings_from_csv(csv_file)
+    print(f"Number of RefSeq-to-CCDS mappings: {len(d)}")
+    
+    size_bytes = getsizeof(d)
+    size_bytes += sum(map(getsizeof, d.values())) + sum(map(getsizeof, d.keys()))
+    size_mb = round(size_bytes / (1024 * 1024), 2)
+    print(f"Size of dictionary in memory: {size_mb}MB")
 
 def _main():
     logging.config.dictConfig(TfxLogConfig().stdout_config)
@@ -272,7 +286,7 @@ def _main():
     print(f"Log level={logging.root.getEffectiveLevel()}, output={output}")
     
     parser = ArgumentParser(description='', formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("-c", "--csv", help="CSV file to write out RefSeq-to-CCDS mappings", type=FileType('w'), required=True)
+    parser.add_argument("-c", "--csv", help="CSV file to write out RefSeq-to-CCDS mappings", type=FileType('w'), required=False)
  
     # These parameters are used when converting GFF to CSV
     parser.add_argument("-g", "--gff", help="GFF file from which to read RefSeq-to-CCDS mappings", type=FileType('r'), required=False)
@@ -281,8 +295,13 @@ def _main():
     # These parameters are used when merging two CSVs
     parser.add_argument("-m0", "--merge_old_csv", help="Previous revision of mappings in CSV", type=FileType('r'), required=False)
     parser.add_argument("-m1", "--merge_new_csv", help="", type=FileType('r'), required=False)
+
+    # Display summary of a mapping CSV
+    parser.add_argument('-s', '--summarize', help="Display summary of CSV mapping file", type=FileType('r'), required=False)
     
+    # Version    
     parser.add_argument('-V', '--version', action='version', version=__version__)
+
 
     # Process arguments
     args = parser.parse_args()
@@ -292,6 +311,8 @@ def _main():
         _create_mappings(args.source_release, args.gff.name, args.csv.name)
     elif operation == 'COMBINE_CSV':
         _combine_csv_files(args.merge_old_csv.name, args.merge_new_csv.name, args.csv.name)
+    elif operation == 'SUMMARIZE':
+        _print_summary(args.summarize.name)
     else:
         return 0
     

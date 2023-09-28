@@ -41,7 +41,7 @@ class AnnovarParserTest(unittest.TestCase):
         self.assertEqual(hgvs_c_dot, 'c.1135-4T>C')        
         self.assertEqual(hgvs_basep, '1135-4')
         
-        # Type IV
+        # Type V
         refseq_transcript, exon, hgvs_c_dot, hgvs_basep = annovar_parser._unpack_vf_transcript_tuple("NM_001242366.3(NM_001242366.3:exon3:c.1142+1T>-,NM_001242366.3:exon4:c.1143-1T>-)")
         self.assertEqual(refseq_transcript, 'NM_001242366.3')
         self.assertEqual(exon, 3)
@@ -51,7 +51,7 @@ class AnnovarParserTest(unittest.TestCase):
         
         # Invalid formats 
         self.assertRaises(ValueError, annovar_parser._unpack_vf_transcript_tuple, "")        
-        self.assertRaises(AssertionError, annovar_parser._unpack_vf_transcript_tuple, "a:b:c:d:e")
+        self.assertRaises(ValueError, annovar_parser._unpack_vf_transcript_tuple, "a:b:c:d:e")
         self.assertRaises(ValueError, annovar_parser._unpack_vf_transcript_tuple, "a:b:c:d:e:f")
         
     def test__parse_variant_function_row(self):
@@ -65,7 +65,7 @@ class AnnovarParserTest(unittest.TestCase):
         transcript_tuples = annovar_parser._split_variant_function_transcript_tuples(data)        
         self.assertEqual(len(transcript_tuples), 3)        
     
-    def test__parse_transcript_tuple_type5(self):
+    def test__parse_transcript_tuple_type5_two_exons(self):
         '''
         Parse the transcript definition that is defined at two different exons, and the left one is chosen.  
         '''        
@@ -76,7 +76,27 @@ class AnnovarParserTest(unittest.TestCase):
         
         self.assertEqual(refseq_transcript, 'NM_001077690.1', "Incorrect refseq transcript")
         self.assertEqual(exon, 'exon1', "Incorrect exon")
-        self.assertEqual(hgvs_c_dot, 'c.60+1C>-', "Incorrect c.")        
+        self.assertEqual(hgvs_c_dot, 'c.60+1C>-', "Incorrect c.")
+    
+    def test__parse_transcript_tuple_type5_invalid(self):
+        '''
+        The "Type 5" tuple type defines a transcript that can be at two or more exons. This test function makes sure
+        an exception would be thrown if a Type-V format specified only one exon.         
+        '''
+        # This definition is invalid because it only defines a single exon 
+        data = "NM_001077690.1(NM_001077690.1:exon1:c.60+1C>-)"
+        annovar_parser = AnnovarParser();
+        self.assertRaises(AssertionError, annovar_parser._parse_transcript_tuple_type5, data)
+    
+    def test__parse_transcript_tuple_type5_six_exons(self):    
+        '''
+        The "Type 5" tuple type defines a transcript that can be at two or more exons. This test function makes sure
+        that the correct exon is returned even when there are six exons.     
+        ''' 
+        data = "NM_1.2(NM_1.2:exon1:c.1+1C>-,NM_1.2:exon2:c.1-1C>-,NM_1.2:exon3:c.1-1C>-,NM_1.2:exon4:c.1-1C>-,NM_1.2:exon5:c.1-1C>-,NM_1.2:exon6:c.1-1C>-)"        
+        annovar_parser = AnnovarParser();
+        refseq_transcript, exon, hgvs_c_dot = annovar_parser._parse_transcript_tuple_type5(data)
+        self.assertEqual(exon, 'exon1', "Incorrect exon")
 
     def test__parse_transcript_tuple_type3(self):
         data = "NM_001289861.1(NM_001289861.1:exon20:c.3002-2A>G)"

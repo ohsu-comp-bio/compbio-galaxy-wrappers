@@ -171,13 +171,13 @@ class AnnovarParser(object):
         elif tuple_type == 3:
             # type III looks like "NM_001206844.2(NM_001206844.2:exon5:c.1135-4T>C)"
             refseq_transcript, exon, hgvs_c_dot  = self._parse_transcript_tuple_type3(delimited_transcript)
-        elif tuple_type == 5:
-            # type IV defines the transcript at two different exons and 
+        elif self._is_multi_exon_transcript_tuple(delimited_transcript):
+            # type V defines the transcript at two or more different exons and 
             # looks like "NM_001077690.1(NM_001077690.1:exon1:c.60+1C>-,NM_001077690.1:exon2:c.61-1C>-)"
             refseq_transcript, exon, hgvs_c_dot = self._parse_transcript_tuple_type5(delimited_transcript)
         else:
             raise ValueError("Tuple format not recognized: " + str(delimited_transcript))
-                    
+
         # Strip the 'exon' prefix from 'exon5'
         if(exon):
             exon = int(exon.replace('exon',''))
@@ -211,6 +211,24 @@ class AnnovarParser(object):
 
         return refseq_transcript, exon, hgvs_c_dot, hgvs_basep 
 
+    def _is_multi_exon_transcript_tuple(self, unparsed):
+        '''
+        Return true if the transcript tuple is the fifth type (see _parse_transcript_tuple_type5 and _get_multi_exon_transcript_tuples).
+        '''        
+        return len(self._get_multi_exon_transcript_tuples(unparsed)) >=2
+        
+    def _get_multi_exon_transcript_tuples(self, unparsed):
+        '''
+        Return all the transcript definitions from a Type V tuple. Type V transcript tuples define multiple exons for the same transcript. 
+        This type looks like NM_x(a,b,...) where "a,b,..." are two or more three part colon delimited tuples.
+        Example:
+            - NM_001243965.1(NM_001243965.1:exon2:c.278+4C>A,NM_001243965.1:exon3:c.281+1C>A,NM_001243965.1:exon4:c.282-1C>A)
+            - NM_001352417.1(NM_001352417.1:exon1:c.60+1C>-,NM_001352417.1:exon2:c.61-1C>-)
+        This function returns a list of colon separated tuples like ['NM_x:exonN:c.','NM_y:exonM:c.'] 
+        '''
+        p = re.compile('NM_[0-9]+\.[0-9]:exon[0-9]+:c\.[0-9-+ACTG>]+')
+        return p.findall(unparsed)
+    
     def _parse_exonic_variant_function_row(self, annovar_row: list):
         '''
         Takes a single row from an Annovar exonic_variant_function file and returns one or more AnnovarVariantFunction objects
@@ -332,18 +350,21 @@ class AnnovarParser(object):
         
         # The first item in the tuple is the broadest match
         return [i[0] for i in matches]
-        
 
     def _parse_transcript_tuple_type5(self, unparsed):
         '''
-        Return the transcript from a definition that has two exons, like "NM_001077690.1(NM_001077690.1:exon1:c.60+1C>-,NM_001077690.1:exon2:c.61-1C>-)" 
-        Users want to use the lower exon number, which we assume will always be the one on the left. 
-        ''' 
-        p = re.compile('\((.*:.*:.*)(?=,.*:.*:.*\))')
-        matches = p.findall(unparsed)
-        assert len(matches) == 1, "Unrecognised variant function delimited transcript definition"
+        Return the transcript from a definition that has two or more exons. 
+        Examples:
+            - NM_001077690.1(NM_001077690.1:exon1:c.60+1C>-,NM_001077690.1:exon2:c.61-1C>-)
+            - NM_001243965.1(NM_001243965.1:exon2:c.278+4C>A,NM_001243965.1:exon3:c.281+1C>A,NM_001243965.1:exon4:c.282-1C>A) 
         
-        refseq_transcript, exon, hgvs_c_dot  = matches[0].split(':')
+        Users want to use the lowest exon number, which we assume will always be the one on the left. 
+        ''' 
+        transcript_tuples = self._get_multi_exon_transcript_tuples(unparsed)
+        
+        assert len(transcript_tuples) >= 2, "Unrecognised variant function delimited transcript definition"
+        
+        refseq_transcript, exon, hgvs_c_dot  = transcript_tuples[0].split(':')
         return refseq_transcript, exon, hgvs_c_dot
     
     def _parse_transcript_tuple_type3(self, unparsed):
