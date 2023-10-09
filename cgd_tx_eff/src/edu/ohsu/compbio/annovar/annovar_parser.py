@@ -214,7 +214,7 @@ class AnnovarParser(object):
     def _is_multi_exon_transcript_tuple(self, unparsed):
         '''
         Return true if the transcript tuple is the fifth type (see _parse_transcript_tuple_type5 and _get_multi_exon_transcript_tuples).
-        '''        
+        '''
         return len(self._get_multi_exon_transcript_tuples(unparsed)) >=2
         
     def _get_multi_exon_transcript_tuples(self, unparsed):
@@ -226,7 +226,7 @@ class AnnovarParser(object):
             - NM_001352417.1(NM_001352417.1:exon1:c.60+1C>-,NM_001352417.1:exon2:c.61-1C>-)
         This function returns a list of colon separated tuples like ['NM_x:exonN:c.','NM_y:exonM:c.'] 
         '''
-        p = re.compile('NM_[0-9]+\.[0-9]:exon[0-9]+:c\.[0-9-+ACTG>]+')
+        p = re.compile('NM_[0-9]+\.[0-9]:exon[0-9]+:(?:r\.spl|c\.[-+0-9ACTG>]+)')
         return p.findall(unparsed)
     
     def _parse_exonic_variant_function_row(self, annovar_row: list):
