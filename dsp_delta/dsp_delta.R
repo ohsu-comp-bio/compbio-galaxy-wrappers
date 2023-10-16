@@ -7,6 +7,7 @@
 # 1.2.0 - Removed selected_pos and pos_cntrls files, read all antibodies from GeoMx input to ensure we are using
 #       - equivalent naming.  Split plots in to multiple pages for clarity and plot all antibodies.
 # 1.2.1 - removed delta ridge plots and added cover sheet
+# 1.2.2 - corrected mislabeling of Sample ID and comparison ID due to A-Z sorting
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -154,7 +155,15 @@ t9.dt <- my.scores %>%
 
 #Changed color from segment # to segment_label
 t9.cast <- dcast(`segment_label`+ProbeName~sample_id, value.var="avg_abund",data=t9.dt[use_roi == "avg"])
-colnames(t9.cast)<- c('segment_label','ProbeName','Specimen_ID','Specimen_ID_compare')
+
+# Check if sample IDs are labelled properly
+if (colnames(t9.cast)[3] == my_samp){
+  colnames(t9.cast)<- c('segment_label','ProbeName','Specimen_ID','Specimen_ID_compare')
+} else {
+  colnames(t9.cast)<- c('segment_label','ProbeName','Specimen_ID_compare','Specimen_ID')
+  t9.cast <- t9.cast %>% relocate(Specimen_ID, .before=Specimen_ID_compare)
+}
+
 t9.cast[,delta:=t9.cast$Specimen_ID-t9.cast$Specimen_ID_compare]
 t9.cast <- merge(t9.cast, delta.thresh, by="ProbeName",allow.cartesian=T)
 t9.cast[,`:=`(status="neither")]
