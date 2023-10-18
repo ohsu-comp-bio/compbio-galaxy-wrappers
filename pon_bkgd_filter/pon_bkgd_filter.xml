@@ -1,4 +1,4 @@
-<tool id="pon_bkgd_filter" name="PON BKGD Filter" version="1.1.0" >
+<tool id="pon_bkgd_filter" name="PON BKGD Filter" version="1.2.0" >
   <description>
       Filter variants in a VCF based on PON background allele frequencies
   </description>
@@ -14,6 +14,12 @@
   <command><![CDATA[
     python $__tool_directory__/pon_bkgd_filter.py
     '${input_vcf}' '${output_vcf}' '${filter_id}'
+    #if $avgAF_threshold
+        --avgAF_threshold '${avgAF_threshold}'
+    #end if
+    #if $sdAF_threshold
+        --sdAF_threshold '${sdAF_threshold}'
+    #end if
     #if $fc_bkgd_metrics
         --fc_bkgd_metrics '${fc_bkgd_metrics}'
     #end if
@@ -23,9 +29,6 @@
 
     #if $per_base_bkgd_metrics
         --per_base_bkgd_metrics '${per_base_bkgd_metrics}'
-    #end if
-    #if $vaf_threshold
-        --vaf_threshold '${vaf_threshold}'
     #end if
     #if $alt_specific
         --alt_specific '${alt_specific}'
@@ -43,8 +46,10 @@
       <param name="per_base_bkgd_metrics" type="data" format="tsv,tabular,txt" optional="true"
              label="Text file containing freq stats of locus in panel" />
 
-      <param name="vaf_threshold" type="float" value="0.1" min="0" max="1.0" optional="true"
-           label="VAF threshold" help="VAF threshold under to perform filtering"/>
+      <param name="avgAF_threshold" type="float" value="0.1" min="0" max="1.0" optional="true"
+           label="Average AF threshold" help="Average AF threshold under to perform filtering"/>
+      <param name="sdAF_threshold" type="float" value="0.1" min="0" max="1.0" optional="true"
+           label="Standard deviation AF threshold" help="Standard deviation AF threshold under to perform filtering"/>
       <param name="alt_specific" type="boolean" truevalue="--alt_specific" falsevalue="" optional="true"
            label="Use ALT allele threshold to filter" />
   </inputs>

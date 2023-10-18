@@ -7,9 +7,12 @@ Example:
 python pon_bkgd_filter/pon_bkgd_filter.py "input.vcf" "output.vcf"
     "BKGD" "Below Background"
     "fc_bkgd_metrics.txt" "fc"
-    --per_base_bkgd_metrics "per_base_bkgd_metrics.txt" --vaf_threshold 0.1
+    --per_base_bkgd_metrics "per_base_bkgd_metrics.txt" --avgAF_threshold 0.1
 
 1.1.0 - make both forced call and per bases metrics inputs optional
+1.2.0:
+- use avgAF_threshold (calculated from normal samples) instead of vaf_threshold for filtering. Allows common germline polymorphism, i.e above 0.2, to come through even if variant AF is under 0.2.
+- fix minor bug where BE<metric> in INFO field is written as BEthreshold
 """
 
 import argparse
@@ -34,7 +37,8 @@ def supply_args():
 
     parser.add_argument('--per_base_bkgd_metrics', help='Text file containing freq stats of locus in panel')
 
-    parser.add_argument('--vaf_threshold', help='VAF threshold under to perform filtering')
+    parser.add_argument('--avgAF_threshold', help='Average AF threshold under to perform filtering')
+    parser.add_argument('--sdAF_threshold', help='Standard deviation AF threshold under to perform filtering')
     parser.add_argument('--alt_specific', action='store_true', help='Use ALT allele threshold to filter')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
@@ -83,15 +87,15 @@ def main():
 
     # add header info
     prefix = 'BE'
-    metrics = ['mean', 'std', 'median', 'threshold', 'zscore', 'pval']
+    metrics = ['mean', 'sd', 'median', 'threshold', 'zscore', 'pval']
 
     for metric in metrics:
         add_metrics_header('INFO', prefix, metric, 1, 'Float',
                            'Descriptive stats of locus allele frequencies from PON samples', header)
-    add_metrics_header('INFO', '', args.filter_id, 1, 'Float',
+    add_metrics_header('FILTER', '', args.filter_id, 1, 'Float',
                        'Below background', header)
     if fc_mets:
-        add_metrics_header('INFO', 'fc', args.filter_id, 1, 'Float',
+        add_metrics_header('FILTER', 'fc', args.filter_id, 1, 'Float',
                            'Below background for forced calls', header)
     writer = vcfpy.Writer.from_path(args.output_vcf, header=header)
 
@@ -100,22 +104,26 @@ def main():
         roi_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.REF, record.ALT[0].value)
         if args.fc_label in record.FILTER:
             if fc_mets:
-                for metric in metrics:
-                    record.INFO['{}{}'.format(prefix, metric)] = fc_mets[roi_id][metric]
-                if record.calls[0].data['AF'] < float(fc_mets[roi_id]['threshold']):
-                    record.add_filter('{}{}'.format(args.fc_label, args.filter_id))
+                if float(fc_mets[roi_id]['mean']) < float(args.avgAF_threshold):
+                    if float(fc_mets[roi_id]['sd']) < float(args.sdAF_threshold):
+                        for metric in metrics:
+                            record.INFO['{}{}'.format(prefix, metric)] = fc_mets[roi_id][metric]
+                        if record.calls[0].data['AF'] < float(fc_mets[roi_id]['threshold']):
+                            record.add_filter('{}{}'.format(args.fc_label, args.filter_id))
         else:
             if per_base_mets:
-                if record.ALT[0].type == 'SNV' and record.calls[0].data['AF'] < float(args.vaf_threshold):
+                if record.ALT[0].type == 'SNV':
                     if not args.alt_specific:
                         roi_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, 'nontarget', 'nontarget')
                     else:
                         roi_id = '{}:{}{}>{}'.format(record.CHROM, record.POS, record.ALT[0].value, record.ALT[0].value)
                     if roi_id in per_base_mets:
-                        for metric in metrics:
-                            record.INFO['{}{}'.format(prefix, metric)] = per_base_mets[roi_id]['threshold']
-                        if record.calls[0].data['AF'] < float(per_base_mets[roi_id]['threshold']):
-                            record.add_filter(args.filter_id)
+                        if float(per_base_mets[roi_id]['mean']) < float(args.avgAF_threshold):
+                            if float(per_base_mets[roi_id]['sd']) < float(args.sdAF_threshold):
+                                for metric in metrics:
+                                    record.INFO['{}{}'.format(prefix, metric)] = per_base_mets[roi_id][metric]
+                                if record.calls[0].data['AF'] < float(per_base_mets[roi_id]['threshold']):
+                                    record.add_filter(args.filter_id)
                     else:
                         print('{}:{} not found in PON background estimates file'.format(record.CHROM, record.POS))
         writer.write_record(record)
