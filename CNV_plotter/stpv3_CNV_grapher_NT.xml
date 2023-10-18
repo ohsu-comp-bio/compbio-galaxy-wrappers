@@ -7,7 +7,7 @@
   </requirements>
   <command detect_errors="exit_code"><![CDATA[
     Rscript $__tool_directory__/gtrellis_CNV_NT.R
-    $count_file $segment_file '${sample_name}' $gene_file
+    $count_file $segment_file '${sample_name}' $gene_file $gene_col
 
     #if $seqdict_source.seqdict_source_selector != "no_seq_dict"
         #if $seqdict_source.seqdict_source_selector != "history"
@@ -33,6 +33,7 @@
     <param name="count_file" type="data" format="tabular" label="Read Counts File"/>
     <param name="segment_file" type="data" format="tabular" label="Copy Ratio Segements"/>
     <param name="gene_file" type="data" format="tabular" label="Gene Interval File"/>
+    <param name="gene_col" type="text" label="Gene column name in Gene Interval File"/>
     <conditional name="seqdict_source">
         <param name="seqdict_source_selector" type="select" label="Choose the source for the sequence dictionary">
             <option value="cached">Locally cached</option>
@@ -53,6 +54,7 @@
     <param name="upper" type="float" value="5" label="Upper Bound"/>
     <param name="lower" type="float" value=".5" label="Lower Bound"/>
   </inputs>
+
   <outputs>
     <data name="plot1" format="png" from_work_dir="plot1.png" label="${tool.name} on ${on_string}: Plot 1"/>
     <data name="plot2" format="png" from_work_dir="plot2.png" label="${tool.name} on ${on_string}: Plot 2"/>

@@ -28,19 +28,21 @@ if ( !dplyrPackageExists ) {
 args <- commandArgs(TRUE)
 #The name of the file containing the read count data
 countFile <- args[1]
-# the name of the file containing the segment data
+#the name of the file containing the segment data
 segmentFile <- args[2]
 #What to name the sample in teh plots
 SampleName <- args[3]
 #the file containing the relevant genes and thier locations, for coloring the dots
 geneFile <- args[4]
+#the gene column name in geneFile
+geneCol <- args[5]
 #the file containing the chromosome lengths. can be either basic CHR, START, END or a sequence dictionary, for placing the pink lines
-chromFile <- args[5]
+chromFile <- args[6]
 #get the tumor percent, as a value from 0-100 and convert to fraction
-tumorPercent <- as.double(args[6])/100
+tumorPercent <- as.double(args[7])/100
 #the upper and lower bounds of normal to place the pink range lines
-upper <- as.double(args[7])
-lower <- as.double(args[8])
+upper <- as.double(args[8])
+lower <- as.double(args[9])
 
 
 #find out what type of chrom file was entered by taking the last four characters
@@ -91,11 +93,11 @@ correctCopies <- function(data_sheet) {
 	#get the tumor corrected copies number
 	data_sheet$tumorCorrectedCopies = (((2^(data_sheet[,log_name] + 1))-(2*(1-tumorPercent)))/tumorPercent)
 	#replace the negatives with .1
-	data_sheet$Tumor_Corrected_Copies_STPv3 = (ifelse(data_sheet$tumorCorrectedCopies > 0.1, data_sheet$tumorCorrectedCopies, .1))
+	data_sheet$Tumor_Corrected_Copies = (ifelse(data_sheet$tumorCorrectedCopies > 0.1, data_sheet$tumorCorrectedCopies, .1))
 	#get the raw copy number
 	data_sheet$rawCopies = 2*(2^data_sheet[,log_name])
 	#return only the needed columns, contig start end and tumore corrected copies
-	return(data_sheet[,c("CONTIG", "START", "END", log_name, "rawCopies", "Tumor_Corrected_Copies_STPv3")])
+	return(data_sheet[,c("CONTIG", "START", "END", log_name, "rawCopies", "Tumor_Corrected_Copies")])
 }
 
 
@@ -121,7 +123,7 @@ cnvPointsSegments <- genome_full_join(cnvPoints, cnvSegments, c('CONTIG', 'START
 cnvPointsSegments<-data.frame(cnvPointsSegments[complete.cases(cnvPointsSegments),]) #? merge() introducing NAs in some samples
 colnames(cnvPointsSegments) <- gsub(".x$", "_point", colnames(cnvPointsSegments))
 colnames(cnvPointsSegments) <- gsub(".y$", "_segment", colnames(cnvPointsSegments))
-cnvPointsSegments$tumorCorrectedCopiesPerSegment <- cnvPointsSegments$rawCopies_point * (cnvPointsSegments$Tumor_Corrected_Copies_STPv3_segment / cnvPointsSegments$rawCopies_segment)
+cnvPointsSegments$tumorCorrectedCopiesPerSegment <- cnvPointsSegments$rawCopies_point * (cnvPointsSegments$Tumor_Corrected_Copies_segment / cnvPointsSegments$rawCopies_segment)
 cnvPointsSegments$hg19Loc_segment = paste0(cnvPointsSegments$CONTIG_segment, ":", cnvPointsSegments$START_segment, "-", cnvPointsSegments$END_segment)
 segment_log2rawCopies_mad <- cnvPointsSegments %>%
   group_by(hg19Loc_segment) %>%
@@ -135,7 +137,7 @@ print(paste0('Sample Median MAD ("Median of the segment-level MADD values of log
 write(paste0('{\"cnv_median_segment_mad_cn\": ', sample_log2rawCopies_mad, '}'), "output_metrics.txt")
 
 
-plotCNV <- function(data, copyratioCol, copyratioPerSegmentCol, panelGeneCol, segments,
+plotCNV <- function(data, copyratioCol, copyratioPerSegmentCol, geneCol, segments,
 					filename, SampleName, title, ncol, byrow, xaxis, add_ideogram_track) {
 
 	png(filename = paste0(filename, ".png"), width = 1920, height = 960, units = "px")
@@ -145,8 +147,8 @@ plotCNV <- function(data, copyratioCol, copyratioPerSegmentCol, panelGeneCol, se
 	# color points differently if targets are within or outside STPv3 genes of interest
 	# blue == within STPv3 gene of interest; grey == outside STPv3 gene of interest; red == neither
 	add_points_track(data, log2(data[,copyratioPerSegmentCol]), pch = 16, size = unit(2, "mm"),
-					 gp = gpar(col = ifelse(data[,panelGeneCol] == "1", "blue",
-                                 ifelse(data[,panelGeneCol] == "0", "grey", "red"))))
+					 gp = gpar(col = ifelse(data[,geneCol] == "1", "blue",
+                                 ifelse(data[,geneCol] == "0", "grey", "red"))))
 	#add the green segement lines
 	add_segments_track(segments, log2(segments[,copyratioCol]), track=current_track(), gp = gpar(col = "green", lwd = 5))
 
@@ -160,13 +162,13 @@ plotCNV <- function(data, copyratioCol, copyratioPerSegmentCol, panelGeneCol, se
 }
 
 ## First plot of all chr in one row
-plotCNV(cnvPointsSegments, "Tumor_Corrected_Copies_STPv3", "tumorCorrectedCopiesPerSegment", "STPv3_225", cnvSegments,
+plotCNV(cnvPointsSegments, "Tumor_Corrected_Copies", "tumorCorrectedCopiesPerSegment", geneCol, cnvSegments,
 		"plot1", SampleName, "Log2 tumor-corrected copies", 24, TRUE, FALSE, FALSE)
 ## Second plot of all chr in six columns
 # plot2 has six columns; chr ordered by column, not by row
 # ylim max is set to max segment value for sample, plus add 1 for buffer to prevent points from getting squished at top
 # ylim min is fixed at -5 for all samples; may cut out failed assays, but prevents individual failed assays from making min too low
-plotCNV(cnvPointsSegments, "Tumor_Corrected_Copies_STPv3", "tumorCorrectedCopiesPerSegment", "STPv3_225", cnvSegments,
+plotCNV(cnvPointsSegments, "Tumor_Corrected_Copies", "tumorCorrectedCopiesPerSegment", geneCol, cnvSegments,
 		"plot2", SampleName, "Log2 tumor-corrected copies", 6, FALSE, TRUE, TRUE)
 
 #### Duplicate plot1 and plot2 to make additional plots with raw copies ####
@@ -174,8 +176,8 @@ plotCNV(cnvPointsSegments, "Tumor_Corrected_Copies_STPv3", "tumorCorrectedCopies
 #### change plot titles, track_ylim, and track_ylab from "tumor-corrected copies" to "raw copies" ####
 #### Replace cnvPoints$Tumor_Corrected_Copies_STPv3 with cnvPoints$rawCopies #####
 #### Replace cnvSegments$Tumor_Corrected_Copies_STPv3 with cnvSegments$rawCopies #####
-plotCNV(cnvPointsSegments, "rawCopies", "tumorCorrectedCopiesPerSegment", "STPv3_225", cnvSegments,
-		"plot3", SampleName, "Log2 raw copies", 24, TRUE, FALSE, FALSE)
-plotCNV(cnvPointsSegments, "rawCopies", "tumorCorrectedCopiesPerSegment", "STPv3_225", cnvSegments,
+plotCNV(cnvPointsSegments, "rawCopies", "tumorCorrectedCopiesPerSegment", geneCol, cnvSegments,
+		"plot3", SampleName, paste0("Log2 raw copies (MAD = ", sample_log2rawCopies_mad, ")"), 24, TRUE, FALSE, FALSE)
+plotCNV(cnvPointsSegments, "rawCopies", "tumorCorrectedCopiesPerSegment", geneCol, cnvSegments,
 		"plot4", SampleName, "Log2 raw copies", 6, FALSE, TRUE, TRUE)
 
