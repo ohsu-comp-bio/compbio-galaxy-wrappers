@@ -8,6 +8,8 @@ Inequality to estimate upper and lower VAF bounds.  Will not assess 1/1 genotype
 1.0.0 - Rewrite.
 1.2.1 - Changed conf to 0.99999999999
 1.3.0 - Don't apply StrandBias label when genotype is 1/1; make conf a parameter
+1.3.1 - Removed vcftype and callers parameter and use VCF fields check to get strand counts.
+1.3.2 - Include previous strand bias method.
 """
 
 from __future__ import print_function
@@ -15,7 +17,10 @@ import argparse
 import vcfpy
 import numpy as np
 
-VERSION = '1.3.0'
+from filter_strand_v0 import adj_alts
+
+
+VERSION = '1.3.2.3'
 
 
 def supply_args():
@@ -24,40 +29,24 @@ def supply_args():
     https://docs.python.org/2.7/library/argparse.html
     """
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--infile', help='Input VCF.')
-    parser.add_argument('--vcftype', help='Type of VCF.')
-    parser.add_argument('--conf', type=float, default=0.9999, help='Confidence level.')
-    parser.add_argument('--callers', help='Callers in a merged VCF.')
-    parser.add_argument('--outfile', help='Output VCF.')
+    parser.add_argument('infile', help="Input VCF.")
+    parser.add_argument('outfile', help="Output VCF.")
+    parser.add_argument('--strandbias_flag', type=str, default='StrandBias', help='Strand bias flag.')
+    parser.add_argument('--method', choices=['adjust_alts', 'hoeffding'], default='adjust_alts',
+                        help="Method to use to access strand bias. Choices: adjust_alts, hoeffding.")
+    parser.add_argument('--conf', type=float, default=0.9999, help="Confidence level for hoeffding calculation.")
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
 
 
-def m2_strand_count(record):
-    srf, srr, saf, sar = record.calls[0].data['SB']
-    return [srf, srr, saf, sar]
-
-
-def fb_strand_count(record):
-    srf, srr, saf, sar, = record.INFO['SRF'], record.INFO['SRR'], record.INFO['SAF'][0], record.INFO['SAR'][0]
-    return [srf, srr, saf, sar]
-
-
-def get_strand_count(record, vcftype, callers):
-    if vcftype == 'merged':
-        callers = callers.split(' ')
-        for flt in record.FILTER:
-            if flt in callers:
-                vcftype = flt[:2]
-                break
-    if vcftype == 'm2':
-        return m2_strand_count(record)
-    elif vcftype == 'fb':
-        return fb_strand_count(record)
+def get_strand_count(record):
+    if 'SRF' in record.INFO:
+        return [record.INFO['SRF'], record.INFO['SRR'], record.INFO['SAF'][0], record.INFO['SAR'][0]]
+    elif 'SB' in record.calls[0].data and record.calls[0].data['SB']:
+        return record.calls[0].data['SB']
     else:
-        pass
-        # raise Exception('Unrecognized VCF type at {}:{}'.format(record.CHROM, record.POS))
+        return None
 
 
 class VcfReader:
@@ -166,27 +155,29 @@ class FilterAdd:
 def main():
     args = supply_args()
     infile = VcfReader(args.infile)
-    filter_annot = 'StrandBias'
-    conf = 0.95
+    filter_annot = args.strandbias_flag
     # Add the header entry.
     header_add = vcfpy.OrderedDict()
     header_add['ID'] = filter_annot
-    header_add['Description'] = 'Evidence of strand orientation bias at this locus according to bounds defined ' \
-                                'by Hoeffdings Inequality.'
+    header_add['Description'] = f"Evidence of strand orientation bias at this locus according to bounds defined by {args.method} method."
     infile.header.add_filter_line(header_add)
     # Open writer using newly created header.
     writer = vcfpy.Writer.from_path(args.outfile, infile.header)
 
     for entry in infile.vrnts:
-        info = get_strand_count(entry, args.vcftype, args.callers)
+        strand_res = True
+        info = get_strand_count(entry)
         if info:
-            gt = entry.calls[0].gt_type
-            strand = StrandOps(info, args.conf)
-            strand_res = strand.assess_strand()
-            if not strand_res:
-                if gt != 2:
-                    filt = FilterAdd(entry.FILTER)
-                    filt.add_filt(text=filter_annot)
+            if entry.calls[0].gt_type != 2:
+                if args.method == 'adjust_alts':
+                    strand_res = adj_alts(*info)
+                elif args.method == 'hoeffding':
+                    strand_res = StrandOps(info, args.conf).assess_strand()
+                else:
+                    raise Exception("Specify either adjust_alts or hoeffding methods")
+        if not strand_res:
+            filt = FilterAdd(entry.FILTER)
+            filt.add_filt(text=filter_annot)
         writer.write_record(entry)
 
     writer.close()

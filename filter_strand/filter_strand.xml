@@ -1,4 +1,4 @@
-<tool id="filter_strand" name="Strand Bias Filter" version="1.3.0" >
+<tool id="filter_strand" name="Strand Bias Filter" version="1.3.2.3" >
     <description>Filter based on bias in alternate and reference read direction.</description>
 
     <requirements>
@@ -8,24 +8,34 @@
 
     <command><![CDATA[
     python $__tool_directory__/filter_strand.py
-    --infile "${infile}"
-    --outfile "${outfile}"
-    #if $vcftype
-        --vcftype "${vcftype}"
+    "${infile}" "${outfile}"
+    #if $strandbias_flag
+        --strandbias_flag "${strandbias_flag}"
     #end if
-    #if $conf
-        --conf "${conf}"
+
+    #if $method_select.method
+        --method "${method_select.method}"
     #end if
-    #if $callers
-        --callers "${callers}"
+
+    #if str($method_select.method) == "hoeffding"
+        #if $method_select.conf
+            --conf "${method_select.conf}"
+        #end if
     #end if
     ]]></command>
 
     <inputs>
         <param name="infile" type="data" format="vcf" label="Input VCF" />
-        <param name="vcftype" type="text" label="Type of VCF" />
-        <param name="conf" type="float" value="0.9999" min="0" max="1" label="Confidence level" />
-        <param name="callers" type="text" optional="true" label="Callers if VCF type is a merged VCF" />
+        <param name="strandbias_flag" type="text" label="StrandBias flag" />
+        <conditional name="method_select">
+            <param name="method" type="select" label="Method to use to access strand bias. Choices: adjust_alts, hoeffding." >
+                <option value="adjust_alts">adjust_alts</option>
+                <option value="hoeffding">hoeffding</option>
+            </param>
+            <when value="hoeffding">
+                <param name="conf" type="float" value="0.9999" min="0" max="1" label="Confidence level" />
+            </when>
+        </conditional>
     </inputs>
 
     <outputs>
