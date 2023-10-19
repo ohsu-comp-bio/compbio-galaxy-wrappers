@@ -4,13 +4,13 @@
 Filter a merged VCF based on FILTER column.
 
 Usage:
-    vcf_filter.py 'input.vcf' 'output.vcf' 'output2_vcf'
-        --callers "sc fb m2 fc mrdf"
-        --exclude "PON_FILT" --include "mrdf fc clinvar.CLNSIG=Pathogenic clinvar.CLNSIG=Likely_pathogenic clinvar.CLNSIG=Pathogenic/Likely_pathogenic CLNSIGCONF=Pathogenic CLNSIGCONF=Likely_pathogenic" --snp_threshold 1.0 --indel_threshold 1.0
-        --exclude "BelowBKGD" --include "mrdf fc clinvar.CLNSIG=Pathogenic clinvar.CLNSIG=Likely_pathogenic clinvar.CLNSIG=Pathogenic/Likely_pathogenic CLNSIGCONF=Pathogenic CLNSIGCONF=Likely_pathogenic" --snp_threshold 1.0 --indel_threshold 1.0
-        --exclude "StrandBias" --include "mrdf fc clinvar.CLNSIG=Pathogenic clinvar.CLNSIG=Likely_pathogenic clinvar.CLNSIG=Pathogenic/Likely_pathogenic CLNSIGCONF=Pathogenic CLNSIGCONF=Likely_pathogenic" --snp_threshold 1.0 --indel_threshold 1.0
-        --exclude "fb" --include "mrdf fc clinvar.CLNSIG=Pathogenic clinvar.CLNSIG=Likely_pathogenic clinvar.CLNSIG=Pathogenic/Likely_pathogenic CLNSIGCONF=Pathogenic CLNSIGCONF=Likely_pathogenic" --snp_threshold 0.1 --indel_threshold 0.02
-        --exclude "m2"  --include "mrdf fc clinvar.CLNSIG=Pathogenic clinvar.CLNSIG=Likely_pathogenic clinvar.CLNSIG=Pathogenic/Likely_pathogenic clinvar.CLNSIGCONF=Pathogenic clinvar.CLNSIGCONF=Likely_pathogenic" --snp_threshold 0.1 --indel_threshold 0.1
+vcf_filter.py 'input.vcf' 'output.vcf' 'output2_vcf'
+    --callers "sc fb m2 fc mrdf"
+    --exclude "PON_FILT" --include "mrdf fc clinvar.CLNSIG=Pathogenic clinvar.CLNSIG=Likely_pathogenic clinvar.CLNSIG=Pathogenic/Likely_pathogenic CLNSIGCONF=Pathogenic CLNSIGCONF=Likely_pathogenic" --snp_threshold 1.0 --indel_threshold 1.0
+    --exclude "BelowBKGD" --include "mrdf fc clinvar.CLNSIG=Pathogenic clinvar.CLNSIG=Likely_pathogenic clinvar.CLNSIG=Pathogenic/Likely_pathogenic CLNSIGCONF=Pathogenic CLNSIGCONF=Likely_pathogenic" --snp_threshold 1.0 --indel_threshold 1.0
+    --exclude "StrandBias" --include "mrdf fc clinvar.CLNSIG=Pathogenic clinvar.CLNSIG=Likely_pathogenic clinvar.CLNSIG=Pathogenic/Likely_pathogenic CLNSIGCONF=Pathogenic CLNSIGCONF=Likely_pathogenic" --snp_threshold 1.0 --indel_threshold 1.0
+    --exclude "fb" --include "mrdf fc clinvar.CLNSIG=Pathogenic clinvar.CLNSIG=Likely_pathogenic clinvar.CLNSIG=Pathogenic/Likely_pathogenic CLNSIGCONF=Pathogenic CLNSIGCONF=Likely_pathogenic" --snp_threshold 0.1 --indel_threshold 0.02
+    --exclude "m2"  --include "mrdf fc clinvar.CLNSIG=Pathogenic clinvar.CLNSIG=Likely_pathogenic clinvar.CLNSIG=Pathogenic/Likely_pathogenic clinvar.CLNSIGCONF=Pathogenic clinvar.CLNSIGCONF=Likely_pathogenic" --snp_threshold 0.1 --indel_threshold 0.1
 
 Given a merged VCF, this will filter out variants that contain the exclude argument in the FILTER column.
 """
@@ -18,7 +18,7 @@ Given a merged VCF, this will filter out variants that contain the exclude argum
 import argparse
 import vcfpy
 
-VERSION = '2.1.1'
+VERSION = '2.2.0'
 
 
 def get_args():
@@ -41,12 +41,12 @@ def get_args():
     return args
 
 
-class RecordFilters:
-    def __init__(self, record_filters, vcf_callers):
-        self.filters = record_filters
-        self.vcf_callers = vcf_callers
-        self.callers = [filt for filt in record_filters if filt in vcf_callers]
-        self.flags = [filt for filt in record_filters if filt not in vcf_callers]
+class VcfFilters:
+    def __init__(self, filters, callers):
+        self.filters = filters
+        self.callers = callers
+        self.callers = [filt for filt in filters if filt in callers]
+        self.flags = [filt for filt in filters if filt not in callers]
         self.is_multicalled = True if len(self.callers) > 1 else False
         self.info = self._get_info()
 
@@ -65,46 +65,42 @@ class RecordFilters:
         return self.callers + self.flags
 
 
-def check_info(record, info):
-    for k in info:
-        if k in record.INFO:
-            for item in info[k]:
-                # if given filter string is contained in record.INFO item  # TODO
-                if any(item in item2 for item2 in record.INFO[k]):
-                    return True
-
-
 class RecordKeeper:
     def __init__(self, record, callers):
         self.record = record
         self.callers = callers
-        self.rec_filters = RecordFilters(record.FILTER, callers)
+        self.record_filters = VcfFilters(record.FILTER, callers)
+
+    def check_record_infos(self, info_terms_dict):
+        for d in [self.record.INFO, self.record.calls[0].data]:
+            for k in info_terms_dict:
+                if k in d:
+                    for item in info_terms_dict[k]:
+                        if any(item == item2 for item2 in d[k]) or item == '*':
+                            return True
 
     def exclude_record(self, exclude, threshold):
-        exclude = RecordFilters(exclude, self.callers)
+        exclude = VcfFilters(exclude, self.callers)
         if self.record.calls[0].data['AF'] <= float(threshold):
             # if only given a caller check that it is the only caller present
             if exclude.callers and not (exclude.flags or exclude.info):
-                if exclude.callers == self.rec_filters.callers:
+                if exclude.callers == self.record_filters.callers:
                     return True
             # if given only flag(s) (or info field(s))
             elif not exclude.callers and (exclude.flags or exclude.info):
-                if any(filt in self.rec_filters.filters for filt in exclude.flags) or check_info(self.record, exclude.info):
+                if any(filt in self.record_filters.filters for filt in exclude.flags) or self.check_record_infos(exclude.info):
                     return True
             # if given callers and flags or info fields
             elif exclude.callers and (exclude.flags or exclude.info):
-                if exclude.callers == self.rec_filters.callers and (any(filt in self.rec_filters.filters for filt in exclude.flags) or check_info(self.record, exclude.info)):
+                if exclude.callers == self.record_filters.callers and (any(filt in self.record_filters.filters for filt in exclude.flags) or self.check_record_infos(exclude.info)):
                     return True
             else:
                 raise Exception('Filters must be callers, flags or info (given as ID=value)')
         return False
 
     def include_record(self, include, inc_multicalled):
-        include = RecordFilters(include, self.callers)
-        if any(filt in self.rec_filters.filters for filt in include.filters) or \
-                any(filt in self.rec_filters.filters for filt in include.filters) or \
-                check_info(self.record, include.info) or \
-                (inc_multicalled == "True" and self.rec_filters.is_multicalled):
+        include = VcfFilters(include, self.callers)
+        if any(filt in self.record_filters.filters for filt in include.filters) or self.check_record_infos(include.info) or (inc_multicalled == "True" and self.record_filters.is_multicalled):
             return True
         return False
 
@@ -155,7 +151,7 @@ def main():
                 else:
                     break
 
-        record.FILTER = RecordFilters(record.FILTER, callers).caller_prioritize()
+        record.FILTER = VcfFilters(record.FILTER, callers).caller_prioritize()
         if keep:
             writer.write_record(record)
         else:

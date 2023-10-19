@@ -1,4 +1,4 @@
-<tool id="vcf_filter" name="VCF Filter" version="2.1.1" >
+<tool id="vcf_filter" name="VCF Filter" version="2.2.0" >
   <description>Filter VCF based on FILTER column</description>
 
   <requirements>

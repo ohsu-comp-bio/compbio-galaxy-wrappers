@@ -9,11 +9,6 @@ repositories:
     include:
       - vcf_merge.py
       - vcf_merge.xml
-  vcf_select_2:
-    description: "Select VCF fields in a merged VCF."
-    include:
-      - vcf_select.py
-      - vcf_select.xml
   vcf_filter_2:
     description: "Filter VCF based on FILTER column."
     include:
