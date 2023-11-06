@@ -9,3 +9,5 @@ repositories:
     include:
       - filter_strand.xml
       - filter_strand.py
+      - filter_strand_v0.py
+      - file_handle_ops.py
