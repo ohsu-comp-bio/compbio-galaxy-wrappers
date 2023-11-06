@@ -1,4 +1,4 @@
-<tool id="vcf_merge" name="VCF Merge" version="2.0.0" >
+<tool id="vcf_merge" name="VCF Merge" version="2.2.0" >
   <description>Merge VCFs produced by various variant callers</description>
 
   <requirements>
@@ -23,11 +23,20 @@
       --caller_label "${input.caller_label}"
       --input_vcf input${i}.vcf
     #end for
-    --input_vcfs
-    #for $i, $input in enumerate( $inputs ):
-      input${i}.vcf
-    #end for
     --output_vcf "${output_vcf}"
+    --caller_priority $caller_priority
+    #if $caller_priority_indel
+      --caller_priority_indel $caller_priority_indel
+    #end if
+    #if $filter_fields
+      --filter_fields $filter_fields
+    #end if
+    #if $info_fields
+      --info_fields $info_fields
+    #end if
+    #if $format_fields
+      --format_fields $format_fields
+    #end if
   ]]></command>
 
   <inputs>
@@ -35,6 +44,11 @@
       <param name="caller_label" type="text" label="Labels for each input vcf" />
       <param name="input_vcf" type="data" format="vcf,vcf_bgzip" label="Input VCF" />
     </repeat>
+    <param name="caller_priority" type="text" label="Caller label priority" />
+    <param name="caller_priority_indel" type="text" label="Caller label priority for INDELs" />
+    <param name="filter_fields" type="text" label="Filter fields of interest" />
+    <param name="info_fields" type="text" label="Info fields of interest" />
+    <param name="format_fields" type="text" label="Format fields of interest" />
   </inputs>
 
   <outputs>
