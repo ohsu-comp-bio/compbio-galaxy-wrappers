@@ -1,4 +1,4 @@
-<tool id='XY_check' name="XY Check" version='2.0.0'>
+<tool id='XY_check' name="XY Check" version='2.1.0'>
     <description>Predict allosome type based on existence of Y chromosome marker counts.</description>
     <requirements>
         <requirement type="package" version="4.0.5.1">gatk4</requirement>

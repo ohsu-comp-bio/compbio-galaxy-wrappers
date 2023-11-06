@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION='2.0.0'
+VERSION='2.1.0'
 
 """
 Predict allosomes based on existence of Y chromosome marker counts
@@ -25,13 +25,13 @@ END
 echo $COUNT > "log.txt"
 
 if [ $COUNT -lt $2 ]; then
-    echo "{\"bio_sex_check\": 0}" > "output.txt";
+    echo "{\"bio_sex_check\": \"Female\"}" > "output.txt";
     XY="FEMALE"
 elif [ $COUNT -gt $3 ]; then
-    echo "{\"bio_sex_check\": 1}" > "output.txt";
+    echo "{\"bio_sex_check\": \"Male\"}" > "output.txt";
     XY="MALE"
 else
-    echo "{\"bio_sex_check\": 999}" > "output.txt";
+    echo "{\"bio_sex_check\": \"Indeterminate\"}" > "output.txt";
     XY="UNSPECIFIED"
 fi
 echo $XY >> "log.txt"
