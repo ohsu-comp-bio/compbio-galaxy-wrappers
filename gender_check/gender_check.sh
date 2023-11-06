@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION='2.0.0'
+VERSION='2.1.0'
 
 gatk CollectReadCounts -I $1 -L Y -O output.tsv -imr OVERLAPPING_ONLY -format TSV
 
@@ -19,13 +19,13 @@ END
 echo $COUNT > "log.txt"
 
 if [ $COUNT -lt $2 ]; then
-    echo "{\"bio_sex_check\": 0}" > "output.txt";
+    echo "{\"bio_sex_check\": \"Female\"}" > "output.txt";
     GENDER="FEMALE"
 elif [ $COUNT -gt $3 ]; then
-    echo "{\"bio_sex_check\": 1}" > "output.txt";
+    echo "{\"bio_sex_check\": \"Male\"}" > "output.txt";
     GENDER="MALE"
 else
-    echo "{\"bio_sex_check\": 999}" > "output.txt";
+    echo "{\"bio_sex_check\": \"Indeterminate\"}" > "output.txt";
     GENDER="UNSPECIFIED"
 fi
 echo $GENDER >> "log.txt"
