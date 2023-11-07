@@ -1,11 +1,15 @@
 import argparse
 
+VERSION = '0.0.1'
+
 def supply_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('gff', help='')
     parser.add_argument('vcf', help='')
+    parser.add_argument('outfile', help='Output VCF')
     parser.add_argument('gene_list', help='')
     parser.add_argument('--ordered_test', '-o')
+    parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
     return args
 
@@ -29,11 +33,10 @@ def filter_genes(genelist_filepath, ot_input):
     return gene_filter
 
 
-def annotate_vcf(gff_filepath, vcf_filepath, genes=[]):
+def annotate_vcf(gff_filepath, vcf_filepath, new_filepath, genes=[]):
     gff = open(gff_filepath, 'r')
     vcf = open(vcf_filepath, 'r')
-    new_vcf_filepath = vcf_filepath.partition('.vcf')[0] + '_MODIFIED' + vcf_filepath.partition('.vcf')[1]
-    new_vcf = open(new_vcf_filepath, 'w')
+    new_vcf = open(new_filepath, 'w')
 
     # Init dictionary of GENE:[chr, start pos, end pos] from GFF
     gene_dict = {}
@@ -106,9 +109,9 @@ def main():
 
     if args.ordered_test != None:
         genes = filter_genes(args.gene_list, args.ordered_test)
-        annotate_vcf(args.gff, args.vcf, genes)
+        annotate_vcf(args.gff, args.vcf, args.outfile, genes)
     else:
-        annotate_vcf(args.gff, args.vcf)
+        annotate_vcf(args.gff, args.vcf, args.outfile)
 
 if __name__ == '__main__':
     main()
