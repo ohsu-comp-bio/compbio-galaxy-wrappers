@@ -1,6 +1,6 @@
 import argparse
 
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 
 def supply_args():
     parser = argparse.ArgumentParser(description='')
@@ -66,16 +66,28 @@ def annotate_vcf(gff_filepath, vcf_filepath, new_filepath, genes=[]):
             # Get INFO entry
             line_array2 = line.split('\t')
             info_array = line_array2[7].split(';')
+            info_array_check = len(info_array)
 
             # iterate through .gff genes
             for k, v in gene_dict.items():
-                if v[0] == line_array2[0] and line_array2[1] >= v[1] and line_array2[1] <= v[2]:
+                if v[0] == line_array2[0] and line_array2[1] >= v[1] and line_array2[1] <= v[2] and len(
+                        info_array) == info_array_check:
+                    info_array.append('Gene=' + k)
+                elif v[0] == line_array2[0] and line_array2[1] >= v[1] and line_array2[1] <= v[2] and len(
+                        info_array) > info_array_check:
+                    info_array[-1] = str(info_array[-1]) + ',' + k
 
-                    if k not in genes and len(genes) != 0:
-                        break
-                    else:
-                        info_array.append('Gene=' + k)
-                        break
+            # Filter if not in gene list
+            gene_in_list = False
+            if info_array[-1][0:4] == 'Gene' and len(genes) != 0:
+                for g in info_array[-1].split(','):
+                    if g[0:5] == 'Gene=' and g[5:] in genes:
+                        gene_in_list = True
+                    elif g in genes:
+                        gene_in_list = True
+
+            if gene_in_list == False:
+                continue
 
             # Filter out non-annotated lines by skipping it if gene info isn't available
             if info_array[-1][0:4] != 'Gene' and len(genes) != 0:
@@ -101,7 +113,7 @@ def annotate_vcf(gff_filepath, vcf_filepath, new_filepath, genes=[]):
 
     vcf.close()
     new_vcf.close()
-
+    return gene_dict.keys()
 
 def main():
 
@@ -109,7 +121,11 @@ def main():
 
     if args.ordered_test != None:
         genes = filter_genes(args.gene_list, args.ordered_test)
-        annotate_vcf(args.gff, args.vcf, args.outfile, genes)
+        gff_genes = annotate_vcf(args.gff, args.vcf, args.outfile, genes)
+        print('Ordered test genes: ', len(genes))
+        print('GFF genes: ', len(gff_genes))
+        print('Number of common genes: ', len(set(genes) & set(gff_genes)))
+        print('Common genes: ', set(genes) & set(gff_genes))
     else:
         annotate_vcf(args.gff, args.vcf, args.outfile)
 
