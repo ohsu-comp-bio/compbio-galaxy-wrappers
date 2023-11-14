@@ -1,6 +1,6 @@
 import argparse
 
-VERSION = '0.0.2'
+VERSION = '0.0.3'
 
 def supply_args():
     parser = argparse.ArgumentParser(description='')
@@ -57,11 +57,16 @@ def annotate_vcf(gff_filepath, vcf_filepath, new_filepath, genes=[]):
                 gene = line_array[8].split(';')[1].partition('Name=')[2]
                 gene_dict[gene] = [current_chr, start, end]
 
+    # Insert ##INFO description for Gene annotation
+    header_insert = False
     for line in vcf:
         # If it's a header line, just write it to new VCF
         if line.startswith('#'):
             new_vcf.write(line)
-            continue
+            if line.startswith('##INFO') and header_insert is False:
+                new_vcf.write(
+                    '##INFO=<ID=Gene,Number=.,Type=String,Description="Genes corresponding to coordinates of this variant.">\n')
+                header_insert = True
         else:
             # Get INFO entry
             line_array2 = line.split('\t')
