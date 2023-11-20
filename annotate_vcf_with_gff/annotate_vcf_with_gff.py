@@ -1,6 +1,6 @@
 import argparse
 
-VERSION = '0.0.3'
+VERSION = '0.0.4'
 
 def supply_args():
     parser = argparse.ArgumentParser(description='')
@@ -75,11 +75,9 @@ def annotate_vcf(gff_filepath, vcf_filepath, new_filepath, genes=[]):
 
             # iterate through .gff genes
             for k, v in gene_dict.items():
-                if v[0] == line_array2[0] and line_array2[1] >= v[1] and line_array2[1] <= v[2] and len(
-                        info_array) == info_array_check:
+                if v[0] == line_array2[0] and int(line_array2[1]) >= int(v[1]) and int(line_array2[1]) <= int(v[2]) and len(info_array) == info_array_check:
                     info_array.append('Gene=' + k)
-                elif v[0] == line_array2[0] and line_array2[1] >= v[1] and line_array2[1] <= v[2] and len(
-                        info_array) > info_array_check:
+                elif v[0] == line_array2[0] and int(line_array2[1]) >= int(v[1]) and int(line_array2[1]) <= int(v[2]) and len(info_array) > info_array_check:
                     info_array[-1] = str(info_array[-1]) + ',' + k
 
             # Filter if not in gene list
