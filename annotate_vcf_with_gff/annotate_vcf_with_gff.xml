@@ -1,4 +1,4 @@
-<tool id="annotate_vcf_with_gff" name="Annotate VCF With GFF" version="0.0.4" >
+<tool id="annotate_vcf_with_gff" name="Annotate VCF With GFF" version="0.0.5" >
   <description>Use regions defined in a GFF file to annotate a VCF INFO column.</description>
 
   <requirements>

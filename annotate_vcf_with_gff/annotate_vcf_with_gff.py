@@ -1,6 +1,6 @@
 import argparse
 
-VERSION = '0.0.4'
+VERSION = '0.0.5'
 
 def supply_args():
     parser = argparse.ArgumentParser(description='')
@@ -89,7 +89,7 @@ def annotate_vcf(gff_filepath, vcf_filepath, new_filepath, genes=[]):
                     elif g in genes:
                         gene_in_list = True
 
-            if gene_in_list == False:
+            if gene_in_list is False and len(genes) != 0:
                 continue
 
             # Filter out non-annotated lines by skipping it if gene info isn't available
@@ -124,11 +124,18 @@ def main():
 
     if args.ordered_test != None:
         genes = filter_genes(args.gene_list, args.ordered_test)
-        gff_genes = annotate_vcf(args.gff, args.vcf, args.outfile, genes)
+        gff_genes = list(annotate_vcf(args.gff, args.vcf, args.outfile, genes))
         print('Ordered test genes: ', len(genes))
         print('GFF genes: ', len(gff_genes))
         print('Number of common genes: ', len(set(genes) & set(gff_genes)))
-        print('Common genes: ', set(genes) & set(gff_genes))
+        print('Common: ', set(genes) & set(gff_genes))
+        # Stop tool and print missing genes, if applicable
+        uncommon = []
+        for i in set(genes):
+            if i not in set(gff_genes):
+                uncommon.append(i)
+        if len(uncommon) > 0:
+            raise AttributeError(uncommon, ' is/are missing from reference.')
     else:
         annotate_vcf(args.gff, args.vcf, args.outfile)
 
