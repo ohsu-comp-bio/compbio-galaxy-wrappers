@@ -32,7 +32,7 @@ import json
 from inputs import ProbeQcRead, PerLocusRead, AlignSummaryMetrics, GatkDepthOfCoverageRead, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
 
-VERSION = '0.8.10'
+VERSION = '0.8.11'
 
 def supply_args():
     """
