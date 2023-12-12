@@ -3,6 +3,8 @@
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
 VERSION HISTORY
+0.8.12
+    Add class DragenMetrics to handle metrics data for IlluminaExome_V2_DRAGEN
 0.8.11
     Add QIAseq_XP_RNA_STP
 0.8.10
@@ -32,7 +34,7 @@ import json
 from inputs import ProbeQcRead, PerLocusRead, AlignSummaryMetrics, GatkDepthOfCoverageRead, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
 
-VERSION = '0.8.11'
+VERSION = '0.8.12'
 
 def supply_args():
     """
@@ -72,6 +74,9 @@ def supply_args():
 
     parser.add_argument('--blia_pre', help='JSON from Ding correlation subtyping, pre-normalization.')
     parser.add_argument('--blia_post', help='JSON from Ding correlation subtyping, post-normalization.')
+
+    parser.add_argument('--dragen_metrics', help='JSON file containing metrics produced by DRAGEN')
+    parser.add_argument('--dragen_qc', help='CSV file containing fastqc data produced by DRAGEN')
 
     # These just get attached to the final json output as-is.
     parser.add_argument('--json_in', nargs='*',
@@ -730,18 +735,121 @@ class Writer:
             for metric, val in self.mets.mets.items():
                 to_write.write("{}: {}\n".format(metric, val))
 
+class DragenMetrics:
+    """
+    Collect and write metrics of interest for IlluminaExome_V2_DRAGEN
+    """
+    def __init__(self, args):
+
+        self.gather_dragen_metrics(args)
+        self.gc_calculator(args)
+
+        self.mets = {'qthirty': self.q30,
+                    'averageDepth': self.avg_depth,
+                    'depthTen': self.depth10,
+                    'depthTwenty': self.depth20,
+                    'depthFifty': self.depth50,
+                    'depthOneHundred': self.depth100,
+                    'percentOnTarget': self.pct_on_target,
+                    'gc_pct_r1': self.gc_r1,
+                    'gc_pct_r2': self.gc_r2,
+                    'dragen_ploidy_est': self.ploidy_est,
+                    'number_of_large_roh_gt_eq_3000000': self.roh}
+
+        self.cgd_list = ['gc_pct_r1', 'gc_pct_r2', 'number_of_large_roh_gt_eq_3000000', 'dragen_ploidy_est']
+
+    def gather_dragen_metrics(self, args):
+        """
+        Collect metrics of interest from DRAGEN metrics JSON
+        """
+
+        with open(args.dragen_metrics, "r") as mets_handle:
+            for line in mets_handle:
+                line = line.strip().strip(",").replace("\"", "")
+                if "q30_bases_pct" in line:
+                    self.q30 = line.split()[1]
+                if "average_alignment_coverage_over_target_region" in line:
+                    self.avg_depth = line.split()[1]
+                if "pct_of_target_region_with_coverage_10x_inf" in line:
+                    self.depth10 = line.split()[1]
+                if "pct_of_target_region_with_coverage_20x_inf" in line:
+                    self.depth20 = line.split()[1]
+                if "pct_of_target_region_with_coverage_50x_inf" in line:
+                    self.depth50 = line.split()[1]
+                if "pct_of_target_region_with_coverage_100x_inf" in line:
+                    self.depth100 = line.split()[1]
+                if "aligned_reads_in_target_region_pct" in line:
+                    self.pct_on_target = line.split()[1]
+                if "number_of_large_roh_gt_eq_3000000" in line:
+                    self.roh = line.split()[1]
+                if "ploidy_estimation" in line:
+                    self.ploidy_est = line.split()[1]
+
+    def gc_calculator(self, args):
+        """
+        Calculate GC content for R1 and R2 from DRAGEN QC data
+        """
+
+        r1_total, r2_total = 0, 0
+        r1_gc, r2_gc = 0, 0
+
+        # sum bases from DRAGEN FastQC output file
+        with open(args.dragen_qc) as qc_handle:
+            for line in qc_handle:
+                if "POSITIONAL BASE CONTENT" in line:
+                    num = int(line.split(',')[3])
+                    if "Read1" in line:
+                        r1_total += num
+                        if "G Bases" in line or "C Bases" in line:
+                            r1_gc += num
+                    if "Read2" in line:
+                        r2_total += num
+                        if "G Bases" in line or "C Bases" in line:
+                            r2_gc += num
+
+        # compute GC content for R1 and R2
+        self.gc_r1 = round(r1_gc * 100 / r1_total)
+        self.gc_r2 = round(r2_gc * 100 / r2_total)
+
+    def cgd_writer(self, filename):
+        """
+        Provide new metric style for CGD import
+        """
+        to_write = {'sampleRunMetrics': [], 'geneMetrics': []}
+        for metric, val in self.mets.items():
+            if metric in self.cgd_list:
+                if val:
+                    metric_dict = {'metric': str(metric), 'value': str(val)}
+                    to_write['sampleRunMetrics'].append(metric_dict)
+        with open(filename, 'w') as jwrite:
+            json.dump(to_write, jwrite)
+
+    def txt_writer(self,filename):
+        """
+        Write metrics to a text file, mainly to be viewed in Galaxy
+        """
+        with open(filename, 'w') as to_write:
+            for metric, val in self.mets.items():
+                to_write.write("{}: {}\n".format(metric, val))
 
 def main():
     args = supply_args()
-    raw_mets = RawMetricCollector(args)
-    samp_mets = MetricPrep(raw_mets)
-    writer = Writer(samp_mets)
-    if args.outfile_txt:
-        writer.write_to_text(args.outfile_txt)
-    if args.outfile:
-        writer.write_cgd_old(args.outfile)
-    if args.outfile_new:
-        writer.write_cgd_new(args.outfile_new)
+
+    # If DRAGEN run use DragenMetrics class
+    if args.dragen_metrics and args.dragen_qc:
+        dragen_mets = DragenMetrics(args)
+        dragen_mets.txt_writer(args.outfile_txt)
+        dragen_mets.cgd_writer(args.outfile_new)
+    else:
+        raw_mets = RawMetricCollector(args)
+        samp_mets = MetricPrep(raw_mets)
+        writer = Writer(samp_mets)
+        if args.outfile_txt:
+            writer.write_to_text(args.outfile_txt)
+        if args.outfile:
+            writer.write_cgd_old(args.outfile)
+        if args.outfile_new:
+            writer.write_cgd_new(args.outfile_new)
 
 
 if __name__ == "__main__":
