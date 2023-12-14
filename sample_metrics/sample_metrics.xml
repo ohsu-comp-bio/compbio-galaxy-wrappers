@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.8.11" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.8.12" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
 
   <requirements>
@@ -59,6 +59,12 @@
     #if $blia_post
         --blia_post '${blia_post}'
     #end if
+    #if $dragen_metrics:
+        --dragen_metrics '${dragen_metrics}'
+    #end if
+    #if $dragen_qc:
+        --dragen_qc '${dragen_qc}'
+    #end if
     #if $json_in:
         --json_in
         #for $input in $json_in:
@@ -88,6 +94,8 @@
       <param name="blia_pre" type="data" format="txt" optional="true" label="BLIA BLIS Pre" help="JSON metrics from BLIA BLIA subtyping pre-normalization." />
       <param name="blia_post" type="data" format="txt" optional="true" label="BLIA BLIS Post" help="JSON metrics from BLIA BLIA subtyping post-normalization." />
       <param name="json_in" type="data" format="txt" optional="true" multiple="true" label="JSON Formatted Metrics File" help="Some arbitrary number of input files containing json formatted metrics." />
+      <param name="dragen_metrics" type="data" format="txt" optional="true" label="DRAGEN JSON Formatted Metrics File" help="JSON formatted metrics file produced by DRAGEN." />
+      <param name="dragen_qc" type="data" format="csv" optional="true" label="DRAGEN QC CSV" help="CSV file with QC data produced by DRAGEN." />
       <conditional name="umi">
           <param label="Assess UMI deduplication" name="umi_sel" type="select">
               <option value="umi_yes">Yes</option>
