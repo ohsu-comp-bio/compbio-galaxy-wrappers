@@ -1,6 +1,6 @@
 import argparse
 
-VERSION = '0.0.5'
+VERSION = '0.0.6'
 
 def supply_args():
     parser = argparse.ArgumentParser(description='')
@@ -20,6 +20,9 @@ def filter_genes(genelist_filepath, ot_input):
 
     match = False
     for line in gene_list:
+        if ot_input == 'Clinical Exome' or ot_input == '':
+            match = True
+            break
         line_array = line.split('\t')
         ordered_test = line_array[1]
 
@@ -27,7 +30,7 @@ def filter_genes(genelist_filepath, ot_input):
             match = True
             gene_filter.append(line_array[2])
 
-    if match == False:
+    if match is False:
         raise NameError('Please enter proper ordered test name.')
 
     return gene_filter
@@ -72,12 +75,15 @@ def annotate_vcf(gff_filepath, vcf_filepath, new_filepath, genes=[]):
             line_array2 = line.split('\t')
             info_array = line_array2[7].split(';')
             info_array_check = len(info_array)
+            vcf_chr = line_array2[0]
+            if vcf_chr.startswith('chr'):
+                vcf_chr = vcf_chr[3:]
 
             # iterate through .gff genes
             for k, v in gene_dict.items():
-                if v[0] == line_array2[0] and int(line_array2[1]) >= int(v[1]) and int(line_array2[1]) <= int(v[2]) and len(info_array) == info_array_check:
+                if v[0] == vcf_chr and int(line_array2[1]) >= int(v[1]) and int(line_array2[1]) <= int(v[2]) and len(info_array) == info_array_check:
                     info_array.append('Gene=' + k)
-                elif v[0] == line_array2[0] and int(line_array2[1]) >= int(v[1]) and int(line_array2[1]) <= int(v[2]) and len(info_array) > info_array_check:
+                elif v[0] == vcf_chr and int(line_array2[1]) >= int(v[1]) and int(line_array2[1]) <= int(v[2]) and len(info_array) > info_array_check:
                     info_array[-1] = str(info_array[-1]) + ',' + k
 
             # Filter if not in gene list
@@ -125,17 +131,21 @@ def main():
     if args.ordered_test != None:
         genes = filter_genes(args.gene_list, args.ordered_test)
         gff_genes = list(annotate_vcf(args.gff, args.vcf, args.outfile, genes))
-        print('Ordered test genes: ', len(genes))
-        print('GFF genes: ', len(gff_genes))
-        print('Number of common genes: ', len(set(genes) & set(gff_genes)))
-        print('Common: ', set(genes) & set(gff_genes))
-        # Stop tool and print missing genes, if applicable
-        uncommon = []
-        for i in set(genes):
-            if i not in set(gff_genes):
-                uncommon.append(i)
-        if len(uncommon) > 0:
-            raise AttributeError(uncommon, ' is/are missing from reference.')
+
+        if args.ordered_test != 'Clinical Exome' and args.ordered_test != '':
+            print('Ordered test genes: ', len(genes))
+            print('GFF genes: ', len(gff_genes))
+            print('Number of common genes: ', len(set(genes) & set(gff_genes)))
+            print('Common: ', set(genes) & set(gff_genes))
+            # Stop tool and print missing genes, if applicable
+            uncommon = []
+            for i in set(genes):
+                if i not in set(gff_genes):
+                    uncommon.append(i)
+            if len(uncommon) > 0:
+                raise AttributeError(uncommon, ' is/are missing from reference.')
+        else:
+            print('Annotating without filtering...')
     else:
         annotate_vcf(args.gff, args.vcf, args.outfile)
 
