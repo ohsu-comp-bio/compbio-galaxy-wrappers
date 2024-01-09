@@ -3,6 +3,8 @@
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
 VERSION HISTORY
+0.8.12
+    Add class DragenMetrics and class DragenQC to handle metrics data for IlluminaExome_V2_DRAGEN
 0.8.11
     Add QIAseq_XP_RNA_STP
 0.8.10
@@ -32,7 +34,7 @@ import json
 from inputs import ProbeQcRead, PerLocusRead, AlignSummaryMetrics, GatkDepthOfCoverageRead, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
 
-VERSION = '0.8.11'
+VERSION = '0.8.12'
 
 def supply_args():
     """
@@ -72,6 +74,9 @@ def supply_args():
 
     parser.add_argument('--blia_pre', help='JSON from Ding correlation subtyping, pre-normalization.')
     parser.add_argument('--blia_post', help='JSON from Ding correlation subtyping, post-normalization.')
+
+    parser.add_argument('--dragen_metrics', help='JSON file containing metrics produced by DRAGEN')
+    parser.add_argument('--dragen_qc', help='CSV file containing fastqc data produced by DRAGEN')
 
     # These just get attached to the final json output as-is.
     parser.add_argument('--json_in', nargs='*',
@@ -198,6 +203,16 @@ class RawMetricCollector:
             self.json_mets = self._json_in(args.json_in)
         else:
             self.json_mets = None
+
+        if args.dragen_metrics:
+            self.dragen_metrics = DragenMetrics(args.dragen_metrics)
+        else:
+            self.dragen_metrics = None
+
+        if args.dragen_qc:
+            self.dragen_qc = DragenQC(args.dragen_qc)
+        else:
+            self.dragen_qc = None
 
     @staticmethod
     def _json_in(json_in):
@@ -541,7 +556,18 @@ class MetricPrep(SampleMetrics):
                 'forced_calls_above': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_above'),
                 'forced_calls_below': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_below'),
                 'y_ploidy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='y_ploidy_check'),
-                'cnv_median_segment_mad_cn': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='cnv_median_segment_mad_cn')
+                'cnv_median_segment_mad_cn': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='cnv_median_segment_mad_cn'),
+                'q30_bases_pct': self.raw_mets.dragen_metrics.q30,
+                'average_alignment_coverage_over_target_region': self.raw_mets.dragen_metrics.avg_depth,
+                'pct_of_target_region_with_coverage_10x_inf': self.raw_mets.dragen_metrics.depth10,
+                'pct_of_target_region_with_coverage_20x_inf':self.raw_mets.dragen_metrics.depth20,
+                'pct_of_target_region_with_coverage_50x_inf': self.raw_mets.dragen_metrics.depth50,
+                'pct_of_target_region_with_coverage_100x_inf': self.raw_mets.dragen_metrics.depth100,
+                'aligned_reads_in_target_region_pct': self.raw_mets.dragen_metrics.pct_on_target,
+                'dragen_gc_pct_r1': self.raw_mets.dragen_qc.gc_r1,
+                'dragen_gc_pct_r2': self.raw_mets.dragen_qc.gc_r2,
+                'number_of_large_roh_gt_eq_3000000': self.raw_mets.dragen_metrics.roh,
+                'ploidy_estimation': self.raw_mets.dragen_metrics.ploidy_est
                 }
         return mets
 
@@ -617,6 +643,11 @@ class MetricPrep(SampleMetrics):
                                     'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
                 'AgilentCRE_V1': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
+                'IlluminaExome_V2_DRAGEN': ['q30_bases_pct', 'average_alignment_coverage_over_target_region',
+                                            'pct_of_target_region_with_coverage_20x_inf',
+                                            'pct_of_target_region_with_coverage_100x_inf',
+                                            'aligned_reads_in_target_region_pct', 'pct_of_target_region_with_coverage_10x_inf',
+                                            'pct_of_target_region_with_coverage_50x_inf'],
                 'QIAseq_V3_HEME2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                     'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'QIAseq_V4_MINI': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
@@ -647,6 +678,7 @@ class MetricPrep(SampleMetrics):
                 'TruSightOneV2_5': ['gc_pct_r1', 'gc_pct_r2', 'y_ploidy_check', 'homozygosity_flag'],
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
                                   'gc_pct_r1', 'gc_pct_r2', 'homozygosity_flag', 'y_ploidy_check'],
+                'IlluminaExome_V2_DRAGEN' : ['dragen_gc_pct_r1', 'dragen_gc_pct_r2', 'ploidy_estimation', 'number_of_large_roh_gt_eq_3000000'],
                 'QIAseq_V3_HEME2': [],
                 'QIAseq_V4_MINI': ['forced_calls_above', 'forced_calls_below', 'bio_sex_check'],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
@@ -729,6 +761,66 @@ class Writer:
         with open(filename, 'w') as to_write:
             for metric, val in self.mets.mets.items():
                 to_write.write("{}: {}\n".format(metric, val))
+
+class DragenMetrics:
+    """
+    Collect metrics of interest from DRAGEN metrics JSON
+    """
+    def __init__(self, metrics):
+        self.gather_dragen_metrics(metrics)
+
+    def gather_dragen_metrics(self, metrics):
+        with open(metrics, "r") as metric_handle:
+            for line in metric_handle:
+                line = line.strip().strip(",").replace("\"", "")
+                if "q30_bases_pct" in line:
+                    self.q30 = line.split()[1]
+                if "average_alignment_coverage_over_target_region" in line:
+                    self.avg_depth = line.split()[1]
+                if "pct_of_target_region_with_coverage_10x_inf" in line:
+                    self.depth10 = line.split()[1]
+                if "pct_of_target_region_with_coverage_20x_inf" in line:
+                    self.depth20 = line.split()[1]
+                if "pct_of_target_region_with_coverage_50x_inf" in line:
+                    self.depth50 = line.split()[1]
+                if "pct_of_target_region_with_coverage_100x_inf" in line:
+                    self.depth100 = line.split()[1]
+                if "aligned_reads_in_target_region_pct" in line:
+                    self.pct_on_target = line.split()[1]
+                if "number_of_large_roh_gt_eq_3000000" in line:
+                    self.roh = line.split()[1]
+                if "ploidy_estimation" in line:
+                    self.ploidy_est = line.split()[1]
+
+class DragenQC:
+    """
+    Calculate GC content for R1 and R2 from DRAGEN QC data
+    """
+    def __init__(self, qc_data):
+        self.gc_calculator(qc_data)
+
+    def gc_calculator(self, qc_data):
+
+        r1_total, r2_total = 0, 0
+        r1_gc, r2_gc = 0, 0
+
+        # sum bases from DRAGEN FastQC output file
+        with open(qc_data) as qc_handle:
+            for line in qc_handle:
+                if "POSITIONAL BASE CONTENT" in line:
+                    num = int(line.split(',')[3])
+                    if "Read1" in line:
+                        r1_total += num
+                        if "G Bases" in line or "C Bases" in line:
+                            r1_gc += num
+                    if "Read2" in line:
+                        r2_total += num
+                        if "G Bases" in line or "C Bases" in line:
+                            r2_gc += num
+
+        # compute GC content for R1 and R2
+        self.gc_r1 = round(r1_gc * 100 / r1_total)
+        self.gc_r2 = round(r2_gc * 100 / r2_total)
 
 
 def main():
