@@ -1,0 +1,42 @@
+<tool id="annotate_vcf_with_gff" name="Annotate VCF With GFF" version="0.0.6" >
+  <description>Use regions defined in a GFF file to annotate a VCF INFO column.</description>
+
+  <requirements>
+  </requirements>
+
+  <version_command><![CDATA[
+    python $__tool_directory__/annotate_vcf_with_gff.py --version
+  ]]></version_command>
+
+  <command detect_errors="exit_code"><![CDATA[
+    #if $filter.option == "yes"
+        python $__tool_directory__/annotate_vcf_with_gff.py "${input_gff}" "${input_vcf}" "${output_vcf}" "${gene_list}" -o "${filter.ordered_test}"
+      #else
+        python $__tool_directory__/annotate_vcf_with_gff.py "${input_gff}" "${input_vcf}" "${output_vcf}" "${gene_list}"
+      #end if
+  ]]></command>
+
+  <inputs>
+    <param name="input_gff" type="data" format="gff" label="Input GFF" help="GFF file containing a list of genes to annotate by coordinate." />
+    <param name="input_vcf" type="data" format="vcf" label="Input VCF" help="VCF file to be annotated." />
+    <param name="gene_list" type="data" format="txt" label="Gene List" help="txt file containing genes by ordered test" />
+    <conditional name="filter">
+        <param name="option" type="select" label="Select if VCF should be filtered by gene">
+            <option value="yes" selected="True">Yes</option>
+            <option value="no" selected="True">No</option>
+        </param>
+
+        <when value="yes">
+             <param type="text" name="ordered_test" argument="--ordered_test" label="Ordered Test"/>
+        </when>
+        <when value="no">
+        </when>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" />
+  </outputs>
+  <help>
+  </help>
+</tool>
