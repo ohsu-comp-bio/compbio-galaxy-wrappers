@@ -579,17 +579,17 @@ class MetricPrep(SampleMetrics):
                 'forced_calls_below': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_below'),
                 'y_ploidy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='y_ploidy_check'),
                 'cnv_median_segment_mad_cn': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='cnv_median_segment_mad_cn'),
-                'q30_bases_pct': self.raw_mets.dragen_metrics.q30,
-                'average_alignment_coverage_over_target_region': self.raw_mets.dragen_metrics.avg_depth,
-                'pct_of_target_region_with_coverage_10x_inf': self.raw_mets.dragen_metrics.depth10,
-                'pct_of_target_region_with_coverage_20x_inf':self.raw_mets.dragen_metrics.depth20,
-                'pct_of_target_region_with_coverage_50x_inf': self.raw_mets.dragen_metrics.depth50,
-                'pct_of_target_region_with_coverage_100x_inf': self.raw_mets.dragen_metrics.depth100,
-                'aligned_reads_in_target_region_pct': self.raw_mets.dragen_metrics.pct_on_target,
-                'dragen_gc_pct_r1': self.raw_mets.dragen_qc.gc_r1,
-                'dragen_gc_pct_r2': self.raw_mets.dragen_qc.gc_r2,
-                'number_of_large_roh_gt_eq_3000000': self.raw_mets.dragen_metrics.roh,
-                'ploidy_estimation': self.raw_mets.dragen_metrics.ploidy_est
+                'q30_bases_pct': self.raw_mets.dragen_metrics.q30 if self.raw_mets.dragen_metrics else None,
+                'average_alignment_coverage_over_target_region': self.raw_mets.dragen_metrics.avg_depth if self.raw_mets.dragen_metrics else None,
+                'pct_of_target_region_with_coverage_10x_inf': self.raw_mets.dragen_metrics.depth10 if self.raw_mets.dragen_metrics else None,
+                'pct_of_target_region_with_coverage_20x_inf':self.raw_mets.dragen_metrics.depth20 if self.raw_mets.dragen_metrics else None,
+                'pct_of_target_region_with_coverage_50x_inf': self.raw_mets.dragen_metrics.depth50 if self.raw_mets.dragen_metrics else None,
+                'pct_of_target_region_with_coverage_100x_inf': self.raw_mets.dragen_metrics.depth100 if self.raw_mets.dragen_metrics else None,
+                'aligned_reads_in_target_region_pct': self.raw_mets.dragen_metrics.pct_on_target if self.raw_mets.dragen_metrics else None,
+                'dragen_gc_pct_r1': self.raw_mets.dragen_qc.gc_r1 if self.raw_mets.dragen_metrics else None,
+                'dragen_gc_pct_r2': self.raw_mets.dragen_qc.gc_r2 if self.raw_mets.dragen_metrics else None,
+                'number_of_large_roh_gt_eq_3000000': self.raw_mets.dragen_metrics.roh if self.raw_mets.dragen_metrics else None,
+                'ploidy_estimation': self.raw_mets.dragen_metrics.ploidy_est if self.raw_mets.dragen_metrics else None
                 }
         return mets
 
