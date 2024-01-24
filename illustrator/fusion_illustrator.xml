@@ -1,0 +1,38 @@
+<tool id="fusion_illustrator" name="KMT2A-PTD illustration" version="0.0.1" >
+    <description>Illustrate KMT2A-PTD chimeric junctions</description>
+
+    <requirements>
+        <requirement type="package" version="3.4.4">r-ggplot2</requirement>
+        <requirement type="package" version="1.3.1">r-tidyr</requirement>
+        <requirement type="package" version="1.14.10">r-data.table</requirement>
+        <requirement type="package" version="1.1.4">r-dplyr</requirement>
+        <requirement type="package" version="2.3">r-gridExtra</requirement>
+        <requirement type="package" version="2.3">r-gridExtra</requirement>
+        <requirement type="package" version="1.62.0">bioconductor-rtracklayer</requirement>
+        <requirement type="package" version="1.54.1">bioconductor-genomicranges</requirement>
+        <requirement type="package" version="0.99.9">ggtranscript</requirement>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+       Rscript $__tool_directory__/fusion_illustrator.R $gtf_path $ptd_path $illustration_report
+    ]]></command>
+
+    <inputs>
+        <param name="gtf_path" type="data" format="gtf.gz" label="Sample ID" help=""/>
+        <param name="ptd_path" type="data" format="txt" label="Run ID" help=""/>
+    </inputs>
+
+    <outputs>
+        <data name="illustration_report" format="pdf" label="${ptd_path}_illustration: pdf"/>
+    </outputs>
+
+    <tests>
+      <test>
+      </test>
+    </tests>
+
+    <help></help>
+
+    <citations>
+    </citations>
+</tool>
