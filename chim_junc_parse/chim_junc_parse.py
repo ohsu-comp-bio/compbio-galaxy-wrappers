@@ -1,10 +1,18 @@
 #!/usr/bin/env python
 
+"""
+Used on STAR chimeric junction output to try and find evidence of partial tandem duplication events.
+
+0.0.1 - Initial commit
+0.0.2 - Add gene name columns to output
+"""
+
 import argparse
 import json
 import pysam
+import re
 
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 
 
 def supply_args():
@@ -104,8 +112,23 @@ class BedPeRec:
         self.refseq2 = junc[13]
         self.ccds2 = junc[14]
         self.exon2 = junc[15]
-        self.rec = (self.name, self.refseq1, self.ccds1, self.exon1, self.refseq2, self.ccds2, self.exon2)
+        self.gene1, self.gene2 = self._parse_gene_from_name(self.name)
+        self.rec = (self.name, self.refseq1, self.ccds1, self.exon1, self.refseq2, self.ccds2, self.exon2,
+                    self.gene1, self.gene2)
         self.ref_coords = self._ref_coord()
+
+    @staticmethod
+    def _parse_gene_from_name(fusion_name):
+        """
+        Get the HGNC gene names from the fusion name as defined in the input BEDPE.
+        :param fusion_name:
+        :return:
+        """
+        name_ptrn = re.compile(r'([A-Za-z0-9]*)[ei][0-9]{1,2}-([A-Za-z0-9]*)[ei][0-9]{1,2}')
+        r = re.search(name_ptrn, fusion_name)
+        gene1 = r.group(1)
+        gene2 = r.group(2)
+        return gene1, gene2
 
     def _ref_coord(self):
         """
@@ -169,8 +192,9 @@ class Output:
     """
     def __init__(self, filename, juncs, bedpe, ref_fasta, tott):
         self.filename = filename
-        self.header = ['Fusion', 'Chrom1', 'Coord1', 'RefSeq1', 'CCDS1', 'Exon1', 'RefStatus1', 'Chrom2', 'Coord2',
-                       'RefSeq2', 'CCDS2', 'Exon2', 'RefStatus2', 'Count', 'NormCount', 'CombinedSeq']
+        self.header = ['Fusion', 'Gene1', 'Chrom1', 'Coord1', 'RefSeq1', 'CCDS1', 'Exon1', 'RefStatus1', 'Gene2',
+                       'Chrom2', 'Coord2', 'RefSeq2', 'CCDS2', 'Exon2', 'RefStatus2', 'Count', 'NormCount',
+                       'CombinedSeq']
         self.juncs = juncs
         self.bedpe = bedpe
         self.ref_fasta = ref_fasta
@@ -218,9 +242,9 @@ class Output:
             for fusion in self.juncs:
                 for coords, count in self.juncs[fusion].items():
                     if count >= thresh:
-                        to_write = [fusion[0], coords[0], coords[1], fusion[1], fusion[2], fusion[3],
+                        to_write = [fusion[0], fusion[7], coords[0], coords[1], fusion[1], fusion[2], fusion[3],
                                     self._apply_ref(coords[1], self.bedpe.ref1_coords),
-                                    coords[2], coords[3], fusion[4], fusion[5], fusion[6],
+                                    fusion[8], coords[2], coords[3], fusion[4], fusion[5], fusion[6],
                                     self._apply_ref(coords[3], self.bedpe.ref2_coords),
                                     str(count), self._calc_on_target(count),
                                     self._get_combined_seq(coords[0], coords[1], coords[2], coords[3])]

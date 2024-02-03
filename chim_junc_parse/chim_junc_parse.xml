@@ -1,4 +1,4 @@
-<tool id="chim_junc_parse" name="Chimeric Junction Parser" version="0.0.1" >
+<tool id="chim_junc_parse" name="Chimeric Junction Parser" version="0.0.2" >
     <description>From the STAR aligner chimeric junction output, find additional junctions of interest, as defined in the input BEDPE.</description>
     <requirements>
         <requirement type="package" version="0.15.3">pysam</requirement>
