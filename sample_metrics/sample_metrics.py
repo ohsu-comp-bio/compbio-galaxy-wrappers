@@ -4,6 +4,7 @@ Create sample level metrics to be passed to the CGD.  Metrics are passed as a js
 
 VERSION HISTORY
 0.8.13
+    Add pre-umi dedup depth metrics and post-umi alignment metrics
     Changed workflow name to IlluminaExome_V2_PlusMito
 0.8.12
     Add class DragenMetrics and class DragenQC to handle metrics data for IlluminaExome_V2_DRAGEN
@@ -295,8 +296,11 @@ class SampleMetrics:
         try:
             self.on_target = self._add_on_target(self.raw_mets.picard_summary, self.raw_mets.fastqc_seq_count,
                                                  total_lbl='PF_READS_ALIGNED')
+            self.on_target_after = self._add_on_target(self.raw_mets.picard_summary_umi, self.raw_mets.fastqc_seq_count,
+                                                 total_lbl='PF_READS_ALIGNED')
         except:
             self.on_target = None
+            self.on_target_after = None
         try:
             self.on_primer_frag_count = self.raw_mets.primers_bam
         except:
@@ -487,19 +491,35 @@ class MetricPrep(SampleMetrics):
         "COUNT_10000": 9, "COUNT_100000": 0, "TPM_0": 22296, "TPM_0.01": 15366, "TPM_0.1": 15360, "TPM_1": 14323,
         "TPM_10": 9791, "TPM_100": 1505, "TPM_1000": 98}
         """
-        mets = {'qthirty': self._get_avg_probeqc('Q30'),
-                'averageDepth': self._get_avg_probeqc('AVGD'),
-                'depthTen': self._get_avg_probeqc('D10'),
-                'depthTwenty': self._get_avg_probeqc('D20'),
-                'depthFifty': self._get_avg_probeqc('D50'),
-                'depthOneHundred': self._get_avg_probeqc('D100'),
-                'depthTwoHundredFifty': self._get_avg_probeqc('D250'),
-                'depthFiveHundred': self._get_avg_probeqc('D500'),
-                'depthSevenHundred': self._get_avg_probeqc('D700'),
-                'depthOneThousand': self._get_avg_probeqc('D1000'),
-                'depthTwelveHundredFifty': self._get_avg_probeqc('D1250'),
-                'depthTwoThousand': self._get_avg_probeqc('D2000'),
-                'uniformity_of_coverage': self._get_cov_uniformity(self._get_avg_probeqc('AVGD')),
+        mets = {'qthirty': self._get_avg_probeqc('Q30', self.probeqc_after, self.total_bp_after),
+                'qthirty_before': self._get_avg_probeqc('Q30', self.probeqc_before, self.total_bp_before),
+                'averageDepth': self._get_avg_probeqc('AVGD', self.probeqc_after, self.total_bp_after),
+                'averageDepth_before': self._get_avg_probeqc('AVGD', self.probeqc_before, self.total_bp_before),
+                'depthTen': self._get_avg_probeqc('D10', self.probeqc_after, self.total_bp_after),
+                'depthTen_before': self._get_avg_probeqc('D10', self.probeqc_before, self.total_bp_before),
+                'depthTwenty': self._get_avg_probeqc('D20', self.probeqc_after, self.total_bp_after),
+                'depthTwenty_before': self._get_avg_probeqc('D20', self.probeqc_before, self.total_bp_before),
+                'depthFifty': self._get_avg_probeqc('D50', self.probeqc_after, self.total_bp_after),
+                'depthFifty_before': self._get_avg_probeqc('D50', self.probeqc_before, self.total_bp_before),
+                'depthOneHundred': self._get_avg_probeqc('D100', self.probeqc_after, self.total_bp_after),
+                'depthOneHundred_before': self._get_avg_probeqc('D100', self.probeqc_before, self.total_bp_before),
+                'depthTwoHundredFifty': self._get_avg_probeqc('D250', self.probeqc_after, self.total_bp_after),
+                'depthTwoHundredFifty_before': self._get_avg_probeqc('D250', self.probeqc_before, self.total_bp_before),
+                'depthFiveHundred': self._get_avg_probeqc('D500', self.probeqc_after, self.total_bp_after),
+                'depthFiveHundred_before': self._get_avg_probeqc('D500', self.probeqc_before, self.total_bp_before),
+                'depthSevenHundred': self._get_avg_probeqc('D700', self.probeqc_after, self.total_bp_after),
+                'depthSevenHundred_before': self._get_avg_probeqc('D700', self.probeqc_before, self.total_bp_before),
+                'depthOneThousand': self._get_avg_probeqc('D1000', self.probeqc_after, self.total_bp_after),
+                'depthOneThousand_before': self._get_avg_probeqc('D1000', self.probeqc_before, self.total_bp_before),
+                'depthTwelveHundredFifty': self._get_avg_probeqc('D1250', self.probeqc_after, self.total_bp_after),
+                'depthTwelveHundredFifty_before': self._get_avg_probeqc('D1250', self.probeqc_before, self.total_bp_before),
+                'depthTwoThousand': self._get_avg_probeqc('D2000', self.probeqc_after, self.total_bp_after),
+                'depthTwoThousand_before': self._get_avg_probeqc('D2000', self.probeqc_before, self.total_bp_before),
+                'uniformity_of_coverage': self._get_cov_uniformity(self._get_avg_probeqc('AVGD', self.probeqc_after, self.total_bp_after)),
+                'pf_reads': self.raw_mets.picard_summary['PAIR']['PF_READS'],
+                'pf_reads_after': self.raw_mets.picard_summary_umi['PAIR']['PF_READS'],
+                'pct_pf_reads_aligned': self.raw_mets.picard_summary['PAIR']['PCT_PF_READS_ALIGNED'],
+                'pct_pf_reads_aligned_after': self.raw_mets.picard_summary_umi['PAIR']['PCT_PF_READS_ALIGNED'],
                 'allele_balance': self._reduce_sig(self._add_json_mets(lookin=self.raw_mets.json_mets,
                                                                        metric='allele_balance')),
                 'allele_balance_het_count': self._add_json_mets(lookin=self.raw_mets.json_mets,
@@ -519,6 +539,7 @@ class MetricPrep(SampleMetrics):
                                                            metric='parentage_confirmed'),
                 'parentage_sites': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_sites'),
                 'percentOnTarget': self._reduce_sig(self.on_target),
+                'percentOnTarget_after': self._reduce_sig(self.on_target_after),
                 'percentUmi': self.pumi,
                 'rna_count_zero': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_0'),
                 'rna_count_one': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_1'),
@@ -559,17 +580,17 @@ class MetricPrep(SampleMetrics):
                 'forced_calls_below': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_below'),
                 'y_ploidy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='y_ploidy_check'),
                 'cnv_median_segment_mad_cn': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='cnv_median_segment_mad_cn'),
-                'q30_bases_pct': self.raw_mets.dragen_metrics.q30,
-                'average_alignment_coverage_over_target_region': self.raw_mets.dragen_metrics.avg_depth,
-                'pct_of_target_region_with_coverage_10x_inf': self.raw_mets.dragen_metrics.depth10,
-                'pct_of_target_region_with_coverage_20x_inf':self.raw_mets.dragen_metrics.depth20,
-                'pct_of_target_region_with_coverage_50x_inf': self.raw_mets.dragen_metrics.depth50,
-                'pct_of_target_region_with_coverage_100x_inf': self.raw_mets.dragen_metrics.depth100,
-                'aligned_reads_in_target_region_pct': self.raw_mets.dragen_metrics.pct_on_target,
-                'dragen_gc_pct_r1': self.raw_mets.dragen_qc.gc_r1,
-                'dragen_gc_pct_r2': self.raw_mets.dragen_qc.gc_r2,
-                'number_of_large_roh_gt_eq_3000000': self.raw_mets.dragen_metrics.roh,
-                'ploidy_estimation': self.raw_mets.dragen_metrics.ploidy_est
+                'q30_bases_pct': self.raw_mets.dragen_metrics.q30 if self.raw_mets.dragen_metrics else None,
+                'average_alignment_coverage_over_target_region': self.raw_mets.dragen_metrics.avg_depth if self.raw_mets.dragen_metrics else None,
+                'pct_of_target_region_with_coverage_10x_inf': self.raw_mets.dragen_metrics.depth10 if self.raw_mets.dragen_metrics else None,
+                'pct_of_target_region_with_coverage_20x_inf':self.raw_mets.dragen_metrics.depth20 if self.raw_mets.dragen_metrics else None,
+                'pct_of_target_region_with_coverage_50x_inf': self.raw_mets.dragen_metrics.depth50 if self.raw_mets.dragen_metrics else None,
+                'pct_of_target_region_with_coverage_100x_inf': self.raw_mets.dragen_metrics.depth100 if self.raw_mets.dragen_metrics else None,
+                'aligned_reads_in_target_region_pct': self.raw_mets.dragen_metrics.pct_on_target if self.raw_mets.dragen_metrics else None,
+                'dragen_gc_pct_r1': self.raw_mets.dragen_qc.gc_r1 if self.raw_mets.dragen_metrics else None,
+                'dragen_gc_pct_r2': self.raw_mets.dragen_qc.gc_r2 if self.raw_mets.dragen_metrics else None,
+                'number_of_large_roh_gt_eq_3000000': self.raw_mets.dragen_metrics.roh if self.raw_mets.dragen_metrics else None,
+                'ploidy_estimation': self.raw_mets.dragen_metrics.ploidy_est if self.raw_mets.dragen_metrics else None
                 }
         return mets
 
@@ -604,7 +625,7 @@ class MetricPrep(SampleMetrics):
         if metric:
             return "{:.2f}".format(float(metric)*100)
 
-    def _get_avg_probeqc(self, label):
+    def _get_avg_probeqc(self, label, probeqc, bp):
         """
         Retrieve average metric from the probeqc_after dict.  All ProbeQCs are after, unless they
         are being run on UMI-containing assays.  If this is the case, the probeqc_before dict
@@ -612,8 +633,8 @@ class MetricPrep(SampleMetrics):
         :return:
         """
         try:
-            this_cov = self._calc_cov(self.probeqc_after, label)
-            return self._calc_metric(self.total_bp_after, this_cov)
+            this_cov = self._calc_cov(probeqc, label)
+            return self._calc_metric(bp, this_cov)
         except:
             return None
 
