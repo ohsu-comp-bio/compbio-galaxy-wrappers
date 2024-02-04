@@ -2,10 +2,8 @@
 
 # Galaxy wrapper for cgd_client.jar.
 # JAVA8_PATH and CGD_CLIENT_CONFIG must be defined in the Galaxy contrib/ohsu_exacloud_env.sh file.
-# USAGE: send_to_cgd.py -h
-# CODED BY: John Letaw
+# 1.2.9.5 - Added support for chimeric junctions endpoint
 
-# Not providing this code until we have finalized SNP profile reqs for lab.
 from snp_profile import SnpProfile
 import argparse
 import json
@@ -22,7 +20,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.9.4'
+VERSION = '1.2.9.5'
 
 
 def supply_args():
