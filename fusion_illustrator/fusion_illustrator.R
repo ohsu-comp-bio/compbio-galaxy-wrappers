@@ -9,6 +9,7 @@ library(dplyr)
 library(data.table)
 library(ggtranscript) #for plotting the reference genes
 library(tidyr)
+library(ggrepel)
 library(grid)
 library(gridExtra)
 library(rtracklayer)
