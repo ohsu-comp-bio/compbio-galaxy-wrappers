@@ -8,18 +8,20 @@
         <requirement type="package" version="1.1.4">r-dplyr</requirement>
         <requirement type="package" version="2.3">r-gridExtra</requirement>
         <requirement type="package" version="2.3">r-gridExtra</requirement>
+        <requirement type="package" version="0.9.4">r-ggrepel</requirement>
         <requirement type="package" version="1.62.0">bioconductor-rtracklayer</requirement>
         <requirement type="package" version="1.54.1">bioconductor-genomicranges</requirement>
-        <requirement type="package" version="0.99.9">ggtranscript</requirement>
     </requirements>
 
     <command detect_errors="exit_code"><![CDATA[
-       Rscript $__tool_directory__/fusion_illustrator.R $gtf_path $ptd_path $illustration_report
+       ln -s "gtf_path" human.gtf.gz &&
+       ln -s "$ptd_path" ptd.txt &&
+       Rscript $__tool_directory__/fusion_illustrator.R human.gtf.gz ptd.txt $illustration_report
     ]]></command>
 
     <inputs>
-        <param name="gtf_path" type="data" format="gtf.gz" label="Sample ID" help=""/>
-        <param name="ptd_path" type="data" format="txt" label="Run ID" help=""/>
+        <param name="gtf_path" type="data" format="gtf.gz" label="GTF" help=""/>
+        <param name="ptd_path" type="data" format="txt" label="PTD" help=""/>
     </inputs>
 
     <outputs>
