@@ -1,4 +1,4 @@
-# Current Version: 1.1.3
+# Current Version: 1.1.4
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -487,7 +487,7 @@ for (i in seq(1,length(clia_abs), by=4)){
   if ((i+1)<=length(clia_abs)){
     print(clia_abs[i+1])
     q2.plot <- ggplot(data=ab.batches[ProbeName == clia_abs[i+1]], mapping=aes(x=name, y=abundance)) +
-      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
+      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = T) +
       geom_jitter(data=ab.batches.cur[ProbeName == clia_abs[i+1]], size=3, width=.15, height=0) +
       theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+1])) +
       scale_x_discrete(guide = guide_axis(n.dodge = 3))
@@ -505,12 +505,16 @@ for (i in seq(1,length(clia_abs), by=4)){
   if ((i+3)<=length(clia_abs)){
     print(clia_abs[i+3])
     q4.plot <- ggplot(data=ab.batches[ProbeName == clia_abs[i+3]], mapping=aes(x=name, y=abundance)) +
-      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
+      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = T) +
       geom_jitter(data=ab.batches.cur[ProbeName == clia_abs[i+3]], size=3, width=.15, height=0) +
       theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+3])) +
       scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
-  grid.arrange(q1.plot, q2.plot, q3.plot, q4.plot)
+  q1.grob <- ggplotGrob(q1.plot)
+  q2.grob <- ggplotGrob(q2.plot)
+  q3.grob <- ggplotGrob(q3.plot)
+  q4.grob <- ggplotGrob(q4.plot)
+  grid.arrange(q1.grob, q2.grob, q3.grob, q4.grob)
 }
 
 dev.off()
