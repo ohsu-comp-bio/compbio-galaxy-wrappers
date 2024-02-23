@@ -10,6 +10,9 @@ The output file is horribly un-normalised:
 - The tfx INFO fields (from vcf) corresponding to the variant are also on the line for each variant. 
     - The tfx values are duplicated on each line 
 
+2024.2.6: This script is only used to generate a file used in the CGDTfx environment for validation on the "Tfx Comparison" page. Once The cgd_tx_eff tool 
+          goes to production this script should be deleted.
+
 @author: pleyte
 '''
 import argparse

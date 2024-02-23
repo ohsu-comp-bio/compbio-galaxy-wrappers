@@ -1,6 +1,34 @@
 '''
 Created on Sep. 21, 2023
 
+Read the transcript effects from vcf and render them in a text table like this: 
+
+```
+Variant: 16-89985662-GGACTAT-G
+Tfx                      0                       1
+-----------------------  ----------------------  ----------------------
+TFX_BASE_POSITION        -5                      -5
+TFX_EXON
+TFX_GENE                 MC1R                    MC1R
+TFX_G_DOT                g.89985662_89985667del  g.89985662_89985667del
+TFX_HGVSC                c.-5_1del               c.-5_1del
+TFX_HGVSP                p.Met1?                 p.Met1?
+TFX_SPLICE
+TFX_AMINO_ACID_POSITION
+TFX_TRANSCRIPT           NM_002386.3             CCDS56011.1
+TFX_VARIANT_TYPE         exonic                  exonic
+TFX_PROTEIN_TRANSCRIPT   NP_002377.4             NP_002377.4
+TFX_VARIANT_EFFECT       startloss               startloss
+```
+
+This script is a little awkward to run because it takes as it's parameter the line from a vcf. The best way to execute it is: 
+```sh
+grep -v '#' tfx.vcf | while read -r line ; do
+  python $TFX_HOME/src/edu/ohsu/compbio/txeff/util/print_tfx.py --tfx "$line"
+done
+```
+
+
 @author: pleyte
 '''
 import re
