@@ -3,6 +3,7 @@
 # Galaxy wrapper for cgd_client.jar.
 # JAVA8_PATH and CGD_CLIENT_CONFIG must be defined in the Galaxy contrib/ohsu_exacloud_env.sh file.
 # 1.2.9.5 - Added support for chimeric junctions endpoint
+# 1.2.9.6 - Added support for PTD exon report endpoint
 
 from snp_profile import SnpProfile
 import argparse
@@ -20,7 +21,7 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
     import subprocess
 
-VERSION = '1.2.9.5'
+VERSION = '1.2.9.6'
 
 
 def supply_args():
@@ -70,6 +71,8 @@ def rename_fastqc_output(runid, barcodeid, endpoint, ext):
         newfile = "/tmp/" + '_'.join([runid, barcodeid]) + ext
     elif endpoint == "geneFusionReport":
         newfile = "/tmp/" + '_'.join([runid, barcodeid]) + ext
+    elif endpoint == "ptdExonReport":
+        newfile = "/tmp/" + '_'.join([runid, barcodeid, 'ptd']) + ext
     else:
         return None
 
@@ -128,6 +131,11 @@ def build_cmd(args):
     elif args.endpoint == "cnvpdf":
         newfile = rename_fastqc_output(args.runid, args.barcodeid, args.endpoint, 'pdf')
         logging.info("Copying CNV PDF to " + newfile)
+        shutil.copyfile(args.pipeline_out, newfile)
+        cmd.extend(["-f", newfile])
+    elif args.endpoint == "ptdExonReport":
+        newfile = rename_fastqc_output(args.runid, args.barcodeid, args.endpoint, 'pdf')
+        logging.info("Copying PTD Exon Report PDF to " + newfile)
         shutil.copyfile(args.pipeline_out, newfile)
         cmd.extend(["-f", newfile])
     elif args.endpoint == "geneFusionReport":
@@ -291,8 +299,8 @@ def main():
     outfile.close()
 
     # Clean up temp file.
-    if (args.endpoint == "uploadqcsheet" or args.endpoint == "uploadqcsheetrtwo"
-            or args.endpoint == "cnvpdf" or args.endpoint == "geneFusionReport"):
+    if (args.endpoint == "uploadqcsheet" or args.endpoint == "uploadqcsheetrtwo" or args.endpoint == "cnvpdf"
+            or args.endpoint == "geneFusionReport" or args.endpoint == "ptdExonReport"):
         os.remove(newfile)
 
 
