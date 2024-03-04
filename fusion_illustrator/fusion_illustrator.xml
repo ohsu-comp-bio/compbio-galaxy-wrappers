@@ -14,18 +14,19 @@
     </requirements>
 
     <command detect_errors="exit_code"><![CDATA[
-       ln -s "gtf_path" human.gtf.gz &&
        ln -s "$ptd_path" ptd.txt &&
-       Rscript $__tool_directory__/fusion_illustrator.R human.gtf.gz ptd.txt $illustration_report
+       ln -s "$gtf_path" human.gtf &&
+       Rscript $__tool_directory__/fusion_illustrator.R human.gtf ptd.txt $illustration_report
     ]]></command>
 
     <inputs>
-        <param name="gtf_path" type="data" format="gtf.gz" label="GTF" help=""/>
+        <param name="gtf_path" type="data" format="gtf" label="GTF" help="Ensembl hg19 build"/>
         <param name="ptd_path" type="data" format="txt" label="PTD" help=""/>
+        <param name="sample_id" type="text" label="Sample ID" help=""/>
     </inputs>
 
     <outputs>
-        <data name="illustration_report" format="pdf" label="${ptd_path}_illustration: pdf"/>
+        <data name="illustration_report" format="pdf" label="${sample_id}_illustration: pdf"/>
     </outputs>
 
     <tests>

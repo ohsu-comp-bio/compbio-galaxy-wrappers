@@ -4,25 +4,25 @@
 # Outputs single .pdf illustration
 
 # libraries ---------------------------------------------------------------
-library(ggplot2)
-library(dplyr)
-library(data.table)
-library(ggtranscript) #for plotting the reference genes
-library(tidyr)
-library(ggrepel)
-library(grid)
-library(gridExtra)
-library(rtracklayer)
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(ggtranscript)) #for plotting the reference genes
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(ggrepel))
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(rtracklayer))
 
 # Filepaths
 args <- commandArgs(trailingOnly=TRUE)
+#gtf_path <- '/home/exacloud/clinical/clinglxydev/dataset_import_dir/chongbe@ohsu.edu/Homo_sapiens.GRCh37.75.gtf'
 gtf_path <- args[1]
 ptd_path <- args[2]
 output_path <- args[3]
 
 # input files -----------------------------------------------------------
 #GTF file downloaded from Ensembl archive: https://ftp.ensembl.org/pub/grch37/release-87/gtf/homo_sapiens/
-#gtf_path <- "/Users/chongbe/Downloads/CandaceTool/Homo_sapiens.GRCh37.75.gtf.gz" #hg19
 gtf <- rtracklayer::import(gtf_path) #load GTF file into R - slow. Maybe more efficient to pull specific transcripts of interest
 
 # Data wrangling ----------------------------------------------------------
@@ -44,7 +44,8 @@ ptd.data <- ptd.data %>%
 #check if data file is empty, if so abort.
 if(nrow(ptd.data)==0){
   print("No KMT2A-PTD chimeric junctions were parsed, it's okay, this happens frequently")
-  quit(status=5)
+  print('Quietly exiting....')
+  quit()
 }
 
 # Make PTD illustration ---------------------------------------------------
