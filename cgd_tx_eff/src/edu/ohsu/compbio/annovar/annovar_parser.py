@@ -39,7 +39,7 @@ class AnnovarVariantFunction(object):
         assert type(position) == int or position.isnumeric(), 'Position must be an integer' 
         assert alt.find(',') == -1, 'ALT may only have one value'
         
-        self.chromosome = chromosome
+        self.chromosome = str(chromosome)
         self.position = int(position)
         self.reference = ref
         self.alt = alt
@@ -105,7 +105,7 @@ class AnnovarParser(object):
         raw_exon = transcript_parts[2]
 
         if raw_exon == 'wholegene':
-            logging.debug(f"This transcript's raw_exon value is 'wholegene' which means it is a Stop Loss: {transcript_parts}")
+            logging.debug(f"This transcript's raw_exon value is 'wholegene' which means it is a Start loss: {transcript_parts}")
             amino_acid_position = None 
             hgvs_basep = None
             exon = raw_exon
@@ -273,7 +273,7 @@ class AnnovarParser(object):
 
             # Annovar sets the exon to "wholegene" to indicate a start loss. The 
             # annotation "startloss" isn't a term Annovar uses, it is our own custom 
-            # type and it replaces whater the current value is (eg 'frameshift deletion').  
+            # type and it replaces whatever the current value is (eg 'frameshift deletion').  
             if avf.exon == "wholegene":
                 logging.info(f"Start loss (aka wholegene) detected, substituting variant_effect overwriting '{avf.variant_effect}' with 'startloss': {avf}")
                 avf.exon = None                

@@ -9,7 +9,6 @@ Created on Mar. 21, 2023
 import logging
 import os
 from argparse import ArgumentParser
-import hgvs.assemblymapper
 import hgvs.dataproviders.uta
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff import tx_eff_hgvs

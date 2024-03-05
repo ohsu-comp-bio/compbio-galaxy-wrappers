@@ -179,7 +179,7 @@ def _lookup_hgvs_transcripts(annovar_variants: list, pysam_file):
     
     transcripts = []
     for variant in annovar_variants:
-        hgvs_variant_transcripts = __lookup_hgvs_transcripts(hgvs_parser, hdp, am, variant, pysam_file)
+        hgvs_variant_transcripts = _lookup_variant_hgvs_transcripts(hgvs_parser, hdp, am, variant, pysam_file)
         logging.info(f"HGVS found {len(hgvs_variant_transcripts)} transcripts for {variant}")
         
         # HGVS might not find any transcripts even though Annovar did 
@@ -190,16 +190,24 @@ def _lookup_hgvs_transcripts(annovar_variants: list, pysam_file):
     
     return transcripts
 
-def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am: hgvs.assemblymapper.AssemblyMapper, variant: Variant, pysam_file):
+def _lookup_variant_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am: hgvs.assemblymapper.AssemblyMapper, variant: Variant, pysam_file):
     '''
     Use HGVS/UTA to return a list of the transcripts for a variant
+    
     '''
     logging.debug(f"Using HGVS/UTA to find transcripts for {variant}")
+
+    # Even the numeric chromosomes need to be strings in order to be found in the CHROM_MAP
+    assert type(variant.chromosome) == str 
     
     hgvs_chrom = CHROM_MAP.get(variant.chromosome)
     
     if hgvs_chrom == None:
-        logging.warning(f"Unknown chromosome: {variant.chromosome}-{variant.position}-{variant.reference}-{variant.alt}")
+        if variant.chromosome.startswith("chr"):
+            raise ValueError("Chromosome should not have the 'chr' prefix: " + variant.chromosome) 
+        
+        raise ValueError(f"Unknown chromosome: {variant.chromosome}-{variant.position}-{variant.reference}-{variant.alt}.")
+        
         return []
     
     # Look up the variant using HGVS            
@@ -232,10 +240,18 @@ def __lookup_hgvs_transcripts(hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am:
             var_c = am.g_to_c(var_g, str(hgvs_transcript[0]))
             var_p = am.c_to_p(var_c)
             
-            # Convert the three letter amino acid seq to a one letter and remove the transcript: prefix. 
-            # Remove 'transcript:' to be left with only p.
+            # setting uncertain to False removes the parentheses on the stringified form
+            if var_p.posedit:
+                var_p.posedit.uncertain = False
+
+            # Convert the three letter amino acid seq to a one letter and remove the 'transcript:' prefix.             
             var_p1 = var_p.format(conf={"p_3_letter": False}).replace(var_p.ac+':','')
             var_p3 = var_p.format(conf={"p_3_letter": True}).replace(var_p.ac+':','')
+
+            # Correct bug in biocommons/hgvs lib that always returns the three letter amino acid when variant is start loss. 
+            if var_p1 == 'p.Met1?':
+                var_p1 = 'p.M1?'
+
             c_dot = var_c.type +'.' + str(var_c.posedit)
             
             # HGVS doesrn't provide a variant type. 
@@ -696,28 +712,7 @@ def get_updated_hgvs_transcripts(annovar_transcripts: list, pysam_file):
                              best_transcripts))
 
     
-    # HGVS convention is to place predicted consequences in parenthesis but our users don't care for the parenthesis so they are removed. 
-    return _strip_pdot_parenthesis(best_transcripts)
-    # return best_transcripts
-
-def __strip_pdot_parenthesis(transcript: VariantTranscript):
-    '''
-    Remove the parenthesis from p3 and p1 in a transcript 
-    '''
-
-    if transcript.hgvs_p_dot_one is not None:
-        transcript.hgvs_p_dot_one = transcript.hgvs_p_dot_one.replace('(','').replace(')','')
-
-    if transcript.hgvs_p_dot_three is not None:
-        transcript.hgvs_p_dot_three = transcript.hgvs_p_dot_three.replace('(','').replace(')','')
-    
-    return transcript
-
-def _strip_pdot_parenthesis(transcripts: list):
-    '''
-    Remove the parenthesis from p. values in every transcript. 
-    '''
-    return list(map(lambda x:__strip_pdot_parenthesis(x), transcripts))
+    return best_transcripts
         
 def __get_variant_transcript_key(transcript: VariantTranscript):
     '''
