@@ -20,6 +20,7 @@ args <- commandArgs(trailingOnly=TRUE)
 gtf_path <- args[1]
 ptd_path <- args[2]
 output_path <- args[3]
+sample.id <- args[4]
 
 # input files -----------------------------------------------------------
 #GTF file downloaded from Ensembl archive: https://ftp.ensembl.org/pub/grch37/release-87/gtf/homo_sapiens/
@@ -28,9 +29,6 @@ gtf <- rtracklayer::import(gtf_path) #load GTF file into R - slow. Maybe more ef
 # Data wrangling ----------------------------------------------------------
 gtf <- gtf %>% dplyr::as_tibble() %>%
   mutate(exon_number = as.integer(exon_number)) #convert to tibble format for usability, make sure exons are integers
-
-#Automatically get sample ID, not sure how to automate this. Leave for Galaxy peeps
-sample.id <- "23KD-287P0003"
 
 #read in datafile
 #ptd.data <- read.delim("/Users/chongbe/Downloads/CandaceTool/23KD-287P0003_Galaxy101.txt")

@@ -1,5 +1,5 @@
-<tool id="fusion_illustrator" name="KMT2A-PTD illustration" version="0.0.1" >
-    <description>Illustrate KMT2A-PTD chimeric junctions</description>
+<tool id="fusion_illustrator" name="KMT2A-PTD illustration" version="0.0.2" >
+    <description>Illustrate KMT2A-PTD chimeric junctions.</description>
 
     <requirements>
         <requirement type="package" version="3.4.4">r-ggplot2</requirement>
@@ -16,7 +16,7 @@
     <command detect_errors="exit_code"><![CDATA[
        ln -s "$ptd_path" ptd.txt &&
        ln -s "$gtf_path" human.gtf &&
-       Rscript $__tool_directory__/fusion_illustrator.R human.gtf ptd.txt $illustration_report
+       Rscript $__tool_directory__/fusion_illustrator.R human.gtf ptd.txt $illustration_report $sample_id
     ]]></command>
 
     <inputs>
