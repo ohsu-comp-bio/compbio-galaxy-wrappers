@@ -759,7 +759,7 @@ def __get_best_transcript(transcripts: list):
     '''
     Take a list of transcripts and return the one that has the most fields filled in. If there is a tie, return the one with the latest version.     
     '''
-    # The VariantTranscript's ``__lt__`` function has been overloaded just for the purpose of scoring. 
+    # The VariantTranscript's ``__lt__`` function has been overloaded for the purpose of ranking the transcript based on how many non-null fields it has.  
     sorted_by_ascending_score = sorted(transcripts)
     
     # return the last item in the sorted list (the one with the highest score)
