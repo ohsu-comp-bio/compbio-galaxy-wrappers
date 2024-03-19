@@ -10,6 +10,7 @@ Inequality to estimate upper and lower VAF bounds.  Will not assess 1/1 genotype
 1.3.0 - Don't apply StrandBias label when genotype is 1/1; make conf a parameter
 1.3.1 - Removed vcftype and callers parameter and use VCF fields check to get strand counts.
 1.3.2 - Include previous strand bias method.
+1.3.2.4 - Exclude variants with alt strand counts below 10
 """
 
 from __future__ import print_function
@@ -20,7 +21,7 @@ import numpy as np
 from filter_strand_v0 import adj_alts
 
 
-VERSION = '1.3.2.3'
+VERSION = '1.3.2.4'
 
 
 def supply_args():
@@ -170,7 +171,8 @@ def main():
         if info:
             if entry.calls[0].gt_type != 2:
                 if args.method == 'adjust_alts':
-                    strand_res = adj_alts(*info)
+                    if info[2] >= 10 and info[3] >= 10 and info[0] > 0 and info[1] > 0:
+                        strand_res = adj_alts(*info)
                 elif args.method == 'hoeffding':
                     strand_res = StrandOps(info, args.conf).assess_strand()
                 else:

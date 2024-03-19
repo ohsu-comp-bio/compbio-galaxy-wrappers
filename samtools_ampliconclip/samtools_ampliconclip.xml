@@ -11,13 +11,25 @@
         @ADDTHREADS@
         samtools ampliconclip
             $hard_clip_mode
-            #if $min_length:
-                --fail-len $min_length
+            #if $fail:
+                --fail $fail
             #end if
             #if $filt_len:
                 --filter-len $filt_len
             #end if
+            #if $fail_len:
+                --fail-len $fail_len
+            #end if
+            #if $original:
+                --original $original
+            #end if
+            #if $keep_tag:
+                --keep-tag $keep_tag
+            #end if
             --tolerance $tolerance
+            #if $no_pg:
+                --no-PG $no_pg
+            #end if
             $strand
             -b '${input_bed}'
             -u
@@ -33,16 +45,21 @@
         <param name="input_bed" type="data" format="bed" label="Genetic intervals (in BED format)" />
         <param name="input_bam" type="data" format="bam" label="BAM file" />
         <param name="hard_clip_mode" argument="--hard-clip" type="boolean" checked="false" truevalue="--hard-clip" falsevalue="--soft-clip" label="hard clip" help="hard clip (remove bases), unchekced = default soft-clipping" />
-        <param name="strand" argument="--strand" type="boolean" checked="false" truevalue="--strand" falsevalue="" label="only clip reads that match bed file strand annotation" />
         <param name="both_ends" argument="--both-ends" type="boolean" checked="false" truevalue="--both-ends" falsevalue="" label="clip both ends of reads (false = 5' only)" />
-        <param name="no_excluded" argument="--no-excluded" type="boolean" checked="false" truevalue="--no-excluded" falsevalue="" label="don't write excluded reads to output (default = write all)" />
-        <param name="min_length" argument="--fail-len" type="integer" min="0" optional="true" label="Min Read length" help="mark reads QCFAIL at this length or shorter after clipping" />
+        <param name="strand" argument="--strand" type="boolean" checked="false" truevalue="--strand" falsevalue="" label="only clip reads that match bed file strand annotation" />
+        <param name="fail" argument="--fail" type="boolean" checked="false" truevalue="--original" falsevalue="" optional="true" label="Mark unclipped reads as QC fail." />
         <param name="filt_len" argument="--filter-len" type="integer" min="0" optional="true" label="do not output reads INT size or shorter" />
+        <param name="fail_len" argument="--fail-len" type="integer" min="0" optional="true" label="As --filter-len but mark as QC fail rather then filter out." />
+        <param name="no_excluded" argument="--no-excluded" type="boolean" checked="false" truevalue="--no-excluded" falsevalue="" label="Filter out any reads that are marked as QCFAIL or are unmapped. This works on the state of the reads before clipping takes place." />
+        <param name="original" argument="--original" type="boolean" checked="false" truevalue="--original" falsevalue="" optional="true" label="Add an OA tag with the original data for clipped files." />
+        <param name="keep_tag" argument="--keep-tag" type="boolean" checked="false" truevalue="--keep-tag" falsevalue="" optional="true" label="In clipped reads, keep the possibly invalid NM and MD tags" />
         <param name="tolerance" argument="--tolerance" type="integer" value="5" min="0"  label="Tolerance" help="match region within this number of bases, default 5." />
+        <param name="no_pg" argument="--no-PG" type="boolean" checked="false" truevalue="--no-PG" falsevalue="" optional="true" label="Do not at a PG line to the header." />
     
     </inputs>
     <outputs>
         <data name="output_bam" format="bam" />
+        <param name="rejects_file" argument="--rejects-file" type="data" format="bam" label="Write any filtered reads out to a file." />
     </outputs>
     <tests>
         <!-- 1) -->
