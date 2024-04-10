@@ -1,0 +1,19 @@
+<tool id="evai_poster" name="eVai Sample Poster" version="0.0.1">
+	<description>Uploads VCFs to eVai to analyze</description>
+	<requirements>
+		<requirement type="package" version="latest">snpEff</requirement>
+	</requirements>
+	<command><![CDATA[
+		java -jar eVaiAnalysisExecutor_2.1.0.jar analyze --vcf -f file1.vcf
+	]]>
+	</command>
+	<inputs>
+		<param name="glxy_variants" type="vcf" label="variants"/>
+	</inputs>
+
+	<outputs>
+	</outputs>
+
+	<help></help>
+</tool>
+
