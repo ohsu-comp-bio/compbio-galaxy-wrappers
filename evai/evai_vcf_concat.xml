@@ -1,0 +1,40 @@
+<tool id="evai_vcf_concat" name="eVai VCF concatenate" version="0.0.1">
+	<description>Concatenates SV and CNV VCFs for eVai</description>
+	<requirements>
+        <requirement type="package" version="1.19">bioconda-bcftools</requirement>
+	</requirements>
+	<command><![CDATA[
+        bcftools concat -O v \
+        -o out.tmp.vcf \
+        -a \
+        ${sv_vcf} ${cnv_vcf};
+
+        cat out.tmp.vcf | grep "^##" > header.tmp.vcf;
+        cat out.tmp.vcf | grep "^#CHROM" >> header.tmp.vcf;
+
+        java -jar picard.jar \
+        SortVcf \
+        I=out.tmp.vcf \
+        O=out.sort.vcf \
+        SEQUENCE_DICTIONARY=reference.dict ;
+
+        java -jar picard.jar \
+        FixVcfHeader \
+        I=out.sort.vcf \
+        O=${sv_cnv_concat} \
+        H=header.tmp.vcf ;
+	]]>
+	</command>
+	<inputs>
+        <param name="sample_id" type="text" label="Sample ID"/>
+		<param name="sv_vcf" type="data" format="vcf" label="SNV/Indel VCF"/>
+        <param name="cnv_vcf" type="data" format="vcf" label="CNV VCF"/>
+	</inputs>
+
+	<outputs>
+        <data name="sv_cnv_concat" format="vcf" label="${sample_id}_concat: vcf"/>
+	</outputs>
+
+	<help></help>
+</tool>
+
