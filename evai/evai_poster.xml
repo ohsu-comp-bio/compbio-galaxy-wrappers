@@ -1,14 +1,13 @@
 <tool id="evai_poster" name="eVai Sample Poster" version="0.0.1">
 	<description>Uploads VCFs to eVai to analyze</description>
 	<requirements>
-		<requirement type="package" version="latest">snpEff</requirement>
 	</requirements>
 	<command><![CDATA[
-		java -jar eVaiAnalysisExecutor_2.1.0.jar analyze --vcf -f file1.vcf
+		java -jar eVaiAnalysisExecutor_2.1.0.jar analyze --vcf -f ${dragen_variants}
 	]]>
 	</command>
 	<inputs>
-		<param name="glxy_variants" type="vcf" label="variants"/>
+		<param name="dragen_variants" type="data" format="vcf" label="DRAGEN VCF"/>
 	</inputs>
 
 	<outputs>
