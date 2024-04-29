@@ -2,6 +2,7 @@
 	<description>Concatenates SV and CNV VCFs for eVai</description>
 	<requirements>
         <requirement type="package" version="1.19">bioconda-bcftools</requirement>
+        <requirement type="package" version="4.5.0.0">bioconda-gatk4</requirement>
 	</requirements>
 	<command><![CDATA[
         bcftools concat -O v \
@@ -12,14 +13,12 @@
         cat out.tmp.vcf | grep "^##" > header.tmp.vcf;
         cat out.tmp.vcf | grep "^#CHROM" >> header.tmp.vcf;
 
-        java -jar picard.jar \
-        SortVcf \
+        gatk SortVcf \
         I=out.tmp.vcf \
         O=out.sort.vcf \
         SEQUENCE_DICTIONARY=reference.dict ;
 
-        java -jar picard.jar \
-        FixVcfHeader \
+        gatk FixVcfHeader \
         I=out.sort.vcf \
         O=${sv_cnv_concat} \
         H=header.tmp.vcf ;
