@@ -25,6 +25,7 @@
 # 1.1.1 - added conditions to bypass percentile table generation if tumor or stroma segments are absent
 # 1.1.2 - changed 'Exported dataset' to 1 when reading Excel sheets
 # 1.1.3 - sanitize datadir paths via wrapper
+# 1.1.4 - fixed outlier detection to include all antibodies instead of just pos controls
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -287,15 +288,17 @@ clia_abs <- unique(ab.batches$ProbeName)
 # Outlier detection -- Zscore method
 datalist = list()
 k <- 1
-for (i in seq(1, length(clia_abs))){
+all_abs <- unique(paths$ProbeName)
+
+for (i in seq(1, length(all_abs))){
   for (j in seq(1, length(unique(ab.batches.cur$name)))){
-    ref <- ab.batches %>% filter(ProbeName==clia_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
+    ref <- ab.batches %>% filter(ProbeName==all_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
       select(batch, ProbeName, name, abundance) %>%
       group_by(name)
     mu <- mean(ref$abundance)
     sigma <- sd(ref$abundance)
 
-    cur <- ab.batches.cur %>% filter(ProbeName==clia_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
+    cur <- ab.batches.cur %>% filter(ProbeName==all_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
       select(batch, ProbeName, name, abundance) %>%
       group_by(name) %>%
       mutate(mean = mu,
@@ -307,6 +310,7 @@ for (i in seq(1, length(clia_abs))){
     k <- k+1
   }
 }
+
 outlier_df = do.call(rbind, datalist)
 
 # Get failed antibodies (Ab combos with 5+ flagged outliers)
