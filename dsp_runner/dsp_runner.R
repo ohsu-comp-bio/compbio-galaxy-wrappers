@@ -1,4 +1,4 @@
-# Current Version: 1.1.4
+# Current Version: 1.1.5
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -25,7 +25,7 @@
 # 1.1.1 - added conditions to bypass percentile table generation if tumor or stroma segments are absent
 # 1.1.2 - changed 'Exported dataset' to 1 when reading Excel sheets
 # 1.1.3 - sanitize datadir paths via wrapper
-# 1.1.4 - fixed outlier detection to include all antibodies instead of just pos controls
+# 1.1.5 - fixed outlier detection to include all antibodies instead of just pos controls
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -281,9 +281,10 @@ plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund, coh)
 pdf(file=paste0(report.out), width=16, height=16)
 
 # Restrict ab plots and outlier detection to those ab/cell line combos included in pos.cntrls
-ab.batches <- ref.batches[`name` %in% pos.cntrls$V2 & `ProbeName` %in% pos.cntrls$V1]
-ab.batches.cur <- cur.batch[`name` %in% pos.cntrls$V2 & `ProbeName` %in% pos.cntrls$V1]
-clia_abs <- unique(ab.batches$ProbeName)
+# 05/01/24 update -- no longer restricting, oepn to all antibodies
+ab.batches <- ref.batches[`name` %in% pos.cntrls$V2]# & `ProbeName` %in% pos.cntrls$V1]
+ab.batches.cur <- cur.batch[`name` %in% pos.cntrls$V2]# & `ProbeName` %in% pos.cntrls$V1]
+clia_abs <- unique(ab.batches[`ProbeName` %in% pos.cntrls$V1]$ProbeName)
 
 # Outlier detection -- Zscore method
 datalist = list()
