@@ -1,4 +1,4 @@
-# Current Version: 1.1.5
+# Current Version: 1.1.6
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -26,6 +26,7 @@
 # 1.1.2 - changed 'Exported dataset' to 1 when reading Excel sheets
 # 1.1.3 - sanitize datadir paths via wrapper
 # 1.1.5 - fixed outlier detection to include all antibodies instead of just pos controls
+# 1.1.6 - expand antibody plots to include failed antibodies from QC step
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -479,6 +480,8 @@ write.xlsx(score_tum, excel.out.tum)
 write.xlsx(score_str, excel.out.str)
 
 # Produce boxplots
+failed_ab <- as.vector(failed_ab$'Failed Antibodies')
+clia_abs <- unique(c(failed_ab,clia_abs))
 
 for (i in seq(1,length(clia_abs), by=4)){
 
