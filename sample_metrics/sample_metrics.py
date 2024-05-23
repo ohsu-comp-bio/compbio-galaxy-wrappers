@@ -5,6 +5,7 @@ Create sample level metrics to be passed to the CGD.  Metrics are passed as a js
 VERSION HISTORY
 0.8.14
     Update tmb to use 0.0 as placeholder value
+    Update QIAseq_V4_STP4 to remove bio_sex_check metric
 0.8.13
     Add pre-umi dedup depth metrics and post-umi alignment metrics
     Changed workflow name to IlluminaExome_V2_PlusMito
