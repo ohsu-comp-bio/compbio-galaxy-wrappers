@@ -1,4 +1,4 @@
-<tool id="vcf_filter" name="VCF Filter" version="2.2.0" >
+<tool id="vcf_filter" name="VCF Filter" version="2.3.0" >
   <description>Filter VCF based on FILTER column</description>
 
   <requirements>
@@ -21,6 +21,9 @@
       --snp_threshold "${input.snp_threshold}"
       --indel_threshold "${input.indel_threshold}"
     #end for
+    #if $rm_long_vars
+      --rm_long_vars
+    #end if
   ]]></command>
 
   <inputs>
@@ -36,6 +39,8 @@
       <param name="indel_threshold" type="float" optional="true" value="1.0" min="0" max="1.0"
            label="For INDELs, only perform filtering if VAF is below this threshold"/>
     </repeat>
+    <param name="rm_long_vars" type="boolean" checked="True" truevalue="True" falsevalue="False"
+           label="Remove variants with REF or ALT longer than 255 bases" />
   </inputs>
 
   <outputs>
