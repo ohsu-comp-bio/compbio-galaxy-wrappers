@@ -1,4 +1,4 @@
-<tool id="star_fusion" name="STAR-Fusion" version="1.11.1.1">
+<tool id="star_fusion" name="STAR-Fusion" version="1.11.1.2">
     <description>detect fusion genes in RNA-Seq data</description>
     <requirements>
         <requirement type="package" version="1.11.1">star-fusion</requirement>
@@ -208,7 +208,12 @@
         <data format="html" name="output_html_report_validate" label="${tool.name} on ${on_string}: html report finspector_validate" from_work_dir="STAR-Fusion_outdir/FusionInspector-validate/finspector.fusion_inspector_web.html">
             <filter>params['FusionInspector'] == 'validate'</filter>
         </data>
+        <data format="txt" name="output_finspector_blast_fail" label="${tool.name} on ${on_string}: blast promiscuity fail finspector_validate TXT" from_work_dir="STAR-Fusion_outdir/FusionInspector-validate/finspector.post_blast_and_promiscuity_filter.annot_filter.fail">
+            <filter>params['FusionInspector'] == 'validate'</filter>
+        </data>
         <data format="tabular" name="pre_blast_filt_info" label="${tool.name} on ${on_string}: fusion_pre_blast_filt_info" from_work_dir="STAR-Fusion_outdir/star-fusion.preliminary/star-fusion.filter.intermediates_dir/star-fusion.pre_blast_filter.filt_info"/>
+        <data format="txt" name="annot_filt_fail" label="${tool.name} on ${on_string}: annot_filter_fail" from_work_dir="STAR-Fusion_outdir/star-fusion.preliminary/star-fusion.fusion_candidates.preliminary.wSpliceInfo.wAnnot.annot_filter.fail"/>
+        <data format="txt" name="junc_and_bps_fail" label="${tool.name} on ${on_string}: junction_breakpoints_fail" from_work_dir="STAR-Fusion_outdir/star-fusion.preliminary/star-fusion.junction_breakpts_to_genes.txt.fail"/>
     </outputs>
 
     <help>
