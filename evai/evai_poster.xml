@@ -4,11 +4,13 @@
 	</requirements>
 	<command><![CDATA[
 		java -jar eVaiAnalysisExecutor_2.0.0.jar analyze --vcf -f ${dragen_variants} \
-   			-n ${sample_id} -u chongbe@ohsu.edu -p 'Chongbe2024!'
+   			-n ${sample_id} -u ${username} -p ${password}
 	]]>
 	</command>
 	<inputs>
 		<param name="sample_id" type="text" label="Sample ID"/>
+		<param name="username" type="text" label="eNgenome username"/>
+		<param name="password" type="text" label="eNgenome password"/>
 		<param name="dragen_variants" type="data" format="vcf" label="DRAGEN VCF"/>
 	</inputs>
 
