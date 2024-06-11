@@ -5,23 +5,17 @@
         <requirement type="package" version="4.5.0.0">bioconda-gatk4</requirement>
 	</requirements>
 	<command><![CDATA[
-        bcftools concat -O v \
-        -o out.tmp.vcf \
-        -a \
-        ${sv_vcf} ${cnv_vcf};
+        bgzip -c ${sv_vcf} > sample_sv.vcf.gz
+		bcftools index -t sample_sv.vcf.gz
+		bgzip -c ${cnv_vcf}  > sample_cnv.vcf.gz
+		bcftools index -t sample_cnv.vcf.gz
 
-        cat out.tmp.vcf | grep "^##" > header.tmp.vcf;
-        cat out.tmp.vcf | grep "^#CHROM" >> header.tmp.vcf;
+		bcftools concat -O v \
+			-o ${sv_cnv_concat} \
+			-a \
+			sample_sv.vcf.gz sample_cnv.vcf.gz;
 
-        gatk SortVcf \
-        I=out.tmp.vcf \
-        O=out.sort.vcf \
-        SEQUENCE_DICTIONARY=reference.dict ;
-
-        gatk FixVcfHeader \
-        I=out.sort.vcf \
-        O=${sv_cnv_concat} \
-        H=header.tmp.vcf ;
+		sed -i'' -e 's/<DIP>/./g' ${sv_cnv_concat}
 	]]>
 	</command>
 	<inputs>
