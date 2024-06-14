@@ -1,7 +1,8 @@
-<tool id="evai_vcf_concat" name="eVai VCF concatenate" version="0.0.1">
+<tool id="evai_vcf_concat" name="eVai VCF concatenate" version="0.0.2">
 	<description>Concatenates SV and CNV VCFs for eVai</description>
 	<requirements>
         <requirement type="package" version="1.19">bioconda-bcftools</requirement>
+		<requirement type="package" version="1.10">bioconda-samtools</requirement>
         <requirement type="package" version="4.5.0.0">bioconda-gatk4</requirement>
 	</requirements>
 	<command><![CDATA[
