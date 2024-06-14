@@ -157,6 +157,7 @@ def main():
                         keep = recordkeeper.keep_record(exclude, include, inc_multicalled, float(args.indel_threshold[i]))
                         if args.rm_long_vars:
                             if len(record.REF) > 255 or len(record.ALT) > 255:
+                                print(len(record.REF))
                                 keep = False
                 else:
                     break
