@@ -1,4 +1,4 @@
-<tool id="vcf_filter" name="VCF Filter" version="2.2.0" >
+<tool id="vcf_filter" name="VCF Filter" version="2.3.0" >
   <description>Filter VCF based on FILTER column</description>
 
   <requirements>
@@ -14,6 +14,9 @@
     "${output_vcf}"
     "${output2_vcf}"
     --callers "${callers}"
+    #if $rm_long_vars
+      --rm_long_vars
+    #end if
     #for $i, input in enumerate( $inputs ):
       --exclude "${input.exclude}"
       --include "${input.include}"
@@ -26,7 +29,8 @@
   <inputs>
     <param name="input_vcf" type="data" format="vcf" label="Input VCF" />
     <param name="callers" type="text" label="FILTER labels of variant callers used in the merged VCF" />
-
+    <param name="rm_long_vars" type="boolean" checked="True" truevalue="True" falsevalue="False"
+           label="Remove variants with REF or ALT longer than 255 bases" />
     <repeat name="inputs" title="Filtering inputs and conditions" help="">
       <param name="exclude" type="text" label="Filters to use to exclude VCF records" />
       <param name="include" type="text" label="Filters to use to include VCF records" />

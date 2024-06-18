@@ -3,6 +3,9 @@
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
 VERSION HISTORY
+0.8.14
+    Update tmb to use 0.0 as placeholder value
+    Update QIAseq_V4_STP4 to remove bio_sex_check metric
 0.8.13
     Add pre-umi dedup depth metrics and post-umi alignment metrics
     Changed workflow name to IlluminaExome_V2_PlusMito
@@ -555,7 +558,7 @@ class MetricPrep(SampleMetrics):
                 'rna_tpm_ten': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_10'),
                 'rna_tpm_onehundred': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_100'),
                 'rna_tpm_onethousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_1000'),
-                'tmb': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb'),
+                'tmb': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb') if self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb') else 0.0001,
                 'msi_pct': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_pct'),
                 'msi_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='total_sites'),
                 'msi_somatic_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_sites'),
@@ -705,7 +708,7 @@ class MetricPrep(SampleMetrics):
                 'QIAseq_V3_HEME2': [],
                 'QIAseq_V4_MINI': ['forced_calls_above', 'forced_calls_below', 'bio_sex_check'],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
-                'QIAseq_V4_STP4': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb', 'bio_sex_check',
+                'QIAseq_V4_STP4': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb',
                                    'uniformity_of_coverage', 'cnv_median_segment_mad_cn'],
                 'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
                                           'gatk_pct_correct_strand_reads'],

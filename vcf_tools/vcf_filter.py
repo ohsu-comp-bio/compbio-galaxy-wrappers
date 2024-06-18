@@ -18,7 +18,7 @@ Given a merged VCF, this will filter out variants that contain the exclude argum
 import argparse
 import vcfpy
 
-VERSION = '2.2.0'
+VERSION = '2.3.0'
 
 
 def get_args():
@@ -30,8 +30,15 @@ def get_args():
     parser.add_argument('--exclude',  action='append', help='Filters to use to exclude VCF records')
     parser.add_argument('--include', action='append', help='Filters to use to include VCF records')
     parser.add_argument('--inc_multicalled', action='append', help='Include multicalled variants')
-    parser.add_argument('--snp_threshold', action='append', type=float, help='For SNPs, only perform filtering if VAF is below this threshold')
-    parser.add_argument('--indel_threshold', action='append', type=float, help='For INDELs, only perform filtering if VAF is below this threshold')
+
+    parser.add_argument('--snp_threshold', action='append', type=float,
+                        help='For SNPs, only perform filtering if VAF is below this threshold')
+    parser.add_argument('--indel_threshold', action='append', type=float,
+                        help='For INDELs, only perform filtering if VAF is below this threshold')
+
+    parser.add_argument('--rm_long_vars', action='store_true',
+                        help="Remove variants with REF or ALT longer than 255 bases")
+
     parser.add_argument('-v', '--version', action='version', version="%(prog)s " + VERSION)
 
     args = parser.parse_args()
@@ -148,6 +155,10 @@ def main():
                         keep = recordkeeper.keep_record(exclude, include, inc_multicalled, float(args.snp_threshold[i]))
                     else:
                         keep = recordkeeper.keep_record(exclude, include, inc_multicalled, float(args.indel_threshold[i]))
+                        if args.rm_long_vars:
+                            if len(record.REF) > 255 or len(record.ALT) > 255:
+                                print(len(record.REF))
+                                keep = False
                 else:
                     break
 
