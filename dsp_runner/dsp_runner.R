@@ -1,4 +1,4 @@
-# Current Version: 1.1.3
+# Current Version: 1.1.5
 # Version history
 # 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
 # 0.9.6 - modified regex to allow for new batch date format
@@ -25,6 +25,7 @@
 # 1.1.1 - added conditions to bypass percentile table generation if tumor or stroma segments are absent
 # 1.1.2 - changed 'Exported dataset' to 1 when reading Excel sheets
 # 1.1.3 - sanitize datadir paths via wrapper
+# 1.1.5 - fixed outlier detection to include all antibodies instead of just pos controls
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -117,7 +118,6 @@ all.abund <- Reduce(function(x,y){
 #stopifnot((ncol(all.abund)-1) == sum(sapply(res.list$data, function(x) ncol(x$qc)-4 )))
 if((nrow(all.abund) != res.list$data[[1]]$qc[,.N])|| (ncol(all.abund)-1) != sum(sapply(res.list$data, function(x) ncol(x$qc)-4 ))){
     message("Dimension error with processed batch data")
-    quit(status=5)
 }
 abund.mat <- log2(as.matrix(all.abund[,-1,with=F]))
 rownames(abund.mat) <- all.abund[,ProbeName]
@@ -281,22 +281,25 @@ plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund, coh)
 pdf(file=paste0(report.out), width=16, height=16)
 
 # Restrict ab plots and outlier detection to those ab/cell line combos included in pos.cntrls
-ab.batches <- ref.batches[`name` %in% pos.cntrls$V2 & `ProbeName` %in% pos.cntrls$V1]
-ab.batches.cur <- cur.batch[`name` %in% pos.cntrls$V2 & `ProbeName` %in% pos.cntrls$V1]
-clia_abs <- unique(ab.batches$ProbeName)
+# 05/01/24 update -- no longer restricting, oepn to all antibodies
+ab.batches <- ref.batches[`name` %in% pos.cntrls$V2]# & `ProbeName` %in% pos.cntrls$V1]
+ab.batches.cur <- cur.batch[`name` %in% pos.cntrls$V2]# & `ProbeName` %in% pos.cntrls$V1]
+clia_abs <- unique(ab.batches[`ProbeName` %in% pos.cntrls$V1]$ProbeName)
 
 # Outlier detection -- Zscore method
 datalist = list()
 k <- 1
-for (i in seq(1, length(clia_abs))){
+all_abs <- unique(paths$ProbeName)
+
+for (i in seq(1, length(all_abs))){
   for (j in seq(1, length(unique(ab.batches.cur$name)))){
-    ref <- ab.batches %>% filter(ProbeName==clia_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
+    ref <- ab.batches %>% filter(ProbeName==all_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
       select(batch, ProbeName, name, abundance) %>%
       group_by(name)
     mu <- mean(ref$abundance)
     sigma <- sd(ref$abundance)
 
-    cur <- ab.batches.cur %>% filter(ProbeName==clia_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
+    cur <- ab.batches.cur %>% filter(ProbeName==all_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
       select(batch, ProbeName, name, abundance) %>%
       group_by(name) %>%
       mutate(mean = mu,
@@ -308,6 +311,7 @@ for (i in seq(1, length(clia_abs))){
     k <- k+1
   }
 }
+
 outlier_df = do.call(rbind, datalist)
 
 # Get failed antibodies (Ab combos with 5+ flagged outliers)
@@ -488,7 +492,7 @@ for (i in seq(1,length(clia_abs), by=4)){
   if ((i+1)<=length(clia_abs)){
     print(clia_abs[i+1])
     q2.plot <- ggplot(data=ab.batches[ProbeName == clia_abs[i+1]], mapping=aes(x=name, y=abundance)) +
-      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
+      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = T) +
       geom_jitter(data=ab.batches.cur[ProbeName == clia_abs[i+1]], size=3, width=.15, height=0) +
       theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+1])) +
       scale_x_discrete(guide = guide_axis(n.dodge = 3))
@@ -506,12 +510,16 @@ for (i in seq(1,length(clia_abs), by=4)){
   if ((i+3)<=length(clia_abs)){
     print(clia_abs[i+3])
     q4.plot <- ggplot(data=ab.batches[ProbeName == clia_abs[i+3]], mapping=aes(x=name, y=abundance)) +
-      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = F) +
+      geom_boxplot(outlier.shape=NA) + geom_jitter(mapping=aes(color=fac_batch),size=3, height=0, width=.15, show.legend = T) +
       geom_jitter(data=ab.batches.cur[ProbeName == clia_abs[i+3]], size=3, width=.15, height=0) +
       theme_bw() + xlab("") + ylab("log2 Abundance") + ggtitle(paste("Antibody: ", clia_abs[i+3])) +
       scale_x_discrete(guide = guide_axis(n.dodge = 3))
   }
-  grid.arrange(q1.plot, q2.plot, q3.plot, q4.plot)
+  q1.grob <- ggplotGrob(q1.plot)
+  q2.grob <- ggplotGrob(q2.plot)
+  q3.grob <- ggplotGrob(q3.plot)
+  q4.grob <- ggplotGrob(q4.plot)
+  grid.arrange(q1.grob, q2.grob, q3.grob, q4.grob)
 }
 
 dev.off()
