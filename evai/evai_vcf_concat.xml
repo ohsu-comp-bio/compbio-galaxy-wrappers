@@ -1,22 +1,24 @@
 <tool id="evai_vcf_concat" name="eVai VCF concatenate" version="0.0.2">
 	<description>Concatenates SV and CNV VCFs for eVai</description>
 	<requirements>
-        <requirement type="package" version="1.19">bioconda-bcftools</requirement>
-		<requirement type="package" version="1.10">bioconda-samtools</requirement>
-        <requirement type="package" version="4.5.0.0">bioconda-gatk4</requirement>
+        <requirement type="package" version="1.20">bcftools</requirement>
+		<requirement type="package" version="1.10">samtools</requirement>
 	</requirements>
 	<command><![CDATA[
-        bgzip -c ${sv_vcf} > sample_sv.vcf.gz
-		bcftools index -t sample_sv.vcf.gz
-		bgzip -c ${cnv_vcf}  > sample_cnv.vcf.gz
-		bcftools index -t sample_cnv.vcf.gz
+		ln ${sv_vcf} sample_sv.vcf &&
+		ln ${cnv_vcf} sample_cnv.vcf &&
+
+        bgzip -c sample_sv.vcf > sample_sv.vcf.gz &&
+		bcftools index -t sample_sv.vcf.gz;
+		bgzip -c sample_cnv.vcf > sample_cnv.vcf.gz &&
+		bcftools index -t sample_cnv.vcf.gz;
 
 		bcftools concat -O v \
 			-o ${sv_cnv_concat} \
 			-a \
 			sample_sv.vcf.gz sample_cnv.vcf.gz;
 
-		sed -i'' -e 's/<DIP>/./g' ${sv_cnv_concat}
+		sed -i'' -e 's/<DIP>/./g' ${sv_cnv_concat};
 	]]>
 	</command>
 	<inputs>
