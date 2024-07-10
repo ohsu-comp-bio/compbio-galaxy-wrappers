@@ -1,15 +1,6 @@
-# Current Version: 1.1.6
+# Current Version: 1.1.7
 # Version history
-# 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
-# 0.9.6 - modified regex to allow for new batch date format
-#       - limit normalization tmas to batches in good_tma
-# 0.9.7 - BC: edit intermediate .RData filenames for general usage
-# 1.0.0 - edits to support new TMA, removed extra igg_info input, fixed table output
-# 1.0.1 - handle situations where there are only segment 1 segements for reference comp
-# 1.0.2 - groups Ab boxplots by 4 to a page, give args actual names
-# 1.0.3 - cleans up Ab plots to make x-axis legible and remove legends
-#       - fixed: corrected duplicate Ab plot pages
-#       - use good_tma again
+# ...
 # 1.0.4 - add outlier detection by z-score
 # 1.0.5 - add cover summary sheet and re-arrange displayed tables/plots
 # 1.0.6 - restrict plots to only those included in the pos.cntrls input
@@ -27,6 +18,7 @@
 # 1.1.3 - sanitize datadir paths via wrapper
 # 1.1.5 - fixed outlier detection to include all antibodies instead of just pos controls
 # 1.1.6 - expand antibody plots to include failed antibodies from QC step
+# 1.1.7 - revert to restricted QC step using positive controls // removed 'failed antibody' threshold
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -118,10 +110,10 @@ all.abund <- Reduce(function(x,y){
 #stopifnot(nrow(all.abund) == res.list$data[[1]]$qc[,.N])
 #stopifnot((ncol(all.abund)-1) == sum(sapply(res.list$data, function(x) ncol(x$qc)-4 )))
 if((nrow(all.abund) != res.list$data[[1]]$qc[,.N])|| (ncol(all.abund)-1) != sum(sapply(res.list$data, function(x) ncol(x$qc)-4 ))){
-    message("Dimension error with processed batch data")
+  message("Dimension error with processed batch data")
 }
-abund.mat <- log2(as.matrix(all.abund[,-1,with=F]))
-rownames(abund.mat) <- all.abund[,ProbeName]
+#abund.mat <- log2(as.matrix(all.abund[,-1,with=F]))
+#rownames(abund.mat) <- all.abund[,ProbeName]
 
 # Get TMA submatrix
 tma.meta <- qc.meta[`Segment (Name/ Label)`=="Full ROI" | `Segment (Name/ Label)`=="Geometric Segment"]
@@ -129,15 +121,75 @@ tma.meta[,lower_sample:=tolower(sample_id)]
 
 #stopifnot(]control.type[,.N,by=.(lower_secondary, name, type)[,all(N==1)])
 if(!(control.type[,.N,by=.(lower_secondary, name, type)][,all(N==1)])){
-    message("Ambiguous and/or duplicate alternate TMA names -- check control type input file.")
-    quit(status=5)
+  message("Ambiguous and/or duplicate alternate TMA names -- check control type input file.")
+  quit(status=5)
 }
 
 tma.meta <- merge(tma.meta, control.type[,.(lower_sample=lower_secondary, name, type)], by="lower_sample", all=F)
 tma.meta <- tma.meta[`batch` %in% good_tma | `batch` %in% runid]
 #stopifnot(tma.meta[,.N,by=batch][,all(N==19)])
 
-tma.abund <- abund.mat[,tma.meta$barcode]
+# Replace by geomean norm step
+#abund.mat <- as.matrix(all.abund[,-1,with=F])
+#tma.abund <- abund.mat[,tma.meta$barcode]
+
+# GeoMean Normalization
+gm_list <- list()
+tma_list <- unique(tma.meta$sample_id)
+tma_list <- tma_list[tma_list != 'Tonsil' & tma_list != 'Spleen' & tma_list != 'Liver']
+for (i in tma_list){
+  get_tma <- tma.meta[tma.meta$sample_id==i] %>% select(barcode)
+  get_tma <- c(get_tma)[[1]]
+  idx <- match(get_tma, names(all.abund))
+  by_tma <- c(as.matrix(all.abund[,idx, with=F]))
+  gm_list[i] <- exp(mean(log(by_tma[by_tma>0])))
+}
+mean_gm <- mean(unlist(gm_list))
+
+# Group batch data by TMA
+tma_abund_list <- list()
+for (i in tma_list){
+  by_tma <- tma.meta[tma.meta$sample_id==i] %>% select(barcode)
+  by_tma <- c(by_tma)[[1]]
+  idx <- match(by_tma, names(all.abund))
+  by_tma_abund <- all.abund[,idx, with=F]
+  tma_abund_list[[i]] <- by_tma_abund
+}
+
+# Determine NF and scale all TMA x batch combo
+tma_scaled_list <- list()
+nf_list <- list()
+for (i in tma_list){
+  tma <- tma_abund_list[[i]]
+  tma_scaled <- sapply(tma, function(x){
+    nf <- mean_gm/(exp(mean(log(x[x>0]))))
+    x*nf
+  })
+  tma_scaled_list[[i]] <- tma_scaled
+  # write out NF
+  #nf_out <- sapply(tma, function(x){
+  #nf <- mean_gm/(exp(mean(log(x[x>0]))))
+  #})
+
+  #nf_list[[i]] <- as.data.frame(nf_out)
+}
+
+# EXPORT nf for gabriel
+#another_list <- list()
+#for (i in unique(tma.meta$sample_id)){
+#print(i)
+#tma <- nf_list[[i]]
+#tma <- tibble::rownames_to_column(tma, "barcode")
+#another_list[[i]] <- tma
+#}
+#nf_df <- do.call(rbind,another_list)
+
+tma.abund <- do.call(cbind, tma_scaled_list)
+tma.abund <- as.matrix(log2(tma.abund))
+rownames(tma.abund) <- all.abund[,ProbeName]
+
+abund.mat <- log2(as.matrix(all.abund[,-1,with=F]))
+rownames(abund.mat) <- all.abund[,ProbeName]
 
 ## QC of experimental samples with respect to ROI
 exp.meta <- qc.meta[`sample_id` %in% dsp.meta$Specimen.ID]
@@ -164,10 +216,14 @@ relevant.abund <- exp.abund[,relevant.meta$barcode]
 tma.meta <- tma.meta[batch %in% relevant.meta$batch]
 # Figure out how we want to number batches.
 tma.meta[,num_batch:=batch]
-tma.abund <- abund.mat[,tma.meta$barcode]
+tma.abund2 <- abund.mat[,tma.meta$barcode]
 cntrl.abs <- setdiff(rownames(tma.abund), exp.low[[1]])
 segment.proc <- preprocess_dsp_tma(tma.meta, tma.abund, relevant.meta, relevant.abund, igg.map=paths, bg.method=c('none'), controls=cntrl.abs, use.type='quant', k=2, num.roi.avg=1)
 #can save here
+
+# Write out TMA abund sheets
+write.csv(tma.abund, paste0('/Users/chongbe/Documents/RStudio/dsp/2.0/results/',runid,'_tma_abund_scaled.csv'))
+write.csv(tma.abund2, paste0('/Users/chongbe/Documents/RStudio/dsp/2.0/results/',runid,'_tma_abund_orig.csv'))
 
 # Use the summarized metadata to deal with replicates and form groups
 #create per segment summarized metadata
@@ -181,15 +237,10 @@ my.meta <- merge(dsp.meta[,.(num_batch=Date_run, sample_id=Specimen.ID, Specimen
 
 #choose a technical replicate
 ## First determine how correlated they are to each other in segment abundance
-sapply(names(segment.proc), function(x){
 
-  tmp.meta <- my.meta[`Segment (Name/ Label)`==x]
-  tmp.abund <- segment.proc[[x]]$avg_abund[,tmp.meta$avg_barcode]
-  pair.cors <- sapply(split(tmp.meta, by=c("Specimen.ID", "code")), function(y){
-    min(cor(tmp.abund[,y$avg_barcode]))
-  })
-  pair.cors
-})
+###
+# REMOVED
+###
 
 my.meta <- my.meta[!duplicated(cbind(`Segment (Name/ Label)`, Specimen.ID, num_batch, code)),]
 #Here define reference vs experimental
@@ -258,6 +309,8 @@ melt.tma$year<- substr(melt.tma$batch, 5, 8)
 melt.tma$name_ProbeName<- str_c(melt.tma$name,'_',melt.tma$ProbeName)
 # Write out csv for Westgard rules script in Galaxy wf
 write.csv(melt.tma, file=paste0(melt.tma.out), row.names=F)
+write.csv(tma.abund, file=paste0(my_samp, '_tma_abund_scaled.csv'))
+write.csv(tma.abund2, file=paste0(my_samp, '_tma_abund_orig.csv'))
 
 ref.batches <- melt.tma[batch != runid]
 cur.batch <- melt.tma[batch == runid]
@@ -282,25 +335,23 @@ plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund, coh)
 pdf(file=paste0(report.out), width=16, height=16)
 
 # Restrict ab plots and outlier detection to those ab/cell line combos included in pos.cntrls
-# 05/01/24 update -- no longer restricting, oepn to all antibodies
-ab.batches <- ref.batches[`name` %in% pos.cntrls$V2]# & `ProbeName` %in% pos.cntrls$V1]
-ab.batches.cur <- cur.batch[`name` %in% pos.cntrls$V2]# & `ProbeName` %in% pos.cntrls$V1]
-clia_abs <- unique(ab.batches[`ProbeName` %in% pos.cntrls$V1]$ProbeName)
+colnames(pos.cntrls) <- c('ProbeName','name')
+ab.batches <- ref.batches %>% inner_join(pos.cntrls, by=c('ProbeName','name'))
+ab.batches.cur <- cur.batch %>% inner_join(pos.cntrls, by=c('ProbeName','name'))
+clia_abs <- unique(ab.batches$ProbeName)
 
 # Outlier detection -- Zscore method
 datalist = list()
 k <- 1
-all_abs <- unique(paths$ProbeName)
-
-for (i in seq(1, length(all_abs))){
+for (i in seq(1, length(clia_abs))){
   for (j in seq(1, length(unique(ab.batches.cur$name)))){
-    ref <- ab.batches %>% filter(ProbeName==all_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
+    ref <- ab.batches %>% filter(ProbeName==clia_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
       select(batch, ProbeName, name, abundance) %>%
       group_by(name)
     mu <- mean(ref$abundance)
     sigma <- sd(ref$abundance)
 
-    cur <- ab.batches.cur %>% filter(ProbeName==all_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
+    cur <- ab.batches.cur %>% filter(ProbeName==clia_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
       select(batch, ProbeName, name, abundance) %>%
       group_by(name) %>%
       mutate(mean = mu,
@@ -312,15 +363,14 @@ for (i in seq(1, length(all_abs))){
     k <- k+1
   }
 }
-
 outlier_df = do.call(rbind, datalist)
 
 # Get failed antibodies (Ab combos with 5+ flagged outliers)
-failed_ab <- as.data.frame(table(outlier_df$ProbeName))
-if (nrow(failed_ab)>0){
-  failed_ab <- failed_ab %>% filter(Freq >= 5) %>% select(Var1)
-  colnames(failed_ab) <- c('Failed Antibodies')
-}
+#failed_ab <- as.data.frame(table(outlier_df$ProbeName))
+#if (nrow(failed_ab)>0){
+#  failed_ab <- failed_ab %>% filter(Freq >= 5) %>% select(Var1)
+#  colnames(failed_ab) <- c('Failed Antibodies')
+#}
 
 # First, produce Cover Sheet
 tt <- ttheme_default(base_size = 16)
@@ -354,13 +404,15 @@ if (nrow(outlier_df)>0){
 }
 
 g.outlier <- textGrob(outlier_message, gp = gpar(col = "blue", fontsize = 20))
-if (nrow(failed_ab)>0){
-  gc3 <- tableGrob(failed_ab, theme=tt1)
-  haligned <- gtable_combine(gc2, gc3)
-  cover_sheet<- grid.arrange(gc1, haligned, g.outlier, ncol=1)
-} else{
-  cover_sheet<- grid.arrange(gc1, gc2, g.outlier, ncol=1)
-}
+#if (nrow(failed_ab)>0){
+#  gc3 <- tableGrob(failed_ab, theme=tt1)
+#  haligned <- gtable_combine(gc2, gc3)
+#  cover_sheet<- grid.arrange(gc1, haligned, g.outlier, ncol=1)
+#} else{
+#  cover_sheet<- grid.arrange(gc1, gc2, g.outlier, ncol=1)
+#}
+
+cover_sheet<- grid.arrange(gc1, gc2, g.outlier, ncol=1)
 grid.draw(cover_sheet)
 
 # Draw outlier table
@@ -403,7 +455,7 @@ if (nrow(score_tum)>0){
                         as.vector(round(quantile(v$norm, probs=0.5), digits=2)),
                         as.vector(round(quantile(v$norm, probs=0.75), digits=2)),
                         as.vector(round(quantile(v$norm, probs=1), digits=2))
-                        )
+    )
   })
   percentiles <- t(percentiles)
   colnames(percentiles) <- c('z-score perc', 'rank perc', 'Q1', 'Q2', 'Q3', 'Q4')
@@ -445,7 +497,7 @@ if(nrow(score_str>0)){
                         as.vector(round(quantile(v$norm, probs=0.5), digits=2)),
                         as.vector(round(quantile(v$norm, probs=0.75), digits=2)),
                         as.vector(round(quantile(v$norm, probs=1), digits=2))
-                        )
+    )
   })
   percentiles <- t(percentiles)
   colnames(percentiles) <- c('z-score perc', 'rank perc', 'Q1', 'Q2', 'Q3', 'Q4')
@@ -480,8 +532,13 @@ write.xlsx(score_tum, excel.out.tum)
 write.xlsx(score_str, excel.out.str)
 
 # Produce boxplots
-failed_ab <- as.vector(failed_ab$'Failed Antibodies')
-clia_abs <- unique(c(failed_ab,clia_abs))
+#failed_ab <- as.vector(failed_ab$'Failed Antibodies')
+#clia_abs <- unique(c(failed_ab,clia_abs))
+clia_abs <- unique(ab.batches$ProbeName)
+
+# Open plot list back up
+ab.batches <- filter(ref.batches, name %in% pos.cntrls$name)
+ab.batches.cur <- filter(cur.batch, name %in% pos.cntrls$name)
 
 for (i in seq(1,length(clia_abs), by=4)){
 
