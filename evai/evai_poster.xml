@@ -1,10 +1,10 @@
-<tool id="evai_poster" name="eVai Sample Poster" version="0.0.2">
+<tool id="evai_poster" name="eVai Sample Poster" version="0.0.3">
 	<description>Uploads VCFs to eVai to analyze</description>
 	<requirements>
 	</requirements>
 	<command><![CDATA[
 		java -jar eVaiAnalysisExecutor_2.0.0.jar analyze --vcf -f ${dragen_variants} \
-   			-n ${sample_id} -u ${username} -p ${password}
+   			-n ${sample_id} -u ${username} -p ${password} > ${output_log}
 	]]>
 	</command>
 	<inputs>
@@ -15,7 +15,7 @@
 	</inputs>
 
 	<outputs>
-		<param name="sample_id" type="text" label="Sample ID"/>
+		<data name="output_log" format="txt" label="log: txt"/>
 	</outputs>
 
 	<help></help>
