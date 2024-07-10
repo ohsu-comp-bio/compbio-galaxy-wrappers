@@ -16,7 +16,7 @@ from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 
 
-VERSION = '0.6.6'
+VERSION = '0.6.7'
 
 def _parse_args():
     '''
