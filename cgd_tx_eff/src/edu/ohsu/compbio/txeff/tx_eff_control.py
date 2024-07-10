@@ -7,12 +7,16 @@ Created on May 18, 2022
 import argparse
 import logging.config
 import time
+
+from edu.ohsu.compbio.txeff.tx_eff_annovar import TxEffAnnovar
+from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
+from edu.ohsu.compbio.txeff.tx_eff_hgvs import TxEffHgvs
+from edu.ohsu.compbio.txeff.tx_eff_vcf import TxEffVcf
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
-from edu.ohsu.compbio.txeff import tx_eff_annovar, tx_eff_hgvs, tx_eff_vcf
-from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 
-VERSION = '0.6.5'
+
+VERSION = '0.6.6'
 
 def _parse_args():
     '''
@@ -74,16 +78,19 @@ def _main():
     
     args = _parse_args()
 
-    # Use tx_eff_annovar to read annovar records 
-    annovar_records = tx_eff_annovar.get_annovar_records(args.annovar_variant_function.name, args.annovar_exonic_variant_function.name)
+    # Use tx_eff_annovar to read annovar records
+    
+    annovar_records = TxEffAnnovar().get_annovar_records(args.annovar_variant_function.name, args.annovar_exonic_variant_function.name)
 
     # Load the reference genome with pysam.
     pysam_file = PysamTxEff(args.reference_fasta)
 
+    txEffHgvs = TxEffHgvs()
+    
     # Use tx_eff_hgvs to fix the nomenclature
-    tx_eff_hgvs.identify_hgvs_datasources()
+    txEffHgvs.identify_hgvs_datasources()
 
-    merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records, pysam_file)
+    merged_transcripts = txEffHgvs.get_updated_hgvs_transcripts(annovar_records, pysam_file)
     # Close the reference FASTA
     pysam_file.my_fasta.close()
 
@@ -92,7 +99,7 @@ def _main():
     tx_eff_ccds.add_ccds_transcripts(merged_transcripts)
      
     # Use tx_eff_vcf to write the transcript effects to a VCF
-    tx_eff_vcf.create_vcf_with_transcript_effects(args.in_vcf.name, args.out_vcf.name, merged_transcripts)
+    TxEffVcf(args.in_vcf.name, args.out_vcf.name).create_vcf(merged_transcripts)
     
     print(f"Wrote {len(merged_transcripts)} transcripts to {args.out_vcf.name}")
 

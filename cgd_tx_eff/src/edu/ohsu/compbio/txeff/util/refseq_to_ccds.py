@@ -16,7 +16,6 @@ from BCBio import GFF
 import Bio
 from sys import getsizeof
 
-__version__ = '0.6.6'
 GFF_RELEASE_105 = '105'
 GFF_RELEASE_105_20220307 = '105.20220307'
 
@@ -299,10 +298,6 @@ def _main():
     # Display summary of a mapping CSV
     parser.add_argument('-s', '--summarize', help="Display summary of CSV mapping file", type=FileType('r'), required=False)
     
-    # Version    
-    parser.add_argument('-V', '--version', action='version', version=__version__)
-
-
     # Process arguments
     args = parser.parse_args()
     operation = _get_app_operation(args)

@@ -127,4 +127,3 @@ class VariantTranscript(AnnovarVariantFunction):
             score += 1
             
         return score
-
