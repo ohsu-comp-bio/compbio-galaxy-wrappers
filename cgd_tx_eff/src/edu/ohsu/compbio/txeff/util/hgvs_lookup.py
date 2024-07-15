@@ -6,14 +6,17 @@ Created on Mar. 21, 2023
 
 @author: pleyte
 '''
+from argparse import ArgumentParser
 import logging
 import os
-from argparse import ArgumentParser
+
 import hgvs.dataproviders.uta
+
+from edu.ohsu.compbio.txeff.tx_eff_hgvs import TxEffHgvs
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
-from edu.ohsu.compbio.txeff import tx_eff_hgvs
-from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
+from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
+
 
 class HgvsLookup(object):
     def __init__(self):
@@ -42,7 +45,7 @@ class HgvsLookup(object):
         # Reference file   
         pysam_file = PysamTxEff(reference_fasta)
         
-        transcripts = tx_eff_hgvs._lookup_hgvs_transcripts([variant], pysam_file)
+        transcripts = TxEffHgvs()._lookup_hgvs_transcripts([variant], pysam_file)
 
         logging.info(f"Found {len(transcripts)} transcripts associated with {genotype}")
         

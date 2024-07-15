@@ -274,7 +274,7 @@ class TxEffHgvs(object):
                 variant_transcript.refseq_transcript = var_c.ac
                 variant_transcript.variant_type = variant_type
     
-                # Sometimes the am.c_to_p function results the protein accession coming back as MD5 hash 
+                # Sometimes the am.c_to_p function returns the protein accession as an MD5 hash 
                 # of the amino acid sequence (see uta.get_acs_for_protein_seq)
                 if not var_p.ac.startswith('MD5'):
                     variant_transcript.protein_transcript = var_p.ac
@@ -576,7 +576,6 @@ class TxEffHgvs(object):
          
         for transcript_key in all_transcript_keys:
             if annovar_dict.get(transcript_key) and hgvs_dict.get(transcript_key):
-                assert merged_dict.get(transcript_key)
                 matched_annovar_and_hgvs_transcript_count += 1
             elif annovar_dict.get(transcript_key) and not hgvs_dict.get(transcript_key):
                 unmatched_annovar_transcript_count += 1
