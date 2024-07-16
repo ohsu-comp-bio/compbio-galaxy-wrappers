@@ -8,10 +8,8 @@
 		ln -s ${sv_vcf} sample_sv.vcf &&
 		ln -s ${cnv_vcf} sample_cnv.vcf &&
 
-        bgzip -c sample_sv.vcf > sample_sv.vcf.gz &&
-		bcftools index -t sample_sv.vcf.gz;
-		bgzip -c sample_cnv.vcf > sample_cnv.vcf.gz &&
-		bcftools index -t sample_cnv.vcf.gz;
+        bgzip -c sample_sv.vcf > sample_sv.vcf.gz | bcftools index -t sample_sv.vcf.gz;
+		bgzip -c sample_cnv.vcf > sample_cnv.vcf.gz | bcftools index -t sample_cnv.vcf.gz;
 
 		bcftools concat -O v \
 			-o ${sv_cnv_concat} \
