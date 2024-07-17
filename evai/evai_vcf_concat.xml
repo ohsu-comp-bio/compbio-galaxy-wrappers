@@ -5,16 +5,15 @@
 		<requirement type="package" version="1.10">samtools</requirement>
 	</requirements>
 	<command><![CDATA[
-		ln -s ${sv_vcf} sample_sv.vcf &&
-		ln -s ${cnv_vcf} sample_cnv.vcf &&
+		ln -s ${sv_vcf} sample_sv.vcf;
+		ln -s ${cnv_vcf} sample_cnv.vcf;
 
-        bgzip -c sample_sv.vcf > sample_sv.vcf.gz | bcftools index -t sample_sv.vcf.gz;
-		bgzip -c sample_cnv.vcf > sample_cnv.vcf.gz | bcftools index -t sample_cnv.vcf.gz;
+        bgzip -c sample_sv.vcf > sample_sv.vcf.gz;
+        bcftools index -t sample_sv.vcf.gz;
+		bgzip -c sample_cnv.vcf > sample_cnv.vcf.gz;
+		bcftools index -t sample_cnv.vcf.gz;
 
-		bcftools concat -O v \
-			-o ${sv_cnv_concat} \
-			-a \
-			sample_sv.vcf.gz sample_cnv.vcf.gz;
+		bcftools concat -O v -o ${sv_cnv_concat} -a sample_sv.vcf.gz sample_cnv.vcf.gz &> log.out;
 
 		sed -i'' -e 's/<DIP>/./g' ${sv_cnv_concat}
 	]]>
