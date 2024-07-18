@@ -85,12 +85,12 @@ def _main():
     # Load the reference genome with pysam.
     pysam_file = PysamTxEff(args.reference_fasta)
 
-    txEffHgvs = TxEffHgvs()
+    tx_eff_hgvs = TxEffHgvs()
     
     # Use tx_eff_hgvs to fix the nomenclature
-    txEffHgvs.identify_hgvs_datasources()
+    tx_eff_hgvs.identify_hgvs_datasources()
 
-    merged_transcripts = txEffHgvs.get_updated_hgvs_transcripts(annovar_records, pysam_file)
+    merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records, pysam_file)
     # Close the reference FASTA
     pysam_file.my_fasta.close()
 

@@ -93,8 +93,8 @@ def _main():
     annovar_records = TxEffAnnovar().get_annovar_records(annovar_file_names)    
 
     logging.info(f"Writing {args.out_file.name}")    
-    txEffCsv = TxEffCsv()
-    txEffCsv.write_transcripts(args.out_file.name, annovar_records)
+    tx_eff_csv = TxEffCsv()
+    tx_eff_csv.write_transcripts(args.out_file.name, annovar_records)
 
 if __name__ == '__main__':
     _main()

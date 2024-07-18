@@ -780,16 +780,16 @@ def _main():
     
     args = _parse_args()
     
-    txEffCsv = TxEffCsv()    
-    annovar_transcripts = txEffCsv.read_transcripts(args.in_file.name)
+    tx_eff_csv = TxEffCsv()    
+    annovar_transcripts = tx_eff_csv.read_transcripts(args.in_file.name)
     logging.debug(f'Read {len(annovar_transcripts)} Annovar transcripts from {args.in_file.name}')
     
-    txEffHgvs = TxEffHgvs()
-    txEffHgvs.identify_hgvs_datasources()
-    transcripts = txEffHgvs.get_updated_hgvs_transcripts(annovar_transcripts)
+    tx_eff_hgvs = TxEffHgvs()
+    tx_eff_hgvs.identify_hgvs_datasources()
+    transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_transcripts)
     
     logging.info(f"Writing {args.out_file.name}")
-    txEffCsv.write_transcripts(args.out_file.name, transcripts)
+    tx_eff_csv.write_transcripts(args.out_file.name, transcripts)
 
 if __name__ == '__main__':
     _main()

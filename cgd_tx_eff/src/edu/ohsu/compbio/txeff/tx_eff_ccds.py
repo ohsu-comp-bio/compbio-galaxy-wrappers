@@ -200,15 +200,15 @@ def _main():
     args = _parse_args()
     
     # Read transcripts that have been written to csv
-    txEffCsv = TxEffCsv()
-    transcripts = txEffCsv.read_transcripts(args.in_file.name)
+    tx_eff_csv = TxEffCsv()
+    transcripts = tx_eff_csv.read_transcripts(args.in_file.name)
     
     # Add CCDS copies of refseq transcripts
-    txEffCcds = TxEffCcds(args.ccds_map.name)
-    txEffCcds.add_ccds_transcripts(transcripts)
+    tx_eff_ccds = TxEffCcds(args.ccds_map.name)
+    tx_eff_ccds.add_ccds_transcripts(transcripts)
     
     # Write the old and new records to file
-    txEffCsv.write_transcripts(args.out_file.name, transcripts)
+    tx_eff_csv.write_transcripts(args.out_file.name, transcripts)
     
 if __name__ == '__main__':
     _main()        
