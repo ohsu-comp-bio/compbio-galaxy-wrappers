@@ -4,6 +4,9 @@
         <requirement type="package" version="1.20">bcftools</requirement>
 		<requirement type="package" version="1.10">samtools</requirement>
 	</requirements>
+	<stdio>
+        <regex match="[W::bcf_hdr_merge]" source="stdout" level="log" description="bcftools log messaging" />
+    </stdio>
 	<command><![CDATA[
 		ln -s ${sv_vcf} sample_sv.vcf;
 		ln -s ${cnv_vcf} sample_cnv.vcf;
@@ -13,9 +16,10 @@
 		bgzip -c sample_cnv.vcf > sample_cnv.vcf.gz;
 		bcftools index -t sample_cnv.vcf.gz;
 
-		bcftools concat -O v -o ${sv_cnv_concat} -a sample_sv.vcf.gz sample_cnv.vcf.gz &> log.out;
+		bcftools concat -O v -o ${sv_cnv_concat} -a sample_sv.vcf.gz sample_cnv.vcf.gz;
 
-		sed -i'' -e 's/<DIP>/./g' ${sv_cnv_concat}
+		sed -i'' -e 's/<DIP>/./g' ${sv_cnv_concat};
+
 	]]>
 	</command>
 	<inputs>
