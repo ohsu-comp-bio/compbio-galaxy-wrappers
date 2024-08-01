@@ -1,0 +1,12 @@
+owner: "rosenaus"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/y_ploidy_check_DRAGEN"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/y_ploidy_check_DRAGEN"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  y_ploidy_check_dragen:
+    description: "Checks the ploidy estimation from DRAGEN metrics JSON to confirm specification in samplesheet"
+    include:
+      - y_ploidy_check_dragen.xml
+      - test-data/*
