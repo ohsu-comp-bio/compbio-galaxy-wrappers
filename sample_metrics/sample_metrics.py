@@ -3,6 +3,8 @@
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
 VERSION HISTORY
+0.0.15
+    Change IlluminaExome_V2_PlusMito to IlluminaExome_V2-5_PlusMito
 0.8.14
     Update tmb to use 0.0 as placeholder value
     Update QIAseq_V4_STP4 to remove bio_sex_check metric
@@ -40,7 +42,7 @@ import json
 from inputs import ProbeQcRead, PerLocusRead, AlignSummaryMetrics, GatkDepthOfCoverageRead, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
 from inputs import FastQcRead
 
-VERSION = '0.8.13'
+VERSION = '0.8.15'
 
 def supply_args():
     """
@@ -669,7 +671,7 @@ class MetricPrep(SampleMetrics):
                                     'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
                 'AgilentCRE_V1': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
-                'IlluminaExome_V2_PlusMito': ['q30_bases_pct', 'average_alignment_coverage_over_target_region',
+                'IlluminaExome_V2-5_PlusMito': ['q30_bases_pct', 'average_alignment_coverage_over_target_region',
                                             'pct_of_target_region_with_coverage_20x_inf',
                                             'pct_of_target_region_with_coverage_100x_inf',
                                             'aligned_reads_in_target_region_pct', 'pct_of_target_region_with_coverage_10x_inf',
@@ -704,7 +706,7 @@ class MetricPrep(SampleMetrics):
                 'TruSightOneV2_5': ['gc_pct_r1', 'gc_pct_r2', 'y_ploidy_check', 'homozygosity_flag'],
                 'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
                                   'gc_pct_r1', 'gc_pct_r2', 'homozygosity_flag', 'y_ploidy_check'],
-                'IlluminaExome_V2_PlusMito': ['dragen_gc_pct_r1', 'dragen_gc_pct_r2', 'ploidy_estimation', 'number_of_large_roh_gt_eq_3000000'],
+                'IlluminaExome_V2-5_PlusMito': ['dragen_gc_pct_r1', 'dragen_gc_pct_r2', 'ploidy_estimation', 'number_of_large_roh_gt_eq_3000000'],
                 'QIAseq_V3_HEME2': [],
                 'QIAseq_V4_MINI': ['forced_calls_above', 'forced_calls_below', 'bio_sex_check'],
                 'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
