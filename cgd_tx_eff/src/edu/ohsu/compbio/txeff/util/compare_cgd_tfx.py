@@ -22,8 +22,6 @@ import vcfpy
 from edu.ohsu.compbio.txeff.tx_eff_vcf import TranscriptEffect
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
-VERSION = '0.4.6'
-
 def find_in_vcf(chromosome: str, position_start: int, position_end: int, ref: str, alt: str, vcf_reader: vcfpy.reader.Reader):
     '''
     Return the variant context matching the given genotype
@@ -149,8 +147,6 @@ def _parse_args():
                         help='CSV file to create',
                         type=argparse.FileType('w'),
                         required=True)    
-    
-    parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     
     args = parser.parse_args()
     

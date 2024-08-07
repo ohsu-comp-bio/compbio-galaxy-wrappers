@@ -10,8 +10,6 @@ import logging.config
 import csv
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 
-VERSION = '0.0.1'
-
 def _parse_args():
     '''
     Validate and return command line arguments.

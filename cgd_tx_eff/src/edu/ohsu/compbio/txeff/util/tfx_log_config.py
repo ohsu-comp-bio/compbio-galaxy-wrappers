@@ -22,7 +22,7 @@ class TfxLogConfig(object):
                 },
             },
             'handlers': {
-                'default': {                     
+                'default': {
                     'formatter': 'standard',
                     'class': 'logging.FileHandler',
                     'filename': 'cgd_tx_eff.log', 
@@ -31,19 +31,19 @@ class TfxLogConfig(object):
             },
             'loggers': { 
                 '': {  # root logger
+                    'level': 'WARNING',
                     'handlers': ['default'],
-                    'level': 'DEBUG',
                     'propagate': False
                 },
-                'edu.ohsu.compbio.txeff': { 
-                    'level': 'DEBUG',
-                    'propagate': False,
+                'edu.ohsu.compbio': { 
+                    'level': 'INFO',
                     'handlers': ['default'],
+                    'propagate': False
                 },
             } 
         }
         
-        # Configuration for helper utilties in this source tree 
+        # Configuration for helper utilities in this source tree 
         self.utility_config = { 
             'version': 1,
             'disable_existing_loggers': False,
@@ -61,14 +61,14 @@ class TfxLogConfig(object):
             },
             'loggers': { 
                 '': {  # root logger
+                    'level': 'WARNING',
                     'handlers': ['default'],
-                    'level': 'DEBUG',
                     'propagate': False
                 },
-                'edu.ohsu.compbio.txeff': { 
+                'edu.ohsu.compbio': { 
                     'level': 'DEBUG',
-                    'propagate': False,
                     'handlers': ['default'],
+                    'propagate': False
                 },
             } 
         }
@@ -91,14 +91,14 @@ class TfxLogConfig(object):
             },
             'loggers': { 
                 '': {  # root logger
+                    'level': 'WARNING',
                     'handlers': ['default'],
-                    'level': 'DEBUG',
                     'propagate': False
                 },
-                'edu.ohsu.compbio.txeff': { 
+                'edu.ohsu.compbio': { 
                     'level': 'DEBUG',
-                    'propagate': False,
                     'handlers': ['default'],
+                    'propagate': False,
                 },
             }
         }
