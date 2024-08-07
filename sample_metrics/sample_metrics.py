@@ -3,7 +3,7 @@
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
 VERSION HISTORY
-0.0.15
+0.8.15
     Change IlluminaExome_V2_PlusMito to IlluminaExome_V2-5_PlusMito
 0.8.14
     Update tmb to use 0.0 as placeholder value
