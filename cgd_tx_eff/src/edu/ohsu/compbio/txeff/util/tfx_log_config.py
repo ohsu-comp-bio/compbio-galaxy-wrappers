@@ -36,7 +36,7 @@ class TfxLogConfig(object):
                     'propagate': False
                 },
                 'edu.ohsu.compbio': { 
-                    'level': 'WARNING',
+                    'level': 'INFO',
                     'handlers': ['default'],
                     'propagate': False
                 },

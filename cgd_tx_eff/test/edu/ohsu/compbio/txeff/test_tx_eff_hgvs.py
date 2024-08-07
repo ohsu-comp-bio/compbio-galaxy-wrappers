@@ -1,7 +1,10 @@
 import unittest
-import edu.ohsu.compbio.txeff.tx_eff_hgvs as tx_eff_hgvs 
-from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
+
+from edu.ohsu.compbio.txeff.tx_eff_hgvs import TxEffHgvs
+import edu.ohsu.compbio.txeff.tx_eff_hgvs as tx_eff_hgvs
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
+from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
+
 
 FILE_HG37_REFERENCE_FASTA = '/opt/bioinformatics/Broad/Homo_sapiens_assembly19.fasta'
 
@@ -20,7 +23,7 @@ class TxEffHgvsTest(unittest.TestCase):
         hgvs_b = self._create_variant('2', 2, 'A', 'T', 'bbb.1', c_dot='c.1A>T', p_dot_one='p.L1P', p_dot_three='p.Leu1Pro', protein_transcript='NP_001')
         hgvs_c = self._create_variant('3', 3, 'A', 'T', 'ccc.1', c_dot='c.3A>T', p_dot_one='p.L3P', p_dot_three='p.Leu3Pro', protein_transcript='NP_003')
 
-        merged_transcripts, unmerged_transcripts = tx_eff_hgvs._merge_annovar_with_hgvs([annovar_a, annovar_b], [hgvs_b,hgvs_c])
+        merged_transcripts, unmerged_transcripts = TxEffHgvs()._merge_annovar_with_hgvs([annovar_a, annovar_b], [hgvs_b,hgvs_c])
         
         self.assertEqual(len(merged_transcripts), 1, 'Only one transcript is common to both lists')
         self.assertEqual(len(unmerged_transcripts), 2, 'Two transcripts are common to both lists')
@@ -44,7 +47,7 @@ class TxEffHgvsTest(unittest.TestCase):
         b = {t3.get_label():t3, t4.get_label():t4, t5.get_label():t5, t6.get_label():t6}
         
         # Unmatched will be 1,2,5,6
-        c = tx_eff_hgvs._get_unmatched_annovar_transcripts(a,b)
+        c = TxEffHgvs()._get_unmatched_annovar_transcripts(a,b)
         
         self.assertEqual(len(c), 4, 'Symmetric difference') 
         
@@ -67,7 +70,7 @@ class TxEffHgvsTest(unittest.TestCase):
                               self._create_variant('1', 1, 'A', 'T', 'NM_000.3', gene='AAA'),
                               self._create_variant('1', 1, 'A', 'T', 'NM_000.2', gene='AAA', p_dot_one='p.(L1P)', variant_effect='Y')]
 
-        best = tx_eff_hgvs._get_the_best_transcripts(merged_transcripts)
+        best = TxEffHgvs()._get_the_best_transcripts(merged_transcripts)
         
         self.assertEqual(len(best), 1, 'Only one transcript expected')
         self.assertEqual(best[0].get_label(), '1-1-A-T-NM_000.2', 'Most complete, lastest version')
@@ -79,31 +82,31 @@ class TxEffHgvsTest(unittest.TestCase):
         # Substitution 
         genotype = '1-123-G-A'
         chromosome, position, ref, alt = genotype.split('-')
-        pos_part = tx_eff_hgvs._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
+        pos_part = TxEffHgvs()._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
         self.assertEqual(pos_part, '123G>A', "g. is incorrect")
 
         # Insertion 
         genotype = '1-123-G-AC'
         chromosome, position, ref, alt = genotype.split('-')
-        pos_part = tx_eff_hgvs._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
+        pos_part = TxEffHgvs()._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
         self.assertEqual(pos_part, '123_124insC', "g. is incorrect")
 
         # Deletion
         genotype = '1-123-AC-G'
         chromosome, position, ref, alt = genotype.split('-')
-        pos_part = tx_eff_hgvs._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
+        pos_part = TxEffHgvs()._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
         self.assertEqual(pos_part, '124del', "g. is incorrect")
         
         # Indel
         genotype = '5-112175461-CAGTTCACTTGA-CGTC'
         chromosome, position, ref, alt = genotype.split('-')
-        pos_part = tx_eff_hgvs._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
+        pos_part = TxEffHgvs()._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
         self.assertEqual(pos_part, '112175462_112175472delinsGTC', "g. is incorrect")
         
         # Repeat
         genotype = '1-153924029-AG-A'
         chromosome, position, ref, alt = genotype.split('-')
-        pos_part = tx_eff_hgvs._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
+        pos_part = TxEffHgvs()._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
         self.assertEqual(pos_part, '153924033del', "g. is incorrect")
         
     def _create_variant(self, chromosome, pos, ref, alt, transcript, gene=None, c_dot=None, p_dot_one=None, p_dot_three=None, variant_effect=None, variant_type=None, protein_transcript=None):

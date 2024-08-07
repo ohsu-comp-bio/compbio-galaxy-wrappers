@@ -276,8 +276,8 @@ def _main():
     args = _parse_args()
     
     logging.info(f"Reading transcripts from {args.in_csv.name}")
-    txEffCsv = TxEffCsv()    
-    transcripts = txEffCsv.read_transcripts(args.in_csv.name)
+    tx_eff_csv = TxEffCsv()    
+    transcripts = tx_eff_csv.read_transcripts(args.in_csv.name)
     
     # Combine transcript effects with VCF variants and write to file 
     TxEffVcf(args.in_vcf.name, args.out_vcf.name).create_vcf(transcripts)
