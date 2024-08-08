@@ -2,6 +2,8 @@
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
 VERSION HISTORY
+0.9.1
+    Update to allow for case when picard_summary and picard_summary_umi are None
 0.9.0
     Remove old style metrics in favor of new style
 0.8.15
@@ -43,7 +45,7 @@ from inputs import (ProbeQcRead, PerLocusRead, AlignSummaryMetrics, GatkDepthOfC
                     MsiSensor, SamReader, GatkCollectRnaSeqMetrics)
 from inputs import FastQcRead
 
-VERSION = '0.9.0'
+VERSION = '0.9.1'
 
 
 def supply_args():
@@ -533,10 +535,10 @@ class MetricPrep(SampleMetrics):
                 'uniformity_of_coverage':
                     self._get_cov_uniformity(self._get_avg_probeqc('AVGD', self.probeqc_after,
                                                                    self.total_bp_after)),
-                'pf_reads': self.raw_mets.picard_summary['PAIR']['PF_READS'],
-                'pf_reads_after': self.raw_mets.picard_summary_umi['PAIR']['PF_READS'],
-                'pct_pf_reads_aligned': self.raw_mets.picard_summary['PAIR']['PCT_PF_READS_ALIGNED'],
-                'pct_pf_reads_aligned_after': self.raw_mets.picard_summary_umi['PAIR']['PCT_PF_READS_ALIGNED'],
+                'pf_reads': self.raw_mets.picard_summary['PAIR']['PF_READS'] if self.raw_mets.picard_summary else None,
+                'pf_reads_after': self.raw_mets.picard_summary_umi['PAIR']['PF_READS'] if self.raw_mets.picard_summary_umi else None,
+                'pct_pf_reads_aligned': self.raw_mets.picard_summary['PAIR']['PCT_PF_READS_ALIGNED'] if self.raw_mets.picard_summary else None,
+                'pct_pf_reads_aligned_after': self.raw_mets.picard_summary_umi['PAIR']['PCT_PF_READS_ALIGNED'] if self.raw_mets.picard_summary_umi else None,
                 'allele_balance': self._reduce_sig(self._add_json_mets(lookin=self.raw_mets.json_mets,
                                                                        metric='allele_balance')),
                 'allele_balance_het_count': self._add_json_mets(lookin=self.raw_mets.json_mets,
