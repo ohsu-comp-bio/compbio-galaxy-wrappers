@@ -37,9 +37,8 @@ class TxEffAnnotate(object):
         '''
         Add annotations to each variant transcript
         '''
+        self.logger.info("Applying Reference context annotations")
         for transcript in transcripts:
-            # Add the reference context annotation
-            self.logger.info("Applying Reference context annotations")
             transcript.reference_context = self._get_reference_context(transcript)
 
     def _get_reference_context(self, transcript: VariantTranscript):
@@ -53,5 +52,4 @@ class TxEffAnnotate(object):
             
         context_stop = transcript.position + self.REFERENCE_CONTEXT_LENGTH_PER_SIDE - 1
         
-        # jDebug: what happens if context_start is negative? 
         return self.sr[refseq_chromosome][context_start:context_stop]
