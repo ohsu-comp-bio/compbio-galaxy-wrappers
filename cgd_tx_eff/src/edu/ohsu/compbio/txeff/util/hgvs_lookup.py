@@ -17,7 +17,6 @@ from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
 
-
 class HgvsLookup(object):
     def __init__(self):
         '''

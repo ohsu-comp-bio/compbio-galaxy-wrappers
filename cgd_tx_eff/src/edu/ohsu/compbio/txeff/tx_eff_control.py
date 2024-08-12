@@ -8,6 +8,7 @@ import argparse
 import logging.config
 import time
 
+from edu.ohsu.compbio.txeff.tx_eff_annotate import TxEffAnnotate
 from edu.ohsu.compbio.txeff.tx_eff_annovar import TxEffAnnovar
 from edu.ohsu.compbio.txeff.tx_eff_ccds import TxEffCcds
 from edu.ohsu.compbio.txeff.tx_eff_hgvs import TxEffHgvs
@@ -98,6 +99,10 @@ def _main():
     tx_eff_ccds = TxEffCcds(args.ccds_map.name)
     tx_eff_ccds.add_ccds_transcripts(merged_transcripts)
 
+    # Add additional annotations to each variant 
+    tx_eff_annotate = TxEffAnnotate()
+    tx_eff_annotate.annotate(merged_transcripts)
+    
     # Use tx_eff_vcf to write the transcript effects to a VCF
     TxEffVcf(args.in_vcf.name, args.out_vcf.name).create_vcf(merged_transcripts)
     

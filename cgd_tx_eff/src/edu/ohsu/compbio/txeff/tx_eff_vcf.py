@@ -36,6 +36,7 @@ class TranscriptEffect(Enum):
     TFX_PROTEIN_TRANSCRIPT = 'TFX_PROTEIN_TRANSCRIPT'
     TFX_EXON = 'TFX_EXON'
     TFX_AMINO_ACID_POSITION = 'TFX_AMINO_ACID_POSITION'
+    TFX_REFERENCE_CONTEXT = 'TFX_REFERENCE_CONTEXT' 
 
 class TxEffVcf(object):
     def __init__(self, in_vcf:str, out_vcf:str):
@@ -105,6 +106,7 @@ class TxEffVcf(object):
             tfx_variant_types = []
             tfx_protein_transcripts = []
             tfx_amino_acid_positions = []
+            tfx_reference_contexts = []
             
             for transcript in transcripts:
                 tfx_base_positions.append(transcript.hgvs_base_position)
@@ -120,6 +122,7 @@ class TxEffVcf(object):
                 tfx_variant_types.append(transcript.variant_type)
                 tfx_protein_transcripts.append(transcript.protein_transcript)
                 tfx_amino_acid_positions.append(transcript.hgvs_amino_acid_position)
+                tfx_reference_contexts.append(transcript.reference_context)
     
             vcf_record.INFO[TranscriptEffect.TFX_BASE_POSITION.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_base_positions])]
             vcf_record.INFO[TranscriptEffect.TFX_EXON.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_exons])]
@@ -133,6 +136,7 @@ class TxEffVcf(object):
             vcf_record.INFO[TranscriptEffect.TFX_TRANSCRIPT.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_refseq_transcripts])]        
             vcf_record.INFO[TranscriptEffect.TFX_VARIANT_TYPE.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_variant_types])]        
             vcf_record.INFO[TranscriptEffect.TFX_PROTEIN_TRANSCRIPT.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_protein_transcripts])]
+            vcf_record.INFO[TranscriptEffect.TFX_REFERENCE_CONTEXT.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_reference_contexts])]
             
             # Replace spaces with underscore because spaces are not allowed in the INFO field.
             vcf_record.INFO[TranscriptEffect.TFX_VARIANT_EFFECT.value] = [':'.join([self._replaceNoneWithEmpty(x).replace(' ', '_') for x in tfx_variant_effects])]
@@ -217,6 +221,11 @@ class TxEffVcf(object):
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
                                                                 ('Description', 'Amino acid start position.')]))
+        header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_REFERENCE_CONTEXT.value),
+                                                                ('Number', '.'),
+                                                                ('Type', 'String'),
+                                                                ('Description', 'Reference context.')]))
+        
     
     def create_vcf(self, transcripts: list):
         '''

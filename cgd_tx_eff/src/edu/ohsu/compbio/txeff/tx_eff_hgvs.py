@@ -23,6 +23,7 @@ from hgvs.sequencevariant import SequenceVariant
 
 from edu.ohsu.compbio.annovar import annovar_parser
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
+from edu.ohsu.compbio.txeff.util import chromosome_map
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
@@ -32,13 +33,6 @@ from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
 
 # When we upgrade from python 3.8 to 3.9 this import needs to be changed to: "from collections.abc import Iterable"
 ASSEMBLY_VERSION = "GRCh37"
-
-# These will need to be updated when we switch from GRCh37 to GRCh38
-CHROM_MAP = {'1': 'NC_000001.10', '2': 'NC_000002.11', '3': 'NC_000003.11', '4': 'NC_000004.11', '5': 'NC_000005.9',
-             '6': 'NC_000006.11', '7': 'NC_000007.13', '8': 'NC_000008.10', '9': 'NC_000009.11', '10': 'NC_000010.10',
-             '11': 'NC_000011.9', '12': 'NC_000012.11', '13': 'NC_000013.10', '14': 'NC_000014.8', '15': 'NC_000015.9',
-             '16': 'NC_000016.9', '17': 'NC_000017.10', '18': 'NC_000018.9', '19': 'NC_000019.9', '20': 'NC_000020.10',
-             '21': 'NC_000021.8', '22': 'NC_000022.10', 'X': 'NC_000023.10', 'Y': 'NC_000024.9', 'MT': 'NC_012920.1'}
 
 class RptHandler:
     """
@@ -197,22 +191,14 @@ class TxEffHgvs(object):
         '''
         self.logger.debug(f"Using HGVS/UTA to find transcripts for {variant}")
     
-        # Even the numeric chromosomes need to be strings in order to be found in the CHROM_MAP
+        # Even the numeric chromosomes need to be strings in order to be found in the chromosome map
         assert type(variant.chromosome) == str 
         
-        hgvs_chrom = CHROM_MAP.get(variant.chromosome)
-        
-        if hgvs_chrom == None:
-            if variant.chromosome.startswith("chr"):
-                raise ValueError("Chromosome should not have the 'chr' prefix: " + variant.chromosome) 
-            
-            raise ValueError(f"Unknown chromosome: {variant.chromosome}-{variant.position}-{variant.reference}-{variant.alt}.")
-            
-            return []
+        refseq_chromosome = chromosome_map.get_refseq(variant.chromosome)
         
         # Look up the variant using HGVS            
         pos_part = self._correct_indel_coords(variant.chromosome, variant.position, variant.reference, variant.alt, pysam_file)
-        new_hgvs = hgvs_chrom + ':g.' + pos_part
+        new_hgvs = refseq_chromosome + ':g.' + pos_part
     
         var_g = hgvs_parser.parse_hgvs_variant(new_hgvs)
     
@@ -437,7 +423,7 @@ class TxEffHgvs(object):
             self.logger.debug(f"Gene selection: Annovar did not provide a gene for {transcript_key}, using HGVS's: gene={hgvs_transcript.hgnc_gene}")            
             transcript_gene = hgvs_transcript.hgnc_gene
         elif annovar_transcript.hgnc_gene != hgvs_transcript.hgnc_gene:
-            self.logger.debug(f"Gene selection: Annovar and HGVS genes don't match for {transcript_key}: {annovar_transcript.hgnc_gene} != {hgvs_transcript.hgnc_gene}")
+            self.logger.info(f"Gene selection: Annovar and HGVS genes don't match for {transcript_key}: {annovar_transcript.hgnc_gene} != {hgvs_transcript.hgnc_gene}")
         
         if self._allow_merge(new_transcript.hgnc_gene, transcript_gene, transcript_key, 'hgnc_gene'):
             new_transcript.hgnc_gene = transcript_gene

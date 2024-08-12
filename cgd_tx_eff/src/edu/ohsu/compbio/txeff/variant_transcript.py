@@ -13,6 +13,9 @@ class VariantTranscript(AnnovarVariantFunction):
         
         # An hgvs.sequencevariant.SequenceVariant with g. notation 
         self.sequence_variant = None
+        
+        # Reference sequence of 10 bases before and after the variant 
+        self.reference_context = None
 
     def __eq__(self, obj):
         if obj is None:
@@ -46,6 +49,8 @@ class VariantTranscript(AnnovarVariantFunction):
         transcript.splicing = self._noneIfEmpty(self.splicing)
         transcript.refseq_transcript = self._noneIfEmpty(self.refseq_transcript)
         transcript.protein_transcript = self._noneIfEmpty(self.protein_transcript)
+        transcript.reference_context = self._noneIfEmpty(self.reference_context)
+
         return transcript
 
     def _noneIfEmpty(self, value: str):
