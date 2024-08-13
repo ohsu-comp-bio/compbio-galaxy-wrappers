@@ -46,10 +46,11 @@ class TxEffAnnotate(object):
         Look up the reference sequence that surrounds a variant. 
         '''
         refseq_chromosome = chromosome_map.get_refseq(transcript.chromosome)
-        context_start = transcript.position - self.REFERENCE_CONTEXT_LENGTH_PER_SIDE
+
+        context_start = transcript.position - self.REFERENCE_CONTEXT_LENGTH_PER_SIDE - 1
         if context_start < 0:
             context_start = 0
             
-        context_stop = transcript.position + self.REFERENCE_CONTEXT_LENGTH_PER_SIDE - 1
+        context_stop = transcript.position + len(transcript.reference) + self.REFERENCE_CONTEXT_LENGTH_PER_SIDE - 1
         
         return self.sr[refseq_chromosome][context_start:context_stop]

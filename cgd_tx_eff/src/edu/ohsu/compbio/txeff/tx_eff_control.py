@@ -17,7 +17,7 @@ from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 
 
-VERSION = '0.6.8'
+VERSION = '0.6.9'
 
 def _parse_args():
     '''
@@ -104,7 +104,7 @@ def _main():
     tx_eff_annotate.annotate(merged_transcripts)
     
     # Use tx_eff_vcf to write the transcript effects to a VCF
-    TxEffVcf(args.in_vcf.name, args.out_vcf.name).create_vcf(merged_transcripts)
+    TxEffVcf(VERSION, args.in_vcf.name, args.out_vcf.name).create_vcf(merged_transcripts)
     
     print(f"Wrote {len(merged_transcripts)} transcripts to {args.out_vcf.name}")
 
