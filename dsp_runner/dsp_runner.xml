@@ -1,4 +1,4 @@
-<tool id="dsp_runner" name="NanoString DSP RUV-III Normalization" version="1.1.6" >
+<tool id="dsp_runner" name="NanoString DSP RUV-III Normalization" version="1.2.0" >
     <description>NanoString GeoMx Digital Spatial Profiling</description>
 
     <requirements>
@@ -27,7 +27,8 @@
        ln -s "$control_type" control_type.xlsx &&
        ln -s "$dsp_meta" dsp_meta.xlsx &&
        ln -s "$pos_cntrls" pos_cntrls.txt &&
-       Rscript $__tool_directory__/dsp_runner.R "$sample_id" "$run_id" "$coh" "$datadir" ab_info.xlsx low_probes.xlsx control_type.xlsx dsp_meta.xlsx $dsp_abund_meta $dsp_proc_data $dsp_tma_results $dsp_report $dsp_report_norm_table_tum $dsp_report_norm_table_str pos_cntrls.txt
+       ln -s "$cntrl_genes" cntrl_genes.txt &&
+       Rscript $__tool_directory__/dsp_runner.R "$sample_id" "$run_id" "$coh" "$datadir" ab_info.xlsx low_probes.xlsx control_type.xlsx dsp_meta.xlsx $dsp_abund_meta $dsp_proc_data $dsp_tma_results $dsp_report $dsp_report_norm_table_tum $dsp_report_norm_table_str pos_cntrls.txt cntrl_genes.txt
     ]]></command>
 
     <inputs>
@@ -50,6 +51,7 @@
         <param name="control_type" type="data" format="xlsx" label="Control type xlsx file" help=""/>
         <param name="dsp_meta" type="data" format="xlsx" label="DSP metadata xlsx file" help=""/>
         <param name="pos_cntrls" type="data" format="txt" label="Positive controls file" help="This is used to restrict antibody and cell line combinations used during outlier detection."/>
+        <param name="cntrl_genes" type="data" format="txt" label="Control Genes for RUV-III Normalization" help="RUV feature selection"/>
     </inputs>
 
     <outputs>

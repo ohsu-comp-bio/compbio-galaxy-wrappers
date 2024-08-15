@@ -208,9 +208,13 @@ preprocess_dsp_tma <- function(tma.meta, tma.mat, exp.meta, exp.mat, igg.map=NUL
   
   #apply RUV normalization, note that it is technically applied sample-by-sample so ok to mix tumor/stroma segments here
   norm.igg.abund  <- apply_norm(bg.exp.mat, cl.pcs$pcs, k, controls)
-  
-  .summarize_roi(norm.igg.abund, exp.meta, num.roi.avg)
-  
+
+  #apply RUV norm to TMA
+  norm.tma.abund  <- apply_norm(bg.tma.mat, cl.pcs$pcs, k, controls)
+
+  segment.proc <- .summarize_roi(norm.igg.abund, exp.meta, num.roi.avg)
+  segment.proc <- c(segment.proc,list(norm.tma.abund))
+  segment.proc
 }
 
 #' Cohort-level scoring of abundance data

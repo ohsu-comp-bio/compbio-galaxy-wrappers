@@ -1,32 +1,14 @@
-# Current Version: 1.1.6
+# Current Version: 1.2.0
 # Version history
-# 0.9.5 - all arguments are parameters, first version to function inside of Galaxy
-# 0.9.6 - modified regex to allow for new batch date format
-#       - limit normalization tmas to batches in good_tma
-# 0.9.7 - BC: edit intermediate .RData filenames for general usage
-# 1.0.0 - edits to support new TMA, removed extra igg_info input, fixed table output
-# 1.0.1 - handle situations where there are only segment 1 segements for reference comp
-# 1.0.2 - groups Ab boxplots by 4 to a page, give args actual names
-# 1.0.3 - cleans up Ab plots to make x-axis legible and remove legends
-#       - fixed: corrected duplicate Ab plot pages
-#       - use good_tma again
-# 1.0.4 - add outlier detection by z-score
-# 1.0.5 - add cover summary sheet and re-arrange displayed tables/plots
-# 1.0.6 - restrict plots to only those included in the pos.cntrls input
-#       - display 'no outlier' message in outlier plots
-# 1.0.7 - place tma check after checking for good_tma runs
-# 1.0.8 - add percentiles to antibody/segment table
-# 1.0.9 - changed stopifnot() to if(){quit()} for error handling and added error messaging
-# 1.0.10 - corrected percentiles bug and added additional quartile values
-# 1.0.11 - change recursive batch reading to False
-#        - write out antibody table as Excel file
-# 1.0.12 - remove hardcoding for good_tma and path.ord // temporarily removed TMA count error check
-# 1.1.0 - Add rank percentile and formatting changes to pdf
+# ...
 # 1.1.1 - added conditions to bypass percentile table generation if tumor or stroma segments are absent
 # 1.1.2 - changed 'Exported dataset' to 1 when reading Excel sheets
 # 1.1.3 - sanitize datadir paths via wrapper
 # 1.1.5 - fixed outlier detection to include all antibodies instead of just pos controls
 # 1.1.6 - expand antibody plots to include failed antibodies from QC step
+# 1.2.0 - added new input file of control genes as RUV-III feature selection
+#       - applied RUV-III to TMA data for outlier detection and plotting
+#       - created variable k for changing default PCs used for RUV-III
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -73,6 +55,7 @@ excel.out.str <- args[14]
 
 # positive cntrl file
 pos_cntrls <- args[15]
+cntrl_genes <- args[16]
 
 # Set constants
 exp.regex <- "[0-9]{8}-[0-9]{2}"
@@ -165,9 +148,16 @@ tma.meta <- tma.meta[batch %in% relevant.meta$batch]
 # Figure out how we want to number batches.
 tma.meta[,num_batch:=batch]
 tma.abund <- abund.mat[,tma.meta$barcode]
-cntrl.abs <- setdiff(rownames(tma.abund), exp.low[[1]])
-segment.proc <- preprocess_dsp_tma(tma.meta, tma.abund, relevant.meta, relevant.abund, igg.map=paths, bg.method=c('none'), controls=cntrl.abs, use.type='quant', k=2, num.roi.avg=1)
-#can save here
+
+# Enter custom set of control genes for RUV feature selection
+#cntrl.abs <- setdiff(rownames(tma.abund), exp.low[[1]])
+cntrl.abs <- read.csv(cntrl_genes, header=F)[[1]]
+use_k <- 4
+
+segment.proc <- preprocess_dsp_tma(tma.meta, tma.abund, relevant.meta, relevant.abund, igg.map=paths, bg.method=c('none'), controls=cntrl.abs, use.type='quant', k=use_k, num.roi.avg=1)
+# Re-arrange segment.proc output
+tma.abund <- segment.proc[[3]]
+segment.proc <- segment.proc[1:2]
 
 # Use the summarized metadata to deal with replicates and form groups
 #create per segment summarized metadata
@@ -282,25 +272,24 @@ plot.list <- loli_plot(score.dt=samp.scores, ref.dt=ref.abund, coh)
 pdf(file=paste0(report.out), width=16, height=16)
 
 # Restrict ab plots and outlier detection to those ab/cell line combos included in pos.cntrls
-# 05/01/24 update -- no longer restricting, oepn to all antibodies
-ab.batches <- ref.batches[`name` %in% pos.cntrls$V2]# & `ProbeName` %in% pos.cntrls$V1]
-ab.batches.cur <- cur.batch[`name` %in% pos.cntrls$V2]# & `ProbeName` %in% pos.cntrls$V1]
-clia_abs <- unique(ab.batches[`ProbeName` %in% pos.cntrls$V1]$ProbeName)
+colnames(pos.cntrls) <- c('ProbeName','name')
+ab.batches <- ref.batches %>% inner_join(pos.cntrls, by=c('ProbeName','name'))
+ab.batches.cur <- cur.batch %>% inner_join(pos.cntrls, by=c('ProbeName','name'))
+clia_abs <- unique(ab.batches$ProbeName)
 
 # Outlier detection -- Zscore method
 datalist = list()
 k <- 1
-all_abs <- unique(paths$ProbeName)
 
-for (i in seq(1, length(all_abs))){
+for (i in seq(1, length(clia_abs))){
   for (j in seq(1, length(unique(ab.batches.cur$name)))){
-    ref <- ab.batches %>% filter(ProbeName==all_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
+    ref <- ab.batches %>% filter(ProbeName==clia_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
       select(batch, ProbeName, name, abundance) %>%
       group_by(name)
     mu <- mean(ref$abundance)
     sigma <- sd(ref$abundance)
 
-    cur <- ab.batches.cur %>% filter(ProbeName==all_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
+    cur <- ab.batches.cur %>% filter(ProbeName==clia_abs[i] & name == unique(ab.batches.cur$name)[j]) %>%
       select(batch, ProbeName, name, abundance) %>%
       group_by(name) %>%
       mutate(mean = mu,
