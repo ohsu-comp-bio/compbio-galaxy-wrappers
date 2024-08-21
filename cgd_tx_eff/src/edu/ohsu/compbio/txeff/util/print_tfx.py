@@ -25,8 +25,6 @@ TFX_VARIANT_EFFECT       startloss               startloss
 @author: pleyte
 '''
 from argparse import ArgumentParser
-import re
-
 from tabulate import tabulate
 import vcfpy
 
@@ -123,36 +121,6 @@ class PrintTfx(object):
             values_matrix.append(tfx_row)
             
         print(tabulate(values_matrix, headers=headers))
-        
-    def _parse(self, info:str) -> dict:
-        '''
-        Retrieve the TFX labels and value arrays from a vcf line and return them in a dict object
-        ''' 
-        
-        info_fields = info.split(';')
-        array_size = 0
-        type_values = dict()
-        
-        for info in info_fields:
-            if(info.startswith('TFX')):
-                label, values = self._parse_individual(info)
-                
-                if array_size == 0:
-                    array_size = len(values)
-                elif len(values) != array_size:
-                    raise ValueError(f"Inconsistent number of values found in {label} len={len(values)}, expected={array_size}")
-                    
-                type_values[label] = values
-        
-        return type_values
-                
-    def _parse_individual(self, section: str) -> (str, list):
-        '''
-        Return the TFX type and an array of values from a string like "TFX_BASE_POSITION=951:951:951:951"
-        '''
-        label = re.search('TFX_[A-Z_]+', section).group(0)
-        delimited_values = section.split("=",1)[1]
-        return label, delimited_values.split(':')
                 
 if __name__ == '__main__':
     parser = ArgumentParser(description='Read VCF with transcript effects and display the effects in a table.')
