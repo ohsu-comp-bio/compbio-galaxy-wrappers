@@ -14,7 +14,6 @@ TFX_GENE                 MC1R                    MC1R
 TFX_G_DOT                g.89985662_89985667del  g.89985662_89985667del
 TFX_HGVSC                c.-5_1del               c.-5_1del
 TFX_HGVSP                p.Met1?                 p.Met1?
-TFX_SPLICE
 TFX_AMINO_ACID_POSITION
 TFX_TRANSCRIPT           NM_002386.3             CCDS56011.1
 TFX_VARIANT_TYPE         exonic                  exonic
