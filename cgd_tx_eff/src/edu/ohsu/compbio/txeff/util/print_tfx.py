@@ -5,6 +5,7 @@ Read the transcript effects from vcf and render them in a text table like this:
 
 ```
 Variant: 16-89985662-GGACTAT-G
+Splicing: False, Reference Context: TTCTCACAATTTGCAGAAACT
 Tfx                      0                       1
 -----------------------  ----------------------  ----------------------
 TFX_BASE_POSITION        -5                      -5
@@ -21,29 +22,93 @@ TFX_PROTEIN_TRANSCRIPT   NP_002377.4             NP_002377.4
 TFX_VARIANT_EFFECT       startloss               startloss
 ```
 
-This script is a little awkward to run because it takes as it's parameter the line from a vcf. The best way to execute it is: 
-```sh
-grep -v '#' tfx.vcf | while read -r line ; do
-  python $TFX_HOME/src/edu/ohsu/compbio/txeff/util/print_tfx.py --tfx "$line"
-done
-```
-
-
 @author: pleyte
 '''
-import re
 from argparse import ArgumentParser
+import re
+
 from tabulate import tabulate
+import vcfpy
+
 
 class PrintTfx(object):
-    def print(self, vcf_line:str):
-        genotype = self._get_genotype(vcf_line)
-        info = self._get_info(vcf_line)
-        records = self._parse(info)
+    def print(self, vcf_filename: str, genotype:str = None):
         
-        print(f"Variant: {genotype}")
-        self._print_tfx(records)
+        vcf_reader = vcfpy.Reader.from_path(vcf_filename)
         
+        for row in vcf_reader:
+            if not genotype or genotype == self._get_genotype(row):
+                self._print(row)
+    
+    def _get_genotype(self, row: vcfpy.record.Record):
+        return f'{row.CHROM}-{row.POS}-{row.REF}-{row.ALT[0].value}'
+        
+    def _print(self, row):
+        '''
+        '''
+        splicing, ref_context, info_field_values = self._get_info_field_values(row)
+        
+        print(f"Variant: {self._get_genotype(row)}")
+        print(f"Splicing: {splicing}, Reference Context: {ref_context}")
+        
+        if not info_field_values:
+            # Not all variants have transcript effects.  
+            print("No transcript effects found")
+        else:        
+            self._print_tfx(info_field_values)
+        
+        print("")
+
+    def _get_info_field_values(self, row: vcfpy.record.Record):    
+        '''
+        Returns the transcript effects values.
+        '''
+        tfx_field_values = dict()
+        tfx_splicing = None
+        tfx_reference_context = None
+        tfx_array_length = None
+         
+        for field, info_value in row.INFO.items():
+            if not field.startswith('TFX'):
+                continue
+            
+            
+            # Unlike the other tfx fields these may be empty or only have a single value.             
+            if field == 'TFX_SPLICE':
+                value = self._get_single_value(info_value)
+                if value:
+                    tfx_splicing = value
+                else:
+                    tfx_splicing = False
+                continue  
+            elif field == 'TFX_REFERENCE_CONTEXT':
+                tfx_reference_context = self._get_single_value(info_value)                
+                continue
+
+            # vcfpy wraps each info value in a list, but there is only ever one item in the list.
+            assert len(info_value) == 1, "The INFO value returned by vcfpy should only have a single value"
+            
+            # transcript effects values are separated by a ':'. 
+            tfx_field_values[field] = info_value[0].split(':')                    
+            
+            # Make sure all the deliited tfx fields (except splice and ref context) have the same number of values
+            if not tfx_array_length:
+                tfx_array_length = len(tfx_field_values[field])
+            elif tfx_array_length != len(tfx_field_values[field]):
+                raise ValueError(f'Variant {self.get_genotype(row)} field {field} does not have the expected number of values: {tfx_array_length}')
+        
+        return tfx_splicing, tfx_reference_context, tfx_field_values
+          
+    def _get_single_value(self, info_value):
+        '''
+        The value of an INFO field is returned as a list. This function extracts that value but returns
+        None if the list is empty.  
+        '''
+        if len(info_value) == 0:
+            return None
+        elif len(info_value) == 1:
+            return info_value[0]
+  
     def _print_tfx(self, records: dict):
         '''
         Print a table of tfx values with labels (eg TFX_TRANSCRIPT) starting each row, and each column being 
@@ -70,9 +135,6 @@ class PrintTfx(object):
         
         for info in info_fields:
             if(info.startswith('TFX')):
-                if(info == 'TFX_VARIANT_EFFECT'):
-                    print(123)
-                
                 label, values = self._parse_individual(info)
                 
                 if array_size == 0:
@@ -91,31 +153,15 @@ class PrintTfx(object):
         label = re.search('TFX_[A-Z_]+', section).group(0)
         delimited_values = section.split("=",1)[1]
         return label, delimited_values.split(':')
-        
-    def _get_genotype(self, vcf_line:str):
-        '''
-        Return the genotype defined in a VCF line
-        '''
-        sections = vcf_line.split("\t")
-        chromosome = sections[0]
-        pos = sections[1]
-        ref = sections[3]
-        alt = sections[4]
-        return f"{chromosome}-{pos}-{ref}-{alt}"
-    
-    def _get_info(self, vcf_line):
-        '''
-        Return the INFO section of the VCF line. 
-        '''
-        sections = vcf_line.split("\t")
-        return sections[7]
-        
-        
+                
 if __name__ == '__main__':
-    parser = ArgumentParser(description='Accepts the delimited TFX string that is found in the INFO section of a VCF and prints it to screen in a table.')
-    parser.add_argument("-t", "--tfx", help="Delimited transcript effects string", type=str, required=True)
+    parser = ArgumentParser(description='Read VCF with transcript effects and display the effects in a table.')
+    parser.add_argument("-f", "--vcf", help="VCF file having transcript effects INFO fields.", type=str, required=True)
+    parser.add_argument("-g", "--genotype", help="Limit output to variant matching the specified genotype.", type=str)
     
     args = parser.parse_args()
-    PrintTfx().print(args.tfx)
+    
+    print_tfx = PrintTfx()
+    PrintTfx().print(args.vcf, args.genotype)
     
 pass

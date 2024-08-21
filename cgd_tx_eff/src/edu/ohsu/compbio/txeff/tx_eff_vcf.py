@@ -21,7 +21,11 @@ from edu.ohsu.compbio.txeff.variant import Variant
 
 class TranscriptEffect(Enum):
     '''
-    The transcript effects that are added to VCF file
+    The transcript effects INFO fields that are added to the VCF file.
+    
+    Most of these INFO fields are ':' delimited parallel arrays where each index in one field is associated
+    with the same index in another field.  The TFX_SPLICE and TFX_REFERENCE_CONTEXT fields apply to all 
+    transcripts so they only have a single value.  
     ''' 
     TFX_GENE = 'TFX_GENE'
     TFX_TRANSCRIPT = 'TFX_TRANSCRIPT'
