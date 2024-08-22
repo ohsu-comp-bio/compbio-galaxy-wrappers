@@ -23,7 +23,7 @@ class HgvsLookup(object):
         Constructor
         '''
         self.logger = logging.getLogger(__name__)
-        
+
         if os.environ.get('HGVS_SEQREPO_DIR') is None:
             self.logger.warning("The HGVS_SEQREPO_DIR environment variable is not defined. The remote seqrepo database will be used.")
         else:

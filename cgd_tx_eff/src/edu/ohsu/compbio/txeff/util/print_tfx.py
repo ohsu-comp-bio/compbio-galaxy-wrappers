@@ -69,7 +69,6 @@ class PrintTfx(object):
             if not field.startswith('TFX'):
                 continue
             
-            
             # Unlike the other tfx fields these may be empty or only have a single value.             
             if field == 'TFX_SPLICE':
                 value = self._get_single_value(info_value)
@@ -86,9 +85,9 @@ class PrintTfx(object):
             assert len(info_value) == 1, "The INFO value returned by vcfpy should only have a single value"
             
             # transcript effects values are separated by a ':'. 
-            tfx_field_values[field] = info_value[0].split(':')                    
+            tfx_field_values[field] = info_value[0].split(':')
             
-            # Make sure all the deliited tfx fields (except splice and ref context) have the same number of values
+            # Make sure all the delimited tfx fields (except splice and ref context) have the same number of values
             if not tfx_array_length:
                 tfx_array_length = len(tfx_field_values[field])
             elif tfx_array_length != len(tfx_field_values[field]):
@@ -111,11 +110,16 @@ class PrintTfx(object):
         Print a table of tfx values with labels (eg TFX_TRANSCRIPT) starting each row, and each column being 
         an index in the array of values. 
         '''
+        # Number of values in the list for every key is the same.  
         array_length = len(next(iter(records.values())))
+        
+        # Column headings
         headers = ['Tfx'] + list(range(0,array_length))
+        
         values_matrix = []
 
         for key, values in records.items():
+            # The first column is the label, the rest are the list of values 
             tfx_row = [key] + values
             values_matrix.append(tfx_row)
             
