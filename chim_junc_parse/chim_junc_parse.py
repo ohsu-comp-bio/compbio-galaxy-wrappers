@@ -270,25 +270,24 @@ class Output:
             handle_out.write('\n')
             for fusion in self.juncs:
                 for coords, count in self.juncs[fusion].items():
-                    if count >= thresh:
-                        if self.bedpe:
+                    if self.bedpe:
+                        if count >= thresh:
                             to_write = [fusion[0], fusion[7], coords[0], coords[1], fusion[1], fusion[2], fusion[3],
                                         self._apply_ref(coords[1], self.bedpe.ref1_coords),
                                         fusion[8], coords[2], coords[3], fusion[4], fusion[5], fusion[6],
                                         self._apply_ref(coords[3], self.bedpe.ref2_coords),
                                         str(count), self._calc_on_target(count),
                                         self._get_combined_seq(coords[0], coords[1], coords[2], coords[3])]
-                        else:
-                            print(fusion)
-                            print(coords)
-                            to_write = ['.', '.', coords[0], coords[1], '.', '.', '.',
-                                        '.',
-                                        '.', coords[2], coords[3], '.', '.', '.',
-                                        '.',
-                                        str(count), self._calc_on_target(count),
-                                        self._get_combined_seq(coords[0], coords[1], coords[2], coords[3])]
-                        handle_out.write('\t'.join(to_write))
-                        handle_out.write('\n')
+                    else:
+                        to_write = ['.', '.', coords[0], coords[1], '.', '.', '.',
+                                    '.',
+                                    '.', coords[2], coords[3], '.', '.', '.',
+                                    '.',
+                                    str(count), self._calc_on_target(count),
+                                    self._get_combined_seq(coords[0], coords[1], coords[2], coords[3])]
+                    handle_out.write('\t'.join(to_write))
+                    handle_out.write('\n')
+
         handle_out.close()
 
 
