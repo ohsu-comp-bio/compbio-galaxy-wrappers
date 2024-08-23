@@ -1,4 +1,4 @@
-<tool id="chim_junc_parse" name="Chimeric Junction Parser" version="0.0.2" >
+<tool id="chim_junc_parse" name="Chimeric Junction Parser" version="0.1.0" >
     <description>From the STAR aligner chimeric junction output, find additional junctions of interest, as defined in the input BEDPE.</description>
     <requirements>
         <requirement type="package" version="0.15.3">pysam</requirement>
@@ -6,7 +6,6 @@
     <command detect_errors="exit_code"><![CDATA[
         python $__tool_directory__/chim_junc_parse.py
         '${raw_junc}'
-        '${srch_junc}'
         #if $refGenomeSource.genomeSource == "history"
             '${refGenomeSource.ownFile}'
         #else
@@ -14,10 +13,20 @@
         #end if
         '${json_sample_metrics}'
         '${bedpe_out}'
+        #if $manual_opt.manual_opt_sel == "default"
+            --srch_junc '${manual_opt.srch_junc}'
+        #else
+            --manual_mode
+            --chr1 '${manual_opt.chr1}'
+            --start1 '${manual_opt.start1}'
+            --end1 '${manual_opt.end1}'
+            --chr2 '${manual_opt.chr2}'
+            --start2 '${manual_opt.start2}'
+            --end2 '${manual_opt.end2}'
+        #end if
     ]]></command>
     <inputs>
         <param name="raw_junc" type="data" format="interval" label="STAR Chimeric Junctions" help="Input chimeric junctions from STAR." />
-        <param name="srch_junc" type="data" format="bed" label="BEDPE Regions" help="Input BEDPE file describing regions of interest." />
         <conditional name="refGenomeSource">
           <param name="genomeSource" type="select" label="Will you select a reference genome from your history or use a built-in index?" help="Built-ins were indexed using default options">
               <option value="indexed">Use a built-in index</option>
@@ -36,20 +45,52 @@
           </when>  <!-- history -->
         </conditional>  <!-- refGenomeSource -->
         <param name="json_sample_metrics" type="data" format="txt" label="Sample metrics output in JSON format." />
+        <conditional name="manual_opt">
+            <param name="manual_opt_sel" type="select" label="Manual Entry" help="Enter coordinates manually instead of reading from file.">
+                <option value="default" selected="true">Read From File</option>
+                <option value="manual">Manual Entry</option>
+            </param>
+            <when value="default">
+                <param name="srch_junc" type="data" format="bed" label="BEDPE Regions" help="Input BEDPE file describing regions of interest." />
+            </when>
+            <when value="manual">
+                <param name="chr1" type="text" label="Chromosome 1" help="Chromosome corresponding to first interval, formatted with chr prefix (chr#)." />
+                <param name="start1" type="text" label="Start Coordinate 1" help="Start coordinate corresponding to first interval." />
+                <param name="end1" type="text" label="End Coordinate 1" help="End coordinate corresponding to first interval." />
+                <param name="chr2" type="text" label="Chromosome 2" help="Chromosome corresponding to second interval, formatted with chr prefix (chr#)." />
+                <param name="start2" type="text" label="Start Coordinate 2" help="Start coordinate corresponding to second interval." />
+                <param name="end2" type="text" label="End Coordinate 2" help="End coordinate corresponding to second interval." />
+            </when>
+        </conditional>
     </inputs>
     <outputs>
         <data format="txt" name="bedpe_out" label="${tool.name} on ${on_string}: TXT" />
     </outputs>
     <help><![CDATA[
-    usage: chim_junc_parse.py [-h] [--version] raw_junc srch_junc bedpe_out
+usage: chim_junc_parse.py [-h] [--srch_junc SRCH_JUNC] [--manual_mode]
+                          [--chr1 CHR1] [--start1 START1] [--end1 END1]
+                          [--chr2 CHR2] [--start2 START2] [--end2 END2]
+                          [--version]
+                          raw_junc ref_fasta samp_met bedpe_out
 
-    positional arguments:
-      raw_junc    Input chimeric junctions from STAR.
-      srch_junc   Input BEDPE file describing regions of interest.
-      bedpe_out   Output containing sites of interest.
+positional arguments:
+  raw_junc              Input chimeric junctions from STAR.
+  ref_fasta             Reference FASTA, FAI index should be in same location.
+  samp_met              Sample metrics JSON file with
+                        total_on_target_transcripts metric.
+  bedpe_out             Output containing sites of interest.
 
-    optional arguments:
-      -h, --help  show this help message and exit
-      --version   show program's version number and exit
+optional arguments:
+  -h, --help            show this help message and exit
+  --srch_junc SRCH_JUNC
+                        Input BEDPE file describing regions of interest.
+  --manual_mode         Process manually entered coordinates.
+  --chr1 CHR1
+  --start1 START1
+  --end1 END1
+  --chr2 CHR2
+  --start2 START2
+  --end2 END2
+  --version             show program's version number and exit
     ]]></help>
 </tool>

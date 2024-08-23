@@ -5,6 +5,7 @@ Used on STAR chimeric junction output to try and find evidence of partial tandem
 
 0.0.1 - Initial commit
 0.0.2 - Add gene name columns to output
+0.1.0 - Allow for manual input of regions of interest
 """
 
 import argparse
@@ -12,7 +13,7 @@ import json
 import pysam
 import re
 
-VERSION = '0.0.2'
+VERSION = '0.1.0'
 
 
 def supply_args():
@@ -22,12 +23,25 @@ def supply_args():
     """
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('raw_junc', help='Input chimeric junctions from STAR.')
-    parser.add_argument('srch_junc', help='Input BEDPE file describing regions of interest.')
     parser.add_argument('ref_fasta', help='Reference FASTA, FAI index should be in same location.')
     parser.add_argument('samp_met', help='Sample metrics JSON file with total_on_target_transcripts metric.')
     parser.add_argument('bedpe_out', help='Output containing sites of interest.')
+    parser.add_argument('--srch_junc', help='Input BEDPE file describing regions of interest.')
+    parser.add_argument('--manual_mode', action='store_true', help='Process manually entered coordinates.')
+    parser.add_argument('--chr1', help='')
+    parser.add_argument('--start1', type=int, help='')
+    parser.add_argument('--end1', type=int, help='')
+    parser.add_argument('--chr2', help='')
+    parser.add_argument('--start2', type=int, help='')
+    parser.add_argument('--end2', type=int, help='')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
+
+    if args.manual_mode:
+        assert args.chr1 and args.start1 and args.end1 and args.chr2 and args.start2 and args.end2
+    else:
+        assert not (args.chr1 and args.start1 and args.end1 and args.chr2 and args.start2 and args.end2)
+
     return args
 
 
@@ -74,24 +88,39 @@ class ChimJuncFile:
                         juncs.append(entry)
             return juncs
 
-    def filt_cj(self):
+    def filt_cj(self, regions):
         """
         Get all of the junction records that lie within the BEDPE regions of interest.
         :return:
         """
         filt_juncs = {}
-        for reg in self.regions.regions:
+        for reg in regions:
             if reg.rec not in filt_juncs:
                 filt_juncs[reg.rec] = {}
             for junc in self.juncs:
                 if reg.chrom1 == junc.chrom1:
-                    if junc.coord1 > reg.start1 and junc.coord1 <= reg.end1:
-                        if junc.coord2 > reg.start2 and junc.coord2 <= reg.end2:
+                    if int(junc.coord1) > int(reg.start1) and int(junc.coord1) <= int(reg.end1):
+                        if int(junc.coord2) > int(reg.start2) and int(junc.coord2) <= int(reg.end2):
                             if junc.rec not in filt_juncs[reg.rec]:
                                 filt_juncs[reg.rec][junc.rec] = 1
                             else:
                                 filt_juncs[reg.rec][junc.rec] += 1
         return filt_juncs
+
+
+class ManualRec:
+    """
+    Set cotegory names for records.
+    """
+    def __init__(self, junc):
+        self.chrom1 = junc[0]
+        self.start1 = junc[1] - 1
+        self.end1 = junc[2]
+        self.chrom2 = junc[3]
+        self.start2 = junc[4] - 1
+        self.end2 = junc[5]
+        self.valid_chrs = self.chrom1
+        self.rec = (self.chrom1, self.start1, self.end1, self.chrom2, self.start2, self.end2)
 
 
 class BedPeRec:
@@ -242,12 +271,22 @@ class Output:
             for fusion in self.juncs:
                 for coords, count in self.juncs[fusion].items():
                     if count >= thresh:
-                        to_write = [fusion[0], fusion[7], coords[0], coords[1], fusion[1], fusion[2], fusion[3],
-                                    self._apply_ref(coords[1], self.bedpe.ref1_coords),
-                                    fusion[8], coords[2], coords[3], fusion[4], fusion[5], fusion[6],
-                                    self._apply_ref(coords[3], self.bedpe.ref2_coords),
-                                    str(count), self._calc_on_target(count),
-                                    self._get_combined_seq(coords[0], coords[1], coords[2], coords[3])]
+                        if self.bedpe:
+                            to_write = [fusion[0], fusion[7], coords[0], coords[1], fusion[1], fusion[2], fusion[3],
+                                        self._apply_ref(coords[1], self.bedpe.ref1_coords),
+                                        fusion[8], coords[2], coords[3], fusion[4], fusion[5], fusion[6],
+                                        self._apply_ref(coords[3], self.bedpe.ref2_coords),
+                                        str(count), self._calc_on_target(count),
+                                        self._get_combined_seq(coords[0], coords[1], coords[2], coords[3])]
+                        else:
+                            print(fusion)
+                            print(coords)
+                            to_write = ['.', '.', coords[0], coords[1], '.', '.', '.',
+                                        '.',
+                                        '.', coords[2], coords[3], '.', '.', '.',
+                                        '.',
+                                        str(count), self._calc_on_target(count),
+                                        self._get_combined_seq(coords[0], coords[1], coords[2], coords[3])]
                         handle_out.write('\t'.join(to_write))
                         handle_out.write('\n')
         handle_out.close()
@@ -259,11 +298,6 @@ class SampMetJson:
         self.tott = self._get_sample_met()
 
     def _get_sample_met(self):
-        """
-
-        :param filename:
-        :return:
-        """
         with open(self.filename, 'r') as samp_metrics_fh:
             metrics = json.load(samp_metrics_fh)
             for entry in metrics['sampleRunMetrics']:
@@ -272,13 +306,42 @@ class SampMetJson:
         return None
 
 
+class ManualOutput:
+    def __init__(self, filename):
+        self.filename = filename
+
+    def write_me(self, counts):
+        with open(self.filename, 'w') as handle_out:
+            for entry in counts:
+                print(entry)
+                for region, cnt in sorted(counts[entry].items(), key=lambda item: item[1], reverse=True):
+                    print(region)
+                    to_write = [region[0], region[1], region[2], region[3], str(cnt)]
+                    if int(region[1]) == entry[1] or int(region[1]) == entry[2]:
+                        to_write.append('REF')
+                    else:
+                        to_write.append('.')
+                    if int(region[3]) == entry[4] or int(region[3]) == entry[5]:
+                        to_write.append('REF')
+                    else:
+                        to_write.append('.')
+                    handle_out.write('\t'.join(to_write))
+                    handle_out.write('\n')
+
+
 def main():
     args = supply_args()
-    my_bed = BedPe(args.srch_junc)
     my_fasta = pysam.FastaFile(filename=args.ref_fasta)
     tott = SampMetJson(args.samp_met).tott
-    my_juncs = ChimJuncFile(args.raw_junc, my_bed).filt_cj()
-    Output(args.bedpe_out, my_juncs, my_bed, my_fasta, tott).write_me()
+    if args.manual_mode:
+        my_coord = ManualRec([args.chr1, args.start1, args.end1, args.chr2, args.start2, args.end2])
+        my_juncs = ChimJuncFile(args.raw_junc, my_coord).filt_cj([my_coord])
+        Output(args.bedpe_out, my_juncs, None, my_fasta, tott).write_me()
+    else:
+        my_bed = BedPe(args.srch_junc)
+        chim_junc_file = ChimJuncFile(args.raw_junc, my_bed)
+        my_juncs = chim_junc_file.filt_cj(chim_junc_file.regions.regions)
+        Output(args.bedpe_out, my_juncs, my_bed, my_fasta, tott).write_me()
     my_fasta.close()
 
 
