@@ -12,11 +12,10 @@ from enum import Enum
 import logging.config
 import sys
 
-import vcfpy
-
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.variant import Variant
+import vcfpy
 
 
 class TranscriptEffect(Enum):
@@ -209,55 +208,55 @@ class TxEffVcf(object):
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_EXON.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Exon number associated with given transcript.')]))
+                                                                ('Description', 'Exon number associated with given transcript (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_GENE.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'HGNC gene symbol.')]))
+                                                                ('Description', 'HGNC gene symbol (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_G_DOT.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'HGVS g-dot nomenclature.')]))    
+                                                                ('Description', 'HGVS g-dot nomenclature (parallel array of values).')]))    
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_HGVSC.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'HGVS cdot nomenclature.')]))
+                                                                ('Description', 'HGVS cdot nomenclature (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_HGVSP1.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'HGVS pdot nomenclature, single letter amino acids.')]))
+                                                                ('Description', 'HGVS pdot nomenclature, single letter amino acids (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_HGVSP3.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'HGVS pdot nomenclature, three letter amino acids.')]))
+                                                                ('Description', 'HGVS pdot nomenclature, three letter amino acids (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_SPLICE.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Splice site annotation.')]))
+                                                                ('Description', 'Splice site annotation (single value).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_TRANSCRIPT.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Transcript identifier.')]))
+                                                                ('Description', 'Transcript identifier (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_VARIANT_EFFECT.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Variant effect annotation.')]))
+                                                                ('Description', 'Variant effect annotation (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_VARIANT_TYPE.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Variant type or location annotation.')]))
+                                                                ('Description', 'Variant type or location annotation (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_PROTEIN_TRANSCRIPT.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Protein transcript.')]))
+                                                                ('Description', 'Protein transcript (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_AMINO_ACID_POSITION.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Amino acid start position.')]))
+                                                                ('Description', 'Amino acid start position (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_REFERENCE_CONTEXT.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Reference context.')]))
+                                                                ('Description', 'Reference context (single value).')]))
         
     
     def create_vcf(self, transcripts: list):
