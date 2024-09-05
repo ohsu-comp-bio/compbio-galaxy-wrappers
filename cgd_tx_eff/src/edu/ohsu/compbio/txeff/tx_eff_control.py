@@ -16,7 +16,7 @@ from edu.ohsu.compbio.txeff.tx_eff_vcf import TxEffVcf
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 
-VERSION = '0.7.0'
+VERSION = '0.7.1'
 
 def _parse_args():
     '''
@@ -30,7 +30,7 @@ def _parse_args():
                 required=True)
 
     parser.add_argument('-c', '--ccds_map', 
-                help='Input CSV or GFF with Annovar-to-CCDS mappings. Use refseq_to_ccds.py to convert GFF to CSV.', 
+                help='Input CSV or GFF with Annovar-to-CCDS mappings.', 
                 type=argparse.FileType('r'), 
                 required=True)
     
