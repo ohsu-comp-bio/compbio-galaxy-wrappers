@@ -17,14 +17,13 @@ from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
 
-
 class HgvsLookup(object):
     def __init__(self):
         '''
         Constructor
         '''
         self.logger = logging.getLogger(__name__)
-        
+
         if os.environ.get('HGVS_SEQREPO_DIR') is None:
             self.logger.warning("The HGVS_SEQREPO_DIR environment variable is not defined. The remote seqrepo database will be used.")
         else:

@@ -23,7 +23,7 @@ class CcdsMapFileType(Enum):
     
 class TxEffCcds(object):
     '''
-    classdocs
+    This class adds CCDS accessions to the transcript effects 
     '''
     def __init__(self, refseq_to_ccds_file):
         '''

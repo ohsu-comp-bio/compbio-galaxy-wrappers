@@ -4,17 +4,18 @@ Created on Aug. 24, 2022
 @author: pleyte
 '''
 
-import csv
-import logging.config
-import sys
-
-from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from argparse import ArgumentParser, RawDescriptionHelpFormatter, FileType
 from collections import defaultdict
-from BCBio import GFF
-
-import Bio
+import csv
+import logging.config
 from sys import getsizeof
+import sys
+
+from BCBio import GFF
+import Bio
+
+from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
+
 
 GFF_RELEASE_105 = '105'
 GFF_RELEASE_105_20220307 = '105.20220307'
@@ -93,7 +94,7 @@ class RefseqToCcds(object):
                 refseq_ids.update(sub_feature.qualifiers['transcript_id'])
             elif sub_feature.qualifiers['gbkey'][0] == 'CDS':
                 ccds_ids.add(self._get_ccds_id(sub_feature.qualifiers['Dbxref']))
-                    
+
         # It is possible for a feature to have a refseq id and not a ccds id.
         if len(refseq_ids) == 1 and len(ccds_ids) == 0:
             self.logger.debug(f"Refseq {refseq_ids.pop()} does not have a corresponding CCDS id")
@@ -141,6 +142,7 @@ class RefseqToCcds(object):
 
         assert len(dbxref_ccds_ids) == 1, f"Refseq {ref_seq_id} has more than one CCDS: {dbxref_ccds_ids}"
         ccds_id = dbxref_ccds_ids.pop()
+            
         return ref_seq_id, ccds_id
 
     def _get_ref_seq_id(self, s: str):        

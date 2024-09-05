@@ -12,16 +12,19 @@ from enum import Enum
 import logging.config
 import sys
 
-import vcfpy
-
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.variant import Variant
+import vcfpy
 
 
 class TranscriptEffect(Enum):
     '''
-    The transcript effects that are added to VCF file
+    The transcript effects INFO fields that are added to the VCF file.
+    
+    Most of these INFO fields are ':' delimited parallel arrays where each index in one field is associated
+    with the same index in another field.  The TFX_SPLICE and TFX_REFERENCE_CONTEXT fields apply to all 
+    transcripts so they only have a single value.  
     ''' 
     TFX_GENE = 'TFX_GENE'
     TFX_TRANSCRIPT = 'TFX_TRANSCRIPT'
@@ -36,9 +39,11 @@ class TranscriptEffect(Enum):
     TFX_PROTEIN_TRANSCRIPT = 'TFX_PROTEIN_TRANSCRIPT'
     TFX_EXON = 'TFX_EXON'
     TFX_AMINO_ACID_POSITION = 'TFX_AMINO_ACID_POSITION'
+    TFX_REFERENCE_CONTEXT = 'TFX_REFERENCE_CONTEXT' 
 
 class TxEffVcf(object):
-    def __init__(self, in_vcf:str, out_vcf:str):
+    def __init__(self, tfx_version: str, in_vcf:str, out_vcf:str):
+        self.version = tfx_version
         self.logger = logging.getLogger(__name__)
         self.in_vcf_filename = in_vcf
         self.out_vcf_filename = out_vcf
@@ -83,15 +88,20 @@ class TxEffVcf(object):
         Transform the transcript details into parallel arrays and add them to each VCF row.  
         '''
         vcf_records = []
-            
+
         for (variant, vcf_record) in vcf_variant_dict.items():
             transcripts = transcript_dict.get(variant)
-            
+
             if not transcripts:
                 self.logger.warning(f"No transcripts found for VCF variant {variant}")
                 vcf_records.append(vcf_record)
                 continue
-                
+            
+            # These values are the same for all transcripts so there is only one value. 
+            tfx_splice = self._get_any_splicing(transcripts)            
+            tfx_reference_context = self._get_and_confirm_single_value('reference_context', lambda x: x.reference_context, transcripts)
+
+            # These values are different for each transcript
             tfx_base_positions = []
             tfx_exons = []
             tfx_genes = []
@@ -99,7 +109,6 @@ class TxEffVcf(object):
             tfx_c_dots = []
             tfx_p1 = []
             tfx_p3 = []
-            tfx_splice = []
             tfx_refseq_transcripts = []
             tfx_variant_effects = []
             tfx_variant_types = []
@@ -114,13 +123,14 @@ class TxEffVcf(object):
                 tfx_c_dots.append(transcript.hgvs_c_dot)
                 tfx_p1.append(transcript.hgvs_p_dot_one)
                 tfx_p3.append(transcript.hgvs_p_dot_three)
-                tfx_splice.append(transcript.splicing)
                 tfx_refseq_transcripts.append(transcript.refseq_transcript)
                 tfx_variant_effects.append(transcript.variant_effect)
                 tfx_variant_types.append(transcript.variant_type)
                 tfx_protein_transcripts.append(transcript.protein_transcript)
                 tfx_amino_acid_positions.append(transcript.hgvs_amino_acid_position)
     
+            vcf_record.INFO[TranscriptEffect.TFX_SPLICE.value] = [tfx_splice]
+            vcf_record.INFO[TranscriptEffect.TFX_REFERENCE_CONTEXT.value] = [tfx_reference_context]
             vcf_record.INFO[TranscriptEffect.TFX_BASE_POSITION.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_base_positions])]
             vcf_record.INFO[TranscriptEffect.TFX_EXON.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_exons])]
             vcf_record.INFO[TranscriptEffect.TFX_GENE.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_genes])]
@@ -128,12 +138,11 @@ class TxEffVcf(object):
             vcf_record.INFO[TranscriptEffect.TFX_HGVSC.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_c_dots])]
             vcf_record.INFO[TranscriptEffect.TFX_HGVSP1.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_p1])]
             vcf_record.INFO[TranscriptEffect.TFX_HGVSP3.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_p3])]
-            vcf_record.INFO[TranscriptEffect.TFX_SPLICE.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_splice])]
             vcf_record.INFO[TranscriptEffect.TFX_AMINO_ACID_POSITION.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_amino_acid_positions])]
             vcf_record.INFO[TranscriptEffect.TFX_TRANSCRIPT.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_refseq_transcripts])]        
             vcf_record.INFO[TranscriptEffect.TFX_VARIANT_TYPE.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_variant_types])]        
             vcf_record.INFO[TranscriptEffect.TFX_PROTEIN_TRANSCRIPT.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_protein_transcripts])]
-            
+
             # Replace spaces with underscore because spaces are not allowed in the INFO field.
             vcf_record.INFO[TranscriptEffect.TFX_VARIANT_EFFECT.value] = [':'.join([self._replaceNoneWithEmpty(x).replace(' ', '_') for x in tfx_variant_effects])]
             
@@ -141,6 +150,32 @@ class TxEffVcf(object):
         
         return vcf_records
 
+    def _get_and_confirm_single_value(self, field_name, getter, transcripts: list):
+        '''
+        Takes a list of trancripts and a getter function for one of the fields in the transcript. This function
+        confirms that all the transcripts have the same value for that field, and returns the value. 
+        '''
+        if not transcripts:
+            return None
+        
+        # Use getter to extract all values and add them to a set 
+        values = set(map(getter, transcripts))
+        
+        if len(values) != 1:
+            raise ValueError(f"All values in {field_name} array should be the same but {transcripts[0]} has multiple: {values}")
+        
+        return values.pop()
+    
+    def _get_any_splicing(self, trancripts:list):
+        '''
+        Return any non-empty splicing value from the transcript list. If a variant is splicing then all the transcripts
+        identified by Annovar will be splicing. But HGVS/UTA doesn't know about splicing so its trancripts won't have a splicing value.
+        This function checks to see if any of the transcripts are splicing and returns the splicing value if one of them is.    
+        '''
+        for x in trancripts:
+            if x.splicing:
+                return x.splicing
+            
     def _replaceNoneWithEmpty(self, x: str):
         '''
         Return the empty string if x is None, otherwise return x
@@ -163,7 +198,8 @@ class TxEffVcf(object):
         Add the new transcript effect fields to the VCF header 
         '''
         header.add_line(vcfpy.HeaderLine('tfx_commandline', ' '.join(sys.argv)))
-    
+        header.add_line(vcfpy.HeaderLine('TfxVersion', self.version))
+        
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_BASE_POSITION.value),
                                                 ('Number', '.'),
                                                 ('Type', 'String'),
@@ -172,51 +208,56 @@ class TxEffVcf(object):
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_EXON.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Exon number associated with given transcript.')]))
+                                                                ('Description', 'Exon number associated with given transcript (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_GENE.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'HGNC gene symbol.')]))
+                                                                ('Description', 'HGNC gene symbol (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_G_DOT.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'HGVS g-dot nomenclature.')]))    
+                                                                ('Description', 'HGVS g-dot nomenclature (parallel array of values).')]))    
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_HGVSC.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'HGVS cdot nomenclature.')]))
+                                                                ('Description', 'HGVS cdot nomenclature (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_HGVSP1.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'HGVS pdot nomenclature, single letter amino acids.')]))
+                                                                ('Description', 'HGVS pdot nomenclature, single letter amino acids (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_HGVSP3.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'HGVS pdot nomenclature, three letter amino acids.')]))
+                                                                ('Description', 'HGVS pdot nomenclature, three letter amino acids (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_SPLICE.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Splice site annotation.')]))
+                                                                ('Description', 'Splice site annotation (single value).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_TRANSCRIPT.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Transcript identifier.')]))
+                                                                ('Description', 'Transcript identifier (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_VARIANT_EFFECT.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Variant effect annotation.')]))
+                                                                ('Description', 'Variant effect annotation (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_VARIANT_TYPE.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Variant type or location annotation.')]))
+                                                                ('Description', 'Variant type or location annotation (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_PROTEIN_TRANSCRIPT.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Protein transcript.')]))
+                                                                ('Description', 'Protein transcript (parallel array of values).')]))
         header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_AMINO_ACID_POSITION.value),
                                                                 ('Number', '.'),
                                                                 ('Type', 'String'),
-                                                                ('Description', 'Amino acid start position.')]))
+                                                                ('Description', 'Amino acid start position (parallel array of values).')]))
+        header.add_info_line(vcfpy.OrderedDict([('ID', TranscriptEffect.TFX_REFERENCE_CONTEXT.value),
+                                                                ('Number', '.'),
+                                                                ('Type', 'String'),
+                                                                ('Description', 'Reference context (single value).')]))
+        
     
     def create_vcf(self, transcripts: list):
         '''
