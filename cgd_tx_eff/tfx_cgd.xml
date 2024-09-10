@@ -6,7 +6,6 @@
   <requirements>
     <requirement type="package" version="0.13.6">vcfpy</requirement>
     <requirement type="package" version="1.5.2">hgvs</requirement>
-    <requirement type="package" version="0.6.9">bcbio-gff</requirement>
   </requirements>
 
   <version_command><![CDATA[
@@ -42,7 +41,7 @@
  
   <inputs>
     <param name="in_vcf" format="vcf" optional="false" type="data" label="Input VCF" />    
-    <param name="ccds_map" format="csv,gff" optional="false" type="data" label="Input CSV with RefSeq-to-CCDS mappings."/>
+    <param name="ccds_map" format="csv" optional="false" type="data" label="Input CSV with RefSeq-to-CCDS mappings."/>
     <param name="annovar_variant_function" format="tsv" optional="false" type="data" label="Annovar variant_function file" />
     <param name="annovar_exonic_variant_function" format="tsv" optional="false" type="data" label="Annovar exonic_variant_function file" />
     <conditional name="reference_source">
