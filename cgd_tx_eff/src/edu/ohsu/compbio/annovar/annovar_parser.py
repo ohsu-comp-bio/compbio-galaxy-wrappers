@@ -160,9 +160,6 @@ class AnnovarParser(object):
         
         exon = None
         hgvs_c_dot = None
-
-        if 'NM_001306173.2(NM_001306173.2:exon12:c.1365+1G>T,NM_001306173.2:exon12:UTR3)' == delimited_transcript:
-            print("jDebug: found")
              
         # There are four different ways that information can be packaged that may in and annovar_row[. 
         # The format can be are determined by the number of ':' separated values. 
