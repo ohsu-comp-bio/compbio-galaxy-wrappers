@@ -160,7 +160,7 @@ class AnnovarParser(object):
         
         exon = None
         hgvs_c_dot = None
-             
+
         # There are four different ways that information can be packaged that may in and annovar_row[. 
         # The format can be are determined by the number of ':' separated values. 
         tuple_type = len(delimited_transcript.split(':'))

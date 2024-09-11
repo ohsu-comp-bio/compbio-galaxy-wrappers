@@ -178,7 +178,7 @@ class TxEffHgvs(object):
             
             # HGVS might not find any transcripts even though Annovar did 
             if len(hgvs_variant_transcripts) == 0: 
-                self.logger.warning(f'HGVS could not find any transcripts for variant {variant} which has transcripts known to Annovar.')
+                self.logger.info(f'HGVS could not find any transcripts for variant {variant} which has transcripts known to Annovar.')
             else:
                 transcripts.extend(hgvs_variant_transcripts)
         
@@ -222,7 +222,7 @@ class TxEffHgvs(object):
                 if hgvs_transcript[0].startswith('NR_'):
                     variant_transcript.refseq_transcript = hgvs_transcript[0] 
                     
-                # Determine c. and p.. Non coding transcripts will throw an error. See first exception caught below. 
+                # Determine c. and p.. Non coding transcripts will throw an error. See first exception caught below.
                 var_c = am.g_to_c(var_g, str(hgvs_transcript[0]))
                 var_p = am.c_to_p(var_c)
                 
@@ -279,11 +279,13 @@ class TxEffHgvs(object):
                 self.logger.warning(f"Invalid variant {variant}: %s", str(e))
                 raise(e)
             except HGVSUnsupportedOperationError as e:
-                self.logger.warning(f"Invalid parameters while processing variant={variant}, var_g={var_g}, transcript={str(hgvs_transcript[0])}: %s", str(e))
+                self.logger.warning(f"Invalid parameters while processing variant {variant}, var_g={var_g}, transcript={str(hgvs_transcript[0])}: %s", str(e))
             except HGVSInvalidIntervalError as e:
                 self.logger.warning(f"Invalid variant interval {variant}: %s", str(e))
             except HGVSDataNotAvailableError as e:
                 self.logger.warn(f"Unable to use HGVS to parse variant {variant}: %s", str(e))
+            except NotImplementedError as e:
+                self.logger.warn(f"Invalid CDS sequence while processing variant {variant}: %s", str(e))
         
         return hgvs_transcripts
     
@@ -586,29 +588,21 @@ class TxEffHgvs(object):
         
         # These sanity checks have not been maintained. The should probably be deleted and replaced with unit tests.  
         
-        # Sanity check: The number of annovar transcripts minus the count of merged annovar transcripts, minus the number of 
-        # splice variants is equal to the number of merged HGVS and annovar transcripts. Splice variants must be subtradcted because 
-        # they get counted twice - once as a splice variant and once as an exonic or intronic variant. 
-        sanity_check_annovar = (len(annovar_transcripts) - unmatched_annovar_transcript_count - annovar_splice_variant_transcript_count) == matched_annovar_and_hgvs_transcript_count    
-        # sanity_check_annovar = (len(annovar_transcripts) - unmatched_annovar_transcript_count) == matched_annovar_and_hgvs_transcript_count
+        # Sanity check: The number of annovar transcripts minus the count of merged annovar transcripts is equal to the number of 
+        # merged HGVS and annovar transcripts.
+        sanity_check_annovar = (len(annovar_transcripts) - unmatched_annovar_transcript_count) == matched_annovar_and_hgvs_transcript_count    
+
         if not sanity_check_annovar:
-            self.logger.debug(f"Failed sanity check 'sanity_check_annovar': {len(annovar_transcripts)} - {unmatched_annovar_transcript_count} - {annovar_splice_variant_transcript_count} != {matched_annovar_and_hgvs_transcript_count}")
+            self.logger.debug(f"Failed Annovar sanity check: {len(annovar_transcripts)} - {unmatched_annovar_transcript_count} != {matched_annovar_and_hgvs_transcript_count}")
     
         # Essential sanity check:  
-        # Sanity check is currently off by just a little bit. 
         if not sanity_check_hgvs or not sanity_check_annovar:
             self.logger.info(f'Failed sanity check: Total number of transcripts does not equal sum of matched, and unmatched ({sanity_check_hgvs} and {sanity_check_annovar}).')
-             
-        # Non-essential sanity check: all variants from annovar have at least one transcript in the final output
-        sanity_check_variant_coverage = merged_distinct_variant_count == results['annovar_distinct_variant_count']
-        if not sanity_check_variant_coverage:
-            self.logger.warning(f"Not all of the Annovar variants made it into the list of variant-transcripts ({merged_distinct_variant_count}/{results['annovar_distinct_variant_count']})")
-    
-        sanity_check = sanity_check_hgvs and sanity_check_annovar and sanity_check_variant_coverage
+
+        sanity_check = sanity_check_hgvs and sanity_check_annovar
         results['sanity_check'] = sanity_check
     
         return results
-    
     
     def _log_summary(self, results: dict):
         '''

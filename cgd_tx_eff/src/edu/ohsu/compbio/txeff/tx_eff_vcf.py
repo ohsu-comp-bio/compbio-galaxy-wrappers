@@ -12,10 +12,11 @@ from enum import Enum
 import logging.config
 import sys
 
+import vcfpy
+
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.variant import Variant
-import vcfpy
 
 
 class TranscriptEffect(Enum):
@@ -79,8 +80,7 @@ class TxEffVcf(object):
         for transcript in transcripts:        
             variant = Variant(transcript.chromosome, transcript.position, transcript.reference, transcript.alt)
             transcript_dict[variant].append(transcript)
-            self.logger.debug(f"{variant} has {len(transcript_dict[variant])} transcripts")
-    
+
         return transcript_dict
 
     def _add_transcripts_to_vcf(self, vcf_variant_dict, transcript_dict):
