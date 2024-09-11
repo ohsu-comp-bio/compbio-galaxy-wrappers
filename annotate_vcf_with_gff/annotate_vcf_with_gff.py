@@ -1,4 +1,5 @@
 import argparse
+import pandas as pd
 
 VERSION = '0.0.7'
 
@@ -18,20 +19,12 @@ def filter_genes(genelist_filepath, ot_input):
     gene_list = open(genelist_filepath, 'r')
     gene_filter = []
 
-    match = False
     for line in gene_list:
-        if ot_input == 'Clinical Exome' or ot_input == 'Custom Sequencing' or ot_input == '':
-            match = True
-            break
         line_array = line.split('\t')
         ordered_test = line_array[1]
 
         if ot_input == ordered_test:
-            match = True
             gene_filter.append(line_array[2])
-
-    if match is False:
-        raise NameError('Please enter proper ordered test name.')
 
     return gene_filter
 
@@ -128,25 +121,29 @@ def main():
 
     args = supply_args()
 
-    if args.ordered_test != None:
+    # get list of ordered test names
+    with open(args.gene_list, 'r') as file:
+        df = pd.read_csv(file, sep='\t')
+        a = df.iloc[:, 1].unique()
+    ordered_test_list = sorted(a)
+
+    if args.ordered_test in ordered_test_list:
         genes = filter_genes(args.gene_list, args.ordered_test)
         gff_genes = list(annotate_vcf(args.gff, args.vcf, args.outfile, genes))
 
-        if args.ordered_test != 'Clinical Exome' and args.ordered_test != 'Custom Sequencing' and args.ordered_test != '':
-            print('Ordered test genes: ', len(genes))
-            print('GFF genes: ', len(gff_genes))
-            print('Number of common genes: ', len(set(genes) & set(gff_genes)))
-            print('Common: ', set(genes) & set(gff_genes))
-            # Stop tool and print missing genes, if applicable
-            uncommon = []
-            for i in set(genes):
-                if i not in set(gff_genes):
-                    uncommon.append(i)
-            if len(uncommon) > 0:
-                raise AttributeError(uncommon, ' is/are missing from reference.')
-        else:
-            print('Annotating without filtering...')
+        print('Ordered test genes: ', len(genes))
+        print('GFF genes: ', len(gff_genes))
+        print('Number of common genes: ', len(set(genes) & set(gff_genes)))
+        print('Common: ', set(genes) & set(gff_genes))
+        # Stop tool and print missing genes, if applicable
+        uncommon = []
+        for i in set(genes):
+            if i not in set(gff_genes):
+                uncommon.append(i)
+        if len(uncommon) > 0:
+            raise AttributeError(uncommon, ' is/are missing from reference.')
     else:
+        print('Annotating without filtering...')
         annotate_vcf(args.gff, args.vcf, args.outfile)
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@
   <description>Use regions defined in a GFF file to annotate a VCF INFO column.</description>
 
   <requirements>
+      <requirement type="package" version="2.2.2">pandas</requirement>
   </requirements>
 
   <version_command><![CDATA[
