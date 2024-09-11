@@ -1,6 +1,6 @@
 import argparse
 
-VERSION = '0.0.6'
+VERSION = '0.0.7'
 
 def supply_args():
     parser = argparse.ArgumentParser(description='')
@@ -20,7 +20,7 @@ def filter_genes(genelist_filepath, ot_input):
 
     match = False
     for line in gene_list:
-        if ot_input == 'Clinical Exome' or ot_input == '':
+        if ot_input == 'Clinical Exome' or ot_input == 'Custom Sequencing' or ot_input == '':
             match = True
             break
         line_array = line.split('\t')
@@ -132,7 +132,7 @@ def main():
         genes = filter_genes(args.gene_list, args.ordered_test)
         gff_genes = list(annotate_vcf(args.gff, args.vcf, args.outfile, genes))
 
-        if args.ordered_test != 'Clinical Exome' and args.ordered_test != '':
+        if args.ordered_test != 'Clinical Exome' and args.ordered_test != 'Custom Sequencing' and args.ordered_test != '':
             print('Ordered test genes: ', len(genes))
             print('GFF genes: ', len(gff_genes))
             print('Number of common genes: ', len(set(genes) & set(gff_genes)))
