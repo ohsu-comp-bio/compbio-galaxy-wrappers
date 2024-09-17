@@ -3,10 +3,17 @@
 	<requirements>
 	</requirements>
 	<command><![CDATA[
-	#if $ped.selector == "ped"
+	#if $ped.selector == "family"
+		sed -i "s/.*reference=/\#\#reference=hg19/g" ${dragen_variants} &&
+		sed -i "s/.*reference=/\#\#reference=hg19/g" ${ped.father_vcf} &&
+		sed -i "s/.*reference=/\#\#reference=hg19/g" ${ped.mother_vcf} &&
+		ln -s ${ped.pedigree} family.ped &&
 		ln -s ${dragen_variants} sample.vcf &&
-		java -jar \${EVAI_JAR_PATH}/eVaiAnalysisExecutor_2.0.0.jar analyze --vcf -f sample.vcf -n ${sample_id} -pd $ped -tk "`cat ${token_file}`" > ${output_log}
+		ln -s ${ped.father_vcf} father.vcf &&
+		ln -s ${ped.mother_vcf} mother.vcf &&
+		java -jar \${EVAI_JAR_PATH}/eVaiAnalysisExecutor_2.0.0.jar analyze --vcf -f sample.vcf -f father.vcf -f mother.vcf -n ${sample_id} -pd family.ped -tk "`cat ${token_file}`" > ${output_log}
 	#else
+		sed -i "s/.*reference=/\#\#reference=hg19/g" ${dragen_variants} &&
 		ln -s ${dragen_variants} sample.vcf &&
 		java -jar \${EVAI_JAR_PATH}/eVaiAnalysisExecutor_2.0.0.jar analyze --vcf -f sample.vcf -n ${sample_id} -tk "`cat ${token_file}`" > ${output_log}
 	#end if
@@ -19,11 +26,16 @@
 		<conditional name="ped">
             <param name="selector" type="select" label="Select to launch family analysis">
                 <option value="individual" selected="True">Individual</option>
-                <option value="ped" selected="True">Family</option>
+                <option value="family" selected="True">Family</option>
             </param>
-            <when value="ped">
-                 <param type="data" name="ped" label="Pedigree file" format="ped"/>
+            <when value="family">
+                 <param type="data" name="pedigree" label="Pedigree file" format="tabular"/>
+				 <param name="father_vcf" type="data" format="vcf" label="Father VCF"/>
+				 <param name="mother_vcf" type="data" format="vcf" label="Mother VCF"/>
             </when>
+			<when value="no">
+        	</when>
+		</conditional>
 	</inputs>
 
 	<outputs>
