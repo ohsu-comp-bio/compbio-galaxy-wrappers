@@ -44,7 +44,8 @@ class HgvsLookup(object):
         # Reference file   
         pysam_file = PysamTxEff(reference_fasta)
         
-        transcripts = TxEffHgvs()._lookup_hgvs_transcripts([variant], pysam_file)
+        with TxEffHgvs() as tx_eff_hgvs:
+            transcripts = tx_eff_hgvs._lookup_hgvs_transcripts([variant], pysam_file)
 
         logging.info(f"Found {len(transcripts)} transcripts associated with {genotype}")
         
@@ -53,8 +54,9 @@ class HgvsLookup(object):
     def find_gene(self, gene:str):
         hdp = hgvs.dataproviders.uta.connect()
         gene = hdp.get_gene_info(gene)
+        hdp.close()
         print(f'Gene: {gene}')
-            
+
     def print_result_transcripts(self, transcripts: list):
         for transcript in transcripts:
             print(f'Variant: {transcript.chromosome}-{transcript.position}-{transcript.reference}-{transcript.alt}')

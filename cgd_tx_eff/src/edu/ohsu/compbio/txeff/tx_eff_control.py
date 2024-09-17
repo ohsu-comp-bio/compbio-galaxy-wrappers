@@ -16,7 +16,7 @@ from edu.ohsu.compbio.txeff.tx_eff_vcf import TxEffVcf
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 
-VERSION = '0.7.1'
+VERSION = '0.7.2'
 
 def _parse_args():
     '''
@@ -79,18 +79,15 @@ def _main():
     args = _parse_args()
 
     # Use tx_eff_annovar to read annovar records
-    
     annovar_records = TxEffAnnovar().get_annovar_records(args.annovar_variant_function.name, args.annovar_exonic_variant_function.name)
 
     # Load the reference genome with pysam.
     pysam_file = PysamTxEff(args.reference_fasta)
 
-    tx_eff_hgvs = TxEffHgvs()
+    # Look for additional transcripts in the HGVA/UTA database and merge them with the annovar records.
+    with TxEffHgvs() as tx_eff_hgvs:
+        merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records, pysam_file)
     
-    # Use tx_eff_hgvs to fix the nomenclature
-    tx_eff_hgvs.identify_hgvs_datasources()
-
-    merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records, pysam_file)
     # Close the reference FASTA
     pysam_file.my_fasta.close()
 

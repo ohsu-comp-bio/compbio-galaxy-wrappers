@@ -15,7 +15,6 @@ import logging.config
 import os
 
 import hgvs.assemblymapper
-from hgvs.dataproviders.uta import UTABase
 import hgvs.dataproviders.uta
 from hgvs.exceptions import HGVSInvalidVariantError, HGVSUsageError, HGVSDataNotAvailableError, \
     HGVSInvalidIntervalError, HGVSUnsupportedOperationError
@@ -82,11 +81,39 @@ class RptHandler:
         new_start = coord - len(self.allele)
         new_end = new_start + len(self.allele) - 1
         return new_start, new_end
-
+        
 class TxEffHgvs(object):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
+    def __enter__(self):
+        '''
+        Open database connection  
+        '''
+        self.logger.debug("Opening UTA connection")
+        
+        # Check the environment for definitions of HGVS' datasources.
+        if os.environ.get('HGVS_SEQREPO_DIR') == None:
+            self.logger.warning("The HGVS_SEQREPO_DIR environment variable is not defined. The remote seqrepo database will be used.")
+        else:
+            self.logger.info(f"Using SeqRepo {os.environ.get('HGVS_SEQREPO_DIR')}")
+        
+        if os.environ.get('UTA_DB_URL') == None:
+            self.logger.warning("The UTA_DB_URL environment variable is not defined. The remote UTA database will be used.")
+        else:
+            self.logger.info(f"Using UTA Database at {os.environ.get('UTA_DB_URL')}")
+
+        # Initialize the HGVS connection
+        self.hdp = hgvs.dataproviders.uta.connect()
+        self.am = hgvs.assemblymapper.AssemblyMapper(self.hdp, assembly_name=ASSEMBLY_VERSION, alt_aln_method='splign')
+        self.hgvs_parser = hgvs.parser.Parser()
+        
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.logger.debug("Closing UTA connection")
+        self.hdp.close()
+        
     def _noneIfEmpty(self, value: str):
         '''
         Return None if the string is an empty string.
@@ -162,29 +189,24 @@ class TxEffHgvs(object):
             raise Exception("Unknown change type: " + pos + ':' + ref + '>' + alt)
     
     
-    def _lookup_hgvs_transcripts(self, annovar_variants: list, pysam_file):
+    def _lookup_hgvs_transcripts(self, variants: list, pysam_file):
         '''
         Return the HGVS transcripts associated with a list of variants  
         '''
-        # Initialize the HGVS connection
-        hdp = hgvs.dataproviders.uta.connect()
-        am = hgvs.assemblymapper.AssemblyMapper(hdp, assembly_name=ASSEMBLY_VERSION, alt_aln_method='splign')
-        hgvs_parser = hgvs.parser.Parser()
         
         transcripts = []
-        for variant in annovar_variants:
-            hgvs_variant_transcripts = self._lookup_variant_hgvs_transcripts(hgvs_parser, hdp, am, variant, pysam_file)
+        for variant in variants:
+            hgvs_variant_transcripts = self._lookup_variant_hgvs_transcripts(variant, pysam_file)
             self.logger.info(f"HGVS found {len(hgvs_variant_transcripts)} transcripts for {variant}")
-            
+
             # HGVS might not find any transcripts even though Annovar did 
             if len(hgvs_variant_transcripts) == 0: 
-                self.logger.warning(f'HGVS could not find any transcripts for variant {variant} which has transcripts known to Annovar.')
+                self.logger.info(f'HGVS could not find any transcripts for variant {variant} which has transcripts known to Annovar.')
             else:
                 transcripts.extend(hgvs_variant_transcripts)
-        
         return transcripts
 
-    def _lookup_variant_hgvs_transcripts(self, hgvs_parser: hgvs.parser.Parser, hdp: UTABase, am: hgvs.assemblymapper.AssemblyMapper, variant: Variant, pysam_file):
+    def _lookup_variant_hgvs_transcripts(self, variant: Variant, pysam_file):
         '''
         Use HGVS/UTA to return a list of the transcripts for a variant
         
@@ -200,10 +222,10 @@ class TxEffHgvs(object):
         pos_part = self._correct_indel_coords(variant.chromosome, variant.position, variant.reference, variant.alt, pysam_file)
         new_hgvs = refseq_chromosome + ':g.' + pos_part
     
-        var_g = hgvs_parser.parse_hgvs_variant(new_hgvs)
+        var_g = self.hgvs_parser.parse_hgvs_variant(new_hgvs)
     
         # Retrieve transcripts that are in a genomic region    
-        tx_list = hdp.get_tx_for_region(str(var_g.ac), 'splign', var_g.posedit.pos.start.base, var_g.posedit.pos.end.base)
+        tx_list = self.hdp.get_tx_for_region(str(var_g.ac), 'splign', var_g.posedit.pos.start.base, var_g.posedit.pos.end.base)
         
         hgvs_transcripts = []
         
@@ -214,7 +236,7 @@ class TxEffHgvs(object):
                 variant_transcript.sequence_variant = self.__to_g_dot(var_g)
                 
                 # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function. 
-                transcript_detail = hdp.get_tx_info(hgvs_transcript[0], hgvs_transcript[1], 'splign')
+                transcript_detail = self.hdp.get_tx_info(hgvs_transcript[0], hgvs_transcript[1], 'splign')
                 variant_transcript.hgnc_gene = transcript_detail['hgnc']
                 
                 # Non-coding transcripts (prefx NR_) cause HGVS to throw an exception when determining c. and p. 
@@ -222,9 +244,9 @@ class TxEffHgvs(object):
                 if hgvs_transcript[0].startswith('NR_'):
                     variant_transcript.refseq_transcript = hgvs_transcript[0] 
                     
-                # Determine c. and p.. Non coding transcripts will throw an error. See first exception caught below. 
-                var_c = am.g_to_c(var_g, str(hgvs_transcript[0]))
-                var_p = am.c_to_p(var_c)
+                # Determine c. and p.. Non coding transcripts will throw an error. See first exception caught below.
+                var_c = self.am.g_to_c(var_g, str(hgvs_transcript[0]))
+                var_p = self.am.c_to_p(var_c)
                 
                 # setting uncertain to False removes the parentheses on the stringified form
                 if var_p.posedit:
@@ -279,11 +301,13 @@ class TxEffHgvs(object):
                 self.logger.warning(f"Invalid variant {variant}: %s", str(e))
                 raise(e)
             except HGVSUnsupportedOperationError as e:
-                self.logger.warning(f"Invalid parameters while processing variant={variant}, var_g={var_g}, transcript={str(hgvs_transcript[0])}: %s", str(e))
+                self.logger.warning(f"Invalid parameters while processing variant {variant}, var_g={var_g}, transcript={str(hgvs_transcript[0])}: %s", str(e))
             except HGVSInvalidIntervalError as e:
                 self.logger.warning(f"Invalid variant interval {variant}: %s", str(e))
             except HGVSDataNotAvailableError as e:
                 self.logger.warn(f"Unable to use HGVS to parse variant {variant}: %s", str(e))
+            except NotImplementedError as e:
+                self.logger.warn(f"Invalid CDS sequence while processing variant {variant}: %s", str(e))
         
         return hgvs_transcripts
     
@@ -586,29 +610,21 @@ class TxEffHgvs(object):
         
         # These sanity checks have not been maintained. The should probably be deleted and replaced with unit tests.  
         
-        # Sanity check: The number of annovar transcripts minus the count of merged annovar transcripts, minus the number of 
-        # splice variants is equal to the number of merged HGVS and annovar transcripts. Splice variants must be subtradcted because 
-        # they get counted twice - once as a splice variant and once as an exonic or intronic variant. 
-        sanity_check_annovar = (len(annovar_transcripts) - unmatched_annovar_transcript_count - annovar_splice_variant_transcript_count) == matched_annovar_and_hgvs_transcript_count    
-        # sanity_check_annovar = (len(annovar_transcripts) - unmatched_annovar_transcript_count) == matched_annovar_and_hgvs_transcript_count
+        # Sanity check: The number of annovar transcripts minus the count of merged annovar transcripts is equal to the number of 
+        # merged HGVS and annovar transcripts.
+        sanity_check_annovar = (len(annovar_transcripts) - unmatched_annovar_transcript_count) == matched_annovar_and_hgvs_transcript_count    
+
         if not sanity_check_annovar:
-            self.logger.debug(f"Failed sanity check 'sanity_check_annovar': {len(annovar_transcripts)} - {unmatched_annovar_transcript_count} - {annovar_splice_variant_transcript_count} != {matched_annovar_and_hgvs_transcript_count}")
+            self.logger.debug(f"Failed Annovar sanity check: {len(annovar_transcripts)} - {unmatched_annovar_transcript_count} != {matched_annovar_and_hgvs_transcript_count}")
     
         # Essential sanity check:  
-        # Sanity check is currently off by just a little bit. 
         if not sanity_check_hgvs or not sanity_check_annovar:
             self.logger.info(f'Failed sanity check: Total number of transcripts does not equal sum of matched, and unmatched ({sanity_check_hgvs} and {sanity_check_annovar}).')
-             
-        # Non-essential sanity check: all variants from annovar have at least one transcript in the final output
-        sanity_check_variant_coverage = merged_distinct_variant_count == results['annovar_distinct_variant_count']
-        if not sanity_check_variant_coverage:
-            self.logger.warning(f"Not all of the Annovar variants made it into the list of variant-transcripts ({merged_distinct_variant_count}/{results['annovar_distinct_variant_count']})")
-    
-        sanity_check = sanity_check_hgvs and sanity_check_annovar and sanity_check_variant_coverage
+
+        sanity_check = sanity_check_hgvs and sanity_check_annovar
         results['sanity_check'] = sanity_check
     
         return results
-    
     
     def _log_summary(self, results: dict):
         '''
@@ -625,21 +641,7 @@ class TxEffHgvs(object):
         self.logger.info(f"Number of distinct variants in merged transcript list: {results['merged_distinct_variant_count']}")
         self.logger.info(f"Number of best transcripts in final list: {results['best_transcripts']}")
         self.logger.info(f"Sanity check: {'Passed' if results['sanity_check'] else 'Failed' }")
-    
-    def identify_hgvs_datasources(self):
-        '''
-        Check the environment for definitions of HGVS' datasources and log the findings 
-        '''
-        if os.environ.get('HGVS_SEQREPO_DIR') == None:
-            self.logger.warning("The HGVS_SEQREPO_DIR environment variable is not defined. The remote seqrepo database will be used.")
-        else:
-            self.logger.info(f"Using SeqRepo {os.environ.get('HGVS_SEQREPO_DIR')}")
         
-        if os.environ.get('UTA_DB_URL') == None:
-            self.logger.warning("The UTA_DB_URL environment variable is not defined. The remote UTA database will be used.")
-        else:
-            self.logger.info(f"Using UTA Database at {os.environ.get('UTA_DB_URL')}")
-    
     def get_updated_hgvs_transcripts(self, annovar_transcripts: list, pysam_file):
         '''
         Take a list of transcripts from Annovar and use them to look up the corresponding variants using the HGVS python lib; and then 
@@ -729,8 +731,12 @@ class TxEffHgvs(object):
         Use the HGVS lib to lookup a transcript's gene in UTA. 
         ToDo: this method reconnects to UTA each time it is called. Performance can be improved by keeping the connection open.
         '''
-        hdp = hgvs.dataproviders.uta.connect()
-        rec = hdp.get_tx_identity_info(transcript_accession)
+        try:
+            rec = self.hdp.get_tx_identity_info(transcript_accession)
+        except HGVSDataNotAvailableError as e:
+            # if the transcript isn't in uta it throws an exception rather than just returning null
+            self.logger.info(str(e))
+            rec = None
     
         if rec is not None:
             assert type(rec[6]) == str, "Index six in object returned by hdp.get_tx_identity_info is supposed to the gene."

@@ -4,14 +4,16 @@ Created on Apr 14, 2022
 @author: pleyte
 '''
 
+from collections import defaultdict
 import csv
 from enum import Enum
-import hgvs.parser
 import logging
-from collections import defaultdict
-import re
 import os
+import re
+
 from hgvs.location import BaseOffsetPosition
+import hgvs.parser
+
 
 def is_annovar_splicing_type(value: str):
     '''
@@ -177,7 +179,8 @@ class AnnovarParser(object):
             # looks like "NM_001077690.1(NM_001077690.1:exon1:c.60+1C>-,NM_001077690.1:exon2:c.61-1C>-)"
             refseq_transcript, exon, hgvs_c_dot = self._parse_transcript_tuple_type5(delimited_transcript)
         else:
-            raise ValueError("Tuple format not recognized: " + str(delimited_transcript))
+            self.logger.warning("Annovar tuple format not recognized: " + str(delimited_transcript))
+            refseq_transcript, exon, hgvs_c_dot = None, None, None
 
         # Strip the 'exon' prefix from 'exon5'
         if(exon):
@@ -225,9 +228,10 @@ class AnnovarParser(object):
         Example:
             - NM_001243965.1(NM_001243965.1:exon2:c.278+4C>A,NM_001243965.1:exon3:c.281+1C>A,NM_001243965.1:exon4:c.282-1C>A)
             - NM_001352417.1(NM_001352417.1:exon1:c.60+1C>-,NM_001352417.1:exon2:c.61-1C>-)
+            - NM_001306173.2(NM_001306173.2:exon12:c.1365+1G>T,NM_001306173.2:exon12:UTR3)
         This function returns a list of colon separated tuples like ['NM_x:exonN:c.','NM_y:exonM:c.'] 
         '''
-        p = re.compile('NM_[0-9]+\.[0-9]:exon[0-9]+:(?:r\.spl|c\.[-+0-9ACTG>]+)')
+        p = re.compile('NM_[0-9]+\.[0-9]:exon[0-9]+:(?:r\.spl|c\.[-+0-9ACTG>]+|UTR3|UTR5)')
         return p.findall(unparsed)
     
     def _parse_exonic_variant_function_row(self, annovar_row: list):
@@ -344,7 +348,11 @@ class AnnovarParser(object):
         '''
         Take an annovar variant_function field that has delimited information about transcripts 
         and split it into chunks for each transcript. The resulting string need to be further 
-        parsed by the _unpack_vf_transcript_tuple function
+        parsed by the _unpack_vf_transcript_tuple function.
+        Examples: 
+            NM_001005484.1(dist=28)
+            NM_001005484.1
+            NM_001005277.1(dist=168389),NR_125957.1(dist=25774) 
         '''
         p = re.compile('(?<=,)?([^\\(,]+(\\([^\\)]+\\))?)')
         matches = p.findall(unparsed)
@@ -365,7 +373,9 @@ class AnnovarParser(object):
         
         assert len(transcript_tuples) >= 2, "Unrecognised variant function delimited transcript definition"
         
+        # Even though there are multiple definitions of this transcript, we can only accept one. So we take the first.
         refseq_transcript, exon, hgvs_c_dot  = transcript_tuples[0].split(':')
+
         return refseq_transcript, exon, hgvs_c_dot
     
     def _parse_transcript_tuple_type3(self, unparsed):
