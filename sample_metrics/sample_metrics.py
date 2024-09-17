@@ -1,8 +1,11 @@
-
 """
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
 VERSION HISTORY
+0.9.1
+    Update to allow for case when picard_summary and picard_summary_umi are None
+0.9.0
+    Remove old style metrics in favor of new style
 0.8.15
     Change IlluminaExome_V2_PlusMito to IlluminaExome_V2-5_PlusMito
 0.8.14
@@ -35,14 +38,15 @@ VERSION HISTORY
     Now calculate percentOnTarget from FastQC tatal sequences and collectalignmentmetrics on sorted bwa bam
 """
 
-
 import argparse
 import json
 # User libraries
-from inputs import ProbeQcRead, PerLocusRead, AlignSummaryMetrics, GatkDepthOfCoverageRead, GatkCountReads, MsiSensor, SamReader, GatkCollectRnaSeqMetrics
+from inputs import (ProbeQcRead, PerLocusRead, AlignSummaryMetrics, GatkDepthOfCoverageRead, GatkCountReads,
+                    MsiSensor, SamReader, GatkCollectRnaSeqMetrics)
 from inputs import FastQcRead
 
-VERSION = '0.8.15'
+VERSION = '0.9.1'
+
 
 def supply_args():
     """
@@ -91,7 +95,6 @@ def supply_args():
                         help='Arbitrary number of files to be included in sample metrics that are in json format.')
 
     parser.add_argument('--outfile', help='Output file with json string.')
-    parser.add_argument('--outfile_new', help='Output file with new style json string.')
     parser.add_argument('--outfile_txt', help='Output file in human readable text format.')
     parser.add_argument('--workflow', help='Pass the Galaxy workflow name, if applicable.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
@@ -110,8 +113,8 @@ def supply_args():
         parser.error("Argument primers_bed requires primers_bam.")
 
     # Ensure at least one output option has been selected.
-    if not args.outfile and not args.outfile_txt and not args.outfile_new:
-        parser.error("You must specify one of outfile, outfile_new, or outfile_txt.")
+    if not args.outfile and not args.outfile_txt:
+        parser.error("You must specify outfile or outfile_txt.")
 
     return args
 
@@ -484,8 +487,7 @@ class MetricPrep(SampleMetrics):
     def __init__(self, raw_mets):
         super(MetricPrep, self).__init__(raw_mets)
         self.mets = self._gather_metrics()
-        self.req_old = self._req_old()
-        self.req_new = self._req_new()
+        self.req = self._req()
 
     def _gather_metrics(self):
         """
@@ -507,24 +509,36 @@ class MetricPrep(SampleMetrics):
                 'depthFifty': self._get_avg_probeqc('D50', self.probeqc_after, self.total_bp_after),
                 'depthFifty_before': self._get_avg_probeqc('D50', self.probeqc_before, self.total_bp_before),
                 'depthOneHundred': self._get_avg_probeqc('D100', self.probeqc_after, self.total_bp_after),
-                'depthOneHundred_before': self._get_avg_probeqc('D100', self.probeqc_before, self.total_bp_before),
+                'depthOneHundred_before':
+                    self._get_avg_probeqc('D100', self.probeqc_before, self.total_bp_before),
                 'depthTwoHundredFifty': self._get_avg_probeqc('D250', self.probeqc_after, self.total_bp_after),
-                'depthTwoHundredFifty_before': self._get_avg_probeqc('D250', self.probeqc_before, self.total_bp_before),
+                'depthTwoHundredFifty_before':
+                    self._get_avg_probeqc('D250', self.probeqc_before, self.total_bp_before),
                 'depthFiveHundred': self._get_avg_probeqc('D500', self.probeqc_after, self.total_bp_after),
-                'depthFiveHundred_before': self._get_avg_probeqc('D500', self.probeqc_before, self.total_bp_before),
-                'depthSevenHundred': self._get_avg_probeqc('D700', self.probeqc_after, self.total_bp_after),
-                'depthSevenHundred_before': self._get_avg_probeqc('D700', self.probeqc_before, self.total_bp_before),
-                'depthOneThousand': self._get_avg_probeqc('D1000', self.probeqc_after, self.total_bp_after),
-                'depthOneThousand_before': self._get_avg_probeqc('D1000', self.probeqc_before, self.total_bp_before),
-                'depthTwelveHundredFifty': self._get_avg_probeqc('D1250', self.probeqc_after, self.total_bp_after),
-                'depthTwelveHundredFifty_before': self._get_avg_probeqc('D1250', self.probeqc_before, self.total_bp_before),
+                'depthFiveHundred_before':
+                    self._get_avg_probeqc('D500', self.probeqc_before, self.total_bp_before),
+                'depthSevenHundred':
+                    self._get_avg_probeqc('D700', self.probeqc_after, self.total_bp_after),
+                'depthSevenHundred_before':
+                    self._get_avg_probeqc('D700', self.probeqc_before, self.total_bp_before),
+                'depthOneThousand':
+                    self._get_avg_probeqc('D1000', self.probeqc_after, self.total_bp_after),
+                'depthOneThousand_before':
+                    self._get_avg_probeqc('D1000', self.probeqc_before, self.total_bp_before),
+                'depthTwelveHundredFifty':
+                    self._get_avg_probeqc('D1250', self.probeqc_after, self.total_bp_after),
+                'depthTwelveHundredFifty_before':
+                    self._get_avg_probeqc('D1250', self.probeqc_before, self.total_bp_before),
                 'depthTwoThousand': self._get_avg_probeqc('D2000', self.probeqc_after, self.total_bp_after),
-                'depthTwoThousand_before': self._get_avg_probeqc('D2000', self.probeqc_before, self.total_bp_before),
-                'uniformity_of_coverage': self._get_cov_uniformity(self._get_avg_probeqc('AVGD', self.probeqc_after, self.total_bp_after)),
-                'pf_reads': self.raw_mets.picard_summary['PAIR']['PF_READS'],
-                'pf_reads_after': self.raw_mets.picard_summary_umi['PAIR']['PF_READS'],
-                'pct_pf_reads_aligned': self.raw_mets.picard_summary['PAIR']['PCT_PF_READS_ALIGNED'],
-                'pct_pf_reads_aligned_after': self.raw_mets.picard_summary_umi['PAIR']['PCT_PF_READS_ALIGNED'],
+                'depthTwoThousand_before':
+                    self._get_avg_probeqc('D2000', self.probeqc_before, self.total_bp_before),
+                'uniformity_of_coverage':
+                    self._get_cov_uniformity(self._get_avg_probeqc('AVGD', self.probeqc_after,
+                                                                   self.total_bp_after)),
+                'pf_reads': self.raw_mets.picard_summary['PAIR']['PF_READS'] if self.raw_mets.picard_summary else None,
+                'pf_reads_after': self.raw_mets.picard_summary_umi['PAIR']['PF_READS'] if self.raw_mets.picard_summary_umi else None,
+                'pct_pf_reads_aligned': self.raw_mets.picard_summary['PAIR']['PCT_PF_READS_ALIGNED'] if self.raw_mets.picard_summary else None,
+                'pct_pf_reads_aligned_after': self.raw_mets.picard_summary_umi['PAIR']['PCT_PF_READS_ALIGNED'] if self.raw_mets.picard_summary_umi else None,
                 'allele_balance': self._reduce_sig(self._add_json_mets(lookin=self.raw_mets.json_mets,
                                                                        metric='allele_balance')),
                 'allele_balance_het_count': self._add_json_mets(lookin=self.raw_mets.json_mets,
@@ -560,7 +574,8 @@ class MetricPrep(SampleMetrics):
                 'rna_tpm_ten': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_10'),
                 'rna_tpm_onehundred': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_100'),
                 'rna_tpm_onethousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_1000'),
-                'tmb': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb') if self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb') else 0.0001,
+                'tmb': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb') if
+                self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb') else 0.0001,
                 'msi_pct': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_pct'),
                 'msi_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='total_sites'),
                 'msi_somatic_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_sites'),
@@ -584,17 +599,25 @@ class MetricPrep(SampleMetrics):
                 'forced_calls_above': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_above'),
                 'forced_calls_below': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_below'),
                 'y_ploidy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='y_ploidy_check'),
-                'cnv_median_segment_mad_cn': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='cnv_median_segment_mad_cn'),
+                'cnv_median_segment_mad_cn':
+                    self._add_json_mets(lookin=self.raw_mets.json_mets, metric='cnv_median_segment_mad_cn'),
                 'q30_bases_pct': self.raw_mets.dragen_metrics.q30 if self.raw_mets.dragen_metrics else None,
-                'average_alignment_coverage_over_target_region': self.raw_mets.dragen_metrics.avg_depth if self.raw_mets.dragen_metrics else None,
-                'pct_of_target_region_with_coverage_10x_inf': self.raw_mets.dragen_metrics.depth10 if self.raw_mets.dragen_metrics else None,
-                'pct_of_target_region_with_coverage_20x_inf':self.raw_mets.dragen_metrics.depth20 if self.raw_mets.dragen_metrics else None,
-                'pct_of_target_region_with_coverage_50x_inf': self.raw_mets.dragen_metrics.depth50 if self.raw_mets.dragen_metrics else None,
-                'pct_of_target_region_with_coverage_100x_inf': self.raw_mets.dragen_metrics.depth100 if self.raw_mets.dragen_metrics else None,
-                'aligned_reads_in_target_region_pct': self.raw_mets.dragen_metrics.pct_on_target if self.raw_mets.dragen_metrics else None,
+                'average_alignment_coverage_over_target_region':
+                    self.raw_mets.dragen_metrics.avg_depth if self.raw_mets.dragen_metrics else None,
+                'pct_of_target_region_with_coverage_10x_inf':
+                    self.raw_mets.dragen_metrics.depth10 if self.raw_mets.dragen_metrics else None,
+                'pct_of_target_region_with_coverage_20x_inf':
+                    self.raw_mets.dragen_metrics.depth20 if self.raw_mets.dragen_metrics else None,
+                'pct_of_target_region_with_coverage_50x_inf':
+                    self.raw_mets.dragen_metrics.depth50 if self.raw_mets.dragen_metrics else None,
+                'pct_of_target_region_with_coverage_100x_inf':
+                    self.raw_mets.dragen_metrics.depth100 if self.raw_mets.dragen_metrics else None,
+                'aligned_reads_in_target_region_pct':
+                    self.raw_mets.dragen_metrics.pct_on_target if self.raw_mets.dragen_metrics else None,
                 'dragen_gc_pct_r1': self.raw_mets.dragen_qc.gc_r1 if self.raw_mets.dragen_metrics else None,
                 'dragen_gc_pct_r2': self.raw_mets.dragen_qc.gc_r2 if self.raw_mets.dragen_metrics else None,
-                'number_of_large_roh_gt_eq_3000000': self.raw_mets.dragen_metrics.roh if self.raw_mets.dragen_metrics else None,
+                'number_of_large_roh_gt_eq_3000000':
+                    self.raw_mets.dragen_metrics.roh if self.raw_mets.dragen_metrics else None,
                 'ploidy_estimation': self.raw_mets.dragen_metrics.ploidy_est if self.raw_mets.dragen_metrics else None
                 }
         return mets
@@ -646,77 +669,71 @@ class MetricPrep(SampleMetrics):
     def _get_cov_uniformity(self, average_depth):
         """
         Calculate the uniformity of coverage
-        The percentage of targeted base positions in which the read depth is greater than 0.2 times the mean region target coverage depth.
+        The percentage of targeted base positions in which the read depth is greater than 0.2 times the mean region
+        target coverage depth.
         :return:
         """
         try:
-            # return float(self.gatk_depth_cov_prop.sample_mets['gte_'+str(round(float(average_depth)*0.2))])*100
             # calculate using perlocusread instead to get decimal places
-            return "{:.1f}".format(float(sum(float(i) > float(average_depth)*0.2 for i in list(self.gatk_depth_cov_cnts.perlocus.values())) / len(list(self.gatk_depth_cov_cnts.perlocus.values())) * 100))
+            return "{:.1f}".format(float(sum(float(i) > float(average_depth)*0.2 for i in
+                                             list(self.gatk_depth_cov_cnts.perlocus.values())) /
+                                         len(list(self.gatk_depth_cov_cnts.perlocus.values())) * 100))
         except:
             return None
 
     @staticmethod
-    def _req_old():
+    def _req():
         """
         Based on test name, list which metrics should be provided.
         :return:
         """
-        return {'QIAseq_V3_RNA': ['qthirty', 'averageDepth', 'percentUmi'],
-                'QIAseq_XP_RNA_HEME': ['qthirty', 'averageDepth', 'percentUmi'],
-                'QIAseq_XP_RNA_STP': ['qthirty', 'averageDepth', 'percentUmi'],
-                'TruSightOne': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
+        return {'QIAseq_V3_RNA': ['qthirty', 'averageDepth', 'percentUmi', 'total_on_target_transcripts',
+                                  'total_on_target_transcripts_pct'],
+                'QIAseq_XP_RNA_HEME': ['qthirty', 'averageDepth', 'percentUmi', 'total_on_target_transcripts',
+                                       'total_on_target_transcripts_pct'],
+                'QIAseq_XP_RNA_STP': ['qthirty', 'averageDepth', 'percentUmi', 'total_on_target_transcripts',
+                                      'total_on_target_transcripts_pct'],
+                'TruSightOne': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty', 'depthOneHundred',
+                                'percentOnTarget', 'depthTen', 'depthFifty', 'gc_pct_r1', 'gc_pct_r2',
+                                'y_ploidy_check'],
                 'TruSightOneV2_5': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                    'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
-                'AgilentCRE_V1': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                  'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty'],
+                                    'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'gc_pct_r1',
+                                    'gc_pct_r2', 'y_ploidy_check', 'homozygosity_flag'],
+                'AgilentCRE_V1': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty', 'depthOneHundred',
+                                  'percentOnTarget', 'depthTen', 'depthFifty', 'parentage_sites', 'parentage_disc',
+                                  'parentage_binom', 'parentage_confirmed',
+                                  'gc_pct_r1', 'gc_pct_r2', 'homozygosity_flag', 'y_ploidy_check'],
                 'IlluminaExome_V2-5_PlusMito': ['q30_bases_pct', 'average_alignment_coverage_over_target_region',
-                                            'pct_of_target_region_with_coverage_20x_inf',
-                                            'pct_of_target_region_with_coverage_100x_inf',
-                                            'aligned_reads_in_target_region_pct', 'pct_of_target_region_with_coverage_10x_inf',
-                                            'pct_of_target_region_with_coverage_50x_inf'],
+                                                'pct_of_target_region_with_coverage_20x_inf',
+                                                'pct_of_target_region_with_coverage_100x_inf',
+                                                'aligned_reads_in_target_region_pct',
+                                                'pct_of_target_region_with_coverage_10x_inf',
+                                                'pct_of_target_region_with_coverage_50x_inf', 'dragen_gc_pct_r1',
+                                                'dragen_gc_pct_r2', 'ploidy_estimation',
+                                                'number_of_large_roh_gt_eq_3000000'],
                 'QIAseq_V3_HEME2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
                                     'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
                 'QIAseq_V4_MINI': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
+                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi',
+                                   'forced_calls_above', 'forced_calls_below', 'bio_sex_check'],
                 'QIAseq_V3_STP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
+                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi',
+                                   'msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
                 'QIAseq_V4_STP4': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
-                'TruSeq_RNA_Exome_V1-2': ['qthirty'],
-                'QIAseq_V3_HOP': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                  'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi'],
-                'QIAseq_V3_HOP2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi'],
-                'QIAseq_V3_HOP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi']
-                }
-
-    @staticmethod
-    def _req_new():
-        """
-        Based on test name, list which metrics should be provided.
-        :return:
-        """
-        return {'QIAseq_V3_RNA': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
-                'QIAseq_XP_RNA_HEME': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
-                'QIAseq_XP_RNA_STP': ['total_on_target_transcripts', 'total_on_target_transcripts_pct'],
-                'TruSightOne': ['gc_pct_r1', 'gc_pct_r2', 'y_ploidy_check'],
-                'TruSightOneV2_5': ['gc_pct_r1', 'gc_pct_r2', 'y_ploidy_check', 'homozygosity_flag'],
-                'AgilentCRE_V1': ['parentage_sites', 'parentage_disc', 'parentage_binom', 'parentage_confirmed',
-                                  'gc_pct_r1', 'gc_pct_r2', 'homozygosity_flag', 'y_ploidy_check'],
-                'IlluminaExome_V2-5_PlusMito': ['dragen_gc_pct_r1', 'dragen_gc_pct_r2', 'ploidy_estimation', 'number_of_large_roh_gt_eq_3000000'],
-                'QIAseq_V3_HEME2': [],
-                'QIAseq_V4_MINI': ['forced_calls_above', 'forced_calls_below', 'bio_sex_check'],
-                'QIAseq_V3_STP3': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
-                'QIAseq_V4_STP4': ['msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb',
-                                   'uniformity_of_coverage', 'cnv_median_segment_mad_cn'],
-                'TruSeq_RNA_Exome_V1-2': ['total_on_target_transcripts', 'gatk_pct_mrna_bases',
+                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi',
+                                   'msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb', 'uniformity_of_coverage',
+                                   'cnv_median_segment_mad_cn'],
+                'TruSeq_RNA_Exome_V1-2': ['qthirty', 'total_on_target_transcripts', 'gatk_pct_mrna_bases',
                                           'gatk_pct_correct_strand_reads'],
-                'QIAseq_V3_HOP': ['allele_balance', 'allele_balance_het_count'],
-                'QIAseq_V3_HOP2': ['allele_balance', 'allele_balance_het_count'],
-                'QIAseq_V3_HOP3': ['allele_balance', 'allele_balance_het_count']
+                'QIAseq_V3_HOP': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty', 'depthOneHundred',
+                                  'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi', 'allele_balance',
+                                  'allele_balance_het_count'],
+                'QIAseq_V3_HOP2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
+                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi',
+                                   'allele_balance', 'allele_balance_het_count'],
+                'QIAseq_V3_HOP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
+                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi',
+                                   'allele_balance', 'allele_balance_het_count']
                 }
 
 
@@ -756,27 +773,10 @@ class Writer:
         """
         to_write = {'sampleRunMetrics': [], 'geneMetrics': []}
         for metric, val in self.mets.mets.items():
-            if metric in self.mets.req_new[self.wf]:
+            if metric in self.mets.req[self.wf]:
                 if val:
                     metric_dict = {'metric': str(metric), 'value': str(val)}
                     to_write['sampleRunMetrics'].append(metric_dict)
-
-        with open(filename, 'w') as jwrite:
-            json.dump(to_write, jwrite)
-
-    def write_cgd_old(self, filename):
-        """
-        Provide old metric style for CGD import.
-        {
-        "depthSevenHundred": "95.6",
-        "depthTwelveHundredFifty": "66.8",
-        "percentOnTarget": "61.03"
-        }
-        """
-        to_write = {}
-        for metric, val in self.mets.mets.items():
-            if metric in self.mets.req_old[self.wf]:
-                to_write[str(metric)] = str(val)
 
         with open(filename, 'w') as jwrite:
             json.dump(to_write, jwrite)
@@ -789,6 +789,7 @@ class Writer:
         with open(filename, 'w') as to_write:
             for metric, val in self.mets.mets.items():
                 to_write.write("{}: {}\n".format(metric, val))
+
 
 class DragenMetrics:
     """
@@ -819,6 +820,7 @@ class DragenMetrics:
                     self.roh = line.split()[1]
                 if "ploidy_estimation" in line:
                     self.ploidy_est = line.split()[1]
+
 
 class DragenQC:
     """
@@ -859,9 +861,7 @@ def main():
     if args.outfile_txt:
         writer.write_to_text(args.outfile_txt)
     if args.outfile:
-        writer.write_cgd_old(args.outfile)
-    if args.outfile_new:
-        writer.write_cgd_new(args.outfile_new)
+        writer.write_cgd_new(args.outfile)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.8.15" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.9.1" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
 
   <requirements>
@@ -27,7 +27,6 @@
       --gatk_depth_cov_cnts '${gatk_depth_cov_cnts}'
     #end if
     --outfile '${output}'
-    --outfile_new '${output_new}'
     --outfile_txt '${output_txt}'
     #if $fastqc_one:
         --fastqc_r1 '${fastqc_one}'
@@ -110,12 +109,76 @@
   </inputs>
   <outputs>
     <data format="txt" name="output" label="${tool.name} on ${on_string}: json" />
-    <data format="txt" name="output_new" label="${tool.name} on ${on_string}: json [NEW STYLE]" />
     <data format="txt" name="output_txt" label="${tool.name} on ${on_string}: txt" />
   </outputs>
 
-  <help>
-      Metrics calculated at the sample level, for use in CGD and for additional QC.
-  </help>
+  <help><![CDATA[
+usage: sample_metrics.py [-h] [--probeqc_after PROBEQC_AFTER]
+                         [--probeqc_before PROBEQC_BEFORE]
+                         [--fastqc_r1 FASTQC_R1] [--fastqc_r2 FASTQC_R2]
+                         [--picard_summary PICARD_SUMMARY]
+                         [--picard_summary_umi PICARD_SUMMARY_UMI]
+                         [--gatk_depth_cov_prop GATK_DEPTH_COV_PROP]
+                         [--gatk_depth_cov_cnts GATK_DEPTH_COV_CNTS]
+                         [--gatk_coll_rnaseq_mets GATK_COLL_RNASEQ_METS]
+                         [--gatk_count_reads_total GATK_COUNT_READS_TOTAL]
+                         [--gatk_count_reads_ints GATK_COUNT_READS_INTS]
+                         [--msi MSI] [--primers_bam PRIMERS_BAM]
+                         [--primers_bed PRIMERS_BED] [--blia_pre BLIA_PRE]
+                         [--blia_post BLIA_POST]
+                         [--dragen_metrics DRAGEN_METRICS]
+                         [--dragen_qc DRAGEN_QC]
+                         [--json_in [JSON_IN [JSON_IN ...]]]
+                         [--outfile OUTFILE] [--outfile_txt OUTFILE_TXT]
+                         [--workflow WORKFLOW] [--version]
 
+optional arguments:
+  -h, --help            show this help message and exit
+  --probeqc_after PROBEQC_AFTER
+                        Probe coverage QC after UMI deduplication metrics.
+  --probeqc_before PROBEQC_BEFORE
+                        Probe coverage QC before UMI deduplication metrics.
+  --fastqc_r1 FASTQC_R1
+                        FastQC stats for read 1.
+  --fastqc_r2 FASTQC_R2
+                        FastQC stats for read 2.
+  --picard_summary PICARD_SUMMARY
+                        Picard alignment summary metrics file.
+  --picard_summary_umi PICARD_SUMMARY_UMI
+                        Picard alignment summary metrics file taken after umi
+                        deduplication.
+  --gatk_depth_cov_prop GATK_DEPTH_COV_PROP
+                        GATK DepthOfCoverage file.
+  --gatk_depth_cov_cnts GATK_DEPTH_COV_CNTS
+                        GATK DepthOfCoverage locus file.
+  --gatk_coll_rnaseq_mets GATK_COLL_RNASEQ_METS
+                        GATK CollectRnaSeqMetrics file.
+  --gatk_count_reads_total GATK_COUNT_READS_TOTAL
+                        Output from GATK4 CountReads with total read count.
+  --gatk_count_reads_ints GATK_COUNT_READS_INTS
+                        Output from GATK4 CountReads with read count for reads
+                        overlapping targets.
+  --msi MSI             TSV file containing MSI results
+  --primers_bam PRIMERS_BAM
+                        BAM file to calculate primer reads on target.
+  --primers_bed PRIMERS_BED
+                        BED file containing primer coordinates only.
+  --blia_pre BLIA_PRE   JSON from Ding correlation subtyping, pre-
+                        normalization.
+  --blia_post BLIA_POST
+                        JSON from Ding correlation subtyping, post-
+                        normalization.
+  --dragen_metrics DRAGEN_METRICS
+                        JSON file containing metrics produced by DRAGEN
+  --dragen_qc DRAGEN_QC
+                        CSV file containing fastqc data produced by DRAGEN
+  --json_in [JSON_IN [JSON_IN ...]]
+                        Arbitrary number of files to be included in sample
+                        metrics that are in json format.
+  --outfile OUTFILE     Output file with json string.
+  --outfile_txt OUTFILE_TXT
+                        Output file in human readable text format.
+  --workflow WORKFLOW   Pass the Galaxy workflow name, if applicable.
+  --version             show program's version number and exit
+  ]]></help>
 </tool>
