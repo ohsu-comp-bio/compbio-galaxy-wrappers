@@ -4,23 +4,16 @@ Created on Aug. 24, 2022
 @author: pleyte
 '''
 
+from _collections import defaultdict
 import argparse
-from enum import Enum
+import csv
 import logging
 
-from edu.ohsu.compbio.txeff.util.refseq_to_ccds import RefseqToCcds
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
 
 
-class CcdsMapFileType(Enum):
-    '''
-    File type that maps Refseq to CCDS
-    '''
-    GFF = 1
-    CSV = 2
-    
 class TxEffCcds(object):
     '''
     This class adds CCDS accessions to the transcript effects 
@@ -39,37 +32,22 @@ class TxEffCcds(object):
 
     def _get_refseq_to_ccds_mappings(self):
         '''
-        Return a dictionary of RefSeq id to CCDS id. The mappings are read from a CSV or a GFF that was specified at class construction.
+        Return a dictionary of RefSeq id to CCDS id. The mappings are read from a CSV file that was created by 
+        the script: https://github.com/ohsu-comp-bio/kdl-tools/tree/master/cgd_prep/src/edu/ohsu/compbio/etl/refseq_ccds.py
         '''
-        refseq_to_ccds = RefseqToCcds()
+        refseq_ccds_map = defaultdict()
         
-        map_file_type = self.__get_file_type(self.refseq_to_ccds_file)
+        with open(self.refseq_to_ccds_file) as csv_file:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
+                if refseq_ccds_map.get(row['refseq_id']) is not None:
+                    raise Exception(f"RefSeq id {row['refseq_id']} is already mapped to {refseq_ccds_map.get(row['refseq_id'])}. Cannot add additional mapping to {row['ccds_id']}")
+                
+                refseq_ccds_map[row['refseq_id']] = row['ccds_id']
         
-        if(map_file_type == CcdsMapFileType.GFF):
-            refSeq_to_ccds_mappings = refseq_to_ccds.get_mappings_from_gff(self.refseq_to_ccds_file)
-        elif(map_file_type == CcdsMapFileType.CSV):
-            refSeq_to_ccds_mappings = refseq_to_ccds.get_mappings_from_csv(self.refseq_to_ccds_file)
-        else:
-            raise Exception(f"Mapping file must be csv or gff. File type is unknown: {self.refseq_to_ccds_file}")
+        self.logger.info(f"Created RefSeq-CCDS map of size {len(refseq_ccds_map)} from CSV")
         
-        return refSeq_to_ccds_mappings
-
-    def __get_file_type(self, file_name:str):        
-        '''
-        Determines file type by reading the first line of the file. A gff file will have a comment with the gff version in the first line; a csv will have the field headers in the first line. 
-        '''
-        with open(file_name) as f:
-            firstline = f.readline().rstrip()
-        
-        if('gff' in firstline):
-            # The first line of a gff file should be something like "##gff-version 3" 
-            return CcdsMapFileType.GFF
-        elif('refseq_id' in firstline and 'ccds_id' in firstline):
-            # The first line of the csv is the field list
-            return CcdsMapFileType.CSV
-            
-        self.logger.warn(f"Expected GFF or CSV but received unknown file type having first line: {firstline}")
-        return None
+        return refseq_ccds_map
 
     def _get_preferred_refseq_transcript(self, transcript0: VariantTranscript, transcript1: VariantTranscript):
         '''
@@ -180,7 +158,7 @@ def _parse_args():
                         required=True)
     
     parser.add_argument('-c', '--ccds_map', 
-                        help='Input CSV or GFF with Annovar-to-CCDS mappings. Use refseq_to_ccds.py to convert GFF to CSV.', 
+                        help='CSV with Annovar-to-CCDS mappings.', 
                         type=argparse.FileType('r'), 
                         required=True)
 

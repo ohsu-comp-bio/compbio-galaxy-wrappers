@@ -16,8 +16,8 @@ The output file is horribly un-normalised:
 @author: pleyte
 '''
 import argparse
-import logging.config
 import csv
+import logging.config
 import vcfpy
 from edu.ohsu.compbio.txeff.tx_eff_vcf import TranscriptEffect
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig

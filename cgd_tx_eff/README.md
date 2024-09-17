@@ -117,6 +117,4 @@ Read a csv with chromosome, posistion start, position end, reference, and varian
 
 ### compare_cgd_tfx.py
 
-### refseq_to_ccds.py
-
-A class with methods for creating a RefSeq-to-CCDS dictionary from gff or csv files. This class can also be used to create a mapping csv from the gff file. 
+Compares the transcript effects in a CSV with the transcript effects that have been exported (via sql) from a CGD deployment. 
