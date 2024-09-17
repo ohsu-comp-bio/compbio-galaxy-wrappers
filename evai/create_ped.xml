@@ -1,0 +1,32 @@
+<tool id="create_ped" name="Pedigree file generator" version="0.0.1" >
+  <description>Takes PROBAND/MOTHER/FATHER IDs to create pedigree file for trio analysis on eVai</description>
+
+  <requirements>
+  </requirements>
+
+  <version_command><![CDATA[
+    python $__tool_directory__/create.py --version
+  ]]>
+  </version_command>
+
+  <command detect_errors="exit_code"><![CDATA[
+    python $__tool_directory__/create.py -o "${output_ped}" "${family_id}" "${proband_id}" "${proband_sex}" "${father_id}" "${mother_id}" -f "${father_ph}" -m "${mother_ph}"
+  ]]>
+  </command>
+
+  <inputs>
+      <param name="family_id" type="text" label="Family ID"/>
+      <param name="proband_id" type="text" label="Proband ID"/>
+      <param name="proband_sex" type="text" label="Proband sex"/>
+      <param name="father_id" type="text" label="Father ID"/>
+      <param name="mother_id" type="text" label="Mother ID"/>
+      <param name="father_ph" type="text" label="Father phenotype"/>
+      <param name="mother_ph" type="text" label="Mother phenotype"/>
+  </inputs>
+
+  <outputs>
+    <data format="ped" name="output_ped" label="${family_id}: ped" />
+  </outputs>
+  <help>
+  </help>
+</tool>
