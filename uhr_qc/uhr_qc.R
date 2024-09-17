@@ -1,11 +1,12 @@
 #!/usr/bin/env Rscript
 
-# Current Version: 0.1.3
+# Current Version: 0.1.4
 # Version history
 # 0.1.0 - initial commit
 # 0.1.1 - set output file names as args
 # 0.1.2 - added sequencer type to PCA plot
 # 0.1.3 - added summary page to pdf output
+# 0.1.4 - remove non-variant columns from counts matrix before doing scaled PCA
 
 ### Load required packages
 
@@ -185,7 +186,8 @@ colnames(sample) <- "sample"
 sample["group"] <- "background cohort"
 sample$group[length(sample$group)] <- "new sample"
 sample["sequencer"] <- sequencer
-pca <- prcomp(trans, scale = T)
+filt_trans <- trans[ , which(apply(trans, 2, var) != 0)]
+pca <- prcomp(filt_trans, scale = T)
 
 # calculate Spearman correlation coefficient between new sample and background cohort median values
 background <- sub_tmm[-c(1,2,ncol(sub_tmm))]
