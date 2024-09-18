@@ -17,11 +17,11 @@ parser.add_argument('--mother_ph', '-m')
 args = parser.parse_args()
 
 # Optional inputs for parental phenotypes
-if args.father_ph is None:
+if args.father_ph is None or args.father_ph == '':
     fp = '1'
 else:
     fp = args.father_ph
-if args.mother_ph is None:
+if args.mother_ph is None or args.mother_ph == '':
     mp = '1'
 else:
     mp = args.mother_ph
