@@ -5,27 +5,27 @@
   </requirements>
 
   <version_command><![CDATA[
-    python $__tool_directory__/create.py --version
+    python $__tool_directory__/create_ped.py --version
   ]]>
   </version_command>
 
   <command detect_errors="exit_code"><![CDATA[
-    python $__tool_directory__/create.py -o "${output_ped}" "${family_id}" "${proband_id}" "${proband_sex}" "${father_id}" "${mother_id}" -f "${father_ph}" -m "${mother_ph}"
+    python $__tool_directory__/create_ped.py -o "${output_ped}" "${family_id}" "${proband_id}" "${proband_sex}" "${father_id}" "${mother_id}" -f "${father_ph}" -m "${mother_ph}"
   ]]>
   </command>
 
   <inputs>
       <param name="family_id" type="text" label="Family ID"/>
       <param name="proband_id" type="text" label="Proband ID"/>
-      <param name="proband_sex" type="text" label="Proband sex"/>
+      <param name="proband_sex" type="text" label="Proband sex" help="1 for male, 2 for female"/>
       <param name="father_id" type="text" label="Father ID"/>
       <param name="mother_id" type="text" label="Mother ID"/>
-      <param name="father_ph" type="text" label="Father phenotype"/>
-      <param name="mother_ph" type="text" label="Mother phenotype"/>
+      <param name="father_ph" type="text" label="Father phenotype" help="default 1 for 'unaffected'"/>
+      <param name="mother_ph" type="text" label="Mother phenotype" help="default 1 for 'unaffected'"/>
   </inputs>
 
   <outputs>
-    <data format="ped" name="output_ped" label="${family_id}: ped" />
+    <data format="txt" name="output_ped" label="${family_id}.ped" />
   </outputs>
   <help>
   </help>
