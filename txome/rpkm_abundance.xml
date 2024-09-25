@@ -1,4 +1,4 @@
-<tool id="rpkm_abundance" name="" version="0.0.1" >
+<tool id="rpkm_abundance" name="RPKM Abundance table generator" version="0.0.1" >
     <description></description>
 
     <requirements>
@@ -32,8 +32,8 @@
 
     <outputs>
         <data name="rpkm_uhr_lot1" format="csv" label="rpkm_uhr_lot1: csv"/>
-        <data name="rpkm_uhr_lot2" format="csv" label="rpkm_uhr_lot1: csv"/>
-        <data name="rpkm_uhr_tumor" format="csv" label="rpkm_uhr_lot1: csv"/>
+        <data name="rpkm_uhr_lot2" format="csv" label="rpkm_uhr_lot2: csv"/>
+        <data name="rpkm_uhr_tumor" format="csv" label="rpkm_uhr_tumor: csv"/>
     </outputs>
 
     <tests>
