@@ -1,11 +1,11 @@
-owner: "letaw"
+owner: "chongbe"
 remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/txome"
 homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/txome"
 type: "unrestricted"
 categories:
   - "CompBio Galaxy Wrappers"
 repositories:
-  dsp_runner:
+  txome:
     description: "Transcriptome Analysis Tools"
     include:
       - rpkm_abundance.xml
