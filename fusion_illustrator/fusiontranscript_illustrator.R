@@ -41,6 +41,13 @@ suppressPackageStartupMessages(library(janitor))
 suppressPackageStartupMessages(library(httr))
 suppressPackageStartupMessages(library(knitr))
 
+# Load helper functions
+source('ensembl_func.R')
+
+options(datatable.rbindlist.check="warning")
+options(datatable.optimize=1)
+options(error=traceback)
+
 # Input paths
 args <- commandArgs(trailingOnly=TRUE)
 sample_id <- args[1]

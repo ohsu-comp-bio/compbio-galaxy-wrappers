@@ -30,6 +30,7 @@
 
     <command detect_errors="exit_code"><![CDATA[
          ln -s $gtf_path transcripts.gtf &&
+         ln -s $__tool_directory__/ensembl_func.R &&
          Rscript $__tool_directory__/fusiontranscript_illustrator.R "${sample_id}" transcripts.gtf ${protein_ref} ${biomart_idmap} ${starfusion_results} ${starfusion_modified_results} ${output}
     ]]></command>
 
