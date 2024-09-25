@@ -1,0 +1,58 @@
+<tool id="fusiontranscript_illustrator" name="Fusion transcript illustrator" version="0.0.1" >
+    <description></description>
+
+    <requirements>
+        <requirement type="package" version="1.1.4">r-dplyr</requirement>
+        <requirement type="package" version="1.4.4">r-reshape2</requirement>
+        <requirement type="package" version="1.3.1">r-tidyr</requirement>
+        <requirement type="package" version="3.4.4">r-ggplot2</requirement>
+        <requirement type="package" version="0.9.4">r-ggrepel</requirement>
+        <requirement type="package" version="0.1.2">r-ggbreak</requirement>
+        <requirement type="package" version="0.2.8">r-ggh4x</requirement>
+        <requirement type="package" version="0.1.0">r-ggbump</requirement>
+        <requirement type="package" version="1.3.0">r-scales</requirement>
+        <requirement type="package" version="1.28.0">bioconductor-chimeraviz</requirement>
+        <requirement type="package" version="1.22.0">bioconductor-drawproteins</requirement>
+        <requirement type="package" version="1.62.0">bioconductor-rtracklayer</requirement>
+        <requirement type="package" version="2.3">r-gridExtra</requirement>
+        <requirement type="package" version="2.26.0">bioconductor-ensembldb</requirement>
+        <requirement type="package" version="2.99.0">bioconductor-ensdb.hsapiens.v75</requirement>
+        <requirement type="package" version="1.22.0">bioconductor-plyranges</requirement>
+        <requirement type="package" version="1.64.1">bioconductor-annotationdbi</requirement>
+        <requirement type="package" version="2.42.0">bioconductor-uniprot.ws</requirement>
+        <requirement type="package" version="1.54.1">bioconductor-genomicranges</requirement>
+        <requirement type="package" version="1.50.0">bioconductor-ggbio</requirement>
+        <requirement type="package" version="2.0.3">r-magrittr </requirement>
+        <requirement type="package" version="2.2.0">r-janitor</requirement>
+        <requirement type="package" version="1.4.7">r-httr</requirement>
+        <requirement type="package" version="1.48">r-knitr</requirement>
+    </requirements>
+
+    <command detect_errors="exit_code"><![CDATA[
+         ln -s $gtf_path transcripts.gtf &&
+         Rscript $__tool_directory__/fusiontranscript_illustrator.R "${sample_id}" transcripts.gtf ${protein_ref} ${biomart_idmap} ${starfusion_results} ${starfusion_modified_results} ${output}
+    ]]></command>
+
+    <inputs>
+        <param name="sample_id" type="text" label="Sample ID" help=""/>
+        <param name="gtf_path" type="data" format="gtf" label="GTF" help="Ensembl hg19 build"/>
+        <param name="protein_ref" type="data" format="csv" label="Ensembl Protein Reference" help=""/>
+        <param name="biomart_idmap" type="data" format="csv" label="Biomart ID Map" help=""/>
+        <param name="starfusion_results" type="data" format="tabular" label="STAR-Fusion output" help=""/>
+        <param name="starfusion_modified_results" type="data" format="tabular" label="STAR-fusion output with exons" help=""/>
+    </inputs>
+
+    <outputs>
+        <data name="output" format="pdf" label="${sample_id}_fusiontranscript_illustration: pdf"/>
+    </outputs>
+
+    <tests>
+      <test>
+      </test>
+    </tests>
+
+    <help></help>
+
+    <citations>
+    </citations>
+</tool>
