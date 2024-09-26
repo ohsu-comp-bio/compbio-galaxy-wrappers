@@ -1,0 +1,47 @@
+<tool id="gatk_germline_cnv_annotate" name="GATK Germline CNV Annotator" version="0.0.1">
+
+	<description>Use segments file output from GATK PostProcessGermlineCNV and apply formatting and additional annotation.</description>
+
+	<requirements>
+		<requirement type="package" version="0.13">gffutils</requirement>
+		<requirement type="package" version="0.13.8">vcfpy</requirement>
+	</requirements>
+
+	<command detect_errors="exit_code"><![CDATA[
+		python $__tool_directory__/gatk_germline_cnv_annotate.py "${input_vcf}" "${gffutils_db}" "${gatk_counts}" "${segments_dir}" "${outfile}" "${outfile_nogene}" "${logfile}"
+	]]></command>
+
+	<inputs>
+		<param name="input_vcf" type="data" format="vcf" label="CNV VCF"/>
+		<param name="gffutils_db" type="text" label="gffutils DB Location" >
+			<sanitizer>
+				<valid initial="string.ascii_letters,string.digits">
+					<add value="/"/>
+					<add value="_"/>
+					<add value="-"/>
+					<add value="."/>
+					<add value="$"/>
+				</valid>
+			</sanitizer>
+		</param>
+		<param name="gatk_counts" type="data" format="tsv,tabular" label="Read Counts"/>
+		<param name="segments_dir" type="text" label="Segments Directory" help="Directory of segments files from previous cases" >
+			<sanitizer>
+				<valid initial="string.ascii_letters,string.digits">
+					<add value="/"/>
+					<add value="_"/>
+					<add value="-"/>
+					<add value="."/>
+					<add value="$"/>
+				</valid>
+			</sanitizer>
+		</param>
+	</inputs>
+
+	<outputs>
+		<data format="tsv" name="outfile" label="${tool.name} on ${on_string}: TSV"/>
+		<data format="tsv" name="outfile_nogene" label="${tool.name} on ${on_string}: TSV NO GENE"/>
+		<data format="txt" name="logfile" label="${tool.name} on ${on_string}: LOG"/>
+	</outputs>
+
+</tool>

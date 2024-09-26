@@ -1,0 +1,11 @@
+owner: "letaw"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/gatk_germline_cnv_annotate"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/gatk_germline_cnv_annotate"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  gatk_germline_cnv_annotate:
+    description: "Use segments file output from GATK PostProcessGermlineCNV and apply formatting and additional annotation."
+    include:
+      - gatk_germline_cnv_annotate.xml
+      - gatk_germline_cnv_annotate.py
