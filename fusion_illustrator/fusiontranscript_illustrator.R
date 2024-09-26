@@ -50,7 +50,7 @@ options(error=traceback)
 
 # Input paths
 args <- commandArgs(trailingOnly=TRUE)
-sample_id <- args[1]
+sample.id <- args[1]
 gtf_path <- args[2]
 protein_ref <- args[3]
 biomart_idmap <- args[4]
@@ -323,7 +323,7 @@ for(i in names(fusions[1:nloops])) {
 }
 
 # Plot --------------------------------------------------------------------
-pdf(path_for_pdf, width = 12, height =8)
+pdf(output, width = 12, height =8)
 
 #Plot only junctions above the 2xSD background - note hard coded threshold
 temp <- sapply(circos.fusions, function(x) x@split_reads_count >= 22.5)
