@@ -24,6 +24,7 @@
 				</valid>
 			</sanitizer>
 		</param>
+		<param name="dummy_file" type="data" label="Dummy Input File (OPTIONAL)" help="Optional file(s) to keep job from starting until dummy file is sent." optional="true" multiple="true"/>
 		<param name="gatk_counts" type="data" format="tsv,tabular" label="Read Counts"/>
 		<param name="segments_dir" type="text" label="Segments Directory" help="Directory of segments files from previous cases" >
 			<sanitizer>

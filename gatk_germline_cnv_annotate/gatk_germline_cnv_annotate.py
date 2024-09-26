@@ -83,7 +83,7 @@ class VcfRegion:
             if entry.featuretype == 'gene':
                 this_gene = entry.attributes['gene']
                 genes.extend(this_gene)
-        return genes
+        return list(set(genes))
 
 
 class Writer:
@@ -105,12 +105,12 @@ class Writer:
                 end = vrnt[2]
                 region = VcfRegion(chrom=chrom, start=start, end=end, dbfile=gffutils_db)
                 size_bp = str(region.size_bp)
-                genes = ','.join(region.genes)
+                genes = ', '.join(region.genes)
                 geno = str(myvcf[vrnt].calls[0].data['GT'])
                 geno_lbl = self._assign_geno_label(geno)
                 copy_number = str(myvcf[vrnt].calls[0].data['CN'])
                 probes = str(myvcf[vrnt].calls[0].data['NP'])
-                avg_count = "%.1f" % float(stats[vrnt]['total'] / stats[vrnt]['regions'])
+                avg_count = str(int(stats[vrnt]['total'] / stats[vrnt]['regions']))
                 min_count = str(stats[vrnt]['min'])
                 max_count = str(stats[vrnt]['max'])
                 qc_all = str(myvcf[vrnt].calls[0].data['QA'])
@@ -122,9 +122,9 @@ class Writer:
                     del_freq = "%.3f" % float(pop_freqs[vrnt]['1'] / vcf_count)
                     dup_freq = "%.3f" % float(pop_freqs[vrnt]['2'] / vcf_count)
                 except KeyError:
-                    local_freq = ''
-                    del_freq = ''
-                    dup_freq = ''
+                    local_freq = '0.000'
+                    del_freq = '0.000'
+                    dup_freq = '0.000'
                     logger.info(f"{vrnt} not found in segments directory.")
                 if geno != '0':
                     if not genes:
