@@ -18,7 +18,8 @@ class TfxLogConfig(object):
             'disable_existing_loggers': False,
             'formatters': {
                 'standard': { 
-                    'format': '%(levelname)s: %(name)s::%(module)s:%(lineno)s: %(message)s'
+                    'format': '%(asctime)s %(levelname)s: %(name)s::%(module)s:%(lineno)s: %(message)s',
+                    'datefmt': '%Y-%m-%d %H:%M:%S'
                 },
             },
             'handlers': {

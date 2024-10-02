@@ -11,6 +11,7 @@ Created on Apr 20, 2022
 
 import argparse
 from collections import defaultdict
+import csv
 import logging.config
 import os
 
@@ -23,6 +24,7 @@ from hgvs.sequencevariant import SequenceVariant
 from edu.ohsu.compbio.annovar import annovar_parser
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
 from edu.ohsu.compbio.txeff.util import chromosome_map
+from edu.ohsu.compbio.txeff.util.benchmarking import Benchmarking
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
@@ -83,8 +85,21 @@ class RptHandler:
         return new_start, new_end
         
 class TxEffHgvs(object):
-    def __init__(self):
+    """
+    Finds transcripts associated with variant. Makes use of the SeqRepo and UTA datasources. 
+    Benchmarking can be enabled to produce a csv file that shows how long SeqRepo and UTA queries are taking. 
+    """ 
+    def __init__(self, benchmark = False):
         self.logger = logging.getLogger(__name__)
+        self._benchmarking = None
+
+        if benchmark:
+            self._benchmarking = Benchmarking()
+             
+            self._benchmark_file = open("benchmark.csv", 'w')
+            self.logger.info(f"Benchmarking enabled. Writing to {self._benchmark_file.name}") 
+            self._benchmark_csv_writer = csv.writer(self._benchmark_file)
+            self._benchmark_csv_writer.writerow(['variant', 'name', 'transcript_count', 'total_time', 'average_time'])
 
     def __enter__(self):
         '''
@@ -101,6 +116,7 @@ class TxEffHgvs(object):
         if os.environ.get('UTA_DB_URL') == None:
             self.logger.warning("The UTA_DB_URL environment variable is not defined. The remote UTA database will be used.")
         else:
+            # This leaks the password. Consider splitting the string: postgresql://name:password@host:5432/uta/uta_20210129
             self.logger.info(f"Using UTA Database at {os.environ.get('UTA_DB_URL')}")
 
         # Initialize the HGVS connection
@@ -113,6 +129,9 @@ class TxEffHgvs(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.logger.debug("Closing UTA connection")
         self.hdp.close()
+        
+        if self._benchmarking:
+            self._benchmark_file.close() 
         
     def _noneIfEmpty(self, value: str):
         '''
@@ -188,13 +207,12 @@ class TxEffHgvs(object):
         else:
             raise Exception("Unknown change type: " + pos + ':' + ref + '>' + alt)
     
-    
     def _lookup_hgvs_transcripts(self, variants: list, pysam_file):
         '''
         Return the HGVS transcripts associated with a list of variants  
         '''
-        
         transcripts = []
+        
         for variant in variants:
             hgvs_variant_transcripts = self._lookup_variant_hgvs_transcripts(variant, pysam_file)
             self.logger.info(f"HGVS found {len(hgvs_variant_transcripts)} transcripts for {variant}")
@@ -204,8 +222,9 @@ class TxEffHgvs(object):
                 self.logger.info(f'HGVS could not find any transcripts for variant {variant} which has transcripts known to Annovar.')
             else:
                 transcripts.extend(hgvs_variant_transcripts)
+                
         return transcripts
-
+        
     def _lookup_variant_hgvs_transcripts(self, variant: Variant, pysam_file):
         '''
         Use HGVS/UTA to return a list of the transcripts for a variant
@@ -218,14 +237,16 @@ class TxEffHgvs(object):
         
         refseq_chromosome = chromosome_map.get_refseq(variant.chromosome)
         
-        # Look up the variant using HGVS            
+        # Look up the variant using HGVS
         pos_part = self._correct_indel_coords(variant.chromosome, variant.position, variant.reference, variant.alt, pysam_file)
         new_hgvs = refseq_chromosome + ':g.' + pos_part
     
         var_g = self.hgvs_parser.parse_hgvs_variant(new_hgvs)
     
-        # Retrieve transcripts that are in a genomic region    
+        # Retrieve transcripts that are in a genomic region
+        self._benchmark_start('hdp.get_tx_for_region (UTA)')
         tx_list = self.hdp.get_tx_for_region(str(var_g.ac), 'splign', var_g.posedit.pos.start.base, var_g.posedit.pos.end.base)
+        self._benchmark_stop('hdp.get_tx_for_region (UTA)')
         
         hgvs_transcripts = []
         
@@ -235,18 +256,25 @@ class TxEffHgvs(object):
     
                 variant_transcript.sequence_variant = self.__to_g_dot(var_g)
                 
-                # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function. 
+                # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function.
+                self._benchmark_start('hdp.get_tx_info (UTA)')
                 transcript_detail = self.hdp.get_tx_info(hgvs_transcript[0], hgvs_transcript[1], 'splign')
                 variant_transcript.hgnc_gene = transcript_detail['hgnc']
+                self._benchmark_stop('hdp.get_tx_info (UTA)')
                 
-                # Non-coding transcripts (prefx NR_) cause HGVS to throw an exception when determining c. and p. 
+                # Non-coding transcripts (prefix NR_) cause HGVS to throw an exception when determining c. and p. 
                 # But instead of giving up on the transcript altogether, the transcript is saved with transcript name and gene only. 
                 if hgvs_transcript[0].startswith('NR_'):
                     variant_transcript.refseq_transcript = hgvs_transcript[0] 
                     
                 # Determine c. and p.. Non coding transcripts will throw an error. See first exception caught below.
+                self._benchmark_start('am.g_to_c (SeqRepo)') 
                 var_c = self.am.g_to_c(var_g, str(hgvs_transcript[0]))
+                self._benchmark_stop('am.g_to_c (SeqRepo)')
+                
+                self._benchmark_start('am.c_to_p (SeqRepo)') 
                 var_p = self.am.c_to_p(var_c)
+                self._benchmark_stop('am.c_to_p (SeqRepo)')
                 
                 # setting uncertain to False removes the parentheses on the stringified form
                 if var_p.posedit:
@@ -295,6 +323,7 @@ class TxEffHgvs(object):
                     
                     # Add the transcript even though an exception was thrown. At least we have the transcript+gene. 
                     hgvs_transcripts.append(variant_transcript)
+                    self._benchmark_cancel()
                 else:
                     raise(e)
             except HGVSInvalidVariantError as e:            
@@ -302,13 +331,20 @@ class TxEffHgvs(object):
                 raise(e)
             except HGVSUnsupportedOperationError as e:
                 self.logger.warning(f"Invalid parameters while processing variant {variant}, var_g={var_g}, transcript={str(hgvs_transcript[0])}: %s", str(e))
+                self._benchmark_cancel()
             except HGVSInvalidIntervalError as e:
                 self.logger.warning(f"Invalid variant interval {variant}: %s", str(e))
+                self._benchmark_cancel()
             except HGVSDataNotAvailableError as e:
                 self.logger.warn(f"Unable to use HGVS to parse variant {variant}: %s", str(e))
+                self._benchmark_cancel()
             except NotImplementedError as e:
                 self.logger.warn(f"Invalid CDS sequence while processing variant {variant}: %s", str(e))
-        
+                self._benchmark_cancel()
+
+        # Update the benchmarking log after processing each variant
+        self._log_hgvs_benchmarks(variant, len(hgvs_transcripts))
+
         return hgvs_transcripts
     
     def __to_g_dot(self, var_g: SequenceVariant):
@@ -520,7 +556,6 @@ class TxEffHgvs(object):
             new_transcript.protein_transcript = hgvs_transcript.protein_transcript
         
         return new_transcript
-        
     
     def _allow_merge(self, existing_value, new_value, variant_id, field_name):
         '''
@@ -536,7 +571,6 @@ class TxEffHgvs(object):
             return False
         else:
             return True
-    
     
     def get_summary(self, annovar_transcripts: list, annovar_variants: set, hgvs_transcripts: list, merged_transcripts: list, best_transcripts: list):
         '''
@@ -744,6 +778,46 @@ class TxEffHgvs(object):
         else:
             return None;
 
+    def _benchmark_start(self, name):
+        """
+        If benchmarking is enabled, begin timing a function. 
+        """
+        if not self._benchmarking:
+            return
+        
+        self._benchmarking.start(name)
+    
+    def _benchmark_stop(self, name):
+        """
+        If benchmarking is enabled, stop the timer for a function
+        """
+        if not self._benchmarking:
+            return
+        
+        self._benchmarking.stop(name)
+    
+    def _benchmark_cancel(self):
+        """
+        If benchmarking is enabled, cancel the timer  
+        """
+        if not self._benchmarking:
+            return
+        
+        self._benchmarking.cancel_last()
+
+    def _log_hgvs_benchmarks(self, variant: Variant, cnt_transcripts):
+        """
+        Update the a log file with the results of the benchmarking performed during execution of multiple HGVS functions.
+        """
+        if not self._benchmarking:
+            return
+        
+        for name in self._benchmarking.get_names():            
+            self._benchmark_csv_writer.writerow([variant, name, cnt_transcripts, self._benchmarking.get_time_total(name), self._benchmarking.get_time_average(name)])
+         
+        # Clear the timers after each log
+        self._benchmarking.clear()
+        
 def _parse_args():
     '''
     Validate and return command line arguments.
