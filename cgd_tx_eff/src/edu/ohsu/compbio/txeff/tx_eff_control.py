@@ -20,7 +20,7 @@ from edu.ohsu.compbio.txeff.tx_eff_vcf import TxEffVcf
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 
-VERSION = '0.7.6a'
+VERSION = '0.7.6d'
 
 def _parse_args():
     '''
@@ -72,20 +72,17 @@ def _get_time(real_seconds, user_seconds):
     Take the real time and user time in seconds and return a string that breaks the time into hours, minutes, and seconds. 
     """
     
-    dt_real = datetime.time(second = round(real_seconds))
-    dt_user = datetime.time(second = round(user_seconds))
+    dt_real = datetime.timedelta(seconds = real_seconds)
+    dt_user = datetime.timedelta(seconds = user_seconds)
     
-    real = dt_real.strftime('%Hh:%Mm:%S.%fs')
-    user = dt_user.strftime('%Hh:%Mm:%S.%fs')
-    
-    return real, user
+    return str(dt_real), str(dt_user)
     
 def _main():
     '''
     main function
     '''
     print(f"tfx_cgd {VERSION} is starting...")
-    print("Python version: " + sys.version.replace('\\n', ''))
+    print("Python version: " + sys.version.replace('\n', ''))
     print(f"biocommons.seqrepo version: {biocommons.seqrepo.__version__}")
     print(f"hgvs version: {hgvs.__version__}")
     
