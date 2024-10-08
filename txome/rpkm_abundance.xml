@@ -1,5 +1,5 @@
 <tool id="rpkm_abundance" name="RPKM Abundance table generator" version="0.0.1" >
-    <description></description>
+    <description>Generate abundance tables and metadata tables for downstream analysis</description>
 
     <requirements>
         <requirement type="package" version="4.0.16">bioconductor-edger</requirement>
@@ -15,7 +15,6 @@
         <requirement type="package" version="2.1.6">r-cluster</requirement>
         <requirement type="package" version="2.2.1">r-ggally</requirement>
         <requirement type="package" version="1.3.0">r-scales</requirement>
-
     </requirements>
 
     <command detect_errors="exit_code"><![CDATA[
@@ -23,11 +22,11 @@
     ]]></command>
 
     <inputs>
-        <param name="gene_info" type="data" format="rdata" label="" help=""/>
-        <param name="counts" type="data" format="csv" label="" help=""/>
-        <param name="new_counts" type="data" format="csv" label="" help=""/>
-        <param name="meta" type="data" format="csv" label="" help=""/>
-        <param name="new_meta" type="data" format="csv" label="" help=""/>
+        <param name="gene_info" type="data" format="rdata" label="Gene info" help=""/>
+        <param name="counts" type="data" format="csv" label="" help="Sample data"/>
+        <param name="new_counts" type="data" format="csv" label="additional sample data" help=""/>
+        <param name="meta" type="data" format="csv" label="" help="meta data"/>
+        <param name="new_meta" type="data" format="csv" label="" help="additional meta data"/>
     </inputs>
 
     <outputs>
