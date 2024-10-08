@@ -20,7 +20,8 @@ from edu.ohsu.compbio.txeff.tx_eff_vcf import TxEffVcf
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 
-VERSION = '0.7.6d'
+
+VERSION = '0.7.6'
 
 def _parse_args():
     '''
@@ -117,7 +118,7 @@ def _main():
     tx_eff_ccds = TxEffCcds(args.ccds_map.name)
     tx_eff_ccds.add_ccds_transcripts(merged_transcripts)
 
-    # Add additional annotations to each variant 
+    # Add additional annotations to each variant
     tx_eff_annotate = TxEffAnnotate()
     tx_eff_annotate.annotate(merged_transcripts)
     

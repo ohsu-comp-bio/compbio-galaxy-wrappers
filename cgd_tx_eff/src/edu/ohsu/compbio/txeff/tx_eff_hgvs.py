@@ -105,14 +105,16 @@ class TxEffHgvs(object):
         '''
         Open database connection  
         '''
-        self.logger.debug("Opening UTA connection")
-        
+        self.logger.debug("Opening UTA connection and locating SeqRepo repository.")
+                
         # Check the environment for definitions of HGVS' datasources.
-        if os.environ.get('HGVS_SEQREPO_DIR') == None:
-            self.logger.warning("The HGVS_SEQREPO_DIR environment variable is not defined. The remote seqrepo database will be used.")
+        if os.environ.get('HGVS_SEQREPO_DIR'):
+            self.logger.info(f"SeqRepo will access files at: {os.environ.get('HGVS_SEQREPO_DIR')}")
+        elif os.environ.get('HGVS_SEQREPO_URL'):
+            self.logger.info(f"SeqRepo will use the seqrepo-rest-service at {os.environ.get('HGVS_SEQREPO_URL')}")
         else:
-            self.logger.info(f"Using SeqRepo {os.environ.get('HGVS_SEQREPO_DIR')}")
-        
+            self.logger.warning("SeqRepo will retrieve sequences by querying NCBI using the E-utilities API")
+
         if os.environ.get('UTA_DB_URL') == None:
             self.logger.warning("The UTA_DB_URL environment variable is not defined. The remote UTA database will be used.")
         else:
@@ -266,8 +268,8 @@ class TxEffHgvs(object):
                 # But instead of giving up on the transcript altogether, the transcript is saved with transcript name and gene only. 
                 if hgvs_transcript[0].startswith('NR_'):
                     variant_transcript.refseq_transcript = hgvs_transcript[0] 
-                    
-                # Determine c. and p.. Non coding transcripts will throw an error. See first exception caught below.
+
+                # Determine c. and p.. Non coding transcripts will throw an error. See HGVSUsageError caught below.
                 self._benchmark_start('am.g_to_c (SeqRepo)') 
                 var_c = self.am.g_to_c(var_g, str(hgvs_transcript[0]))
                 self._benchmark_stop('am.g_to_c (SeqRepo)')
@@ -684,7 +686,7 @@ class TxEffHgvs(object):
         disinct_variants = {Variant(x.chromosome, x.position, x.reference, x.alt) for x in annovar_transcripts}
         
         self.logger.debug(f'{len(disinct_variants)} distinct variants')
-        
+
         # Lookup the variant in the HGVS/UTA database
         hgvs_transcripts = self._lookup_hgvs_transcripts(disinct_variants, pysam_file)
         self.logger.debug(f'Received {len(hgvs_transcripts)} transcripts from HGVS')
