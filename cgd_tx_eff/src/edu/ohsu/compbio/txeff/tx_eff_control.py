@@ -3,10 +3,14 @@ Created on May 18, 2022
 
 @author: pleyte
 '''
-
 import argparse
+import datetime
 import logging.config
+import sys
 import time
+
+import biocommons.seqrepo
+import hgvs
 
 from edu.ohsu.compbio.txeff.tx_eff_annotate import TxEffAnnotate
 from edu.ohsu.compbio.txeff.tx_eff_annovar import TxEffAnnovar
@@ -16,7 +20,8 @@ from edu.ohsu.compbio.txeff.tx_eff_vcf import TxEffVcf
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 
-VERSION = '0.7.2'
+
+VERSION = '0.7.6'
 
 def _parse_args():
     '''
@@ -52,18 +57,35 @@ def _parse_args():
                     help='Output VCF', 
                     type=argparse.FileType('w'), 
                     required=True)
-
+    
+    parser.add_argument('-b', '--benchmark',
+                    help='Write benchmarking information to file', 
+                    action='store_true')
+    
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     
     args = parser.parse_args()
     
     return args
 
+def _get_time(real_seconds, user_seconds):
+    """
+    Take the real time and user time in seconds and return a string that breaks the time into hours, minutes, and seconds. 
+    """
+    
+    dt_real = datetime.timedelta(seconds = real_seconds)
+    dt_user = datetime.timedelta(seconds = user_seconds)
+    
+    return str(dt_real), str(dt_user)
+    
 def _main():
     '''
     main function
     '''
     print(f"tfx_cgd {VERSION} is starting...")
+    print("Python version: " + sys.version.replace('\n', ''))
+    print(f"biocommons.seqrepo version: {biocommons.seqrepo.__version__}")
+    print(f"hgvs version: {hgvs.__version__}")
     
     logging.config.dictConfig(TfxLogConfig().log_config)
     
@@ -74,8 +96,9 @@ def _main():
         
     print(f"Log level={logging.root.getEffectiveLevel()}, output={output}")
 
-    start_time = time.time()
-    
+    start_time_real = time.perf_counter()
+    start_time_user = time.process_time()
+
     args = _parse_args()
 
     # Use tx_eff_annovar to read annovar records
@@ -85,7 +108,7 @@ def _main():
     pysam_file = PysamTxEff(args.reference_fasta)
 
     # Look for additional transcripts in the HGVA/UTA database and merge them with the annovar records.
-    with TxEffHgvs() as tx_eff_hgvs:
+    with TxEffHgvs(benchmark = args.benchmark) as tx_eff_hgvs:
         merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records, pysam_file)
     
     # Close the reference FASTA
@@ -95,7 +118,7 @@ def _main():
     tx_eff_ccds = TxEffCcds(args.ccds_map.name)
     tx_eff_ccds.add_ccds_transcripts(merged_transcripts)
 
-    # Add additional annotations to each variant 
+    # Add additional annotations to each variant
     tx_eff_annotate = TxEffAnnotate()
     tx_eff_annotate.annotate(merged_transcripts)
     
@@ -104,10 +127,12 @@ def _main():
     
     print(f"Wrote {len(merged_transcripts)} transcripts to {args.out_vcf.name}")
 
-    end_time = time.time()
-    total_time = end_time - start_time
-    time_str = time.strftime("%Mm:%Ss", time.gmtime(total_time))
-    print(f"Completed in {time_str}")
+    stop_time_real = time.perf_counter()
+    stop_time_user = time.process_time()
+    real_time, user_time = _get_time(stop_time_real - start_time_real, stop_time_user - start_time_user) 
+    
+    print(f"Time: real {real_time}, user {user_time}")
+    logging.info(f"Time: real {real_time}, user {user_time}")
 
 if __name__ == '__main__':
     _main()

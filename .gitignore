@@ -1,3 +1,4 @@
 freak/data
 /.project
 /.pydevproject
+*.pyc

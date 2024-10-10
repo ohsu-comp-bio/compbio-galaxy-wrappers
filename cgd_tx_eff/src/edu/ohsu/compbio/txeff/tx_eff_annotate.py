@@ -7,7 +7,7 @@ Created on Aug. 12, 2024
 import logging
 import os
 
-from biocommons.seqrepo import SeqRepo
+from biocommons.seqrepo.seqrepo import SeqRepo
 
 from edu.ohsu.compbio.txeff.util import chromosome_map
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript

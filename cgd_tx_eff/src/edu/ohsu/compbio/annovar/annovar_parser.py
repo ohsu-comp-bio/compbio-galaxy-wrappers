@@ -478,14 +478,23 @@ class AnnovarParser(object):
                 self._merge(left_rec, right_rec)
             elif len(matching_genotypes) == 3:
                 # There will be three matches when the transcript is exonic and splicing: One record from annovar.exonic_variant_function 
-                # and two records from annovar.variant_function where one is the splicing line.
+                # and two records from annovar.variant_function where one is 'exonic' and the other is 'splicing'.
                 right1_rec = matching_genotypes[1]
                 right2_rec = matching_genotypes[2]  
 
                 # The two records from annovar.variant_function will label one of the records as exonic and one as splicing   
-                assert left_rec.variant_type == 'exonic' or right1_rec.variant_type == 'exonic' or right2_rec.variant_type == 'exonic'
-                assert left_rec.splicing or right1_rec.splicing or right2_rec.splicing
+                assert left_rec.variant_type == 'exonic' or right1_rec.variant_type == 'exonic' or right2_rec.variant_type == 'exonic', "Transcript has three records none of which are exonic: " + left_rec.get_label()
+                
+                # If the annovar.exonic_variant_function file says the variant is exonic, but the annovar.variant_function file says the same
+                # transcript is intronic the information we have is contradictory and we skip it.  Example: Annovar says 1-146466030-C-G 
+                # is exonic and intronic. 
+                if left_rec.variant_type == 'intronic' or right1_rec.variant_type == 'intronic' or right2_rec.variant_type == 'intronic':
+                    self.logger.info(f"Ignoring because Annovar has conflicting variant types for {left_rec.get_label()}: {left_rec.variant_type}, {right1_rec.variant_type}, {right2_rec.variant_type}")
+                    continue
 
+                # The two records from annovar.variant_function will label one of the records as exonic and one as splicing
+                assert left_rec.splicing == 'splicing' or right1_rec.splicing == 'splicing' or right2_rec.splicing == 'splicing', "Transcript has three records none of which are splicing: " + left_rec.get_label()
+                
                 self.logger.debug(f"Merging three records left={left_rec} and right1={right1_rec}, right2={right2_rec}")
                 self._merge(left_rec, right1_rec)
                 self._merge(left_rec, right2_rec)
