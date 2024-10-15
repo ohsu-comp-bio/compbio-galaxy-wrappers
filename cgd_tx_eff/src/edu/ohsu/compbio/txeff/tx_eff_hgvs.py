@@ -97,7 +97,7 @@ class TxEffHgvs(object):
         # Setup benchmarking if it is requested
         if benchmark:
             self._benchmarking = Benchmarking()
-             
+
             self._benchmark_file = open("benchmark.csv", 'w')
             self.logger.info(f"Benchmarking enabled. Writing to {self._benchmark_file.name}") 
             self._benchmark_csv_writer = csv.writer(self._benchmark_file)

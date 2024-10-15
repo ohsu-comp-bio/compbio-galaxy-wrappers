@@ -29,7 +29,7 @@
                 --reference_fasta ${reference_source.reference_sequence}
             #end if
         #end if
-        
+
         #if $sequence_source.sequence_source_selector != 'configured-by-environment'
             #if $sequence_source.sequence_source_selector == 'seqrepo-rest-service'
                 --sequence_source ${sequence_source.seqrepo_rest_service_url}
@@ -38,7 +38,7 @@
             #elif $sequence_source.sequence_source_selector == 'ncbi'
                 --sequence_source ${sequence_source.sequence_source_selector}
             #else
-                #raise ValueError
+                #raise ValueError("Unknown value for sequence source")
             #end if
         #end if
         
