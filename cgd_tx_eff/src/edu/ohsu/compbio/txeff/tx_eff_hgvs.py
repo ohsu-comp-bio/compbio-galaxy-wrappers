@@ -142,7 +142,7 @@ class TxEffHgvs(object):
             - SeqRepo files are too large be be opened over a network file system.
             - To use this method set the environment variable HGVS_SEQREPO_DIR with the path to the SeqRepo installation.    
         * Use SeqRepo REST API to query a remote SeqRepo installation
-            - For production use Transcript Effects runs on a Galaxy node and we access SeqRepo using the SeqRepo REST service. 
+            - In production Transcript Effects runs on a Galaxy node and we access SeqRepo using the SeqRepo REST service. 
             - To use this method set the environment variable HGVS_SEQREPO_URL with the url of the SeqRepo service.  
         * Use NCBI's E-Utilties API instead of SeqRepo
             - Instead of using SeqRepo, biocommons-hgvs can lookup sequences using NCBI's E-Utilities API. 
@@ -151,13 +151,13 @@ class TxEffHgvs(object):
         
         The KCC Galaxy instances define the HGVS_SEQREPO_DIR environment variable. But it is on a networked file system. If you add 
         HGVS_SEQREPO_URL to the environment, biocommons-hgvs will still use the file repository so it is necessary to unset
-        HGVS_SEQREPO_DIR when we want to use the SeqRepo service.
+        HGVS_SEQREPO_DIR when we want to use the SeqRepo REST service.
         
         This function sets up the environment prioritizing the sequence options the order:
-        0. The method specified by the optional sequence_source parameter
+        0. The method specified by the optional sequence_source parameter in the constructor. 
         1. The SeqRepo REST service found in the HGVS_SEQREPO_URL environment variable
         2. The SeqRepo file repository found in the HGVS_SEQREPO_DIR environment variable. 
-        3. NCBI E-Utilities when neither environment variable is defined. 
+        3. NCBI E-Utilities when none of the above are spefified. 
         """
         self.logger.debug("Determining SeqRepo repository location")
         
@@ -218,7 +218,7 @@ class TxEffHgvs(object):
             os.environ.pop('HGVS_SEQREPO_URL', None)
             return 5
         
-        raise ValueError("The sequence_source parameter must be a url, a path, or 'ncbi': " + self._sequence_source)
+        raise ValueError("The sequence_source parameter must be a url, a directory, or 'ncbi': " + self._sequence_source)
                 
     def _noneIfEmpty(self, value: str):
         '''
@@ -426,12 +426,12 @@ class TxEffHgvs(object):
                 self.logger.warning(f"Invalid variant interval {variant}: %s", str(e))
                 self._benchmark_cancel()
             except HGVSDataNotAvailableError as e:
-                # HGSV uses this exception for unrecoverable connection errors, and for when a row in the database just wasn't found.                
+                # HGVS uses this exception for unrecoverable connection errors, and for when a row in the database just wasn't found.                
                 if 'alignment' in str(e).lower():
                     self.logger.info(f"HGVS alignment not found while parsing variant {variant} (see https://hgvs.readthedocs.io/en/stable/faq.html): %s", str(e))
                     self._benchmark_cancel()
                 else:
-                    self.logger.warning(f"Error while parsing variant {variant}: %s", str(e))
+                    self.logger.error(f"Error while parsing variant {variant}: %s", str(e))
                     raise(e)
             except NotImplementedError as e:
                 self.logger.warning(f"Invalid CDS sequence while processing variant {variant}: %s", str(e))

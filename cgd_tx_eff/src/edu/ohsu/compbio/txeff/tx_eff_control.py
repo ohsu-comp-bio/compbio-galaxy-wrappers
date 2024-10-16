@@ -70,7 +70,7 @@ def _parse_args():
     
     if args.sequence_source \
        and not (args.sequence_source.lower().startswith('http') or args.sequence_source.startswith("/") or args.sequence_source == 'ncbi'):
-        raise ValueError(f'--sequence_source is expected to be a url, path, or "ncbi": "{args.sequence_source}"')
+        raise ValueError(f'--sequence_source is expected to be a url, directory, or "ncbi": "{args.sequence_source}"')
 
     return args
 
