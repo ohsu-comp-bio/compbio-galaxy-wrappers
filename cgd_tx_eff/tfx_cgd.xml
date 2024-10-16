@@ -133,9 +133,12 @@
   		<param name="annovar_exonic_variant_function" value="test_annovar.exonic_variant_function"/>
         <param name="reference_source_selector" value="history" />
         <param name="reference_sequence" ftype="fasta" value="test_chr1.fa"/>
-        <param name="sequence_source_selector" value="file-repository"/>
-        <param name="file_repository_path" value="/opt/transcript_effects/hgvs/seqrepo/2021-01-29"/>
         <param name="benchmarking_selector" value="no"/>
+        <param name="sequence_source_selector" value="file-repository"/>
+        
+        <!-- Change this to your local SeqRepo installation -->
+        <param name="file_repository_path" value="/opt/seqrepo/2021-01-29"/>
+        
 
         <output name="out_vcf" ftype="vcf">
         	<assert_contents>
