@@ -14,6 +14,7 @@ import csv
 import logging
 import os
 from pathlib import Path
+import re
 
 import hgvs.assemblymapper
 import hgvs.dataproviders.uta
@@ -426,8 +427,11 @@ class TxEffHgvs(object):
                 self.logger.warning(f"Invalid variant interval {variant}: %s", str(e))
                 self._benchmark_cancel()
             except HGVSDataNotAvailableError as e:
-                # HGVS uses this exception for unrecoverable connection errors, and for when a row in the database just wasn't found.                
-                if 'alignment' in str(e).lower():
+                # HGVS uses this exception for unrecoverable connection errors, and for when a row in the database just wasn't found.
+                if not re.match('^NM_[0-9]+\.[0-9]+$', refseq_transcript):
+                    self.logger.warning(f"Unable to find transcript '{refseq_transcript}': {str(e)})")
+                    self._benchmark_cancel()
+                elif 'alignment' in str(e).lower():
                     self.logger.info(f"HGVS alignment not found while parsing variant {variant} (see https://hgvs.readthedocs.io/en/stable/faq.html): %s", str(e))
                     self._benchmark_cancel()
                 else:

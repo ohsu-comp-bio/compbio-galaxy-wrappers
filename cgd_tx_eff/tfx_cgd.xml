@@ -139,7 +139,6 @@
         <!-- Change this to your local SeqRepo installation -->
         <param name="file_repository_path" value="/opt/seqrepo/2021-01-29"/>
         
-
         <output name="out_vcf" ftype="vcf">
         	<assert_contents>
         		<has_text text="CCDS30551.1"/>
