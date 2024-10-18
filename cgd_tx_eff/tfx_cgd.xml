@@ -4,15 +4,19 @@
   </description>
 
   <requirements>
-    <requirement type="package" version="0.13.6">vcfpy</requirement>
     <requirement type="package" version="1.5.4">hgvs</requirement>
+    <requirement type="package" version="0.13.6">vcfpy</requirement>
   </requirements>
 
   <version_command><![CDATA[
     python $__tool_directory__/src/edu/ohsu/compbio/txeff/tx_eff_control.py --version
   ]]></version_command>
 
-  <command detect_errors="exit_code"><![CDATA[  
+  <command detect_errors="exit_code"><![CDATA[
+    #if $sequence_source.sequence_source_selector == "ncbi"
+        export NCBI_API_KEY=${sequence_source.ncbi_api_key};
+    #end if
+
   	python $__tool_directory__/src/edu/ohsu/compbio/txeff/tx_eff_control.py     
         --in_vcf "${in_vcf}"
         --annovar_variant_function "${annovar_variant_function}"
@@ -25,29 +29,29 @@
                 --reference_fasta ${reference_source.reference_sequence}
             #end if
         #end if
+
+        #if $sequence_source.sequence_source_selector != 'configured-by-environment'
+            #if $sequence_source.sequence_source_selector == 'seqrepo-rest-service'
+                --sequence_source ${sequence_source.seqrepo_rest_service_url}
+            #elif $sequence_source.sequence_source_selector == 'file-repository'
+                --sequence_source ${sequence_source.file_repository_path}
+            #elif $sequence_source.sequence_source_selector == 'ncbi'
+                --sequence_source ${sequence_source.sequence_source_selector}
+            #else
+                #raise ValueError("Unknown value for sequence source")
+            #end if
+        #end if
+        
         #if $benchmarking_selector == "yes"
            --benchmark
         #end if
+                 
     	--out_vcf "${out_vcf}"
-
   ]]></command>
   
  <environment_variables>
-    <!--
-    Use environment variables to tell Transcript Effects where to find the UTA database and the SeqRepo sequence repository.
-    
-    * UTA: The environment variable UTA_DB_URL is required and looks like postgresql://name:password@host:5432/uta/uta_20210129
-    * SeqRepo: There are three ways that HGVS can use lookup sequences using coordinates: 
-        - Option 0: Install SeqRepo on the same node where Tanscript Effects will be run, and define the path to SeqRepo in 
-                  the HGVS_SEQREPO_DIR environment variable. 
-        - Option 1: Install SeqRepo on a server and access it using the SeqRepo REST Service (https://github.com/biocommons/seqrepo-rest-service/)
-                  by defining the URL of the service in the HGVS_SEQREPO_URL (eg http://127.0.0.1:5000/seqrepo/)
-        - Option 2: If neither HGVS_SEQREPO_DIR or HGVS_SEQREPO_URL are defined then HGVS will lookup sequences using 
-                  NCBI's E-utilities API (https://www.ncbi.nlm.nih.gov/books/NBK25500/). You will need to place your NCBI API
-                  key in the NCBI_API_KEY environment variable.    
-     -->
     <environment_variable name="PYTHONPATH">$__tool_directory__/src</environment_variable>
-  </environment_variables>
+ </environment_variables>
  
   <inputs>
     <param name="in_vcf" format="vcf" optional="false" type="data" label="Input VCF" />    
@@ -70,6 +74,42 @@
             <when value="history">
                 <param name="reference_sequence" type="data" format="fasta" label="Reference" help="Reference sequence file." />
             </when>
+            <when value="no_ref">
+                <!-- Do nothing -->
+            </when>
+    </conditional>
+    
+    <conditional name="sequence_source">
+        <param name="sequence_source_selector" type="select" label="Source for looking up reference sequences">
+            <option value="configured-by-environment" selected="true">Configured by environment</option>
+            <option value="seqrepo-rest-service">SeqRepo REST Service</option>
+            <option value="file-repository">SeqRepo File Repository</option>
+            <option value="ncbi">NCBI E-utility</option>
+        </param>
+        <when value="seqrepo-rest-service">
+            <param name="seqrepo_rest_service_url" 
+                   label="SeqRepo Service URL" 
+                   type="text" 
+                   help="URL of the SeqRepo REST Service (eg http://host:5000/seqrepo/)" 
+                   optional="false"/>
+        </when>
+        <when value="file-repository">
+            <param name="file_repository_path" 
+                   label="SeqRepo Directory" 
+                   type="text" 
+                   help="Path to SeqRepo installation (eg /opt/seqrepo/2021-01-29/)" 
+                   optional="false"/>
+        </when>
+        <when value="ncbi">
+            <param name="ncbi_api_key" 
+                   label="NCBI API Key" 
+                   type="text" 
+                   help="API Key for accessing NCBI's E-Utilities" 
+                   optional="true"/>                   
+        </when> 
+        <when value="configured-by-environment">
+            <!-- Do nothing -->
+        </when>    
     </conditional>
     <param name="benchmarking_selector" type="select" help="Choose yes to enable benchmarking" label="Enable benchmarking?">
         <option value="yes">Yes</option>
@@ -85,35 +125,43 @@
     </data>
   </outputs>
 
-  <tests>
-  	<test>
-  		<param name="in_vcf" value="test_in.vcf"/>  		
+  <tests>    
+  	<test expect_num_outputs="2">
+  		<param name="in_vcf" value="test_in.vcf"/>
   		<param name="ccds_map" value="test_GRCh37_minimal_genomic.csv"/>
   		<param name="annovar_variant_function" value="test_annovar.variant_function"/>
   		<param name="annovar_exonic_variant_function" value="test_annovar.exonic_variant_function"/>
         <param name="reference_source_selector" value="history" />
         <param name="reference_sequence" ftype="fasta" value="test_chr1.fa"/>
+        <param name="benchmarking_selector" value="no"/>
+        <param name="sequence_source_selector" value="file-repository"/>
+        
+        <!-- Change this to your local SeqRepo installation -->
+        <param name="file_repository_path" value="/opt/seqrepo/2021-01-29"/>
+        
         <output name="out_vcf" ftype="vcf">
         	<assert_contents>
         		<has_text text="CCDS30551.1"/>
-        		<has_n_lines n="46"/>
+                <has_text text="TFX_REFERENCE_CONTEXT=ACCTTCGCCCCGCTGCCGCCT"/>
+                <has_text text="TFX_EXON=::13:13;"/>
+        		<has_n_lines n="49"/>
         	</assert_contents>
         </output>
   	</test>
   </tests>
-  
-  <help><![CDATA[
-usage: tx_eff_control.py [-h]
-						 [--version]
-						 --in_vcf IN_VCF 
-						 --ccds_map CCDS_MAP 
-						 --annovar_variant_function ANNOVAR_VARIANT_FUNCTION 
-						 --annovar_exonic_variant_function ANNOVAR_EXONIC_VARIANT_FUNCTION 
-                         --reference_fasta REFERENCE_FASTA
-						 --out_vcf OUT_VCF
-                         [--benchmark]
-]]>
-  </help>
+
+    <help><![CDATA[
+    usage: tx_eff_control.py [-h]
+                             [--version]
+                             --in_vcf IN_VCF 
+                             --ccds_map CCDS_MAP 
+                             --annovar_variant_function ANNOVAR_VARIANT_FUNCTION 
+                             --annovar_exonic_variant_function ANNOVAR_EXONIC_VARIANT_FUNCTION 
+                             --reference_fasta REFERENCE_FASTA
+                             --out_vcf OUT_VCF
+                             [--sequence_source SEQUENCE_SOURCE]
+                             [--benchmark]
+    ]]></help>
   <citations>
   	<citation type="bibtex">
 		@misc{tx_eff_control,

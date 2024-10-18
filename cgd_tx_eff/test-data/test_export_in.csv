@@ -1,2 +1,0 @@
-"genomic_variant_id","chromosome","position_start","position_end","reference_base","variant_base","genomic_variant_type","base_pair_position","genotype_cdna","cdna_transcript","exon","amino_acid_position","genotype_amino_acid_onel","genotype_amino_acid_threel","protein_variant_type","stop_gain_loss","protein_transcript","splice_site_relationship","primary_gene","genes"
-2071949,"chr6",137519504,137519506,"ACT","A","Deletion",1132,"c.1132_1133del","NM_000416","Ex7",,"p.378_378del",,"frameshift",,"NM_000416",,,"IFNGR1"
