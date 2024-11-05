@@ -1,4 +1,4 @@
-# Current Version: 1.2.0
+# Current Version: 1.2.1
 # Version history
 # ...
 # 1.1.1 - added conditions to bypass percentile table generation if tumor or stroma segments are absent
@@ -9,6 +9,7 @@
 # 1.2.0 - added new input file of control genes as RUV-III feature selection
 #       - applied RUV-III to TMA data for outlier detection and plotting
 #       - created variable k for changing default PCs used for RUV-III
+# 1.2.1 -
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -144,17 +145,23 @@ relevant.meta <- exp.meta[sample_id %in% dsp.meta$Specimen.ID]
 # Figure out how we want to number batches.
 relevant.meta[,num_batch:=batch]
 relevant.abund <- exp.abund[,relevant.meta$barcode]
+
+tma.abund <- abund.mat[,tma.meta$barcode]
 tma.meta <- tma.meta[batch %in% relevant.meta$batch]
 # Figure out how we want to number batches.
 tma.meta[,num_batch:=batch]
-tma.abund <- abund.mat[,tma.meta$barcode]
 
 # Enter custom set of control genes for RUV feature selection
 #cntrl.abs <- setdiff(rownames(tma.abund), exp.low[[1]])
 cntrl.abs <- read.csv(cntrl_genes, header=F)[[1]]
 use_k <- 4
 
-segment.proc <- preprocess_dsp_tma(tma.meta, tma.abund, relevant.meta, relevant.abund, igg.map=paths, bg.method=c('none'), controls=cntrl.abs, use.type='quant', k=use_k, num.roi.avg=1)
+# Remove targets in list
+rm_ab <- c('p-4EBP1')
+tma.abund <- tma.abund[!(row.names(tma.abund) %in% rm_ab),]
+relevant.abund <- relevant.abund[!(row.names(relevant.abund) %in% rm_ab),]
+
+segment.proc <- preprocess_dsp_tma(tma.meta, tma.abund, relevant.meta, relevant.abund, igg.map=paths, bg.method=c('none'), controls=cntrl.abs, use.type='quant', k=use_k, num.roi.avg=3)
 # Re-arrange segment.proc output
 tma.abund <- segment.proc[[3]]
 segment.proc <- segment.proc[1:2]
