@@ -1,7 +1,7 @@
+import os
 import unittest
 
 from edu.ohsu.compbio.txeff.tx_eff_hgvs import TxEffHgvs
-import edu.ohsu.compbio.txeff.tx_eff_hgvs as tx_eff_hgvs
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
 
@@ -12,6 +12,11 @@ class TxEffHgvsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._pysam_file = PysamTxEff(FILE_HG37_REFERENCE_FASTA)
+        
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        os.environ.pop('HGVS_SEQREPO_DIR', None)
+        os.environ.pop('HGVS_SEQREPO_URL', None)
         
     def test__merge_annovar_with_hgvs(self):
         '''
@@ -124,3 +129,60 @@ class TxEffHgvsTest(unittest.TestCase):
         variant_transcript.protein_transcript = protein_transcript
         
         return variant_transcript
+
+    def test___configure_sequence_source_noParameters_useNcbi(self):
+        tx_eff_hgvs = TxEffHgvs()
+        tx_eff_hgvs._sequence_source = None
+        self.assertEqual(tx_eff_hgvs._configure_sequence_source(), 1, "Return value should indicate NCBI will be used")
+    
+    def test___configure_sequence_source_requestNcbi_useNcbi(self):
+        tx_eff_hgvs = TxEffHgvs()
+        tx_eff_hgvs._sequence_source = 'ncbi'
+        self.assertEqual(tx_eff_hgvs._configure_sequence_source(), 1, "Return value should indicate NCBI will be used")
+        
+    def test___configure_sequence_source_invalid_raiseError(self):
+        tx_eff_hgvs = TxEffHgvs()
+        tx_eff_hgvs._sequence_source = 'nonsense'
+        self.assertRaises(ValueError,tx_eff_hgvs._configure_sequence_source)
+        
+    def test___configure_sequence_source_envUrl_urlConfigured(self):
+        # URL overrides directory
+        tx_eff_hgvs = TxEffHgvs()
+        tx_eff_hgvs._sequence_source = None
+        os.environ['HGVS_SEQREPO_URL'] = "http://localhost:5000/seqrepo"
+        os.environ['HGVS_SEQREPO_DIR'] = "/path"
+        self.assertEqual(tx_eff_hgvs._configure_sequence_source(), 2, "Return value should indicate URL will be used")
+        self.assertIsNone(os.environ.get('HGVS_SEQREPO_DIR'), "HGVS_SEQREPO_DIR should be unset")
+        
+    def test___configure_sequence_source_envDirectory_directoryConfigured(self):
+        tx_eff_hgvs = TxEffHgvs()
+        tx_eff_hgvs._sequence_source = None
+        os.environ['HGVS_SEQREPO_DIR'] = "/path"
+        self.assertEqual(tx_eff_hgvs._configure_sequence_source(), 3, "Return value should indicate URL will be used")
+    
+    def test___configure_sequence_source_argUrlAndEnvUrl_argUrlConfigured(self):
+        # The argument (tx_eff_hgvs._sequence_source) overrides any environment variable
+        tx_eff_hgvs = TxEffHgvs()
+        url = "http://host1/seqrepo"
+        tx_eff_hgvs._sequence_source = url
+        os.environ['HGVS_SEQREPO_URL'] = "http://host2/seqrepo"
+        self.assertEqual(tx_eff_hgvs._configure_sequence_source(), 4, "Return value should indicate URL will be used")
+        self.assertEqual(os.environ.get('HGVS_SEQREPO_URL'), url, "HGVS_SEQREPO_URL should be set to the argument path")
+    
+    def test___configure_sequence_source_argDirectory_argDirectoryConfigured(self):
+        tx_eff_hgvs = TxEffHgvs()
+        tx_eff_hgvs._sequence_source = "/path"
+        os.environ['HGVS_SEQREPO_URL'] = "http://host/seqrepo"
+        self.assertEqual(tx_eff_hgvs._configure_sequence_source(), 5, "Return value should indicate file repository will be used")
+        self.assertIsNone(os.environ.get('HGVS_SEQREPO_URL'), "HGVS_SEQREPO_URL should be unset")
+            
+    def test___configure_sequence_source_argDirectoryAndEnvDirectory_argDirectoryConfigured(self):
+        # The argument (tx_eff_hgvs._sequence_source) overrides any environment variable
+        tx_eff_hgvs = TxEffHgvs()
+        path = "/path0"
+        tx_eff_hgvs._sequence_source = path
+        os.environ['HGVS_SEQREPO_DIR'] = "/path1"
+        os.environ['HGVS_SEQREPO_URL'] = "http://host/seqrepo"
+        self.assertEqual(tx_eff_hgvs._configure_sequence_source(), 5, "Return value should indicate file repository will be used")
+        self.assertEqual(os.environ.get('HGVS_SEQREPO_DIR'), path, "HGVS_SEQREPO_DIR should be set to the argument path")
+        self.assertIsNone(os.environ.get('HGVS_SEQREPO_URL'), "HGVS_SEQREPO_URL should be unset")

@@ -9,11 +9,12 @@ Created on Apr 20, 2022
 @author: pleyte
 '''
 
-import argparse
 from collections import defaultdict
 import csv
-import logging.config
+import logging
 import os
+from pathlib import Path
+import re
 
 import hgvs.assemblymapper
 import hgvs.dataproviders.uta
@@ -25,8 +26,6 @@ from edu.ohsu.compbio.annovar import annovar_parser
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
 from edu.ohsu.compbio.txeff.util import chromosome_map
 from edu.ohsu.compbio.txeff.util.benchmarking import Benchmarking
-from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
-from edu.ohsu.compbio.txeff.util.tx_eff_csv import TxEffCsv
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff.variant import Variant
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
@@ -89,43 +88,30 @@ class TxEffHgvs(object):
     Finds transcripts associated with variant. Makes use of the SeqRepo and UTA datasources. 
     Benchmarking can be enabled to produce a csv file that shows how long SeqRepo and UTA queries are taking. 
     """ 
-    def __init__(self, benchmark = False):
+    def __init__(self, sequence_source = None, benchmark = False):
         self.logger = logging.getLogger(__name__)
+        self._sequence_source = sequence_source
         self._benchmarking = None
-
+        
+        # Setup benchmarking if it is requested
         if benchmark:
             self._benchmarking = Benchmarking()
-             
+
             self._benchmark_file = open("benchmark.csv", 'w')
             self.logger.info(f"Benchmarking enabled. Writing to {self._benchmark_file.name}") 
             self._benchmark_csv_writer = csv.writer(self._benchmark_file)
             self._benchmark_csv_writer.writerow(['variant', 'name', 'transcript_count', 'total_time', 'average_time'])
-
+ 
     def __enter__(self):
         '''
         Open database connection  
-        '''
-        self.logger.debug("Opening UTA connection and locating SeqRepo repository.")
-                
-        # Check the environment for definitions of HGVS' datasources.
-        if os.environ.get('HGVS_SEQREPO_DIR'):
-            self.logger.info(f"SeqRepo will access files at: {os.environ.get('HGVS_SEQREPO_DIR')}")
-        elif os.environ.get('HGVS_SEQREPO_URL'):
-            self.logger.info(f"SeqRepo will use the seqrepo-rest-service at {os.environ.get('HGVS_SEQREPO_URL')}")
-        else:
-            self.logger.warning("SeqRepo will retrieve sequences by querying NCBI using the E-utilities API")
+        '''        
+        # Configure biocommons-hgvs to use the SeqRepo rest service, file repository, or the the NCBI api.
+        self._configure_sequence_source()
 
-        if os.environ.get('UTA_DB_URL') == None:
-            self.logger.warning("The UTA_DB_URL environment variable is not defined. The remote UTA database will be used.")
-        else:
-            # This leaks the password. Consider splitting the string: postgresql://name:password@host:5432/uta/uta_20210129
-            self.logger.info(f"Using UTA Database at {os.environ.get('UTA_DB_URL')}")
+        # Initialize the UTA database connection        
+        self._configure_uta()
 
-        # Initialize the HGVS connection
-        self.hdp = hgvs.dataproviders.uta.connect()
-        self.am = hgvs.assemblymapper.AssemblyMapper(self.hdp, assembly_name=ASSEMBLY_VERSION, alt_aln_method='splign')
-        self.hgvs_parser = hgvs.parser.Parser()
-        
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -134,7 +120,108 @@ class TxEffHgvs(object):
         
         if self._benchmarking:
             self._benchmark_file.close() 
+
+    def _configure_uta(self):
+        self.logger.debug("Opening UTA connection")
         
+        if not os.environ.get('UTA_DB_URL'):
+            # This option won't work from within OHSU's network because they seem to block us.  
+            self.logger.warning("The UTA_DB_URL environment variable is not defined. The remote public postgresql database at uta.biocommons.org will be used.")
+        else:
+            # This leaks the password. Consider splitting the string: postgresql://name:password@host:5432/uta/uta_20210129
+            self.logger.info(f"Using UTA Database at {os.environ.get('UTA_DB_URL')}")
+
+        # Initialize the HGVS connection        
+        self.hdp = hgvs.dataproviders.uta.connect()
+        self.am = hgvs.assemblymapper.AssemblyMapper(self.hdp, assembly_name=ASSEMBLY_VERSION, alt_aln_method='splign')
+        self.hgvs_parser = hgvs.parser.Parser()      
+          
+    def _configure_sequence_source(self):
+        """
+        The biocommons-hgvs module needs a way to lookup reference sequences. There are three options:
+        * Use local SeqRepo installation
+            - This is the most performant solution when SeqRepo is installed on the same host as Transcript Effects running. 
+            - SeqRepo files are too large be be opened over a network file system.
+            - To use this method set the environment variable HGVS_SEQREPO_DIR with the path to the SeqRepo installation.    
+        * Use SeqRepo REST API to query a remote SeqRepo installation
+            - In production Transcript Effects runs on a Galaxy node and we access SeqRepo using the SeqRepo REST service. 
+            - To use this method set the environment variable HGVS_SEQREPO_URL with the url of the SeqRepo service.  
+        * Use NCBI's E-Utilties API instead of SeqRepo
+            - Instead of using SeqRepo, biocommons-hgvs can lookup sequences using NCBI's E-Utilities API. 
+            - To use this method use you create an NCBI account, generate an API key and set it in the NCBI_API_KEY environment variable. 
+            - This option works great but we have not investigated its dependability as a production resource.      
+        
+        The KCC Galaxy instances define the HGVS_SEQREPO_DIR environment variable. But it is on a networked file system. If you add 
+        HGVS_SEQREPO_URL to the environment, biocommons-hgvs will still use the file repository so it is necessary to unset
+        HGVS_SEQREPO_DIR when we want to use the SeqRepo REST service.
+        
+        This function sets up the environment prioritizing the sequence options the order:
+        0. The method specified by the optional sequence_source parameter in the constructor. 
+        1. The SeqRepo REST service found in the HGVS_SEQREPO_URL environment variable
+        2. The SeqRepo file repository found in the HGVS_SEQREPO_DIR environment variable. 
+        3. NCBI E-Utilities when none of the above are spefified. 
+        """
+        self.logger.debug("Determining SeqRepo repository location")
+        
+        env_seqrepo_url = os.environ.get('HGVS_SEQREPO_URL')
+        env_seqrepo_directory = os.environ.get('HGVS_SEQREPO_DIR')
+        
+        # If they want to use ncbi then the other two options have to be disabled
+        if self._sequence_source == 'ncbi' \
+           or (not self._sequence_source and not env_seqrepo_url and not env_seqrepo_directory):
+
+            self.logger.info("Reference sequences will be retrieved using NCBI's E-Utilities API")
+            self.logger.warning("The NCBI API should only be used for testing. Do not use it in a production environment.")
+            
+            if os.environ.get('NCBI_API_KEY'):
+                self.logger.info(f"NCBI API Key is present: {os.environ.get('NCBI_API_KEY')}")
+            else:
+                # The n queries per second limit will cause delays and possibly failure  
+                self.logger.warning("Using NCBI's E-Utilities without an NCBI API Key is discouraged")
+
+            os.environ.pop('HGVS_SEQREPO_DIR', None)
+            os.environ.pop('HGVS_SEQREPO_URL', None)
+            return 1
+        
+        # Default is to prioritize the service over the file repository 
+        if not self._sequence_source and env_seqrepo_url:
+            if not env_seqrepo_url.lower().startswith('http'):
+                self.logger.warning("The SeqRepo service is requested but the URL appears invalid: " + env_seqrepo_url)
+            else: 
+                self.logger.info("Reference sequences will be retrieved using the SeqRepo service: " + env_seqrepo_url)
+            
+            # Remove HGVS_SEQREPO_DIR from environment since biocommons.hgvs prioritizes it over the SeqRepo service.
+            os.environ.pop('HGVS_SEQREPO_DIR', None)
+            return 2
+                
+        if not self._sequence_source and env_seqrepo_directory:
+            if not Path(env_seqrepo_directory).is_dir():
+                self.logger.warning("The SeqRepo file repository is requested but the path appears invalid: " + env_seqrepo_directory)
+            else:
+                self.logger.info("Reference sequences will be retrieved using the SeqRepo file repository: " + env_seqrepo_directory)
+            
+            os.environ.pop('HGVS_SEQREPO_URL', None)
+            return 3
+        
+        # If the sequence parameter is a URL then the SeqRepo service will be used. 
+        if self._sequence_source and self._sequence_source.lower().startswith('http'):
+            self.logger.info("Reference sequences will be retrieved using the SeqRepo service: " + self._sequence_source)
+            os.environ['HGVS_SEQREPO_URL'] = self._sequence_source
+            os.environ.pop('HGVS_SEQREPO_DIR', None)
+            return 4
+        
+        if self._sequence_source and self._sequence_source.startswith("/"):
+            if not Path(self._sequence_source).is_dir():
+                self.logger.warning("The SeqRepo file repository is requested but the path appears invalid: " + self._sequence_source)
+            else:
+                self.logger.info("Reference sequences will be retrieved using the SeqRepo file repository: " + self._sequence_source)
+            
+            os.environ['HGVS_SEQREPO_DIR'] = self._sequence_source
+            os.environ.pop('HGVS_SEQREPO_URL', None)
+            return 5
+        
+        raise ValueError("The sequence_source parameter must be a url, a directory, or 'ncbi': " + self._sequence_source)
+                
     def _noneIfEmpty(self, value: str):
         '''
         Return None if the string is an empty string.
@@ -249,10 +336,13 @@ class TxEffHgvs(object):
         self._benchmark_start('hdp.get_tx_for_region (UTA)')
         tx_list = self.hdp.get_tx_for_region(str(var_g.ac), 'splign', var_g.posedit.pos.start.base, var_g.posedit.pos.end.base)
         self._benchmark_stop('hdp.get_tx_for_region (UTA)')
-        
+
         hgvs_transcripts = []
         
-        for hgvs_transcript in tx_list:
+        for uta_row in tx_list:
+            refseq_transcript = uta_row[0]
+            refseq_chromosome = uta_row[1]
+
             try:
                 variant_transcript = VariantTranscript(variant.chromosome, variant.position, variant.reference, variant.alt)
     
@@ -260,20 +350,20 @@ class TxEffHgvs(object):
                 
                 # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function.
                 self._benchmark_start('hdp.get_tx_info (UTA)')
-                transcript_detail = self.hdp.get_tx_info(hgvs_transcript[0], hgvs_transcript[1], 'splign')
+                transcript_detail = self.hdp.get_tx_info(refseq_transcript, refseq_chromosome, 'splign')
                 variant_transcript.hgnc_gene = transcript_detail['hgnc']
                 self._benchmark_stop('hdp.get_tx_info (UTA)')
                 
                 # Non-coding transcripts (prefix NR_) cause HGVS to throw an exception when determining c. and p. 
                 # But instead of giving up on the transcript altogether, the transcript is saved with transcript name and gene only. 
-                if hgvs_transcript[0].startswith('NR_'):
-                    variant_transcript.refseq_transcript = hgvs_transcript[0] 
+                if refseq_transcript.startswith('NR_'):
+                    variant_transcript.refseq_transcript = refseq_transcript 
 
                 # Determine c. and p.. Non coding transcripts will throw an error. See HGVSUsageError caught below.
                 self._benchmark_start('am.g_to_c (SeqRepo)') 
-                var_c = self.am.g_to_c(var_g, str(hgvs_transcript[0]))
+                var_c = self.am.g_to_c(var_g, str(refseq_transcript))
                 self._benchmark_stop('am.g_to_c (SeqRepo)')
-                
+
                 self._benchmark_start('am.c_to_p (SeqRepo)') 
                 var_p = self.am.c_to_p(var_c)
                 self._benchmark_stop('am.c_to_p (SeqRepo)')
@@ -303,7 +393,7 @@ class TxEffHgvs(object):
                     self.logger.debug(f"HGVS variant does not have a position: ref={var_p.posedit.ref}, alt={var_p.posedit.alt}, type={var_p.posedit.type}, str={str(var_p.posedit)}. Keeping.")
                 else:
                     variant_transcript.hgvs_amino_acid_position = var_p.posedit.pos.start.pos
-    
+
                 variant_transcript.hgvs_base_position = var_c.posedit.pos.start.base
                 
                 variant_transcript.hgvs_c_dot = c_dot
@@ -320,8 +410,8 @@ class TxEffHgvs(object):
                 hgvs_transcripts.append(variant_transcript)
     
             except HGVSUsageError as e:
-                if("non-coding transcript" in e.args[0]):
-                    self.logger.info(f"Error caused by non-coding transcript {variant}. Transcript will have name and gene only: %s", str(e))
+                if("non-coding transcript" in str(e)):
+                    self.logger.info(f"Encountered non-coding transcript {variant}. Transcript will have name and gene only: %s", str(e))
                     
                     # Add the transcript even though an exception was thrown. At least we have the transcript+gene. 
                     hgvs_transcripts.append(variant_transcript)
@@ -332,16 +422,26 @@ class TxEffHgvs(object):
                 self.logger.warning(f"Invalid variant {variant}: %s", str(e))
                 raise(e)
             except HGVSUnsupportedOperationError as e:
-                self.logger.warning(f"Invalid parameters while processing variant {variant}, var_g={var_g}, transcript={str(hgvs_transcript[0])}: %s", str(e))
+                self.logger.warning(f"Invalid parameters while processing variant {variant}, var_g={var_g}, transcript={refseq_transcript}: %s", str(e))
                 self._benchmark_cancel()
             except HGVSInvalidIntervalError as e:
                 self.logger.warning(f"Invalid variant interval {variant}: %s", str(e))
                 self._benchmark_cancel()
             except HGVSDataNotAvailableError as e:
-                self.logger.warn(f"Unable to use HGVS to parse variant {variant}: %s", str(e))
-                self._benchmark_cancel()
+                # HGVS throws HGVSDataNotAvailableError for unrecoverable connection errors, and for when a row in the database just wasn't found.
+                # If the RefSeq transcript prefix isn't NM (eg NM_123.3) then it is a transcript type we aren't interested in (eg NR, NP, XM, XR, XP). So we skip
+                # the transcript and continue iterating.
+                if not re.match('^NM_[0-9]+\.[0-9]+$', refseq_transcript):
+                    self.logger.warning(f"Unable to find transcript '{refseq_transcript}': {str(e)})")
+                    self._benchmark_cancel()
+                elif 'alignment' in str(e).lower():
+                    self.logger.info(f"HGVS alignment not found while parsing variant {variant} (see https://hgvs.readthedocs.io/en/stable/faq.html): %s", str(e))
+                    self._benchmark_cancel()
+                else:
+                    self.logger.error(f"Error while parsing variant {variant}: %s", str(e))
+                    raise(e)
             except NotImplementedError as e:
-                self.logger.warn(f"Invalid CDS sequence while processing variant {variant}: %s", str(e))
+                self.logger.warning(f"Invalid CDS sequence while processing variant {variant}: %s", str(e))
                 self._benchmark_cancel()
 
         # Update the benchmarking log after processing each variant
@@ -819,45 +919,3 @@ class TxEffHgvs(object):
          
         # Clear the timers after each log
         self._benchmarking.clear()
-        
-def _parse_args():
-    '''
-    Validate and return command line arguments.
-    '''
-    parser = argparse.ArgumentParser(description='Read file generated by tx_eff_annovar.py, update transcript information using HGVS, and write out a CSV file with variant transcript effects.')
-
-    parser.add_argument('-i', '--in_file',  
-                        help='Input CSV (generated by tx_eff_annovar.py)',
-                        type=argparse.FileType('r'),
-                        required=True)
-        
-    parser.add_argument('-o', '--out_file', 
-                        help='Output CSV', 
-                        type=argparse.FileType('w'), 
-                        required=True)
-    
-    args = parser.parse_args()
-        
-    return args
-
-def _main():
-    '''
-    main function
-    '''
-    logging.config.dictConfig(TfxLogConfig().log_config)
-    
-    args = _parse_args()
-    
-    tx_eff_csv = TxEffCsv()    
-    annovar_transcripts = tx_eff_csv.read_transcripts(args.in_file.name)
-    logging.debug(f'Read {len(annovar_transcripts)} Annovar transcripts from {args.in_file.name}')
-    
-    tx_eff_hgvs = TxEffHgvs()
-    tx_eff_hgvs.identify_hgvs_datasources()
-    transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_transcripts)
-    
-    logging.info(f"Writing {args.out_file.name}")
-    tx_eff_csv.write_transcripts(args.out_file.name, transcripts)
-
-if __name__ == '__main__':
-    _main()

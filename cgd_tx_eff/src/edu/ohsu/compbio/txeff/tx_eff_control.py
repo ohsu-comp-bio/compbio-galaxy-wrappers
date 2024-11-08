@@ -20,7 +20,6 @@ from edu.ohsu.compbio.txeff.tx_eff_vcf import TxEffVcf
 from edu.ohsu.compbio.txeff.util.tfx_log_config import TfxLogConfig
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 
-
 VERSION = '0.7.6'
 
 def _parse_args():
@@ -62,10 +61,17 @@ def _parse_args():
                     help='Write benchmarking information to file', 
                     action='store_true')
     
+    parser.add_argument('-s', '--sequence_source',
+                    help='Method for looking up reference sequences (can be a url, path, or "ncbi")')
+    
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     
     args = parser.parse_args()
     
+    if args.sequence_source \
+       and not (args.sequence_source.lower().startswith('http') or args.sequence_source.startswith("/") or args.sequence_source == 'ncbi'):
+        raise ValueError(f'--sequence_source is expected to be a url, directory, or "ncbi": "{args.sequence_source}"')
+
     return args
 
 def _get_time(real_seconds, user_seconds):
@@ -88,7 +94,8 @@ def _main():
     print(f"hgvs version: {hgvs.__version__}")
     
     logging.config.dictConfig(TfxLogConfig().log_config)
-    
+    logger = logging.getLogger("edu.ohsu.compbio.txeff.tx_eff_control")
+
     if logging.root.handlers[0].stream: 
         output = str(logging.root.handlers[0].stream.name)
     else:
@@ -108,7 +115,7 @@ def _main():
     pysam_file = PysamTxEff(args.reference_fasta)
 
     # Look for additional transcripts in the HGVA/UTA database and merge them with the annovar records.
-    with TxEffHgvs(benchmark = args.benchmark) as tx_eff_hgvs:
+    with TxEffHgvs(sequence_source = args.sequence_source, benchmark = args.benchmark) as tx_eff_hgvs:
         merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records, pysam_file)
     
     # Close the reference FASTA
@@ -119,7 +126,7 @@ def _main():
     tx_eff_ccds.add_ccds_transcripts(merged_transcripts)
 
     # Add additional annotations to each variant
-    tx_eff_annotate = TxEffAnnotate()
+    tx_eff_annotate = TxEffAnnotate(args.sequence_source)
     tx_eff_annotate.annotate(merged_transcripts)
     
     # Use tx_eff_vcf to write the transcript effects to a VCF
@@ -132,7 +139,7 @@ def _main():
     real_time, user_time = _get_time(stop_time_real - start_time_real, stop_time_user - start_time_user) 
     
     print(f"Time: real {real_time}, user {user_time}")
-    logging.info(f"Time: real {real_time}, user {user_time}")
+    logger.info(f"Time: real {real_time}, user {user_time}")
 
 if __name__ == '__main__':
     _main()
