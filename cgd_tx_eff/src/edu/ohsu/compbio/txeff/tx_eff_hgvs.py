@@ -30,6 +30,7 @@ from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff.variant import Variant
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
 
+
 # When we upgrade from python 3.8 to 3.9 this import needs to be changed to: "from collections.abc import Iterable"
 ASSEMBLY_VERSION = "GRCh37"
 
@@ -335,7 +336,7 @@ class TxEffHgvs(object):
         self._benchmark_start('hdp.get_tx_for_region (UTA)')
         tx_list = self.hdp.get_tx_for_region(str(var_g.ac), 'splign', var_g.posedit.pos.start.base, var_g.posedit.pos.end.base)
         self._benchmark_stop('hdp.get_tx_for_region (UTA)')
-        
+
         hgvs_transcripts = []
         
         for uta_row in tx_list:
@@ -392,7 +393,7 @@ class TxEffHgvs(object):
                     self.logger.debug(f"HGVS variant does not have a position: ref={var_p.posedit.ref}, alt={var_p.posedit.alt}, type={var_p.posedit.type}, str={str(var_p.posedit)}. Keeping.")
                 else:
                     variant_transcript.hgvs_amino_acid_position = var_p.posedit.pos.start.pos
-    
+
                 variant_transcript.hgvs_base_position = var_c.posedit.pos.start.base
                 
                 variant_transcript.hgvs_c_dot = c_dot
@@ -427,7 +428,9 @@ class TxEffHgvs(object):
                 self.logger.warning(f"Invalid variant interval {variant}: %s", str(e))
                 self._benchmark_cancel()
             except HGVSDataNotAvailableError as e:
-                # HGVS uses this exception for unrecoverable connection errors, and for when a row in the database just wasn't found.
+                # HGVS throws HGVSDataNotAvailableError for unrecoverable connection errors, and for when a row in the database just wasn't found.
+                # If the RefSeq transcript prefix isn't NM (eg NM_123.3) then it is a transcript type we aren't interested in (eg NR, NP, XM, XR, XP). So we skip
+                # the transcript and continue iterating.
                 if not re.match('^NM_[0-9]+\.[0-9]+$', refseq_transcript):
                     self.logger.warning(f"Unable to find transcript '{refseq_transcript}': {str(e)})")
                     self._benchmark_cancel()
