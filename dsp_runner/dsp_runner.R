@@ -1,4 +1,4 @@
-# Current Version: 1.2.1
+# Current Version: 1.2.2
 # Version history
 # ...
 # 1.1.1 - added conditions to bypass percentile table generation if tumor or stroma segments are absent
@@ -10,6 +10,7 @@
 #       - applied RUV-III to TMA data for outlier detection and plotting
 #       - created variable k for changing default PCs used for RUV-III
 # 1.2.1 -
+# 1.2.2 - create output for melt.tma for pre-RUV data for Westgard QC
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -49,14 +50,15 @@ dsp_meta <- args[8]
 # Output options
 exp.out <- args[9]
 seg.proc.out <- args[10]
-melt.tma.out <- args[11]
-report.out <- args[12]
-excel.out.tum <- args[13]
-excel.out.str <- args[14]
+melt.tma.out.pre <- args[11]
+melt.tma.out.post <- args[12]
+report.out <- args[13]
+excel.out.tum <- args[14]
+excel.out.str <- args[15]
 
 # positive cntrl file
-pos_cntrls <- args[15]
-cntrl_genes <- args[16]
+pos_cntrls <- args[16]
+cntrl_genes <- args[17]
 
 # Set constants
 exp.regex <- "[0-9]{8}-[0-9]{2}"
@@ -150,6 +152,25 @@ tma.abund <- abund.mat[,tma.meta$barcode]
 tma.meta <- tma.meta[batch %in% relevant.meta$batch]
 # Figure out how we want to number batches.
 tma.meta[,num_batch:=batch]
+
+# PRE-RUV melt tma for westgard rules
+melt.tma <- data.table(reshape2::melt(tma.abund, as.is=T))
+names(melt.tma) <- c("ProbeName", "barcode", "abundance")
+melt.tma <- merge(melt.tma, tma.meta[,.(barcode, name, batch)], by="barcode")
+melt.tma <- merge(paths[,.(ProbeName, igg)], melt.tma, by="ProbeName", all=T)
+melt.tma[,fac_batch:=factor(batch)]
+#add in values for corresponding igg
+melt.tma[ProbeName %in% c("Ms IgG1",  "Ms IgG2a", "Rb IgG"), igg:=ProbeName]
+melt.tma <- merge(melt.tma, melt.tma[ProbeName %in% c("Ms IgG1",  "Ms IgG2a", "Rb IgG"),.(igg=ProbeName, barcode, igg_abund=abundance)], by=c("igg", "barcode"), all.x=T, all.y=F)
+melt.tma[,perc_igg:=(abundance/igg_abund)*100]
+melt.tma[,ceil_igg:=pmin(perc_igg, 100)]
+# Add columns splitting batch date into month-day and year for sorting
+melt.tma$monthday<- substr(melt.tma$batch, 1, 4)
+melt.tma$monthday<- str_remove(melt.tma$monthday, "^0+")
+melt.tma$year<- substr(melt.tma$batch, 5, 8)
+# Create combined name_ProbeName column
+melt.tma$name_ProbeName<- str_c(melt.tma$name,'_',melt.tma$ProbeName)
+write.csv(melt.tma, file=paste0(melt.tma.out.pre), row.names=F)
 
 # Enter custom set of control genes for RUV feature selection
 #cntrl.abs <- setdiff(rownames(tma.abund), exp.low[[1]])
@@ -254,7 +275,7 @@ melt.tma$year<- substr(melt.tma$batch, 5, 8)
 # Create combined name_ProbeName column
 melt.tma$name_ProbeName<- str_c(melt.tma$name,'_',melt.tma$ProbeName)
 # Write out csv for Westgard rules script in Galaxy wf
-write.csv(melt.tma, file=paste0(melt.tma.out), row.names=F)
+write.csv(melt.tma, file=paste0(melt.tma.out.post), row.names=F)
 
 ref.batches <- melt.tma[batch != runid]
 cur.batch <- melt.tma[batch == runid]
