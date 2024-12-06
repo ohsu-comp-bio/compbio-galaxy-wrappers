@@ -16,3 +16,4 @@ repositories:
       - normalization.R
       - plots.R
       - summarization.R
+      - qc_check.R
