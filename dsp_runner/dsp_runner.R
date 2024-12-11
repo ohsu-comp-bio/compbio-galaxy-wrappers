@@ -1,4 +1,4 @@
-# Current Version: 1.2.2
+# Current Version: 1.3.0
 # Version history
 # ...
 # 1.1.1 - added conditions to bypass percentile table generation if tumor or stroma segments are absent
@@ -11,6 +11,7 @@
 #       - created variable k for changing default PCs used for RUV-III
 # 1.2.1 -
 # 1.2.2 - create output for melt.tma for pre-RUV data for Westgard QC
+# 1.3.0 - introduce QC check input functions to screen data entry errors
 
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(openxlsx))
@@ -22,6 +23,7 @@ suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(gridExtra))
 suppressPackageStartupMessages(library(grid))
 suppressPackageStartupMessages(library(gtable))
+suppressPackageStartupMessages(library(tidyr))
 
 source('dsp_inputs.R')
 source('evaluation.R')
@@ -29,6 +31,7 @@ source('helpers.R')
 source('normalization.R')
 source('plots.R')
 source('summarization.R')
+source('qc_check.R')
 
 options(datatable.rbindlist.check="warning")
 options(datatable.optimize=1)
@@ -95,6 +98,10 @@ qc.meta <- res.list$meta
 qc.meta[`Segment (Name/ Label)` == "Segment 1",.(.N, max_roi=length(unique(croi))),by=.(sample_id, batch)][(N != 3) | (N != max_roi)]
 qc.meta[sample_id=="01142", `:=`(sample_id="2001142")]
 #Pull out the QC corrected data
+
+# Perform data entry QC
+input_qc()
+qc.meta <- remove_dummy()
 
 all.abund <- Reduce(function(x,y){
 

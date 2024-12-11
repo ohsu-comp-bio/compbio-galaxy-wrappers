@@ -1,4 +1,4 @@
-<tool id="dsp_runner" name="NanoString DSP RUV-III Normalization" version="1.2.2" >
+<tool id="dsp_runner" name="NanoString DSP RUV-III Normalization" version="1.3.0" >
     <description>NanoString GeoMx Digital Spatial Profiling</description>
 
     <requirements>
@@ -12,6 +12,7 @@
         <requirement type="package" version="1.4.4">r-reshape2</requirement>
         <requirement type="package" version="1.0.10">r-dplyr</requirement>
         <requirement type="package" version="2.3">r-gridExtra</requirement>
+        <requirement type="package" version="1.2.1">r-tidyr</requirement>
     </requirements>
 
     <command detect_errors="exit_code"><![CDATA[
@@ -22,6 +23,7 @@
        ln -s $__tool_directory__/normalization.R &&
        ln -s $__tool_directory__/plots.R &&
        ln -s $__tool_directory__/summarization.R &&
+       ln -s $__tool_directory__/qc_check.R &&
        ln -s "$ab_info" ab_info.xlsx &&
        ln -s "$low_probes" low_probes.xlsx &&
        ln -s "$control_type" control_type.xlsx &&
