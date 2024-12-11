@@ -1,4 +1,4 @@
-<tool id="y_ploidy_check_dragen" name="Y Ploidy Check DRAGEN" version="1.1.1">
+<tool id="y_ploidy_check_dragen" name="Y Ploidy Check DRAGEN" version="1.1.2">
 	<description>Checks the ploidy of the y chromosome from DRAGEN metrics.json to confirm specification in samplesheet</description>
 	<command detect_errors="exit_code"><![CDATA[
 	grep "ploidy_estimation" $input | tr -d ' ' | tr -d ',' > $output &&
@@ -31,6 +31,8 @@
 			fi;
 		echo "{\"y_ploidy_check_DRAGEN\": 0}" >> $output;
 		exit 1; fi;
+	else;
+		exit 1; fi;
 	fi
 
 ]]></command>
@@ -40,6 +42,7 @@
 		<param name="gender" type="select" label="Reported Sex">
 			<option value="FEMALE">FEMALE</option>
 			<option value="MALE">MALE</option>
+			<option value="UNSPECIFIED">UNSPECIFIED</option>
 		</param>
 		<param name="input" type="data" format="text" label="DRAGEN_Metrics_JSON"/>
 		<param name="email" type="text" label="Admin Email" help="Send failure reports to this email address">
