@@ -1,0 +1,72 @@
+<tool id="y_ploidy_check_dragen" name="Y Ploidy Check DRAGEN" version="1.1.2">
+	<description>Checks the ploidy of the y chromosome from DRAGEN metrics.json to confirm specification in samplesheet</description>
+	<command detect_errors="exit_code"><![CDATA[
+	grep "ploidy_estimation" $input | tr -d ' ' | tr -d ',' > $output &&
+	echo "ATTENTION - THE BIOLOGICAL SEX OF THIS SAMPLE IS DIFFERENT FROM WHAT WAS SPECIFIED ON THE SAMPLESHEET" > email.txt &&
+	echo $sampleid >> email.txt &&
+	grep "ploidy_estimation" $input | tr -d ' ' | tr -d ',' | tr -d '"' >> email.txt &&
+	echo "SampleSheet_biosex:"$gender >> email.txt &&
+	BIOSEX=\$(grep "ploidy_estimation" $input | cut -d '"' -f 4) && echo \$BIOSEX && echo $gender &&
+	if [ $gender = "MALE" ] ; then
+		if [ \$BIOSEX = "XY" ] || [ \$BIOSEX = "XXY" ] || [ \$BIOSEX = "XXXY" ] || [ \$BIOSEX = "XYY" ]; then
+			echo "{\"y_ploidy_check_DRAGEN\": 1}" >> $output;
+			exit 0;
+		else
+			if [ -z ${5} ]; then
+			echo "Biological sex does not match Samplesheet";
+			else
+				cat email.txt | mailx -s "\$(hostname) Biological Sex Check Tool Error" "${email}";
+			fi;
+		echo "{\"y_ploidy_check_DRAGEN\": 0}" >> $output;
+		exit 1; fi
+	elif [ $gender = "FEMALE" ]; then
+		if [ \$BIOSEX = "XX" ] || [ \$BIOSEX = "XXX" ] || [ \$BIOSEX = "X0" ]; then
+			echo "{\"y_ploidy_check_DRAGEN\": 1}" >> $output;
+			exit 0;
+		else
+			if [ -z ${5} ]; then
+			echo "Biological sex does not match Samplesheet";
+			else
+				cat email.txt | mailx -s "\$(hostname) Biological Sex Check Tool Error" "${email}";
+			fi;
+		echo "{\"y_ploidy_check_DRAGEN\": 0}" >> $output;
+		exit 1; fi;
+	else;
+		exit 1; fi;
+	fi
+
+]]></command>
+
+	<inputs>
+		<param name="sampleid" type="text" label="Sample ID" help="Run identifier to create subdirectory from."/>
+		<param name="gender" type="select" label="Reported Sex">
+			<option value="FEMALE">FEMALE</option>
+			<option value="MALE">MALE</option>
+			<option value="UNSPECIFIED">UNSPECIFIED</option>
+		</param>
+		<param name="input" type="data" format="text" label="DRAGEN_Metrics_JSON"/>
+		<param name="email" type="text" label="Admin Email" help="Send failure reports to this email address">
+			<sanitizer sanitize='False'/>
+		</param>
+	</inputs>
+
+	<outputs>
+		<data format="json" name="output" label="${tool.name} on ${on_string}:JSON"/>
+	</outputs>
+
+	<tests>
+        <test>
+			<param name="gender" value="FEMALE"/>
+            <param name="input" value="NA12878-1.metrics.json"/>
+            <param name="email" value="rosenaus@ohsu.edu"/>
+			<param name="sampleid" value="NA12878-1"/>
+			<param name="output" value="test_output.json"/>
+        </test>
+    </tests>
+
+	<help><![CDATA[
+    This tool performs the quality control step of confirming that the biological sex of the sample as estimated by
+    DRAGEN is the same as the biological sex provided in the SampleSheet.
+    ]]></help>
+
+</tool>
