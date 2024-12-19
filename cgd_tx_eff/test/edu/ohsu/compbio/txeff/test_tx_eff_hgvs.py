@@ -96,12 +96,36 @@ class TxEffHgvsTest(unittest.TestCase):
         pos_part = TxEffHgvs()._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
         self.assertEqual(pos_part, '123_124insC', "g. is incorrect")
 
+        # Multi-nucleotide insertion
+        genotype = '7-33054117-T-TAAGA'
+        chromosome, position, ref, alt = genotype.split('-')
+        pos_part = TxEffHgvs()._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
+        self.assertEqual(pos_part, '33054117_33054118insAAGA', "g. is incorrect")
+
         # Deletion
         genotype = '1-123-AC-G'
         chromosome, position, ref, alt = genotype.split('-')
         pos_part = TxEffHgvs()._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
         self.assertEqual(pos_part, '124del', "g. is incorrect")
-        
+
+        # Multi-nucleotide deletion
+        genotype = '9-2039776-ACAG-A'
+        chromosome, position, ref, alt = genotype.split('-')
+        pos_part = TxEffHgvs()._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
+        self.assertEqual(pos_part, '2039777_2039779del', "g. is incorrect")
+
+        # Duplication
+        genotype = '3-142274739-A-AT'
+        chromosome, position, ref, alt = genotype.split('-')
+        pos_part = TxEffHgvs()._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
+        self.assertEqual(pos_part, '142274749dup', "g. is incorrect")
+
+        # Multi-nucleotide duplication
+        genotype = '5-79950724-G-GCCGCAGCGC'
+        chromosome, position, ref, alt = genotype.split('-')
+        pos_part = TxEffHgvs()._correct_indel_coords(chromosome, int(position), ref, alt, self._pysam_file)
+        self.assertEqual(pos_part, '79950725_79950733dup', "g. is incorrect")
+
         # Indel
         genotype = '5-112175461-CAGTTCACTTGA-CGTC'
         chromosome, position, ref, alt = genotype.split('-')
