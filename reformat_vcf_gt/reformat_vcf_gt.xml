@@ -1,0 +1,25 @@
+<tool id="reformat_vcf_gt" name="Reformat VCF Genotype" version="0.0.1" >
+  <description>Reformat genotype calls from '1' to '1/1'.</description>
+
+  <requirements>
+      <requirement type="package" version="0.13.6">vcfpy</requirement>
+  </requirements>
+
+  <version_command><![CDATA[
+    python $__tool_directory__/reformat_vcf_gt.py --version
+  ]]></version_command>
+
+  <command detect_errors="exit_code"><![CDATA[
+    python $__tool_directory__/reformat_vcf_gt.py "${input_vcf}" "${output_vcf}"
+  ]]></command>
+
+  <inputs>
+    <param name="input_vcf" type="data" format="vcf" label="Input VCF" help="Input VCF file containing genotype values of '1'" />
+  </inputs>
+
+  <outputs>
+    <data format="vcf" name="output_vcf" label="${tool.name} on ${on_string}: VCF" />
+  </outputs>
+  <help>
+  </help>
+</tool>

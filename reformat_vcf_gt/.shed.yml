@@ -1,0 +1,11 @@
+owner: "rosenaus"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/reformat_vcf_gt"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/reformat_vcf_gt"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  reformat_vcf_gt:
+    description: "Reformat a VCF by replacing occurrences of the GT value '1' with the value '1/1'."
+    include:
+      - reformat_vcf_gt.xml
+      - reformat_vcf_gt.py
