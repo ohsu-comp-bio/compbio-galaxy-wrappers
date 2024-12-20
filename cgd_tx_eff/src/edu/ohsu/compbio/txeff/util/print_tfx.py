@@ -27,7 +27,6 @@ from argparse import ArgumentParser
 from tabulate import tabulate
 import vcfpy
 
-
 class PrintTfx(object):
     def print(self, vcf_filename: str, genotype:str = None):
         

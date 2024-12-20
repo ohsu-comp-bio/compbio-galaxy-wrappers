@@ -8,9 +8,7 @@ rename "test" directory to "tests":
 
 '''
 import unittest
-import re
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarParser
-from edu.ohsu.compbio.annovar.annovar_parser import AnnovarFileType
 
 class AnnovarParserTest(unittest.TestCase):
         
@@ -49,11 +47,22 @@ class AnnovarParserTest(unittest.TestCase):
         # For some reason hgvs.parser.Parser.parse can't figure out the base pair in that c.
         self.assertEqual(hgvs_basep, None)
         
-        # Invalid formats 
-        self.assertRaises(ValueError, annovar_parser._unpack_vf_transcript_tuple, "")        
-        self.assertRaises(ValueError, annovar_parser._unpack_vf_transcript_tuple, "a:b:c:d:e")
-        self.assertRaises(ValueError, annovar_parser._unpack_vf_transcript_tuple, "a:b:c:d:e:f")
+        # Invalid format: empty 
+        self.assertRaises(ValueError, annovar_parser._unpack_vf_transcript_tuple, "")
         
+        # Invalid format: delimited but still not a proper Type V  
+        refseq_transcript, exon, hgvs_c_dot, hgvs_basep = annovar_parser._unpack_vf_transcript_tuple("a:b:c:d:e:f")
+        self.assertIs(refseq_transcript, None)
+        self.assertIs(exon, None)
+        self.assertIs(hgvs_c_dot, None)
+        self.assertIs(hgvs_basep, None)
+         
+        refseq_transcript, exon, hgvs_c_dot, hgvs_basep = annovar_parser._unpack_vf_transcript_tuple("a:b:c:d:e")
+        self.assertIs(refseq_transcript, None)
+        self.assertIs(exon, None)
+        self.assertIs(hgvs_c_dot, None)
+        self.assertIs(hgvs_basep, None)
+                
     def test__parse_variant_function_row(self):
         '''
         Parse the list transcripts information that is found in an annovar variant_function file
@@ -107,7 +116,7 @@ class AnnovarParserTest(unittest.TestCase):
         self.assertEqual(refseq_transcript, 'NM_001289861.1', "Incorrect refseq transcript")
         self.assertEqual(exon, 'exon20', "Incorrect exon")
         self.assertEqual(hgvs_c_dot, 'c.3002-2A>G', "Incorrect c.")
-        
+    
     def test__parse_transcript_tuple_type2(self):
         data = "NM_000791.4(NM_000791.4:c.-417_-416insGCGCTGCGG)"
         annovar_parser = AnnovarParser();

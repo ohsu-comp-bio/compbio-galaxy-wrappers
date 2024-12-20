@@ -92,6 +92,7 @@ class TxEffHgvs(object):
         self.logger = logging.getLogger(__name__)
         self._sequence_source = sequence_source
         self._benchmarking = None
+        self._variant_counter = 0
         
         # Setup benchmarking if it is requested
         if benchmark:
@@ -100,7 +101,7 @@ class TxEffHgvs(object):
             self._benchmark_file = open("benchmark.csv", 'w')
             self.logger.info(f"Benchmarking enabled. Writing to {self._benchmark_file.name}") 
             self._benchmark_csv_writer = csv.writer(self._benchmark_file)
-            self._benchmark_csv_writer.writerow(['variant', 'name', 'transcript_count', 'total_time', 'average_time'])
+            self._benchmark_csv_writer.writerow(['variant_number', 'variant', 'name', 'transcript_count', 'total_time', 'average_time'])
  
     def __enter__(self):
         '''
@@ -303,8 +304,9 @@ class TxEffHgvs(object):
         transcripts = []
         
         for variant in variants:
+            self._increment_variant_counter()
             hgvs_variant_transcripts = self._lookup_variant_hgvs_transcripts(variant, pysam_file)
-            self.logger.info(f"HGVS found {len(hgvs_variant_transcripts)} transcripts for {variant}")
+            self.logger.debug(f"HGVS found {len(hgvs_variant_transcripts)} transcripts for {variant}")
 
             # HGVS might not find any transcripts even though Annovar did 
             if len(hgvs_variant_transcripts) == 0: 
@@ -915,7 +917,12 @@ class TxEffHgvs(object):
             return
         
         for name in self._benchmarking.get_names():            
-            self._benchmark_csv_writer.writerow([variant, name, cnt_transcripts, self._benchmarking.get_time_total(name), self._benchmarking.get_time_average(name)])
+            self._benchmark_csv_writer.writerow([self._variant_counter, variant, name, cnt_transcripts, self._benchmarking.get_time_total(name), self._benchmarking.get_time_average(name)])
          
         # Clear the timers after each log
         self._benchmarking.clear()
+    
+    def _increment_variant_counter(self):
+        self._variant_counter = self._variant_counter + 1
+        if self._variant_counter % 1000 == 0:
+            self.logger.info(f"Processed variant {self._variant_counter}")

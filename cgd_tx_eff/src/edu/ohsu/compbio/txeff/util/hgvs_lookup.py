@@ -7,7 +7,7 @@ Created on Mar. 21, 2023
 @author: pleyte
 '''
 from argparse import ArgumentParser
-import logging
+import logging.config
 import os
 
 import hgvs.dataproviders.uta
@@ -63,7 +63,7 @@ class HgvsLookup(object):
             print(f'  Gene: {transcript.hgnc_gene}')
             print(f'  g.: {transcript.sequence_variant}')
             print(f'  c.: {transcript.refseq_transcript}:{transcript.hgvs_c_dot}')
-            print(f'  p.: {transcript.protein_transcript}:{transcript.hgvs_p_dot_three}')
+            print(f'  p.: {transcript.protein_transcript}:{transcript.hgvs_p_dot_one} / {transcript.hgvs_p_dot_three}')
             print(f'  Splicing: {transcript.splicing if transcript.splicing else "No"}')
             print('--------')
         
