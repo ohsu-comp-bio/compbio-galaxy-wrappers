@@ -56,6 +56,7 @@ class RptHandler:
         self.size = self.pysamtxeff.size
         self.seq = self.pysamtxeff.faidx_query(self.chrom, self.coord)
         self.fasta_alt = self.seq[self.size + 1:self.size + len(self.allele) + 1]
+        self.fasta_alt_next = self.seq[self.size + len(self.allele) + 1:self.size + len(self.allele) + len(self.allele) + 1]
 
     def check_rpt_status(self) -> bool:
         """
@@ -63,6 +64,13 @@ class RptHandler:
         :return:
         """
         return self.allele == self.fasta_alt
+
+    def check_rpt_status_dup(self) -> bool:
+        """
+        Check to see if the del/dup allele and sequence at the current search position match.
+        :return:
+        """
+        return self.allele == self.fasta_alt_next
 
     def find_rpt_coords(self) -> (int, int):
         """
@@ -72,7 +80,7 @@ class RptHandler:
         """
         start_size = self.size
         end_size = self.size + len(self.allele)
-        coord = self.coord
+        coord = self.coord + 1
         fasta_alt = self.fasta_alt
         while self.allele == fasta_alt:
             coord += len(self.allele)
@@ -252,7 +260,7 @@ class TxEffHgvs(object):
             if dels.check_rpt_status():
                 new_start, new_end = dels.find_rpt_coords()
                 if len(dels.allele) == 1:
-                    new_pos = '_'.join([str(new_start)]) + 'del'
+                    new_pos = '_'.join([str(new_start - 1)]) + 'del'
                 else:
                     new_pos = '_'.join([str(new_start), str(new_end)]) + 'del'
             else:
@@ -271,12 +279,16 @@ class TxEffHgvs(object):
                 new_start, new_end = dups.find_rpt_coords()
                 # Check if there is a padding base, then adjust accordingly.
                 if alt[0] == ref[0]:
-                    new_start += 1
-                    new_end += 1
+                    new_start -= 1
+                    new_end -= 1
                 if len(dups.allele) == 1:
                     new_pos = '_'.join([str(new_start)]) + 'dup'
                 else:
-                    new_pos = '_'.join([str(new_start), str(new_end)]) + 'dup'
+                    if dups.check_rpt_status_dup():
+                        new_pos = '_'.join([str(new_start + len(dups.allele)), str(new_end + len(dups.allele))]) + 'dup'
+                    else:
+                        new_pos = '_'.join([str(new_start + 1), str(new_end + 1)]) + 'dup'
+
             # Insertion case
             else:
                 new_start = str(pos)
@@ -296,7 +308,7 @@ class TxEffHgvs(object):
             return new_pos
         else:
             raise Exception("Unknown change type: " + pos + ':' + ref + '>' + alt)
-    
+
     def _lookup_hgvs_transcripts(self, variants: list, pysam_file):
         '''
         Return the HGVS transcripts associated with a list of variants  
