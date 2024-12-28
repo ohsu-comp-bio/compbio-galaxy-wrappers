@@ -141,6 +141,7 @@ class TxEffVcf(object):
             vcf_record.INFO[TranscriptEffect.TFX_PROTEIN_TRANSCRIPT.value] = [':'.join([self._replaceNoneWithEmpty(x) for x in tfx_protein_transcripts])]
 
             # Replace spaces with underscore because spaces are not allowed in the INFO field.
+            # Example: annovar's "nonframeshift insertion" and "nonframeshift deletion" will have an underscore inserted. 
             vcf_record.INFO[TranscriptEffect.TFX_VARIANT_EFFECT.value] = [':'.join([self._replaceNoneWithEmpty(x).replace(' ', '_') for x in tfx_variant_effects])]
             
             vcf_records.append(vcf_record)

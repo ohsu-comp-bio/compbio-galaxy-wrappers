@@ -131,23 +131,11 @@ class AnnovarParser(object):
                 self.logger.debug(f"Converting base pair position to string because it is an offset: {full_c}")
                 hgvs_basep = str(hgvs_basep)
             
-            # p. single letter amino acid; not always present
-            if len(transcript_parts) == 5:
-                hgvs_p = transcript_parts[4]                 
-                full_p = ':'.join([refseq_transcript, hgvs_p])
-                try:
-                    parsed_p_dot = self.hgvs_parser.parse(full_p)
-                    hgvs_three = 'p.' + str(parsed_p_dot.posedit)
-                    amino_acid_position = parsed_p_dot.posedit.pos.start.pos                
-                except hgvs.exceptions.HGVSParseError as e:
-                    self.logger.debug(f"Unable to parse {full_p} because Annovar uses non-standard nomenclature. That's ok, HGVS will fill it in: {e}")
-                    hgvs_three = None
-                    amino_acid_position = None
-            else:
-                self.logger.debug(f"This transcript is missing the p. but that's ok, HGVS will fill it in: {transcript_parts}")
-                amino_acid_position = None
-                hgvs_p = None
-                hgvs_three = None
+            # the exonic file may have protein info but we ignore it because 1) we don't trust the format of the p.; 2) it never
+            # includes a protein transcript.  
+            amino_acid_position = None
+            hgvs_p = None
+            hgvs_three = None
 
         return amino_acid_position, hgvs_basep, exon, hgnc_gene, hgvs_c_dot, hgvs_p, hgvs_three, refseq_transcript
 

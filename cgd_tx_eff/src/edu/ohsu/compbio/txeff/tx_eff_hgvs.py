@@ -230,14 +230,6 @@ class TxEffHgvs(object):
             return 5
         
         raise ValueError("The sequence_source parameter must be a url, a directory, or 'ncbi': " + self._sequence_source)
-                
-    def _noneIfEmpty(self, value: str):
-        '''
-        Return None if the string is an empty string.
-        ''' 
-        if value == '':
-            return None
-        return value
 
     def _correct_indel_coords(self, chrom, pos, ref, alt, pysamtxeff):
         """
@@ -368,11 +360,6 @@ class TxEffHgvs(object):
                 variant_transcript.hgnc_gene = transcript_detail['hgnc']
                 self._benchmark_stop('hdp.get_tx_info (UTA)')
                 
-                # Non-coding transcripts (prefix NR_) cause HGVS to throw an exception when determining c. and p. 
-                # But instead of giving up on the transcript altogether, the transcript is saved with transcript name and gene only. 
-                if refseq_transcript.startswith('NR_'):
-                    variant_transcript.refseq_transcript = refseq_transcript 
-
                 # Determine c. and p.. Non coding transcripts will throw an error. See HGVSUsageError caught below.
                 self._benchmark_start('am.g_to_c (SeqRepo)') 
                 var_c = self.am.g_to_c(var_g, str(refseq_transcript))
@@ -401,7 +388,7 @@ class TxEffHgvs(object):
                 
                 # The amino acid position only exists for certain types of variants.             
                 if var_p3 == 'p.?':
-                    assert var_p.posedit == None, "A position is not expected with 'p.?'"                
+                    assert not var_p.posedit, "A position is not expected with 'p.?'"                
                 elif isinstance(var_p.posedit, hgvs.edit.AARefAlt):
                     # Some variants don't have any position information, and that is ok. Most of the time these are indels, as indicated by ``var_p.posedit.type``
                     self.logger.debug(f"HGVS variant does not have a position: ref={var_p.posedit.ref}, alt={var_p.posedit.alt}, type={var_p.posedit.type}, str={str(var_p.posedit)}. Keeping.")
@@ -425,10 +412,7 @@ class TxEffHgvs(object):
     
             except HGVSUsageError as e:
                 if("non-coding transcript" in str(e)):
-                    self.logger.info(f"Encountered non-coding transcript {variant}. Transcript will have name and gene only: %s", str(e))
-                    
-                    # Add the transcript even though an exception was thrown. At least we have the transcript+gene. 
-                    hgvs_transcripts.append(variant_transcript)
+                    self.logger.info(f"Encountered non-coding transcript {variant}. Transcript will be ignored: %s", str(e))
                     self._benchmark_cancel()
                 else:
                     raise(e)
@@ -481,7 +465,7 @@ class TxEffHgvs(object):
         for (transcript_key, annovar_transcript) in annovar_dict.items():
             # Check the HGVS dictionary for a key matching the annovar key. If there is a match, then the annovar transcript has already  
             # been processed. If HGVS does not have the key then the annovar transcript has not been looked at.
-            if hgvs_dict.get(transcript_key) == None:
+            if not hgvs_dict.get(transcript_key):
                 self.logger.debug(f"Adding unmatched Annovar transcript(s) for {transcript_key}")
                 
                 # Convert the AnnovarVariantFunction objects to VariantTranscript so all items in the list are of the VariantTranscript type. 
@@ -489,7 +473,7 @@ class TxEffHgvs(object):
         
         # Iterate through the hgvs transcripts and see if any of them are in the annovar list
         for (transcript_key, hgvs_transcript) in hgvs_dict.items():
-            if annovar_dict.get(transcript_key) == None:
+            if not annovar_dict.get(transcript_key):
                 self.logger.debug(f"Adding unmatched HGVS transcript(s) for {transcript_key}")
                 transcripts.append(hgvs_transcript)
         
@@ -586,16 +570,16 @@ class TxEffHgvs(object):
         
         # Exon number
         ## Only Annovar provides exon, and the value may be empty.
-        assert hgvs_transcript.exon == None
+        assert not hgvs_transcript.exon
         if self._allow_merge(new_transcript.exon, annovar_transcript.exon, transcript_key, 'exon'):
             new_transcript.exon = annovar_transcript.exon 
         
         # Gene
         # Prefer annovar's gene, but annovar doesn't give us a gene for intron and utr; in those cases use hgvs's.        
         transcript_gene = annovar_transcript.hgnc_gene
-        if self._noneIfEmpty(annovar_transcript.hgnc_gene) == None and self._noneIfEmpty(hgvs_transcript.hgnc_gene) == None:
+        if not annovar_transcript.hgnc_gene and not hgvs_transcript.hgnc_gene:
             self.logger.debug(f"Gene selection: Neither Annovar or HGVS have a gene for {transcript_key}") 
-        elif annovar_transcript.hgnc_gene == None:
+        elif not annovar_transcript.hgnc_gene:
             self.logger.debug(f"Gene selection: Annovar did not provide a gene for {transcript_key}, using HGVS's: gene={hgvs_transcript.hgnc_gene}")            
             transcript_gene = hgvs_transcript.hgnc_gene
         elif annovar_transcript.hgnc_gene != hgvs_transcript.hgnc_gene:
@@ -610,7 +594,7 @@ class TxEffHgvs(object):
     
         # c-dot
         ## Use HGVS's c. because Annovar's is not always correct. Non-coding transcripts don't have a c. 
-        assert hgvs_transcript.hgvs_c_dot != None or hgvs_transcript.refseq_transcript.startswith('NR_'), "The HGVS c. value is not supposed to be empty"
+        assert hgvs_transcript.hgvs_c_dot or hgvs_transcript.refseq_transcript.startswith('NR_'), "The HGVS c. value is not supposed to be empty"
         
         if hgvs_transcript.hgvs_c_dot != annovar_transcript.hgvs_c_dot:
             self.logger.debug(f"HGVS and Annovar do not agree on c_dot for {transcript_key}: {hgvs_transcript.hgvs_c_dot} != {annovar_transcript.hgvs_c_dot} ")
@@ -620,7 +604,7 @@ class TxEffHgvs(object):
         
         # p-dot (1L)
         ## Use HGVS's p. because Annovar's is not always correct. Non-coding transcripts don't have a p.
-        assert hgvs_transcript.hgvs_p_dot_one != None or hgvs_transcript.refseq_transcript.startswith('NR_')
+        assert hgvs_transcript.hgvs_p_dot_one or hgvs_transcript.refseq_transcript.startswith('NR_')
         
         if hgvs_transcript.hgvs_p_dot_one != annovar_transcript.hgvs_p_dot_one:
             self.logger.debug(f"HGVS and Annovar do not agree on hgvs_p_dot_one for {transcript_key}: {hgvs_transcript.hgvs_p_dot_one} != {annovar_transcript.hgvs_p_dot_one} ")
@@ -629,7 +613,7 @@ class TxEffHgvs(object):
             new_transcript.hgvs_p_dot_one = hgvs_transcript.hgvs_p_dot_one
     
         # p-dot (3L)
-        assert hgvs_transcript.hgvs_p_dot_three != None or hgvs_transcript.refseq_transcript.startswith('NR_')
+        assert hgvs_transcript.hgvs_p_dot_three or hgvs_transcript.refseq_transcript.startswith('NR_')
     
         if hgvs_transcript.hgvs_p_dot_three != annovar_transcript.hgvs_p_dot_three:
             self.logger.debug(f"HGVS and Annovar do not agree on hgvs_p_dot_three for {transcript_key}: {hgvs_transcript.hgvs_p_dot_three} != {annovar_transcript.hgvs_p_dot_three} ")
@@ -639,7 +623,7 @@ class TxEffHgvs(object):
         
         # Splice variant indicator
         ## HGVS never tells us that a variant/transcript is involved in splicing. But Annovar does. 
-        assert hgvs_transcript.splicing == None
+        assert not hgvs_transcript.splicing
         if self._allow_merge(new_transcript.splicing, annovar_transcript.splicing, transcript_key, 'splicing'):
             new_transcript.splicing = annovar_transcript.splicing
     
@@ -650,24 +634,24 @@ class TxEffHgvs(object):
             
         # Variant Effect 
         ## variant effect is only provided by Annovar, and the value may be empty
-        assert hgvs_transcript.variant_effect == None
+        assert not hgvs_transcript.variant_effect
         if self._allow_merge(new_transcript.variant_effect, annovar_transcript.variant_effect, transcript_key, 'variant_effect'):
             new_transcript.variant_effect = annovar_transcript.variant_effect
         
         # Variant Type 
         ## Variant type is only provided by Annovar, and the value will be empty in the case of splice variants. 
-        assert hgvs_transcript.variant_type == None
+        assert not hgvs_transcript.variant_type
     
         # Non-splicing transcripts from annovar are expected to have a variant type (ie exonic, intronic)
         if not annovar_transcript.splicing:
-            assert self._noneIfEmpty(annovar_transcript.variant_type) != None, f'Variant type must not be empty for non-splicing transcripts. See {transcript_key}'
+            assert annovar_transcript.variant_type, f'Variant type must not be empty for non-splicing transcripts. See {transcript_key}'
     
         if self._allow_merge(new_transcript.variant_type, annovar_transcript.variant_type, transcript_key, 'variant_type'):
             new_transcript.variant_type = annovar_transcript.variant_type 
          
         # Protein Transcript
         ## Only HGVS provides protein transcript
-        assert hgvs_transcript.protein_transcript != None or hgvs_transcript.refseq_transcript.startswith('NR_')
+        assert hgvs_transcript.protein_transcript or hgvs_transcript.refseq_transcript.startswith('NR_')
         if self._allow_merge(new_transcript.protein_transcript, hgvs_transcript.protein_transcript, transcript_key, 'protein_transcript'):
             new_transcript.protein_transcript = hgvs_transcript.protein_transcript
         
@@ -682,7 +666,7 @@ class TxEffHgvs(object):
         if existing_value and new_value and existing_value != new_value:
             # The existing value has already been set and the incoming value is non-empty, and the two values are different
             raise Exception(f"Unexpected merge condition for {variant_id}: existing {field_name} value does not match new value: {existing_value} != {new_value}")
-        elif existing_value != None and not new_value:
+        elif existing_value and not new_value:
             # Don't overwrite a valid value with an empty value
             return False
         else:
@@ -709,7 +693,7 @@ class TxEffHgvs(object):
         for annovar_rec in annovar_transcripts:
             if annovar_parser.is_annovar_splicing_type(annovar_rec.splicing):
                 annovar_splice_variant_transcript_count += 1
-            elif annovar_rec.splicing != None and annovar_rec.splicing != '':
+            elif annovar_rec.splicing:
                 self.logger.warning(f"Invalid value in splicing column: {annovar_rec.splicing}")
     
             annovar_dict[annovar_rec.get_label()].append(annovar_rec)
@@ -857,11 +841,11 @@ class TxEffHgvs(object):
             best_transcript = self.__get_best_transcript(transcript_dict[key])
             
             # Annovar doesn't provide a gene for introns and UTR so when that happens lookup the transcript in UTA to see if we can get a gene for it.    
-            if best_transcript.hgnc_gene is None:
+            if not best_transcript.hgnc_gene:
                 best_transcript.hgnc_gene = self._get_gene_for_transcript(best_transcript.refseq_transcript)
                 if best_transcript.hgnc_gene is not None:
                     self.logger.debug(f"Found gene for transcript {best_transcript}: {best_transcript.hgnc_gene}")
-    
+
             best_transcripts.append(best_transcript)
         
         return best_transcripts    
@@ -879,7 +863,6 @@ class TxEffHgvs(object):
     def _get_gene_for_transcript(self, transcript_accession: str):
         '''
         Use the HGVS lib to lookup a transcript's gene in UTA. 
-        ToDo: this method reconnects to UTA each time it is called. Performance can be improved by keeping the connection open.
         '''
         try:
             rec = self.hdp.get_tx_identity_info(transcript_accession)
