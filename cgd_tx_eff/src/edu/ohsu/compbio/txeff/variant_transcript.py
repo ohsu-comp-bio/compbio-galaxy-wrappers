@@ -87,8 +87,8 @@ class VariantTranscript(AnnovarVariantFunction):
     def _get_self_score(self):
         '''
         Return a score based on how many the fields are filled in. This method can be improved in the following ways
-        - Give p_dot and c_dot a higher score when the values come from HGVS/UTA rather than Annovar
-        - Scoring some fields (e.g. g-dot, protein protein script, exon) may not be relevent for non coding variants. 
+        - Give c_dot a higher score when the value comes from HGVS/UTA rather than Annovar
+        - Scoring some fields (e.g. g-dot, protein protein script, exon) may not be relevant for non coding variants. 
         '''
         score = 0
         
@@ -119,13 +119,20 @@ class VariantTranscript(AnnovarVariantFunction):
             score += 1
 
         if self.hgvs_p_dot_one:
-            assert self.hgvs_p_dot_three, "Failure to set values for p1 and p3 suggests a bug somewhere"
-            assert self.protein_transcript, "Protein genotype is of no use without protein transcript"
-            score += 1
+            if not self.hgvs_p_dot_three:
+                raise ValueError(f"Failure to set values for p1 and p3 suggests a bug somewhere: {self}, p1={self.hgvs_p_dot_one}")
+            elif not self.protein_transcript:
+                raise ValueError(f"Protein genotype is of no use without protein transcript: {self}, p1={self.hgvs_p_dot_one}")
+            else:
+                score += 1
                 
         if self.hgvs_p_dot_three:
-            assert self.hgvs_p_dot_one, "Failure to set values for p3 and p1 suggests a bug somewhere"
-            score += 1
+            if not self.hgvs_p_dot_one:
+                raise ValueError("Failure to set values for p3 and p1 suggests a bug somewhere: {self}, {self.hgvs_p_dot_three}")
+            elif not self.protein_transcript:
+                raise ValueError(f"Protein genotype is of no use without protein transcript: {self}, p3={self.hgvs_p_dot_three}")
+            else:
+                score += 1
             
         if self.variant_effect:            
             score += 1

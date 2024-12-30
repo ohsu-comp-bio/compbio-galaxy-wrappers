@@ -132,7 +132,7 @@ class AnnovarParser(object):
                 hgvs_basep = str(hgvs_basep)
             
             # the exonic file may have protein info but we ignore it because 1) we don't trust the format of the p.; 2) it never
-            # includes a protein transcript.  
+            # includes a protein transcript.
             amino_acid_position = None
             hgvs_p = None
             hgvs_three = None
@@ -177,19 +177,19 @@ class AnnovarParser(object):
         # Handle the special case of a UTR that doesn't actually have a c. (eg "NM_001324237.2(NM_001324237.2:exon2:UTR5)" or "...:r.spl)"
         if hgvs_c_dot and (hgvs_c_dot.endswith('UTR3') or hgvs_c_dot.endswith('UTR5') or hgvs_c_dot.endswith('r.spl')):            
             hgvs_c_dot = None    
-        
-        # Extract base position from c. 
+                
+        # Extract c. and cdna base position 
         if hgvs_c_dot:
             try:
                 full_c = ':'.join([refseq_transcript, hgvs_c_dot])
                 hgvs_basep = self.hgvs_parser.parse(full_c).posedit.pos.start
-                
+        
                 # Sometimes basepair position is an integer, but it can also be an offset (eg c.371-3C>T)
                 if hgvs_basep and type(hgvs_basep) is BaseOffsetPosition:
                     self.logger.debug(f"Converting base pair position to string because it is an offset: {full_c}")
                     # base position is a string because offsets are like "1135-4"
                     hgvs_basep = str(hgvs_basep)
-
+        
             except hgvs.exceptions.HGVSParseError as e:
                 # This doesn't matter because we use the c. from HGVS/UTA not this one from Annovar
                 hgvs_basep = None

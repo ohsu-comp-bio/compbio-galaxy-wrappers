@@ -553,10 +553,7 @@ class TxEffHgvs(object):
         assert hgvs_transcript.alt == annovar_transcript.alt, f"HGVS and Annovar genotype alts are not equal: {hgvs_transcript.alt} != {annovar_transcript.alt}"
         
         # Amino Acid Position
-        ## Amino acid position is commonly different between HGVS and Annovar 
-        if str(hgvs_transcript.hgvs_amino_acid_position) != str(annovar_transcript.hgvs_amino_acid_position):
-            self.logger.debug(f"HGVS and Annovar do not agree on amino acid position for {transcript_key}: {hgvs_transcript.hgvs_amino_acid_position} != {annovar_transcript.hgvs_amino_acid_position}")
-    
+        ## Use only the hgvs/uta value, annovar's is ignored.
         if self._allow_merge(new_transcript.hgvs_amino_acid_position, hgvs_transcript.hgvs_amino_acid_position, transcript_key, 'hgvs_amino_acid_position'):
             new_transcript.hgvs_amino_acid_position = hgvs_transcript.hgvs_amino_acid_position 
         
@@ -567,13 +564,13 @@ class TxEffHgvs(object):
         
         if self._allow_merge(new_transcript.hgvs_base_position, hgvs_transcript.hgvs_base_position, transcript_key, 'hgvs_base_position'):
             new_transcript.hgvs_base_position = hgvs_transcript.hgvs_base_position
-        
+
         # Exon number
         ## Only Annovar provides exon, and the value may be empty.
         assert not hgvs_transcript.exon
         if self._allow_merge(new_transcript.exon, annovar_transcript.exon, transcript_key, 'exon'):
             new_transcript.exon = annovar_transcript.exon 
-        
+
         # Gene
         # Prefer annovar's gene, but annovar doesn't give us a gene for intron and utr; in those cases use hgvs's.        
         transcript_gene = annovar_transcript.hgnc_gene
@@ -603,21 +600,16 @@ class TxEffHgvs(object):
             new_transcript.hgvs_c_dot = hgvs_transcript.hgvs_c_dot
         
         # p-dot (1L)
-        ## Use HGVS's p. because Annovar's is not always correct. Non-coding transcripts don't have a p.
+        ## Use only the hgvs/uta value, annovar's is ignored.
+        ## Non-coding transcripts don't have a p.
         assert hgvs_transcript.hgvs_p_dot_one or hgvs_transcript.refseq_transcript.startswith('NR_')
-        
-        if hgvs_transcript.hgvs_p_dot_one != annovar_transcript.hgvs_p_dot_one:
-            self.logger.debug(f"HGVS and Annovar do not agree on hgvs_p_dot_one for {transcript_key}: {hgvs_transcript.hgvs_p_dot_one} != {annovar_transcript.hgvs_p_dot_one} ")
-    
         if self._allow_merge(new_transcript.hgvs_p_dot_one, hgvs_transcript.hgvs_p_dot_one, transcript_key, 'hgvs_p_dot_one'):
             new_transcript.hgvs_p_dot_one = hgvs_transcript.hgvs_p_dot_one
     
         # p-dot (3L)
-        assert hgvs_transcript.hgvs_p_dot_three or hgvs_transcript.refseq_transcript.startswith('NR_')
-    
-        if hgvs_transcript.hgvs_p_dot_three != annovar_transcript.hgvs_p_dot_three:
-            self.logger.debug(f"HGVS and Annovar do not agree on hgvs_p_dot_three for {transcript_key}: {hgvs_transcript.hgvs_p_dot_three} != {annovar_transcript.hgvs_p_dot_three} ")
-    
+        ## Use only the hgvs/uta value, annovar's is ignored.
+        ## Non-coding transcripts don't have a p.
+        assert hgvs_transcript.hgvs_p_dot_three or hgvs_transcript.refseq_transcript.startswith('NR_')    
         if self._allow_merge(new_transcript.hgvs_p_dot_three, hgvs_transcript.hgvs_p_dot_three, transcript_key, 'hgvs_p_dot_three'):
             new_transcript.hgvs_p_dot_three = hgvs_transcript.hgvs_p_dot_three
         
