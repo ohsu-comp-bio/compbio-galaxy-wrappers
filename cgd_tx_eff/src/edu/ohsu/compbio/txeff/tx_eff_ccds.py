@@ -80,7 +80,7 @@ class TxEffCcds(object):
         '''
         # Load the refseq to CCDS map from file        
         refseq_to_ccds_mappings = self._get_refseq_to_ccds_mappings()        
-        if(len(refseq_to_ccds_mappings) == 0): 
+        if(len(refseq_to_ccds_mappings) == 0):
             raise Exception(f"No mappings found in input file {self.refseq_to_ccds_file}") 
 
         ccds_to_transcript = {}
@@ -120,7 +120,7 @@ class TxEffCcds(object):
         '''
         ccds_transcripts = []
         
-        # Get a map of refseq transcripts that can be mapped to a ccds accession 
+        # Get a map of refseq transcripts that can be mapped to a ccds accession
         ccds_to_transcript = self._get_ccds_mapped_transcripts(refseq_transcripts)
         
         # For each transcript make a copy and substitute the refseq accession with the ccds 
