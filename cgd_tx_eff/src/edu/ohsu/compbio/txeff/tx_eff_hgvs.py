@@ -591,7 +591,7 @@ class TxEffHgvs(object):
     
         # c-dot
         ## Use HGVS's c. because Annovar's is not always correct. Non-coding transcripts don't have a c. 
-        assert hgvs_transcript.hgvs_c_dot or hgvs_transcript.refseq_transcript.startswith('NR_'), "The HGVS c. value is not supposed to be empty"
+        assert hgvs_transcript.hgvs_c_dot, "The HGVS c. value is not supposed to be empty"
         
         if hgvs_transcript.hgvs_c_dot != annovar_transcript.hgvs_c_dot:
             self.logger.debug(f"HGVS and Annovar do not agree on c_dot for {transcript_key}: {hgvs_transcript.hgvs_c_dot} != {annovar_transcript.hgvs_c_dot} ")
@@ -602,14 +602,14 @@ class TxEffHgvs(object):
         # p-dot (1L)
         ## Use only the hgvs/uta value, annovar's is ignored.
         ## Non-coding transcripts don't have a p.
-        assert hgvs_transcript.hgvs_p_dot_one or hgvs_transcript.refseq_transcript.startswith('NR_')
+        assert hgvs_transcript.hgvs_p_dot_one
         if self._allow_merge(new_transcript.hgvs_p_dot_one, hgvs_transcript.hgvs_p_dot_one, transcript_key, 'hgvs_p_dot_one'):
             new_transcript.hgvs_p_dot_one = hgvs_transcript.hgvs_p_dot_one
     
         # p-dot (3L)
         ## Use only the hgvs/uta value, annovar's is ignored.
         ## Non-coding transcripts don't have a p.
-        assert hgvs_transcript.hgvs_p_dot_three or hgvs_transcript.refseq_transcript.startswith('NR_')    
+        assert hgvs_transcript.hgvs_p_dot_three    
         if self._allow_merge(new_transcript.hgvs_p_dot_three, hgvs_transcript.hgvs_p_dot_three, transcript_key, 'hgvs_p_dot_three'):
             new_transcript.hgvs_p_dot_three = hgvs_transcript.hgvs_p_dot_three
         
@@ -643,7 +643,7 @@ class TxEffHgvs(object):
          
         # Protein Transcript
         ## Only HGVS provides protein transcript
-        assert hgvs_transcript.protein_transcript or hgvs_transcript.refseq_transcript.startswith('NR_')
+        assert hgvs_transcript.protein_transcript
         if self._allow_merge(new_transcript.protein_transcript, hgvs_transcript.protein_transcript, transcript_key, 'protein_transcript'):
             new_transcript.protein_transcript = hgvs_transcript.protein_transcript
         

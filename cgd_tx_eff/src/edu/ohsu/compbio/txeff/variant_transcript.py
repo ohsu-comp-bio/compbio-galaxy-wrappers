@@ -128,7 +128,7 @@ class VariantTranscript(AnnovarVariantFunction):
                 
         if self.hgvs_p_dot_three:
             if not self.hgvs_p_dot_one:
-                raise ValueError("Failure to set values for p3 and p1 suggests a bug somewhere: {self}, {self.hgvs_p_dot_three}")
+                raise ValueError(f"Failure to set values for p3 and p1 suggests a bug somewhere: {self}, {self.hgvs_p_dot_three}")
             elif not self.protein_transcript:
                 raise ValueError(f"Protein genotype is of no use without protein transcript: {self}, p3={self.hgvs_p_dot_three}")
             else:
