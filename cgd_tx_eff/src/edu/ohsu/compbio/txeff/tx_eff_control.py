@@ -115,8 +115,8 @@ def _main():
     pysam_file = PysamTxEff(args.reference_fasta)
 
     # Look for additional transcripts in the HGVA/UTA database and merge them with the annovar records.
-    with TxEffHgvs(sequence_source = args.sequence_source, benchmark = args.benchmark) as tx_eff_hgvs:
-        merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records, pysam_file)
+    with TxEffHgvs(pysam_file = pysam_file, sequence_source = args.sequence_source, benchmark = args.benchmark) as tx_eff_hgvs:
+        merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records)
     
     # Close the reference FASTA
     pysam_file.my_fasta.close()

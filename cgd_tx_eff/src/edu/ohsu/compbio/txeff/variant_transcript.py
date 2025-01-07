@@ -8,7 +8,7 @@ class VariantTranscript(AnnovarVariantFunction):
         Create new VariantTranscript using chromosome, position, ref, and alt.
         '''
         super().__init__(chromosome, position, ref, alt)
-            
+
         self.protein_transcript = None
         
         # An hgvs.sequencevariant.SequenceVariant with g. notation 
@@ -111,28 +111,9 @@ class VariantTranscript(AnnovarVariantFunction):
         if self.hgnc_gene:
             score += 1
                 
-        # Protein fields
-        if self.protein_transcript:
+        # Protein fields        
+        if self.protein_transcript and self.hgvs_amino_acid_position and self.hgvs_p_dot_one and self.hgvs_p_dot_three:
             score += 1
-            
-        if self.hgvs_amino_acid_position:
-            score += 1
-
-        if self.hgvs_p_dot_one:
-            if not self.hgvs_p_dot_three:
-                raise ValueError(f"Failure to set values for p1 and p3 suggests a bug somewhere: {self}, p1={self.hgvs_p_dot_one}")
-            elif not self.protein_transcript:
-                raise ValueError(f"Protein genotype is of no use without protein transcript: {self}, p1={self.hgvs_p_dot_one}")
-            else:
-                score += 1
-                
-        if self.hgvs_p_dot_three:
-            if not self.hgvs_p_dot_one:
-                raise ValueError(f"Failure to set values for p3 and p1 suggests a bug somewhere: {self}, {self.hgvs_p_dot_three}")
-            elif not self.protein_transcript:
-                raise ValueError(f"Protein genotype is of no use without protein transcript: {self}, p3={self.hgvs_p_dot_three}")
-            else:
-                score += 1
             
         if self.variant_effect:            
             score += 1
