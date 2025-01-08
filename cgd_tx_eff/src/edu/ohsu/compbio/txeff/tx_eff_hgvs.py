@@ -8,10 +8,14 @@ Created on Apr 20, 2022
 
 from collections import defaultdict
 import csv
+import itertools
 import logging
+from multiprocessing.dummy import Pool as ThreadPool
+
 import os
 from pathlib import Path
 import re
+import threading
 
 import hgvs.assemblymapper
 import hgvs.dataproviders.uta
@@ -92,12 +96,16 @@ class TxEffHgvs(object):
     Benchmarking can be enabled to produce a csv file that shows how long SeqRepo and UTA queries are taking.
     pysam_file is an instance of PysamTxEff 
     """ 
-    def __init__(self, pysam_file, sequence_source = None, benchmark = False):
+    def __init__(self, pysam_file, sequence_source = None, threads = 1, benchmark = False):
         self.logger = logging.getLogger(__name__)
         self.pysam_file = pysam_file
         self._sequence_source = sequence_source
         self._benchmarking = None
         self._variant_counter = 0
+
+        # Fields related to threaded processing
+        self._lock = threading.Lock()
+        self._threads = threads
         
         # Setup benchmarking if it is requested
         if benchmark:
@@ -302,31 +310,28 @@ class TxEffHgvs(object):
         '''
         Return the HGVS transcripts associated with a list of variants  
         '''
-        transcripts = []
+        pool = ThreadPool(processes = self._threads)
         
-        for variant in variants:
-            self._increment_variant_counter()
-            hgvs_variant_transcripts = self._lookup_variant_hgvs_transcripts(variant)
-            self.logger.debug(f"HGVS found {len(hgvs_variant_transcripts)} transcripts for {variant}")
-
-            # HGVS might not find any transcripts even though Annovar did 
-            if len(hgvs_variant_transcripts) == 0: 
-                self.logger.info(f'HGVS could not find any transcripts for variant {variant} which has transcripts known to Annovar.')
-            else:
-                transcripts.extend(hgvs_variant_transcripts)
-                
-        return transcripts
+        results = pool.map(self._lookup_variant_hgvs_transcripts, variants)        
+        
+        pool.close()
+        pool.join()
+        
+        # The results from pool.map is a list of lists where each index is the list of transcripts for one variant. 
+        # itertools flattens the results into a single list of all transcripts for all variants. 
+        return list(itertools.chain.from_iterable(results))                        
         
     def _lookup_variant_hgvs_transcripts(self, variant: Variant):
         '''
         Use HGVS/UTA to return a list of the transcripts for a variant
-        
         '''
+        self._increment_variant_counter()
+
         self.logger.debug(f"Using HGVS/UTA to find transcripts for {variant}")
-    
+
         # Even the numeric chromosomes need to be strings in order to be found in the chromosome map
         assert type(variant.chromosome) == str 
-        
+
         refseq_chromosome = chromosome_map.get_refseq(variant.chromosome)
         
         # Look up the variant using HGVS
@@ -446,6 +451,12 @@ class TxEffHgvs(object):
             except NotImplementedError as e:
                 self.logger.warning(f"Invalid CDS sequence while processing variant {variant}: %s", str(e))
                 self._benchmark_cancel()
+
+        self.logger.debug(f"HGVS found {len(hgvs_transcripts)} transcripts for {variant}")        
+        
+        # HGVS might not find any transcripts even though Annovar did 
+        if len(hgvs_transcripts) == 0: 
+            self.logger.info(f'HGVS could not find any transcripts for variant {variant} which has transcripts known to Annovar.')
 
         # Update the benchmarking log after processing each variant
         self._log_hgvs_benchmarks(variant, len(hgvs_transcripts))
@@ -915,6 +926,11 @@ class TxEffHgvs(object):
         self._benchmarking.clear()
     
     def _increment_variant_counter(self):
+        """
+        Keep track of how many variants have been processed and output a message after every 1000 variants 
+        """
+        self._lock.acquire()
         self._variant_counter = self._variant_counter + 1
         if self._variant_counter % 1000 == 0:
             self.logger.info(f"Processed variant {self._variant_counter}")
+        self._lock.release()        

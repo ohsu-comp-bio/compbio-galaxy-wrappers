@@ -64,6 +64,9 @@ def _parse_args():
     parser.add_argument('-s', '--sequence_source',
                     help='Method for looking up reference sequences (can be a url, path, or "ncbi")')
     
+    parser.add_argument('-t', '--threads', default = 1, type=int,
+                    help="Number of threads to use", )
+    
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     
     args = parser.parse_args()
@@ -107,7 +110,9 @@ def _main():
     start_time_user = time.process_time()
 
     args = _parse_args()
-
+    
+    print(f"Thread count: {args.threads}")
+    
     # Use tx_eff_annovar to read annovar records
     annovar_records = TxEffAnnovar().get_annovar_records(args.annovar_variant_function.name, args.annovar_exonic_variant_function.name)
 
@@ -115,7 +120,7 @@ def _main():
     pysam_file = PysamTxEff(args.reference_fasta)
 
     # Look for additional transcripts in the HGVA/UTA database and merge them with the annovar records.
-    with TxEffHgvs(pysam_file = pysam_file, sequence_source = args.sequence_source, benchmark = args.benchmark) as tx_eff_hgvs:
+    with TxEffHgvs(pysam_file = pysam_file, sequence_source = args.sequence_source, threads = args.threads, benchmark = args.benchmark) as tx_eff_hgvs:
         merged_transcripts = tx_eff_hgvs.get_updated_hgvs_transcripts(annovar_records)
     
     # Close the reference FASTA
