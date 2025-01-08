@@ -75,6 +75,9 @@ def _parse_args():
        and not (args.sequence_source.lower().startswith('http') or args.sequence_source.startswith("/") or args.sequence_source == 'ncbi'):
         raise ValueError(f'--sequence_source is expected to be a url, directory, or "ncbi": "{args.sequence_source}"')
 
+    if args.threads > 1 and args.benchmark:
+        raise ValueError('Benchmarking is not possible when multiple threads are used')
+    
     return args
 
 def _get_time(real_seconds, user_seconds):
