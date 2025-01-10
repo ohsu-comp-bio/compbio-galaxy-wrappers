@@ -81,10 +81,6 @@ class VariantTranscript(AnnovarVariantFunction):
             right = f"{other_genotype} {other.refseq_transcript} {other.hgvs_c_dot} {other.protein_transcript} {other.hgvs_p_dot_three}"
             return left < right 
         
-        # Comparison between same variants with same transcript (minus the transcript version)
-        assert self_genotype == other_genotype, f"attempt to compare different variants: {self_genotype} and {other_genotype}"
-        assert self_accession == other_accession, f"attempt to compare different accessions: {self_accession} and {other_accession}"
-                
         self_score = self._get_self_score()
         other_score = other._get_self_score()
         

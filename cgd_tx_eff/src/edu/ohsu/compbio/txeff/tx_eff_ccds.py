@@ -57,8 +57,6 @@ class TxEffCcds(object):
 
         ccds_to_refseqs = defaultdict(list)
         
-        # ccds_with_multiple = set()
-        
         for transcript in refseq_transcripts:
             refseq_id = transcript.refseq_transcript
             ccds_id = refseq_to_ccds_mappings.get(refseq_id)
@@ -92,16 +90,15 @@ class TxEffCcds(object):
         
     def _get_preferred_refseq_transcript(self, transcript0: VariantTranscript, transcript1: VariantTranscript):
         '''
-        When a CCDS transcript is mapped to multiple RefSeq transcripts then we need to choose just one RefSeq. 
+        When a CCDS transcript is mapped to multiple RefSeq transcripts then we need to choose just one RefSeq. (eg NM_111.4 is preferred to NM_222.5).
         1. If the accessions are the same but with different versions then choose the one with the latest version.
             - This shouldn't happen because tx_eff_hgvs._get_the_best_transcripts should take care of it
         2. If the accession are different then choose the oldest one because it is assumed to be the most curated.   
-        we choose is the earliest because it is assumed to be the best curated.  So NM_111.5 is preferred over
-        'NM_222.4'.  
         ''' 
         if(not transcript0.refseq_transcript.startswith('NM_') or not transcript1.refseq_transcript.startswith('NM_')):
             raise ValueError(f'Both transcripts should have a RefSeq accession starting with "NM_": {transcript0.refseq_transcript}, {transcript1.refseq_transcript}')
-        
+
+        # This shouldn't happen because when tx_eff_hgvs sees transcripts that have the sqme RefSeq accession but different versions, it picks one.           
         if transcript0.refseq_transcript == transcript1.refseq_transcript:
             raise ValueError(f"Unable to choose between two transcripts with the same RefSeq accession: {transcript0} and {transcript1}")
         

@@ -312,6 +312,7 @@ class TxEffHgvs(object):
         '''
         pool = ThreadPool(processes = self._threads)
         
+        # One thread per variant 
         results = pool.map(self._lookup_variant_hgvs_transcripts, variants)        
         
         pool.close()
