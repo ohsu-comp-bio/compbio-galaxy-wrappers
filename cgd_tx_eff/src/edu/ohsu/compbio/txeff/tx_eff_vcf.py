@@ -112,7 +112,7 @@ class TxEffVcf(object):
             tfx_protein_transcripts = []
             tfx_amino_acid_positions = []
             
-            for transcript in transcripts:
+            for transcript in sorted(transcripts):
                 tfx_base_positions.append(transcript.hgvs_base_position)
                 tfx_exons.append(transcript.exon)
                 tfx_genes.append(transcript.hgnc_gene)

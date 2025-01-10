@@ -86,6 +86,9 @@ class AnnovarVariantFunction(object):
             and self.refseq_transcript == obj.refseq_transcript
     
     def get_label(self):
+        """
+        Return this variant transcript as a string.  
+        """
         return "-".join([self.chromosome, str(self.position), self.reference, self.alt, self.refseq_transcript])
     
     

@@ -327,8 +327,6 @@ class TxEffHgvs(object):
         '''
         self._increment_variant_counter()
 
-        self.logger.debug(f"Using HGVS/UTA to find transcripts for {variant}")
-
         # Even the numeric chromosomes need to be strings in order to be found in the chromosome map
         assert type(variant.chromosome) == str 
 
@@ -833,19 +831,16 @@ class TxEffHgvs(object):
         recent version is selected.
         '''
         # Create a dict where the key is the variant genotype and the unversioned transcript; and the value is a list 
-        # of all the transcripts with that prefix that are associated with that genotype. Example:
-        # 1-1-A-C-NM_001 --> [ NM_001.1, NM001.2]
-        # 1-1-C-T-NM_001 --> [ NM_002.2]
-        # 2-2-C-G-NM_001 --> [ NM_003.1, NM003.2, NM_004.5]
+        # of all the transcripts with that prefix that are associated with that genotype.
+        # Example: 
+        #    1-1-A-C-NM_001 --> [ NM_001.1, NM001.2]
         transcript_dict = defaultdict(list)
-    
         for transcript in transcripts:        
             transcript_dict[self.__get_variant_transcript_key(transcript)].append(transcript)
         
         # Send each list of transcripts, that are grouped by genotype and transcript, to a function that returns the best one 
         best_transcripts = []
         for key in transcript_dict:
-            #best_transcripts.append(__get_best_transcript(transcript_dict[key]))
             best_transcript = self.__get_best_transcript(transcript_dict[key])
             
             # Annovar doesn't provide a gene for introns and UTR so when that happens lookup the transcript in UTA to see if we can get a gene for it.    

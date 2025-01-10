@@ -63,17 +63,27 @@ class VariantTranscript(AnnovarVariantFunction):
     
     def __lt__(self, other):
         '''
-        The overloaded ``__lt__`` function is used to compare variant transcripts by the number of fields that are non-null. 
+        The overloaded ``__lt__`` function is used to compare variant transcripts. 
         
-        Only objects that have the same variant genotype and transcript may be compared (transcript versions may differ). 
-        Primary comparison is determined by score (see _get_self_score()). When scores are the same then transcript version 
-        is compared.   
+        Variants that have different genotypes are compared by concatenating several fields together and comparing the strings. 
+        Variants that have the same genotype and transcript are compared by counting how many non-null fields they have (see _get_self_score()).
+            - When scores are the same then transcript version is compared.   
         '''
-        self_genotype, self_transcript_version = self.get_label().split('.')
-        other_genotype, other_transcript_version = other.get_label().split('.')
+        self_genotype = f'{self.chromosome}-{str(self.position)}-{self.reference}-{self.alt}'
+        self_accession, self_transcript_version = self.refseq_transcript.split('.')
         
-        # Comparison can only be between same variants with same transcript (minus the transcript version)
+        other_genotype = f'{other.chromosome}-{str(other.position)}-{other.reference}-{other.alt}'
+        other_accession, other_transcript_version = other.refseq_transcript.split('.')
+        
+        # If these are not the same genotype then compare alphabetically using the most important fields 
+        if self_genotype != other_genotype or self_accession != other_accession:
+            left = f"{self_genotype} {self.refseq_transcript} {self.hgvs_c_dot} {self.protein_transcript} {self.hgvs_p_dot_three}"
+            right = f"{other_genotype} {other.refseq_transcript} {other.hgvs_c_dot} {other.protein_transcript} {other.hgvs_p_dot_three}"
+            return left < right 
+        
+        # Comparison between same variants with same transcript (minus the transcript version)
         assert self_genotype == other_genotype, f"attempt to compare different variants: {self_genotype} and {other_genotype}"
+        assert self_accession == other_accession, f"attempt to compare different accessions: {self_accession} and {other_accession}"
                 
         self_score = self._get_self_score()
         other_score = other._get_self_score()
@@ -81,7 +91,7 @@ class VariantTranscript(AnnovarVariantFunction):
         if self_score != other_score:
             return self_score < other_score
         
-        # If scores are the same then the comparison is made between transcript versions
+        # If scores are the same then the comparison is made between transcript versions (since we know the accessions match)
         return int(self_transcript_version) < int(other_transcript_version)
         
     def _get_self_score(self):
