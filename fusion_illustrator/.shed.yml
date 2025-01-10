@@ -1,0 +1,15 @@
+owner: "chongbe"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/fusion_illustrator"
+homepage_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/fusion_illustrator"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  fusion_illustrator:
+    description: "Fusion Illustration Tools"
+    include:
+      - ensembl_func.R
+      - fusion_illustrator.R
+      - fusiontranscript_illustrator.R
+      - fusion_illustrator.xml
+      - fusiontranscript_illustrator.xml
