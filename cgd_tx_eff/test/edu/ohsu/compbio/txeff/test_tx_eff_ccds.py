@@ -16,6 +16,10 @@ class TxEffCcdsTest(unittest.TestCase):
 
         preferred = self.tx_eff_ccds._get_preferred_refseq_transcript(vt0, vt1)
         self.assertEqual(preferred.refseq_transcript, 'NM_000051.4', "Earliest accession should be preferred")
+        
+        # Switch the order of the inputs and make sure we get the same result
+        preferred = self.tx_eff_ccds._get_preferred_refseq_transcript(vt1, vt0)
+        self.assertEqual(preferred.refseq_transcript, 'NM_000051.4', "Earliest accession should be preferred")
 
     def test__get_preferred_refseq_transcript_different_version(self):
         vt0 = VariantTranscript('1', 123, 'C', 'G')
@@ -26,7 +30,11 @@ class TxEffCcdsTest(unittest.TestCase):
         preferred = self.tx_eff_ccds._get_preferred_refseq_transcript(vt0, vt1)
 
         self.assertEqual(preferred.refseq_transcript, 'NM_000051.5', "Latest version should be preferred")
-    
+        
+        # Switch the order of the inputs and make sure we get the same result
+        preferred = self.tx_eff_ccds._get_preferred_refseq_transcript(vt1, vt0)
+        self.assertEqual(preferred.refseq_transcript, 'NM_000051.5', "Latest version should be preferred")
+        
     def test__get_preferred_refseq_transcript_non_refseq(self):
         vt0 = VariantTranscript('1', 123, 'C', 'G')
         vt0.refseq_transcript = 'NP_000000.0'
