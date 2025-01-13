@@ -46,18 +46,61 @@ class TxEffCcds(object):
         
         return refseq_ccds_map
 
+    def get_ccds_transcripts(self, refseq_transcripts: list):
+        """
+        For every RefSeq transcript associated with a variant, make a copy of the variant and change the accession to the CCDS that the RefSeq is mapped to. 
+        """
+        # Load the refseq to CCDS map from file        
+        refseq_to_ccds_mappings = self._get_refseq_to_ccds_mappings()        
+        if(len(refseq_to_ccds_mappings) == 0): 
+            raise Exception(f"No mappings found in input file {self.refseq_to_ccds_file}") 
+
+        ccds_to_refseqs = defaultdict(list)
+        
+        for transcript in refseq_transcripts:
+            refseq_id = transcript.refseq_transcript
+            ccds_id = refseq_to_ccds_mappings.get(refseq_id)
+
+            if ccds_id:
+                # Key is a tuple formed from variant genotype and ccds accession  
+                key = (f"{transcript.chromosome}-{transcript.position}-{transcript.reference}-{transcript.alt}", ccds_id)
+                existing_refseq_transcript = ccds_to_refseqs[key]
+                
+                if existing_refseq_transcript:
+                    preferred_refseq_transcript = self._get_preferred_refseq_transcript(transcript, existing_refseq_transcript)
+                    ccds_to_refseqs[key] = preferred_refseq_transcript
+                    self.logger.debug(f'RefSeq {transcript.refseq_transcript} and {existing_refseq_transcript.refseq_transcript} both map to {ccds_id}. {preferred_refseq_transcript.refseq_transcript} is preferred.')
+                else:
+                    ccds_to_refseqs[key] = transcript
+                
+        ccds_transcripts = []
+
+        for key, refseq_transcript in ccds_to_refseqs.items():
+            ccds_transcripts.append(self.get_ccds_from_refseq(key[1], refseq_transcript))
+            
+        return ccds_transcripts 
+                    
+    def get_ccds_from_refseq(self, ccds_accession, refseq_transcript):
+        """
+        Take a RefSeq transcript, make a copy, and change the accession from a RefSeq to a CCDS.
+        """
+        ccds_transcript = refseq_transcript.get_copy()
+        ccds_transcript.refseq_transcript = ccds_accession
+        return ccds_transcript
+        
     def _get_preferred_refseq_transcript(self, transcript0: VariantTranscript, transcript1: VariantTranscript):
         '''
-        When a CCDS transcript is mapped to multiple RefSeq transcripts then we need to choose just one RefSeq. The one
-        we choose is the earliest because it is assumed to be the best curated.  So NM_111.5 is preferred over
-        'NM_222.4'.  
+        When a CCDS transcript is mapped to multiple RefSeq transcripts then we need to choose just one RefSeq. (eg NM_111.4 is preferred to NM_222.5).
+        1. If the accessions are the same but with different versions then choose the one with the latest version.
+            - This shouldn't happen because tx_eff_hgvs._get_the_best_transcripts should take care of it
+        2. If the accession are different then choose the oldest one because it is assumed to be the most curated.   
         ''' 
         if(not transcript0.refseq_transcript.startswith('NM_') or not transcript1.refseq_transcript.startswith('NM_')):
             raise ValueError(f'Both transcripts should have a RefSeq accession starting with "NM_": {transcript0.refseq_transcript}, {transcript1.refseq_transcript}')
-        
-        # If the the transcripts are the same then it doesn't matter which one is returned 
+
+        # This shouldn't happen because when tx_eff_hgvs sees transcripts that have the sqme RefSeq accession but different versions, it picks one.           
         if transcript0.refseq_transcript == transcript1.refseq_transcript:
-            return transcript0
+            raise ValueError(f"Unable to choose between two transcripts with the same RefSeq accession: {transcript0} and {transcript1}")
         
         t0_accession, t0_version = map(int, transcript0.refseq_transcript.replace('NM_', '').split('.'))
         t1_accession, t1_version = map(int, transcript1.refseq_transcript.replace('NM_', '').split('.'))
@@ -71,74 +114,3 @@ class TxEffCcds(object):
             return transcript0
         else:
             return transcript1
-
-    def _get_ccds_mapped_transcripts(self, refseq_transcripts: list):
-        '''
-        Return a map where the key is a CCDS accession and the value is a VariantTranscript whose 'refseq_transcript'
-        is the RefSeq accession that is mapped to the CCDS key. Any transcripts in the 'refseq_transcripts' parameter
-        that cannot be mapped to a CCDS accession will not be in the returned map.
-        '''
-        # Load the refseq to CCDS map from file        
-        refseq_to_ccds_mappings = self._get_refseq_to_ccds_mappings()        
-        if(len(refseq_to_ccds_mappings) == 0): 
-            raise Exception(f"No mappings found in input file {self.refseq_to_ccds_file}") 
-
-        ccds_to_transcript = {}
-        cnt_mapped_to_ccds = 0
-        cnt_not_mapped_to_ccds = 0 
-
-        for variant_transcript in refseq_transcripts:
-            refseq_id = variant_transcript.refseq_transcript
-            ccds_id = refseq_to_ccds_mappings.get(refseq_id)
-            
-            if ccds_id:
-                cnt_mapped_to_ccds = cnt_mapped_to_ccds + 1
-                existing_transcript = ccds_to_transcript.get(ccds_id)
-                if existing_transcript:
-                    # A refseq accession has already been mapped to this ccds but there can only be one, so make a choice.
-                    preferred_transcript = self._get_preferred_refseq_transcript(variant_transcript, existing_transcript)
-                    ccds_to_transcript[ccds_id] = preferred_transcript
-                    self.logger.debug(f'RefSeq {variant_transcript.refseq_transcript} and {existing_transcript.refseq_transcript} both map to {ccds_id}. {preferred_transcript.refseq_transcript} is preferred.')
-                else:
-                    # Put the new mapping in the dictionary 
-                    ccds_to_transcript[ccds_id] = variant_transcript
-            else:
-                cnt_not_mapped_to_ccds = cnt_not_mapped_to_ccds + 1
-                self.logger.debug(f"Unable to find CCDS id mapping for {refseq_id}")
-
-        self.logger.info(f"Mapped {cnt_mapped_to_ccds} RefSeq accessions to CCDS.")
-        if(cnt_not_mapped_to_ccds > 0):
-            self.logger.info(f"Could not find mappings for {cnt_not_mapped_to_ccds} refseq ids.")
-
-        return ccds_to_transcript
-    
-    def _get_ccds_transcripts(self, refseq_transcripts: list):
-        '''
-        Take a list of variant transcripts that have refseq accessions and see if any of them are mapped to 
-        CCDS accessions. For every variant-transcript whose refseq can be mapped to ccds, create a copy of it, 
-        and change the transcript identifier to the ccds accession. 
-        '''
-        ccds_transcripts = []
-        
-        # Get a map of refseq transcripts that can be mapped to a ccds accession 
-        ccds_to_transcript = self._get_ccds_mapped_transcripts(refseq_transcripts)
-        
-        # For each transcript make a copy and substitute the refseq accession with the ccds 
-        for ccds_id, refseq_transcript in ccds_to_transcript.items():
-            ccds_transcript = refseq_transcript.get_copy()
-            ccds_transcript.refseq_transcript = ccds_id
-            ccds_transcripts.append(ccds_transcript)
-        
-        return ccds_transcripts
-
-    def add_ccds_transcripts(self, refseq_transcripts: list):
-        '''
-        Iterate over the list of RefSeq transcripts, lookup each refseq id in the Refseq-to-CCDS id map, and create a copy of the transcript.  
-        '''
-        # Create copies of every refseq transcript that has an accession that is mapped to a CCDS accession. 
-        ccds_transcripts = self._get_ccds_transcripts(refseq_transcripts)
-        
-        # Add the CCDS transcripts to the list
-        refseq_transcripts.extend(ccds_transcripts)
-        
-        return refseq_transcripts

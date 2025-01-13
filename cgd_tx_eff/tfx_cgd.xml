@@ -43,9 +43,13 @@
         #end if
         
         #if $benchmarking_selector == "yes"
-           --benchmark
+          --benchmark
         #end if
-                 
+        
+        #if $threads
+            --threads $threads
+        #end if
+
     	--out_vcf "${out_vcf}"
   ]]></command>
   
@@ -111,10 +115,18 @@
             <!-- Do nothing -->
         </when>    
     </conditional>
+
     <param name="benchmarking_selector" type="select" help="Choose yes to enable benchmarking" label="Enable benchmarking?">
         <option value="yes">Yes</option>
         <option value="no" selected="true">No</option>
     </param>
+
+    <param name="threads" 
+           label="Number of threads" 
+           type="integer"
+           help="Number of threads to use while looking up transcripts"
+           value="3" 
+           optional="true"/>
   </inputs>
  
   <outputs>
@@ -161,6 +173,7 @@
                              --out_vcf OUT_VCF
                              [--sequence_source SEQUENCE_SOURCE]
                              [--benchmark]
+                             [--threads THREADS]
     ]]></help>
   <citations>
   	<citation type="bibtex">
