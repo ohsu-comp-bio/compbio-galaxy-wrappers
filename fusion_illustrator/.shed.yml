@@ -10,9 +10,9 @@ repositories:
     include:
       - fusion_illustrator.R
       - fusion_illustrator.xml
-    fusiontranscript_illustrator:
-      description: "Fusion transcript illustration"
-      include:
-        - ensembl_func.R
-        - fusiontranscript_illustrator.R
-        - fusiontranscript_illustrator.xml
+  fusiontranscript_illustrator:
+    description: "Fusion transcript illustration"
+    include:
+      - ensembl_func.R
+      - fusiontranscript_illustrator.R
+      - fusiontranscript_illustrator.xml
