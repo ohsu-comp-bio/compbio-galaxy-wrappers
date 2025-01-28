@@ -71,7 +71,7 @@ class VariantTranscript(AnnovarVariantFunction):
         Variants that have the same genotype and transcript are compared by counting how many non-null fields they have (see _get_self_score()).
             - When scores are the same then transcript accession and version are compared.
         '''
-                # Break down the transcript accessions          
+        # Break down the transcript accessions          
         p = re.compile("(NM_|CCDS)(\d+)\.(\d+)")
         
         self_genotype = f'{self.chromosome}-{self.position}-{self.reference}-{self.alt}'

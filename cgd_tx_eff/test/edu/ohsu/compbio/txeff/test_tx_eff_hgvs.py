@@ -6,7 +6,6 @@ from edu.ohsu.compbio.txeff.tx_eff_hgvs import TxEffHgvs
 from edu.ohsu.compbio.txeff.util.tx_eff_pysam import PysamTxEff
 from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
 
-
 FILE_HG37_REFERENCE_FASTA = '/opt/bioinformatics/Broad/Homo_sapiens_assembly19.fasta'
 REFSEQ_CCDS_MAP = '../../../../../test-data/refseq_ccds_map.csv'
 
@@ -15,7 +14,6 @@ class TxEffHgvsTest(unittest.TestCase):
     def setUpClass(cls):
         cls._pysam = PysamTxEff(FILE_HG37_REFERENCE_FASTA)        
         cls._tx_eff_ccds = TxEffCcds(REFSEQ_CCDS_MAP)
-        
         
     def setUp(self):
         unittest.TestCase.setUp(self)
@@ -36,7 +34,6 @@ class TxEffHgvsTest(unittest.TestCase):
         
         self.assertEqual(len(merged_transcripts), 1, 'Only one transcript is common to both lists')
         self.assertEqual(len(unmerged_transcripts), 2, 'Two transcripts are common to both lists')
-        
     
     def test__get_unmatched_annovar_transcripts(self):
         '''

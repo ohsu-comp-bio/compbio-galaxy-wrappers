@@ -95,7 +95,6 @@ class TxEffHgvs(object):
     Benchmarking can be enabled to produce a csv file that shows how long SeqRepo and UTA queries are taking.
     pysam is an instance of PysamTxEff
     refseq_ccds_map is the dict created by TxEffCcds
-     
     """ 
     def __init__(self, pysam, refseq_ccds_map, sequence_source = None, threads = 1, benchmark = False):
         self.logger = logging.getLogger(__name__)
@@ -544,9 +543,7 @@ class TxEffHgvs(object):
             else:
                 self.logger.debug(f"Merging HGVS transcript with Annovar transcript having key {transcript_key}")
                 merged_transcripts.append(self._merge(transcript_key, hgvs_transcript, annovar_match))
-    
-        # Not all the Annovar transcripts will get matched and merged with an HGVS transcript. They will likely be discarded
-        # when _get_the_best_transcripts is called but we want one version of every known transcript so we need to keep the unmerged ones.  
+      
         unmerged_transcripts = self._get_unmatched_annovar_transcripts(annovar_dict, hgvs_dict)
     
         return merged_transcripts, unmerged_transcripts
@@ -827,8 +824,7 @@ class TxEffHgvs(object):
             
     def __get_variant_transcript_key(self, transcript: VariantTranscript):
         '''
-        This function returns a unique key that is used for a dict in the _get_the_best_transcripts function.
-        The key looks like '7-12345-C-G-NM_123' (the transcript's version is not included) 
+        Generate a key made up of variant and transcript accession w/o version (eg '7-12345-C-G-NM_123'). 
         '''
         # Take the version off of the transcript
         unversioned_transcript = transcript.refseq_transcript.split('.')[0]
@@ -933,36 +929,6 @@ class TxEffHgvs(object):
         ccds_transcript = refseq_transcript.get_copy()
         ccds_transcript.refseq_transcript = ccds_accession
         return ccds_transcript
-        
-    # remvoe this: 
-    def _get_the_best_transcripts(self, transcripts: list): # jdebug
-        '''
-        When there is more than one version of a transcript this method picks the best one so that we only end up with one version of each. 
-        The best transcript will be the one with the most information (ie the least sparse). When there is a tie, the transcript with the most 
-        recent version is selected.
-        '''
-        # Create a dict where the key is the variant genotype and the unversioned transcript; and the value is a list 
-        # of all the transcripts with that prefix that are associated with that genotype.
-        # Example: 
-        #    transcript_dict['1-1-A-C-NM_001] = [NM_001.1, NM001.2]
-        transcript_dict = defaultdict(list)
-        for transcript in transcripts:        
-            transcript_dict[self.__get_variant_transcript_key(transcript)].append(transcript)
-        
-        # Send each list of transcripts, that are grouped by genotype and transcript, to a function that returns the best one 
-        best_transcripts = []
-        for key in transcript_dict:
-            best_transcript = self._get_best_transcript(transcript_dict[key])
-
-            # Annovar doesn't provide a gene for introns and UTR so when that happens lookup the transcript in UTA to see if we can get a gene for it.    
-            if not best_transcript.hgnc_gene:
-                best_transcript.hgnc_gene = self._get_gene_for_transcript(best_transcript.refseq_transcript)
-                if best_transcript.hgnc_gene is not None:
-                    self.logger.debug(f"Found gene for transcript {best_transcript}: {best_transcript.hgnc_gene}")
-
-            best_transcripts.append(best_transcript)
-        
-        return best_transcripts
         
     def _get_best_transcript(self, transcripts: list):
         '''
