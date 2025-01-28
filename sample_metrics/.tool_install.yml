@@ -1,0 +1,13 @@
+install_tool_dependencies: True
+install_repository_dependencies: True
+install_resolver_dependencies: True
+
+tools:
+- name: sample_metrics
+  owner: letaw
+  tool_panel_section_label: "QC Metrics"
+  tool_shed_url: https://kcctools.ohsu.edu/
+- name: sample_metrics_rna
+  owner: letaw
+  tool_panel_section_label: "QC Metrics"
+  tool_shed_url: https://kcctools.ohsu.edu/

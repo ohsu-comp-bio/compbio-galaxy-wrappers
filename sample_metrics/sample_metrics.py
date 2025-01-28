@@ -1,41 +1,6 @@
 """
 Create sample level metrics to be passed to the CGD.  Metrics are passed as a json dump.
 
-VERSION HISTORY
-0.9.1
-    Update to allow for case when picard_summary and picard_summary_umi are None
-0.9.0
-    Remove old style metrics in favor of new style
-0.8.15
-    Change IlluminaExome_V2_PlusMito to IlluminaExome_V2-5_PlusMito
-0.8.14
-    Update tmb to use 0.0 as placeholder value
-    Update QIAseq_V4_STP4 to remove bio_sex_check metric
-0.8.13
-    Add pre-umi dedup depth metrics and post-umi alignment metrics
-    Changed workflow name to IlluminaExome_V2_PlusMito
-0.8.12
-    Add class DragenMetrics and class DragenQC to handle metrics data for IlluminaExome_V2_DRAGEN
-0.8.11
-    Add QIAseq_XP_RNA_STP
-0.8.10
-    Switched before and after picard metric source in _pumi
-0.8.9
-    Add uniformity_of_coverage, cnv_median_segment_mad_cn metrics
-0.8.8
-    Add QIAseq_V4_STP4
-    Revert xy_check to bio_sex_check to maintain CGD compatibility
-0.8.7
-    Rename metric bio_sex_check to y_ploidy_check for AgilentCRE_V1 and TruSightOneV2_5
-    Rename metric bio_sex_check to xy_check for QIAseq_V4_MINI
-0.8.5
-    Change forced calls metric to json
-0.8.3
-    Add entry for json metric bio_sex_check
-0.8.0
-    Pass forced calls above and below background metric
-0.7.0
-    Now calculate percentOnTarget from FastQC tatal sequences and collectalignmentmetrics on sorted bwa bam
 """
 
 import argparse
@@ -45,7 +10,9 @@ from inputs import (ProbeQcRead, PerLocusRead, AlignSummaryMetrics, GatkDepthOfC
                     MsiSensor, SamReader, GatkCollectRnaSeqMetrics)
 from inputs import FastQcRead
 
-VERSION = '0.9.1'
+
+# TODO: Update version number in ./README.md
+VERSION = '0.9.2'
 
 
 def supply_args():
@@ -54,6 +21,13 @@ def supply_args():
     https://docs.python.org/2.7/library/argparse.html
     """
     parser = argparse.ArgumentParser(description='')
+    parser.add_argument('--metrics', required=False,
+                        default="qthirty, averageDepth",
+                        help='List of metrics to be provided.')
+    # xml inputs params type=text will pass metrics args
+    # as 'qthirty averageDepth depthTwoHundredFifty' (even with nargs=*)
+    # best to split to leave as string and split later
+
     # Input files that will be parsed for data.
     parser.add_argument('--probeqc_after', required=False, type=ProbeQcRead,
                         help='Probe coverage QC after UMI deduplication metrics.')
@@ -96,7 +70,6 @@ def supply_args():
 
     parser.add_argument('--outfile', help='Output file with json string.')
     parser.add_argument('--outfile_txt', help='Output file in human readable text format.')
-    parser.add_argument('--workflow', help='Pass the Galaxy workflow name, if applicable.')
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     args = parser.parse_args()
 
@@ -189,11 +162,6 @@ class RawMetricCollector:
         else:
             self.probeqc_after = None
             self.probeqc_header_after = None
-
-        if args.workflow:
-            self.wf = args.workflow
-        else:
-            self.wf = None
 
         if args.primers_bam:
             self.primers_bam = SamReader(args.primers_bam, args.primers_bed).count
@@ -484,10 +452,10 @@ class MetricPrep(SampleMetrics):
     """
     Get the metrics we want from SampleMetrics, and prepare them for being written.
     """
-    def __init__(self, raw_mets):
+    def __init__(self, raw_mets, metrics):
         super(MetricPrep, self).__init__(raw_mets)
+        self.metrics_req = metrics
         self.mets = self._gather_metrics()
-        self.req = self._req()
 
     def _gather_metrics(self):
         """
@@ -509,8 +477,7 @@ class MetricPrep(SampleMetrics):
                 'depthFifty': self._get_avg_probeqc('D50', self.probeqc_after, self.total_bp_after),
                 'depthFifty_before': self._get_avg_probeqc('D50', self.probeqc_before, self.total_bp_before),
                 'depthOneHundred': self._get_avg_probeqc('D100', self.probeqc_after, self.total_bp_after),
-                'depthOneHundred_before':
-                    self._get_avg_probeqc('D100', self.probeqc_before, self.total_bp_before),
+                'depthOneHundred_before': self._get_avg_probeqc('D100', self.probeqc_before, self.total_bp_before),
                 'depthTwoHundredFifty': self._get_avg_probeqc('D250', self.probeqc_after, self.total_bp_after),
                 'depthTwoHundredFifty_before':
                     self._get_avg_probeqc('D250', self.probeqc_before, self.total_bp_before),
@@ -681,66 +648,10 @@ class MetricPrep(SampleMetrics):
         except:
             return None
 
-    @staticmethod
-    def _req():
-        """
-        Based on test name, list which metrics should be provided.
-        :return:
-        """
-        return {'QIAseq_V3_RNA': ['qthirty', 'averageDepth', 'percentUmi', 'total_on_target_transcripts',
-                                  'total_on_target_transcripts_pct'],
-                'QIAseq_XP_RNA_HEME': ['qthirty', 'averageDepth', 'percentUmi', 'total_on_target_transcripts',
-                                       'total_on_target_transcripts_pct'],
-                'QIAseq_XP_RNA_STP': ['qthirty', 'averageDepth', 'percentUmi', 'total_on_target_transcripts',
-                                      'total_on_target_transcripts_pct'],
-                'TruSightOne': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty', 'depthOneHundred',
-                                'percentOnTarget', 'depthTen', 'depthFifty', 'gc_pct_r1', 'gc_pct_r2',
-                                'y_ploidy_check'],
-                'TruSightOneV2_5': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                    'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'gc_pct_r1',
-                                    'gc_pct_r2', 'y_ploidy_check', 'homozygosity_flag'],
-                'AgilentCRE_V1': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty', 'depthOneHundred',
-                                  'percentOnTarget', 'depthTen', 'depthFifty', 'parentage_sites', 'parentage_disc',
-                                  'parentage_binom', 'parentage_confirmed',
-                                  'gc_pct_r1', 'gc_pct_r2', 'homozygosity_flag', 'y_ploidy_check'],
-                'IlluminaExome_V2-5_PlusMito': ['q30_bases_pct', 'average_alignment_coverage_over_target_region',
-                                                'pct_of_target_region_with_coverage_20x_inf',
-                                                'pct_of_target_region_with_coverage_100x_inf',
-                                                'aligned_reads_in_target_region_pct',
-                                                'pct_of_target_region_with_coverage_10x_inf',
-                                                'pct_of_target_region_with_coverage_50x_inf', 'dragen_gc_pct_r1',
-                                                'dragen_gc_pct_r2', 'ploidy_estimation',
-                                                'number_of_large_roh_gt_eq_3000000'],
-                'QIAseq_V3_HEME2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
-                                    'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi'],
-                'QIAseq_V4_MINI': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi',
-                                   'forced_calls_above', 'forced_calls_below', 'bio_sex_check'],
-                'QIAseq_V3_STP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi',
-                                   'msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb'],
-                'QIAseq_V4_STP4': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwelveHundredFifty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthSevenHundred', 'percentUmi',
-                                   'msi_sites', 'msi_somatic_sites', 'msi_pct', 'tmb', 'uniformity_of_coverage',
-                                   'cnv_median_segment_mad_cn'],
-                'TruSeq_RNA_Exome_V1-2': ['qthirty', 'total_on_target_transcripts', 'gatk_pct_mrna_bases',
-                                          'gatk_pct_correct_strand_reads'],
-                'QIAseq_V3_HOP': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty', 'depthOneHundred',
-                                  'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi', 'allele_balance',
-                                  'allele_balance_het_count'],
-                'QIAseq_V3_HOP2': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi',
-                                   'allele_balance', 'allele_balance_het_count'],
-                'QIAseq_V3_HOP3': ['qthirty', 'averageDepth', 'depthTwoHundredFifty', 'depthTwenty',
-                                   'depthOneHundred', 'percentOnTarget', 'depthTen', 'depthFifty', 'percentUmi',
-                                   'allele_balance', 'allele_balance_het_count']
-                }
-
 
 class Writer:
     def __init__(self, mets):
         self.mets = mets
-        self.wf = self.mets.raw_mets.wf
 
     def write_cgd_new(self, filename):
         """
@@ -773,7 +684,7 @@ class Writer:
         """
         to_write = {'sampleRunMetrics': [], 'geneMetrics': []}
         for metric, val in self.mets.mets.items():
-            if metric in self.mets.req[self.wf]:
+            if metric in self.mets.metrics_req:
                 if val:
                     metric_dict = {'metric': str(metric), 'value': str(val)}
                     to_write['sampleRunMetrics'].append(metric_dict)
@@ -855,8 +766,12 @@ class DragenQC:
 
 def main():
     args = supply_args()
+
+    metrics_req = args.metrics.split(" ")
+
     raw_mets = RawMetricCollector(args)
-    samp_mets = MetricPrep(raw_mets)
+    samp_mets = MetricPrep(raw_mets, metrics_req)
+
     writer = Writer(samp_mets)
     if args.outfile_txt:
         writer.write_to_text(args.outfile_txt)
