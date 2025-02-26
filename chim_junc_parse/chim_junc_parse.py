@@ -6,14 +6,18 @@ Used on STAR chimeric junction output to try and find evidence of partial tandem
 0.0.1 - Initial commit
 0.0.2 - Add gene name columns to output
 0.1.0 - Allow for manual input of regions of interest
+0.1.1 - Add write_thresh parameter
+0.2.0 - Add bkgd assessment
 """
 
 import argparse
 import json
+import os
 import pysam
 import re
+import statistics
 
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 
 
 def supply_args():
@@ -26,8 +30,10 @@ def supply_args():
     parser.add_argument('ref_fasta', help='Reference FASTA, FAI index should be in same location.')
     parser.add_argument('samp_met', help='Sample metrics JSON file with total_on_target_transcripts metric.')
     parser.add_argument('bedpe_out', help='Output containing sites of interest.')
+    parser.add_argument('--write_thresh', type=int, default=10, help='Depth threshold for writing records to output.')
     parser.add_argument('--srch_junc', help='Input BEDPE file describing regions of interest.')
     parser.add_argument('--manual_mode', action='store_true', help='Process manually entered coordinates.')
+    parser.add_argument('--bkgd_pon', help='Directory of background PON chimeric junctions and sample metrics files.')
     parser.add_argument('--chr1', help='')
     parser.add_argument('--start1', type=int, help='')
     parser.add_argument('--end1', type=int, help='')
@@ -219,11 +225,16 @@ class Output:
     Start2
     Count
     """
-    def __init__(self, filename, juncs, bedpe, ref_fasta, tott):
+    def __init__(self, filename, juncs, bedpe, ref_fasta, tott, bkgd=None, bkgd_fusion=None):
         self.filename = filename
         self.header = ['Fusion', 'Gene1', 'Chrom1', 'Coord1', 'RefSeq1', 'CCDS1', 'Exon1', 'RefStatus1', 'Gene2',
                        'Chrom2', 'Coord2', 'RefSeq2', 'CCDS2', 'Exon2', 'RefStatus2', 'Count', 'NormCount',
                        'CombinedSeq']
+        self.bkgd = bkgd
+        self.bkgd_fusion = bkgd_fusion
+        if self.bkgd:
+            self.header.extend(['MaxCoordCount', 'StdevCoord', 'OutlierCoord',
+                                'MaxFusionCount', 'StdevFusion', 'OutlierFusion'])
         self.juncs = juncs
         self.bedpe = bedpe
         self.ref_fasta = ref_fasta
@@ -264,13 +275,14 @@ class Output:
         j_s_cpm = (num / self.tott) * 1e6
         return str(round(j_s_cpm, 3))
 
-    def write_me(self, thresh=10):
+    def write_me(self, thresh):
         with open(self.filename, 'w') as handle_out:
             handle_out.write('\t'.join(self.header))
             handle_out.write('\n')
             for fusion in self.juncs:
                 for coords, count in self.juncs[fusion].items():
                     if self.bedpe:
+                        to_write = None
                         if count >= thresh:
                             to_write = [fusion[0], fusion[7], coords[0], coords[1], fusion[1], fusion[2], fusion[3],
                                         self._apply_ref(coords[1], self.bedpe.ref1_coords),
@@ -285,8 +297,27 @@ class Output:
                                     '.',
                                     str(count), self._calc_on_target(count),
                                     self._get_combined_seq(coords[0], coords[1], coords[2], coords[3])]
-                    handle_out.write('\t'.join(to_write))
-                    handle_out.write('\n')
+                    if self.bkgd:
+                        if coords in self.bkgd[fusion]:
+                            to_write.extend([str(self.bkgd[fusion][coords]['max_local']),
+                                             str(self.bkgd[fusion][coords]['stdev_local']),
+                                             str(self.bkgd[fusion][coords]['outlier_local']),
+                                             str(self.bkgd[fusion][coords]['max_targ']),
+                                             str(self.bkgd[fusion][coords]['stdev_targ']),
+                                             str(self.bkgd[fusion][coords]['outlier_targ'])
+                                             ])
+                        else:
+                            if self.bkgd_fusion[fusion]:
+                                to_write.extend(['0.0', '0.0', '0.0',
+                                                 str(self.bkgd_fusion[fusion]['max_targ']),
+                                                 str(self.bkgd_fusion[fusion]['stdev_targ']),
+                                                 str(self.bkgd_fusion[fusion]['outlier_targ'])])
+                            else:
+                                to_write.extend(['0.0', '0.0', '0.0', '0.0', '0.0', '0.0'])
+
+                    if to_write:
+                        handle_out.write('\t'.join(to_write))
+                        handle_out.write('\n')
 
         handle_out.close()
 
@@ -312,9 +343,7 @@ class ManualOutput:
     def write_me(self, counts):
         with open(self.filename, 'w') as handle_out:
             for entry in counts:
-                print(entry)
                 for region, cnt in sorted(counts[entry].items(), key=lambda item: item[1], reverse=True):
-                    print(region)
                     to_write = [region[0], region[1], region[2], region[3], str(cnt)]
                     if int(region[1]) == entry[1] or int(region[1]) == entry[2]:
                         to_write.append('REF')
@@ -328,6 +357,104 @@ class ManualOutput:
                     handle_out.write('\n')
 
 
+class BkgdPon:
+    def __init__(self, dirname):
+        self.dirname = dirname
+        self.dir_files = os.listdir(dirname)
+        self.sample_list = self._collect_sample_info()
+
+    def _collect_sample_info(self):
+        sample_list = {}
+        for entry in self.dir_files:
+            sample_id = entry.split('.')[0]
+            ftype = entry.split('.')[1]
+            if sample_id not in sample_list:
+                sample_list[sample_id] = {}
+            sample_list[sample_id][ftype] = self._create_path(entry)
+        return sample_list
+
+    def _create_path(self, fname):
+        return '/'.join([self.dirname, fname])
+
+
+class BkgdCollect:
+    def __init__(self, my_juncs, tott, all_pon, all_tott):
+        self.my_juncs = my_juncs
+        self.tott = tott
+        self.all_tott = all_tott
+        self.all_pon = all_pon
+        self.sample_cnt = len(self.all_pon.keys())
+        self.bkgd_counts, self.bkgd_counts_norm = self._bkgd_assess()
+        self.stats, self.stats_fusion = self._stat_create()
+
+    @staticmethod
+    def _calc_on_target(tott, *args):
+        """
+        calculate on-target cpm from junction & spanning frag count and sample level metrics
+        :return:
+        """
+        num = 0.0
+        for arg in args:
+            num += float(arg)
+        j_s_cpm = (num / tott) * 1e6
+        return str(round(j_s_cpm, 3))
+
+    def _bkgd_assess(self):
+        comb = {}
+        comb_norm = {}
+        for samp in self.all_pon:
+            for info, targs in self.all_pon[samp].items():
+                if info not in comb:
+                    comb[info] = {}
+                    comb_norm[info] = {}
+                for targ in targs:
+                    if targ not in comb[info]:
+                        comb[info][targ] = [targs[targ]]
+                        comb_norm[info][targ] = [self._calc_on_target(self.all_tott[samp], targs[targ])]
+                    else:
+                        comb[info][targ].append(targs[targ])
+                        comb_norm[info][targ].append(self._calc_on_target(self.all_tott[samp], targs[targ]))
+        return comb, comb_norm
+
+    def _stat_create(self):
+        stats = {}
+        stats_fusion = {}
+        for info, targs in self.bkgd_counts_norm.items():
+            # b = [x for x in targs.values()]
+            # total_count = sum(list(map(float, chain.from_iterable(b))))
+            this_line = []
+            stats[info] = {}
+            stats_fusion[info] = {}
+            for targ in targs:
+                while len(targs[targ]) < 14:
+                    targs[targ].append(0.0)
+                max_local = round(max([float(x) for x in targs[targ]]), 3)
+                stdev_local = round(statistics.stdev([float(x) for x in targs[targ]]), 3)
+                outlier_local = round(self._outlier_calc(max_local, stdev_local), 3)
+                stats[info][targ] = {'max_local': max_local,
+                                     'stdev_local': stdev_local,
+                                     'outlier_local': outlier_local}
+                this_line.extend(targs[targ])
+            if this_line:
+                max_targ = round(max([float(x) for x in this_line]), 3)
+                stdev_targ = round(statistics.stdev([float(x) for x in this_line]), 3)
+                outlier_targ = round(self._outlier_calc(max_targ, stdev_targ), 3)
+                stats_fusion[info] = {'max_targ': max_targ, 'stdev_targ': stdev_targ, 'outlier_targ': outlier_targ}
+                for targ in stats[info]:
+                    stats[info][targ]['max_targ'] = max_targ
+                    stats[info][targ]['stdev_targ'] = stdev_targ
+                    stats[info][targ]['outlier_targ'] = outlier_targ
+        return stats, stats_fusion
+
+    @staticmethod
+    def _outlier_calc(cnt, stdev):
+        """
+        Estimate an outlier value.  Will utilize max(norm_count) + (stdev*2.5)
+        :return:
+        """
+        return cnt+(stdev*2.5)
+
+
 def main():
     args = supply_args()
     my_fasta = pysam.FastaFile(filename=args.ref_fasta)
@@ -335,12 +462,45 @@ def main():
     if args.manual_mode:
         my_coord = ManualRec([args.chr1, args.start1, args.end1, args.chr2, args.start2, args.end2])
         my_juncs = ChimJuncFile(args.raw_junc, my_coord).filt_cj([my_coord])
-        Output(args.bedpe_out, my_juncs, None, my_fasta, tott).write_me()
+        # Assess background files.
+        if args.bkgd_pon:
+            samples = BkgdPon(args.bkgd_pon).sample_list
+            all_pon = {}
+            all_tott = {}
+            for samp in samples:
+                sm_file = samples[samp]['samp_met']
+                chim_file = samples[samp]['chim_junc']
+                bkgd_tott = SampMetJson(sm_file).tott
+                bkgd_juncs = ChimJuncFile(chim_file, my_coord).filt_cj([my_coord])
+                all_pon[samp] = bkgd_juncs
+                all_tott[samp] = bkgd_tott
+            my_bkgd = BkgdCollect(my_juncs, tott, all_pon, all_tott)
+            Output(args.bedpe_out, my_juncs, None, my_fasta, tott, my_bkgd.stats,
+                   my_bkgd.stats_fusion).write_me(args.write_thresh)
+        else:
+            Output(args.bedpe_out, my_juncs, None, my_fasta, tott).write_me(args.write_thresh)
     else:
         my_bed = BedPe(args.srch_junc)
         chim_junc_file = ChimJuncFile(args.raw_junc, my_bed)
         my_juncs = chim_junc_file.filt_cj(chim_junc_file.regions.regions)
-        Output(args.bedpe_out, my_juncs, my_bed, my_fasta, tott).write_me()
+        # Assess background files.
+        if args.bkgd_pon:
+            samples = BkgdPon(args.bkgd_pon).sample_list
+            all_pon = {}
+            all_tott = {}
+            for samp in samples:
+                sm_file = samples[samp]['samp_met']
+                chim_file = samples[samp]['chim_junc']
+                bkgd_tott = SampMetJson(sm_file).tott
+                bkgd_juncs_file = ChimJuncFile(chim_file, my_bed)
+                bkgd_juncs = bkgd_juncs_file.filt_cj(bkgd_juncs_file.regions.regions)
+                all_pon[samp] = bkgd_juncs
+                all_tott[samp] = bkgd_tott
+            my_bkgd = BkgdCollect(my_juncs, tott, all_pon, all_tott)
+            Output(args.bedpe_out, my_juncs, my_bed, my_fasta, tott, my_bkgd.stats,
+                   my_bkgd.stats_fusion).write_me(args.write_thresh)
+        else:
+            Output(args.bedpe_out, my_juncs, my_bed, my_fasta, tott).write_me(args.write_thresh)
     my_fasta.close()
 
 

@@ -1,4 +1,4 @@
-<tool id="chim_junc_parse" name="Chimeric Junction Parser" version="0.1.0" >
+<tool id="chim_junc_parse" name="Chimeric Junction Parser" version="0.2.0" >
     <description>From the STAR aligner chimeric junction output, find additional junctions of interest, as defined in the input BEDPE.</description>
     <requirements>
         <requirement type="package" version="0.15.3">pysam</requirement>
@@ -13,6 +13,15 @@
         #end if
         '${json_sample_metrics}'
         '${bedpe_out}'
+
+        #if $write_thresh
+            --write_thresh $write_thresh
+        #end if
+
+        #if $bkgd_pon
+            --bkgd_pon $bkgd_pon
+        #end if
+
         #if $manual_opt.manual_opt_sel == "default"
             --srch_junc '${manual_opt.srch_junc}'
         #else
@@ -45,6 +54,8 @@
           </when>  <!-- history -->
         </conditional>  <!-- refGenomeSource -->
         <param name="json_sample_metrics" type="data" format="txt" label="Sample metrics output in JSON format." />
+        <param name="write_thresh" type="integer" optional="true" label="Depth threshold for writing results." />
+        <param name="bkgd_pon" type="text" optional="true" label="Directory of background PON set." />
         <conditional name="manual_opt">
             <param name="manual_opt_sel" type="select" label="Manual Entry" help="Enter coordinates manually instead of reading from file.">
                 <option value="default" selected="true">Read From File</option>
@@ -67,7 +78,8 @@
         <data format="txt" name="bedpe_out" label="${tool.name} on ${on_string}: TXT" />
     </outputs>
     <help><![CDATA[
-usage: chim_junc_parse.py [-h] [--srch_junc SRCH_JUNC] [--manual_mode]
+usage: chim_junc_parse.py [-h] [--write_thresh WRITE_THRESH]
+                          [--srch_junc SRCH_JUNC] [--manual_mode]
                           [--chr1 CHR1] [--start1 START1] [--end1 END1]
                           [--chr2 CHR2] [--start2 START2] [--end2 END2]
                           [--version]
@@ -80,8 +92,10 @@ positional arguments:
                         total_on_target_transcripts metric.
   bedpe_out             Output containing sites of interest.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
+  --write_thresh WRITE_THRESH
+                        Depth threshold for writing records to output.
   --srch_junc SRCH_JUNC
                         Input BEDPE file describing regions of interest.
   --manual_mode         Process manually entered coordinates.
