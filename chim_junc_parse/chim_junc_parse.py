@@ -234,7 +234,7 @@ class Output:
         self.bkgd_fusion = bkgd_fusion
         if self.bkgd:
             self.header.extend(['MaxCoordCount', 'StdevCoord', 'OutlierCoord',
-                                'MaxFusionCount', 'StdevFusion', 'OutlierFusion'])
+                                'MaxFusionCount', 'StdevFusion', 'OutlierFusion', 'AboveBkgd'])
         self.juncs = juncs
         self.bedpe = bedpe
         self.ref_fasta = ref_fasta
@@ -275,6 +275,16 @@ class Output:
         j_s_cpm = (num / self.tott) * 1e6
         return str(round(j_s_cpm, 3))
 
+    def _above_bkgd(self, sample, out_coord, out_fusion):
+        """
+        Determine whether the measurement is above background or not.
+        :return:
+        """
+        if float(sample) > float(out_fusion):
+            return "YES"
+        else:
+            return "NO"
+
     def write_me(self, thresh):
         with open(self.filename, 'w') as handle_out:
             handle_out.write('\t'.join(self.header))
@@ -298,22 +308,32 @@ class Output:
                                     str(count), self._calc_on_target(count),
                                     self._get_combined_seq(coords[0], coords[1], coords[2], coords[3])]
                     if self.bkgd:
-                        if coords in self.bkgd[fusion]:
-                            to_write.extend([str(self.bkgd[fusion][coords]['max_local']),
-                                             str(self.bkgd[fusion][coords]['stdev_local']),
-                                             str(self.bkgd[fusion][coords]['outlier_local']),
-                                             str(self.bkgd[fusion][coords]['max_targ']),
-                                             str(self.bkgd[fusion][coords]['stdev_targ']),
-                                             str(self.bkgd[fusion][coords]['outlier_targ'])
-                                             ])
-                        else:
-                            if self.bkgd_fusion[fusion]:
-                                to_write.extend(['0.0', '0.0', '0.0',
-                                                 str(self.bkgd_fusion[fusion]['max_targ']),
-                                                 str(self.bkgd_fusion[fusion]['stdev_targ']),
-                                                 str(self.bkgd_fusion[fusion]['outlier_targ'])])
+                        if to_write:
+                            if coords in self.bkgd[fusion]:
+                                to_write.extend([str(self.bkgd[fusion][coords]['max_local']),
+                                                 str(self.bkgd[fusion][coords]['stdev_local']),
+                                                 str(self.bkgd[fusion][coords]['outlier_local']),
+                                                 str(self.bkgd[fusion][coords]['max_targ']),
+                                                 str(self.bkgd[fusion][coords]['stdev_targ']),
+                                                 str(self.bkgd[fusion][coords]['outlier_targ']),
+                                                 self._above_bkgd(self._calc_on_target(count),
+                                                                  self.bkgd[fusion][coords]['outlier_local'],
+                                                                  self.bkgd[fusion][coords]['outlier_targ'])
+                                                 ])
                             else:
-                                to_write.extend(['0.0', '0.0', '0.0', '0.0', '0.0', '0.0'])
+                                if self.bkgd_fusion[fusion]:
+                                    to_write.extend(['0.0', '0.0', '0.0',
+                                                     str(self.bkgd_fusion[fusion]['max_targ']),
+                                                     str(self.bkgd_fusion[fusion]['stdev_targ']),
+                                                     str(self.bkgd_fusion[fusion]['outlier_targ']),
+                                                     self._above_bkgd(self._calc_on_target(count),'0.0',
+                                                                      self.bkgd_fusion[fusion]['outlier_targ'])
+                                                     ])
+                                else:
+                                    to_write.extend(['0.0', '0.0', '0.0', '0.0', '0.0', '0.0',
+                                                     self._above_bkgd(self._calc_on_target(count),'0.0',
+                                                                      '0.0')
+                                                     ])
 
                     if to_write:
                         handle_out.write('\t'.join(to_write))
