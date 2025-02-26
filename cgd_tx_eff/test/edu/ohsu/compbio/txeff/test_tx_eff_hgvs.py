@@ -71,15 +71,35 @@ class TxEffHgvsTest(unittest.TestCase):
         '''
         Given three versions of a transcript return then one with the most values and the latest version
         '''
-        merged_transcripts = [self._create_variant('1', 1, 'A', 'T', 'NM_000.1', gene='AAA', p_dot_one='p.(L1P)', variant_effect='X'),
+        merged_transcripts = [self._create_variant('1', 1, 'A', 'T', 'NM_000.1', gene='AAA', p_dot_one='p.L1P', p_dot_three='p.Leu1Pro', protein_transcript='NP_123.1', variant_effect='X'),
                               self._create_variant('1', 1, 'A', 'T', 'NM_000.3', gene='AAA'),
-                              self._create_variant('1', 1, 'A', 'T', 'NM_000.2', gene='AAA', p_dot_one='p.(L1P)', variant_effect='Y')]
+                              self._create_variant('1', 1, 'A', 'T', 'NM_000.2', gene='AAA', p_dot_one='p.L1P', p_dot_three='p.Leu1Pro', protein_transcript='NP_123.1', variant_effect='Y')]
 
         best = TxEffHgvs()._get_the_best_transcripts(merged_transcripts)
         
         self.assertEqual(len(best), 1, 'Only one transcript expected')
         self.assertEqual(best[0].get_label(), '1-1-A-T-NM_000.2', 'Most complete, lastest version')
     
+    def test__get_the_best_transcripts_onlyOnePdot_error(self):
+        vt = VariantTranscript('1', 123, 'C', 'G')
+        vt.hgvs_p_dot_one = 'p.E447del'
+        vt.protein_transcript = 'NP_123.1'
+        vt.hgvs_p_dot_three = ''        
+        self.assertRaises(ValueError, vt._get_self_score)
+        
+        vt = VariantTranscript('1', 123, 'C', 'G')
+        vt.hgvs_p_dot_one = 'p.Glu447del'
+        vt.protein_transcript = 'NP_123.1'
+        vt.hgvs_p_dot_three = ''
+        self.assertRaises(ValueError, vt._get_self_score)        
+        
+    def test__get_the_best_transcripts_pDotNoProteinTranscript_error(self):
+        vt = VariantTranscript('1', 123, 'C', 'G')
+        vt.hgvs_p_dot_one = 'p.E447del'
+        vt.hgvs_p_dot_three = 'p.Glu447del'
+        vt.protein_transcript = ''                
+        self.assertRaises(ValueError, vt._get_self_score)
+        
     def test__correct_indel_coords(self):
         '''
         Given a genotype the _correct_indel_coords function returns the nomenclature describing the variant change (the g., minus the g. prefix) 

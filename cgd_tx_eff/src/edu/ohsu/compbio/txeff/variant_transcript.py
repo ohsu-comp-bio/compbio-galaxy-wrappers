@@ -8,7 +8,7 @@ class VariantTranscript(AnnovarVariantFunction):
         Create new VariantTranscript using chromosome, position, ref, and alt.
         '''
         super().__init__(chromosome, position, ref, alt)
-            
+
         self.protein_transcript = None
         
         # An hgvs.sequencevariant.SequenceVariant with g. notation 
@@ -63,72 +63,65 @@ class VariantTranscript(AnnovarVariantFunction):
     
     def __lt__(self, other):
         '''
-        The overloaded ``__lt__`` function is used to compare variant transcripts by their score. This implementation is only 
-        intended for sorting variants by their quality score that is based on the number member fields that are non-null.  
+        The overloaded ``__lt__`` function is used to compare variant transcripts. 
         
-        Only objects that  have the same variant genotype and transcript may be compared (transcript versions may differ). 
-        Primary comparison is determined by score (see _get_self_score()). When scores are the same then transcript version 
-        is compared.   
+        Variants that have different genotypes are compared by concatenating several fields together and comparing the strings. 
+        Variants that have the same genotype and transcript are compared by counting how many non-null fields they have (see _get_self_score()).
+            - When scores are the same then transcript version is compared.   
         '''
-        self_genotype, self_transcript_version = self.get_label().split('.')
-        other_genotype, other_transcript_version = other.get_label().split('.')
+        self_genotype = f'{self.chromosome}-{str(self.position)}-{self.reference}-{self.alt}'
+        self_accession, self_transcript_version = self.refseq_transcript.split('.')
         
-        # Comparison can only be between same variants with same transcript (minus the transcript version)
-        assert self_genotype == other_genotype, f"attempt to compare different variants: {self_genotype} and {other_genotype}"
-                
+        other_genotype = f'{other.chromosome}-{str(other.position)}-{other.reference}-{other.alt}'
+        other_accession, other_transcript_version = other.refseq_transcript.split('.')
+        
+        # If these are not the same genotype then compare alphabetically using the most important fields 
+        if self_genotype != other_genotype or self_accession != other_accession:
+            left = f"{self_genotype} {self.refseq_transcript} {self.hgvs_c_dot} {self.protein_transcript} {self.hgvs_p_dot_three}"
+            right = f"{other_genotype} {other.refseq_transcript} {other.hgvs_c_dot} {other.protein_transcript} {other.hgvs_p_dot_three}"
+            return left < right 
+        
         self_score = self._get_self_score()
         other_score = other._get_self_score()
         
         if self_score != other_score:
             return self_score < other_score
         
-        # If scores are the same then the comparison is made between transcript versions
+        # If scores are the same then the comparison is made between transcript versions (since we know the accessions match)
         return int(self_transcript_version) < int(other_transcript_version)
-        
         
     def _get_self_score(self):
         '''
         Return a score based on how many the fields are filled in. This method can be improved in the following ways
-        - Give p_dot and c_dot  a higher score when the values come from HGVS/UTA rather than Annovar
-        - Scoring some fields (e.g. g-dot, protein protein script, exon) may not be relevent for non coding variants. 
+        - Give c_dot a higher score when the value comes from HGVS/UTA rather than Annovar
+        - Scoring some fields (e.g. g-dot, protein protein script, exon) may not be relevant for non coding variants. 
         '''
         score = 0
         
-        if self.variant_effect != None:
-            score += 1
-            
-        if self.variant_type != None:
-            score += 1
-            
-        if self.hgvs_amino_acid_position != None:
-            score += 1
-        
-        if self.hgvs_base_position != None:
+        # cDNA Fields
+        if self.refseq_transcript:
             score += 1
 
-        if self.exon != None:
+        if self.hgvs_c_dot:
+            score += 1
+            
+        if self.variant_type:
+            score += 1
+            
+        if self.hgvs_base_position:
+            score += 1
+
+        if self.exon:
             score += 1
         
-        if self.hgnc_gene != None:
-            score += 1
-        
-        if self.hgvs_c_dot != None:
-            score += 1
-        
-        if self.hgvs_p_dot_one != None:
+        if self.hgnc_gene:
             score += 1
                 
-        if self.hgvs_p_dot_three != None:
-            score += 1
-        
-        # Splicing may or may not be present
-        if self.splicing != None:
-            score += 0
-            
-        if self.refseq_transcript != None:
+        # Protein fields        
+        if self.protein_transcript and self.hgvs_amino_acid_position and self.hgvs_p_dot_one and self.hgvs_p_dot_three:
             score += 1
             
-        if self.protein_transcript != None:
+        if self.variant_effect:            
             score += 1
-            
+
         return score

@@ -86,6 +86,9 @@ class AnnovarVariantFunction(object):
             and self.refseq_transcript == obj.refseq_transcript
     
     def get_label(self):
+        """
+        Return this variant transcript as a string.  
+        """
         return "-".join([self.chromosome, str(self.position), self.reference, self.alt, self.refseq_transcript])
     
     
@@ -131,23 +134,11 @@ class AnnovarParser(object):
                 self.logger.debug(f"Converting base pair position to string because it is an offset: {full_c}")
                 hgvs_basep = str(hgvs_basep)
             
-            # p. single letter amino acid; not always present
-            if len(transcript_parts) == 5:
-                hgvs_p = transcript_parts[4]                 
-                full_p = ':'.join([refseq_transcript, hgvs_p])
-                try:
-                    parsed_p_dot = self.hgvs_parser.parse(full_p)
-                    hgvs_three = 'p.' + str(parsed_p_dot.posedit)
-                    amino_acid_position = parsed_p_dot.posedit.pos.start.pos                
-                except hgvs.exceptions.HGVSParseError as e:
-                    self.logger.debug(f"Unable to parse {full_p} because Annovar uses non-standard nomenclature. That's ok, HGVS will fill it in: {e}")
-                    hgvs_three = None
-                    amino_acid_position = None
-            else:
-                self.logger.debug(f"This transcript is missing the p. but that's ok, HGVS will fill it in: {transcript_parts}")
-                amino_acid_position = None
-                hgvs_p = None
-                hgvs_three = None
+            # the exonic file may have protein info but we ignore it because 1) we don't trust the format of the p.; 2) it never
+            # includes a protein transcript.
+            amino_acid_position = None
+            hgvs_p = None
+            hgvs_three = None
 
         return amino_acid_position, hgvs_basep, exon, hgnc_gene, hgvs_c_dot, hgvs_p, hgvs_three, refseq_transcript
 
@@ -189,19 +180,19 @@ class AnnovarParser(object):
         # Handle the special case of a UTR that doesn't actually have a c. (eg "NM_001324237.2(NM_001324237.2:exon2:UTR5)" or "...:r.spl)"
         if hgvs_c_dot and (hgvs_c_dot.endswith('UTR3') or hgvs_c_dot.endswith('UTR5') or hgvs_c_dot.endswith('r.spl')):            
             hgvs_c_dot = None    
-        
-        # Extract base position from c. 
+                
+        # Extract c. and cdna base position 
         if hgvs_c_dot:
             try:
                 full_c = ':'.join([refseq_transcript, hgvs_c_dot])
                 hgvs_basep = self.hgvs_parser.parse(full_c).posedit.pos.start
-                
+        
                 # Sometimes basepair position is an integer, but it can also be an offset (eg c.371-3C>T)
                 if hgvs_basep and type(hgvs_basep) is BaseOffsetPosition:
                     self.logger.debug(f"Converting base pair position to string because it is an offset: {full_c}")
                     # base position is a string because offsets are like "1135-4"
                     hgvs_basep = str(hgvs_basep)
-
+        
             except hgvs.exceptions.HGVSParseError as e:
                 # This doesn't matter because we use the c. from HGVS/UTA not this one from Annovar
                 hgvs_basep = None
