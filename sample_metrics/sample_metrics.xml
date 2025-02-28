@@ -1,4 +1,4 @@
-<tool id="sample_metrics" name="Sample Level Metrics" version="0.9.1" >
+<tool id="sample_metrics" name="Sample Level Metrics" version="0.9.2" >
   <description>Metrics calculated at the sample level, for use in CGD and for additional QC.</description>
 
   <requirements>
@@ -10,6 +10,9 @@
 
   <command><![CDATA[
     python3 $__tool_directory__/sample_metrics.py
+    #if $metrics:
+        --metrics '${metrics}'
+    #end if
     #if $probeqc
       --probeqc_after '${probeqc}'
     #end if
@@ -72,12 +75,10 @@
             #end if
         #end for
     #end if
-    #if $workflow:
-        --workflow '${workflow}'
-    #end if
 ]]></command>
 
   <inputs>
+      <param name="metrics" type="text" optional="true" label="Metrics" help="List of metrics to be provided." />
       <param name="probeqc" type="data" format="txt" optional="true" label="ProbeQC Metrics" help="ProbeQC metrics file, as produced by the intervalqc_v2 script.  If you intend on producing UMI metrics, this would be the coverage QC AFTER UMI deduplication." />
       <param name="picard_metrics" type="data" format="txt" optional="true" label="Picard Alignment Summary Metrics" help="Alignment summary metrics produced by the Picard CollectAlignmentSummaryMetrics tool." />
       <param name="gatk_depth_cov_prop" type="data" format="txt" optional="true" label="GATK4 Depth Of Coverage sample file" help="GATK4 Depth Of Coverage sample file" />
@@ -105,80 +106,19 @@
               <param name="picard_metrics_umi" type="data" format="txt" label="Picard Alignment Summary Metrics Post UMI Dedup" help="Alignment summary metrics produced by the Picard CollectAlignmentSummaryMetrics tool taken after UMI deduplication." />
           </when>
       </conditional>
-      <param name="workflow" type="text" label="Workflow Name" optional="true" help="Name of the workflow that is being run." />
   </inputs>
+
   <outputs>
     <data format="txt" name="output" label="${tool.name} on ${on_string}: json" />
     <data format="txt" name="output_txt" label="${tool.name} on ${on_string}: txt" />
   </outputs>
 
   <help><![CDATA[
-usage: sample_metrics.py [-h] [--probeqc_after PROBEQC_AFTER]
-                         [--probeqc_before PROBEQC_BEFORE]
-                         [--fastqc_r1 FASTQC_R1] [--fastqc_r2 FASTQC_R2]
-                         [--picard_summary PICARD_SUMMARY]
-                         [--picard_summary_umi PICARD_SUMMARY_UMI]
-                         [--gatk_depth_cov_prop GATK_DEPTH_COV_PROP]
-                         [--gatk_depth_cov_cnts GATK_DEPTH_COV_CNTS]
-                         [--gatk_coll_rnaseq_mets GATK_COLL_RNASEQ_METS]
-                         [--gatk_count_reads_total GATK_COUNT_READS_TOTAL]
-                         [--gatk_count_reads_ints GATK_COUNT_READS_INTS]
-                         [--msi MSI] [--primers_bam PRIMERS_BAM]
-                         [--primers_bed PRIMERS_BED] [--blia_pre BLIA_PRE]
-                         [--blia_post BLIA_POST]
-                         [--dragen_metrics DRAGEN_METRICS]
-                         [--dragen_qc DRAGEN_QC]
-                         [--json_in [JSON_IN [JSON_IN ...]]]
-                         [--outfile OUTFILE] [--outfile_txt OUTFILE_TXT]
-                         [--workflow WORKFLOW] [--version]
+  Metrics calculated at the sample level
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --probeqc_after PROBEQC_AFTER
-                        Probe coverage QC after UMI deduplication metrics.
-  --probeqc_before PROBEQC_BEFORE
-                        Probe coverage QC before UMI deduplication metrics.
-  --fastqc_r1 FASTQC_R1
-                        FastQC stats for read 1.
-  --fastqc_r2 FASTQC_R2
-                        FastQC stats for read 2.
-  --picard_summary PICARD_SUMMARY
-                        Picard alignment summary metrics file.
-  --picard_summary_umi PICARD_SUMMARY_UMI
-                        Picard alignment summary metrics file taken after umi
-                        deduplication.
-  --gatk_depth_cov_prop GATK_DEPTH_COV_PROP
-                        GATK DepthOfCoverage file.
-  --gatk_depth_cov_cnts GATK_DEPTH_COV_CNTS
-                        GATK DepthOfCoverage locus file.
-  --gatk_coll_rnaseq_mets GATK_COLL_RNASEQ_METS
-                        GATK CollectRnaSeqMetrics file.
-  --gatk_count_reads_total GATK_COUNT_READS_TOTAL
-                        Output from GATK4 CountReads with total read count.
-  --gatk_count_reads_ints GATK_COUNT_READS_INTS
-                        Output from GATK4 CountReads with read count for reads
-                        overlapping targets.
-  --msi MSI             TSV file containing MSI results
-  --primers_bam PRIMERS_BAM
-                        BAM file to calculate primer reads on target.
-  --primers_bed PRIMERS_BED
-                        BED file containing primer coordinates only.
-  --blia_pre BLIA_PRE   JSON from Ding correlation subtyping, pre-
-                        normalization.
-  --blia_post BLIA_POST
-                        JSON from Ding correlation subtyping, post-
-                        normalization.
-  --dragen_metrics DRAGEN_METRICS
-                        JSON file containing metrics produced by DRAGEN
-  --dragen_qc DRAGEN_QC
-                        CSV file containing fastqc data produced by DRAGEN
-  --json_in [JSON_IN [JSON_IN ...]]
-                        Arbitrary number of files to be included in sample
-                        metrics that are in json format.
-  --outfile OUTFILE     Output file with json string.
-  --outfile_txt OUTFILE_TXT
-                        Output file in human readable text format.
-  --workflow WORKFLOW   Pass the Galaxy workflow name, if applicable.
-  --version             show program's version number and exit
+  .. _Sample Metrics details: https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/blob/master/sample_metrics/README.md
+
+  https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/blob/master/sample_metrics/README.md
+
   ]]></help>
 </tool>
