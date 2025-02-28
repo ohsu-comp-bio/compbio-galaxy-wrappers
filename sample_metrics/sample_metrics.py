@@ -47,7 +47,7 @@ from inputs import (ProbeQcRead, PerLocusRead, AlignSummaryMetrics, GatkDepthOfC
                     MsiSensor, SamReader, GatkCollectRnaSeqMetrics)
 from inputs import FastQcRead
 
-VERSION = '0.9.1'
+VERSION = '0.9.2'
 
 
 def supply_args():
