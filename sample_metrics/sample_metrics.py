@@ -713,32 +713,16 @@ class DragenMetrics:
     Collect metrics of interest from DRAGEN metrics JSON
     """
     def __init__(self, metrics):
-        self.gather_dragen_metrics(metrics)
+        self.dragen_dict = self.gather_dragen_metrics(metrics)
 
     def gather_dragen_metrics(self, metrics):
         with open(metrics, "r") as metric_handle:
+            mets = {}
             for line in metric_handle:
-                line = line.strip().strip(",").replace("\"", "")
-                if "q30_bases_pct" in line:
-                    self.q30 = line.split()[1]
-                if "average_alignment_coverage_over_target_region" in line:
-                    self.avg_depth = line.split()[1]
-                if "pct_of_target_region_with_coverage_10x_inf" in line:
-                    self.depth10 = line.split()[1]
-                if "pct_of_target_region_with_coverage_20x_inf" in line:
-                    self.depth20 = line.split()[1]
-                if "pct_of_target_region_with_coverage_50x_inf" in line:
-                    self.depth50 = line.split()[1]
-                if "pct_of_target_region_with_coverage_100x_inf" in line:
-                    self.depth100 = line.split()[1]
-                if "aligned_reads_in_target_region_pct" in line:
-                    self.pct_on_target = line.split()[1]
-                if "number_of_large_roh_gt_eq_3000000" in line:
-                    self.roh = line.split()[1]
-                if "ploidy_estimation" in line:
-                    self.ploidy_est = line.split()[1]
-
-
+                line = line.strip().strip(",").replace("\"", "").replace(":", "")
+                if "{" not in line and "}" not in line:
+                    mets[line.split()[0]] = line.split()[1]
+        return mets
 class DragenQC:
     """
     Calculate GC content for R1 and R2 from DRAGEN QC data
