@@ -466,7 +466,13 @@ class MetricPrep(SampleMetrics):
         "COUNT_10000": 9, "COUNT_100000": 0, "TPM_0": 22296, "TPM_0.01": 15366, "TPM_0.1": 15360, "TPM_1": 14323,
         "TPM_10": 9791, "TPM_100": 1505, "TPM_1000": 98}
         """
-        mets = {'qthirty': self._get_avg_probeqc('Q30', self.probeqc_after, self.total_bp_after),
+        if self.raw_mets.dragen_metrics:
+            mets = self.raw_mets.dragen_metrics.dragen_dict
+            if self.raw_mets.dragen_qc:
+                mets['dragen_gc_pct_r1'] = self.raw_mets.dragen_qc.gc_r1
+                mets['dragen_gc_pct_r2'] = self.raw_mets.dragen_qc.gc_r2
+        else:
+            mets = {'qthirty': self._get_avg_probeqc('Q30', self.probeqc_after, self.total_bp_after),
                 'qthirty_before': self._get_avg_probeqc('Q30', self.probeqc_before, self.total_bp_before),
                 'averageDepth': self._get_avg_probeqc('AVGD', self.probeqc_after, self.total_bp_after),
                 'averageDepth_before': self._get_avg_probeqc('AVGD', self.probeqc_before, self.total_bp_before),
