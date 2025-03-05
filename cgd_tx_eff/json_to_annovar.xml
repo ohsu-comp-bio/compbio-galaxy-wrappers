@@ -1,0 +1,49 @@
+<tool id="json_to_annovar" name="Json2Annovar" version="0.0.1">
+ <description>Convert variants in json file to Annovar avinput</description>
+
+ <version_command><![CDATA[
+    python $__tool_directory__/src/edu/ohsu/compbio/txeff/util/json_to_annovar.py --version
+  ]]></version_command>
+
+ <command detect_errors="exit_code"><![CDATA[
+  python $__tool_directory__/src/edu/ohsu/compbio/txeff/util/json_to_annovar.py --in_json "${in_json}"
+ ]]></command>
+
+ <environment_variables>
+  <environment_variable name="PYTHONPATH">$__tool_directory__/src</environment_variable>
+ </environment_variables>
+
+ <inputs>
+  <param name="in_json" format="json" optional="false" type="data"
+   label="Input json" />
+ </inputs>
+
+ <outputs>
+  <data format="tsv" name="out_tsv" label="Annovar avinput file" from_work_dir="out.avinput"/>
+ </outputs>
+
+ <tests>
+  <test expect_num_outputs="1">
+   <param name="in_json" value="test_in.json" />
+   <output name="out_tsv" ftype="tsv">
+     <assert_contents>
+       <has_n_lines n="4"/>
+     </assert_contents>
+   </output>
+  </test>
+ </tests>
+
+ <help><![CDATA[
+  usage: json_to_annovar.py [-h] -i IN_JSON [-o OUT_AVINPUT] [--version]
+ ]]></help>
+ <citations>
+  <citation type="bibtex">
+   @misc{tx_eff_control,
+   author = {Pleyte, Jay},
+   year = {2025},
+   title = {Json to Annovar},
+   publisher = {OHSU},
+   url = {https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff},}
+  </citation>
+ </citations>
+</tool>

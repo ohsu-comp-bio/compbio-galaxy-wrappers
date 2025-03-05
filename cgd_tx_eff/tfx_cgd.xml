@@ -137,7 +137,7 @@
     </data>
   </outputs>
 
-  <tests>    
+  <tests>
   	<test expect_num_outputs="2">
   		<param name="in_vcf" value="test_in.vcf"/>
   		<param name="ccds_map" value="test_GRCh37_minimal_genomic.csv"/>
