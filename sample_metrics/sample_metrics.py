@@ -184,7 +184,7 @@ class RawMetricCollector:
             self.json_mets = None
 
         if args.dragen_metrics:
-            self.dragen_metrics = DragenMetrics(args.dragen_metrics)
+            self.dragen_metrics = self._dragen_json(args.dragen_metrics)
         else:
             self.dragen_metrics = None
 
@@ -193,6 +193,18 @@ class RawMetricCollector:
         else:
             self.dragen_qc = None
 
+    def _dragen_json(self, json_in):
+        """
+         Collect metrics of interest from DRAGEN metrics JSON
+         :return:
+        """
+        with open(json_in, "r") as metric_handle:
+            dragen_mets = {}
+            for line in metric_handle:
+                line = line.strip().strip(",").replace("\"", "").replace(":", "")
+                if "{" not in line and "}" not in line:
+                    dragen_mets[line.split()[0]] = line.split()[1]
+        return dragen_mets
     @staticmethod
     def _json_in(json_in):
         """
