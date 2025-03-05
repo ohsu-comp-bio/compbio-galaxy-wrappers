@@ -738,7 +738,7 @@ class DragenQC:
     Calculate GC content for R1 and R2 from DRAGEN QC data
     """
     def __init__(self, qc_data):
-        self.gc_calculator(qc_data)
+        self.gc_r1, self.gc_r2 = self.gc_calculator(qc_data)
 
     def gc_calculator(self, qc_data):
 
@@ -760,8 +760,10 @@ class DragenQC:
                             r2_gc += num
 
         # compute GC content for R1 and R2
-        self.gc_r1 = round(r1_gc * 100 / r1_total)
-        self.gc_r2 = round(r2_gc * 100 / r2_total)
+        gc_r1_pct = round(r1_gc * 100 / r1_total)
+        gc_r2_pct = round(r2_gc * 100 / r2_total)
+
+        return gc_r1_pct, gc_r2_pct
 
 
 def main():
