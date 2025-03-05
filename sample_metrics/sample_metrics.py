@@ -323,7 +323,7 @@ class SampleMetrics:
             self.blia_post_mets = {'best': None, 'second': None, 'diff': None}
             self.assess_blia = None
 
-    def gc_calculator(self, qc_data):
+    def _dragen_gc_calc(self, qc_data):
         """
         Calculate GC content for R1 and R2 from DRAGEN QC data
         """
@@ -509,7 +509,7 @@ class MetricPrep(SampleMetrics):
         "TPM_10": 9791, "TPM_100": 1505, "TPM_1000": 98}
         """
         if self.raw_mets.dragen_metrics:
-            mets = self.raw_mets.dragen_metrics.dragen_dict
+            mets = self.raw_mets.dragen_metrics
             if self.raw_mets.dragen_qc:
                 mets['dragen_gc_pct_r1'] = self.gc_r1
                 mets['dragen_gc_pct_r2'] = self.gc_r2
@@ -748,55 +748,6 @@ class Writer:
         with open(filename, 'w') as to_write:
             for metric, val in self.mets.mets.items():
                 to_write.write("{}: {}\n".format(metric, val))
-
-
-class DragenMetrics:
-    """
-    Collect metrics of interest from DRAGEN metrics JSON
-    """
-    def __init__(self, metrics):
-        self.dragen_dict = self.gather_dragen_metrics(metrics)
-
-    def gather_dragen_metrics(self, metrics):
-        with open(metrics, "r") as metric_handle:
-            mets = {}
-            for line in metric_handle:
-                line = line.strip().strip(",").replace("\"", "").replace(":", "")
-                if "{" not in line and "}" not in line:
-                    mets[line.split()[0]] = line.split()[1]
-        return mets
-class DragenQC:
-    """
-    Calculate GC content for R1 and R2 from DRAGEN QC data
-    """
-    def __init__(self, qc_data):
-        self.gc_r1, self.gc_r2 = self.gc_calculator(qc_data)
-
-    def gc_calculator(self, qc_data):
-
-        r1_total, r2_total = 0, 0
-        r1_gc, r2_gc = 0, 0
-
-        # sum bases from DRAGEN FastQC output file
-        with open(qc_data) as qc_handle:
-            for line in qc_handle:
-                if "POSITIONAL BASE CONTENT" in line:
-                    num = int(line.split(',')[3])
-                    if "Read1" in line:
-                        r1_total += num
-                        if "G Bases" in line or "C Bases" in line:
-                            r1_gc += num
-                    if "Read2" in line:
-                        r2_total += num
-                        if "G Bases" in line or "C Bases" in line:
-                            r2_gc += num
-
-        # compute GC content for R1 and R2
-        gc_r1_pct = round(r1_gc * 100 / r1_total)
-        gc_r2_pct = round(r2_gc * 100 / r2_total)
-
-        return gc_r1_pct, gc_r2_pct
-
 
 def main():
     args = supply_args()
