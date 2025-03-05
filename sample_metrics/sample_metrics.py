@@ -195,7 +195,7 @@ class RawMetricCollector:
 
     def _dragen_json(self, json_in):
         """
-         Collect metrics of interest from DRAGEN metrics JSON
+         Collect metrics from DRAGEN metrics JSON
          :return:
         """
         with open(json_in, "r") as metric_handle:
