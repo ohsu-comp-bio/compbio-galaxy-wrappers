@@ -511,129 +511,129 @@ class MetricPrep(SampleMetrics):
         if self.raw_mets.dragen_metrics:
             mets = self.raw_mets.dragen_metrics.dragen_dict
             if self.raw_mets.dragen_qc:
-                mets['dragen_gc_pct_r1'] = self.raw_mets.dragen_qc.gc_r1
-                mets['dragen_gc_pct_r2'] = self.raw_mets.dragen_qc.gc_r2
+                mets['dragen_gc_pct_r1'] = self.gc_r1
+                mets['dragen_gc_pct_r2'] = self.gc_r2
         else:
             mets = {'qthirty': self._get_avg_probeqc('Q30', self.probeqc_after, self.total_bp_after),
-                'qthirty_before': self._get_avg_probeqc('Q30', self.probeqc_before, self.total_bp_before),
-                'averageDepth': self._get_avg_probeqc('AVGD', self.probeqc_after, self.total_bp_after),
-                'averageDepth_before': self._get_avg_probeqc('AVGD', self.probeqc_before, self.total_bp_before),
-                'depthTen': self._get_avg_probeqc('D10', self.probeqc_after, self.total_bp_after),
-                'depthTen_before': self._get_avg_probeqc('D10', self.probeqc_before, self.total_bp_before),
-                'depthTwenty': self._get_avg_probeqc('D20', self.probeqc_after, self.total_bp_after),
-                'depthTwenty_before': self._get_avg_probeqc('D20', self.probeqc_before, self.total_bp_before),
-                'depthFifty': self._get_avg_probeqc('D50', self.probeqc_after, self.total_bp_after),
-                'depthFifty_before': self._get_avg_probeqc('D50', self.probeqc_before, self.total_bp_before),
-                'depthOneHundred': self._get_avg_probeqc('D100', self.probeqc_after, self.total_bp_after),
-                'depthOneHundred_before': self._get_avg_probeqc('D100', self.probeqc_before, self.total_bp_before),
-                'depthTwoHundredFifty': self._get_avg_probeqc('D250', self.probeqc_after, self.total_bp_after),
-                'depthTwoHundredFifty_before':
-                    self._get_avg_probeqc('D250', self.probeqc_before, self.total_bp_before),
-                'depthFiveHundred': self._get_avg_probeqc('D500', self.probeqc_after, self.total_bp_after),
-                'depthFiveHundred_before':
-                    self._get_avg_probeqc('D500', self.probeqc_before, self.total_bp_before),
-                'depthSevenHundred':
-                    self._get_avg_probeqc('D700', self.probeqc_after, self.total_bp_after),
-                'depthSevenHundred_before':
-                    self._get_avg_probeqc('D700', self.probeqc_before, self.total_bp_before),
-                'depthOneThousand':
-                    self._get_avg_probeqc('D1000', self.probeqc_after, self.total_bp_after),
-                'depthOneThousand_before':
-                    self._get_avg_probeqc('D1000', self.probeqc_before, self.total_bp_before),
-                'depthTwelveHundredFifty':
-                    self._get_avg_probeqc('D1250', self.probeqc_after, self.total_bp_after),
-                'depthTwelveHundredFifty_before':
-                    self._get_avg_probeqc('D1250', self.probeqc_before, self.total_bp_before),
-                'depthTwoThousand': self._get_avg_probeqc('D2000', self.probeqc_after, self.total_bp_after),
-                'depthTwoThousand_before':
-                    self._get_avg_probeqc('D2000', self.probeqc_before, self.total_bp_before),
-                'uniformity_of_coverage':
-                    self._get_cov_uniformity(self._get_avg_probeqc('AVGD', self.probeqc_after,
-                                                                   self.total_bp_after)),
-                'pf_reads': self.raw_mets.picard_summary['PAIR']['PF_READS'] if self.raw_mets.picard_summary else None,
-                'pf_reads_after': self.raw_mets.picard_summary_umi['PAIR']['PF_READS'] if self.raw_mets.picard_summary_umi else None,
-                'pct_pf_reads_aligned': self.raw_mets.picard_summary['PAIR']['PCT_PF_READS_ALIGNED'] if self.raw_mets.picard_summary else None,
-                'pct_pf_reads_aligned_after': self.raw_mets.picard_summary_umi['PAIR']['PCT_PF_READS_ALIGNED'] if self.raw_mets.picard_summary_umi else None,
-                'allele_balance': self._reduce_sig(self._add_json_mets(lookin=self.raw_mets.json_mets,
-                                                                       metric='allele_balance')),
-                'allele_balance_het_count': self._add_json_mets(lookin=self.raw_mets.json_mets,
-                                                                metric='allele_balance_het_count'),
-                'gatk_cr_on_target': self._reduce_sig_pct(self.gatk_cr_on_target),
-                'gatk_cr_total': self.raw_mets.gatk_cr_total,
-                'gatk_cr_ints': self.raw_mets.gatk_cr_ints,
-                'gatk_pct_mrna_bases': self._reduce_sig_pct(self.gatk_pct_mrna_bases),
-                'gatk_pct_correct_strand_reads': self._reduce_sig_pct(self.gatk_pct_correct_strand_reads),
-                'gc_pct_r1': self.raw_mets.gc_pct_1,
-                'gc_pct_r2': self.raw_mets.gc_pct_2,
-                'bio_sex_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='bio_sex_check'),
-                'homozygosity_flag': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='homozygosity_flag'),
-                'parentage_binom': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_binom'),
-                'parentage_disc': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_disc'),
-                'parentage_confirmed': self._add_json_mets(lookin=self.raw_mets.json_mets,
-                                                           metric='parentage_confirmed'),
-                'parentage_sites': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_sites'),
-                'percentOnTarget': self._reduce_sig(self.on_target),
-                'percentOnTarget_after': self._reduce_sig(self.on_target_after),
-                'percentUmi': self.pumi,
-                'rna_count_zero': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_0'),
-                'rna_count_one': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_1'),
-                'rna_count_ten': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_10'),
-                'rna_count_onehundred': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_100'),
-                'rna_count_onethousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_1000'),
-                'rna_count_tenthousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_10000'),
-                'rna_count_hundredthousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_100000'),
-                'rna_tpm_zero': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_0'),
-                'rna_tpm_hundredth': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_0.01'),
-                'rna_tpm_tenth': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_0.1'),
-                'rna_tpm_one': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_1'),
-                'rna_tpm_ten': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_10'),
-                'rna_tpm_onehundred': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_100'),
-                'rna_tpm_onethousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_1000'),
-                'tmb': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb') if
-                self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb') else 0.0001,
-                'msi_pct': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_pct'),
-                'msi_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='total_sites'),
-                'msi_somatic_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_sites'),
-                'blia_pre_best': self.blia_pre_mets['best'],
-                'blia_pre_second': self.blia_pre_mets['second'],
-                'blia_pre_diff': self._reduce_sig(self.blia_pre_mets['diff']),
-                'blia_post_best': self.blia_post_mets['best'],
-                'blia_post_second': self.blia_post_mets['second'],
-                'blia_post_diff': self._reduce_sig(self.blia_post_mets['diff']),
-                'blia_reportable': self.assess_blia,
-                'blia_raw_pre': self.raw_mets.blia_pre['blia'],
-                'blis_raw_pre': self.raw_mets.blia_pre['blis'],
-                'lar_raw_pre': self.raw_mets.blia_pre['lar'],
-                'mes_raw_pre': self.raw_mets.blia_pre['mes'],
-                'blia_raw_post': self.raw_mets.blia_post['blia'],
-                'blis_raw_post': self.raw_mets.blia_post['blis'],
-                'lar_raw_post': self.raw_mets.blia_post['lar'],
-                'mes_raw_post': self.raw_mets.blia_post['mes'],
-                'total_on_target_transcripts': self.on_primer_frag_count,
-                'total_on_target_transcripts_pct': self.on_primer_frag_count_pct,
-                'forced_calls_above': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_above'),
-                'forced_calls_below': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_below'),
-                'y_ploidy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='y_ploidy_check'),
-                'cnv_median_segment_mad_cn':
-                    self._add_json_mets(lookin=self.raw_mets.json_mets, metric='cnv_median_segment_mad_cn'),
-                'q30_bases_pct': self.raw_mets.dragen_metrics.q30 if self.raw_mets.dragen_metrics else None,
-                'average_alignment_coverage_over_target_region':
-                    self.raw_mets.dragen_metrics.avg_depth if self.raw_mets.dragen_metrics else None,
-                'pct_of_target_region_with_coverage_10x_inf':
-                    self.raw_mets.dragen_metrics.depth10 if self.raw_mets.dragen_metrics else None,
-                'pct_of_target_region_with_coverage_20x_inf':
-                    self.raw_mets.dragen_metrics.depth20 if self.raw_mets.dragen_metrics else None,
-                'pct_of_target_region_with_coverage_50x_inf':
-                    self.raw_mets.dragen_metrics.depth50 if self.raw_mets.dragen_metrics else None,
-                'pct_of_target_region_with_coverage_100x_inf':
-                    self.raw_mets.dragen_metrics.depth100 if self.raw_mets.dragen_metrics else None,
-                'aligned_reads_in_target_region_pct':
-                    self.raw_mets.dragen_metrics.pct_on_target if self.raw_mets.dragen_metrics else None,
-                'dragen_gc_pct_r1': self.raw_mets.dragen_qc.gc_r1 if self.raw_mets.dragen_metrics else None,
-                'dragen_gc_pct_r2': self.raw_mets.dragen_qc.gc_r2 if self.raw_mets.dragen_metrics else None,
-                'number_of_large_roh_gt_eq_3000000':
-                    self.raw_mets.dragen_metrics.roh if self.raw_mets.dragen_metrics else None,
-                'ploidy_estimation': self.raw_mets.dragen_metrics.ploidy_est if self.raw_mets.dragen_metrics else None
+                    'qthirty_before': self._get_avg_probeqc('Q30', self.probeqc_before, self.total_bp_before),
+                    'averageDepth': self._get_avg_probeqc('AVGD', self.probeqc_after, self.total_bp_after),
+                    'averageDepth_before': self._get_avg_probeqc('AVGD', self.probeqc_before, self.total_bp_before),
+                    'depthTen': self._get_avg_probeqc('D10', self.probeqc_after, self.total_bp_after),
+                    'depthTen_before': self._get_avg_probeqc('D10', self.probeqc_before, self.total_bp_before),
+                    'depthTwenty': self._get_avg_probeqc('D20', self.probeqc_after, self.total_bp_after),
+                    'depthTwenty_before': self._get_avg_probeqc('D20', self.probeqc_before, self.total_bp_before),
+                    'depthFifty': self._get_avg_probeqc('D50', self.probeqc_after, self.total_bp_after),
+                    'depthFifty_before': self._get_avg_probeqc('D50', self.probeqc_before, self.total_bp_before),
+                    'depthOneHundred': self._get_avg_probeqc('D100', self.probeqc_after, self.total_bp_after),
+                    'depthOneHundred_before': self._get_avg_probeqc('D100', self.probeqc_before, self.total_bp_before),
+                    'depthTwoHundredFifty': self._get_avg_probeqc('D250', self.probeqc_after, self.total_bp_after),
+                    'depthTwoHundredFifty_before':
+                        self._get_avg_probeqc('D250', self.probeqc_before, self.total_bp_before),
+                    'depthFiveHundred': self._get_avg_probeqc('D500', self.probeqc_after, self.total_bp_after),
+                    'depthFiveHundred_before':
+                        self._get_avg_probeqc('D500', self.probeqc_before, self.total_bp_before),
+                    'depthSevenHundred':
+                        self._get_avg_probeqc('D700', self.probeqc_after, self.total_bp_after),
+                    'depthSevenHundred_before':
+                        self._get_avg_probeqc('D700', self.probeqc_before, self.total_bp_before),
+                    'depthOneThousand':
+                        self._get_avg_probeqc('D1000', self.probeqc_after, self.total_bp_after),
+                    'depthOneThousand_before':
+                        self._get_avg_probeqc('D1000', self.probeqc_before, self.total_bp_before),
+                    'depthTwelveHundredFifty':
+                        self._get_avg_probeqc('D1250', self.probeqc_after, self.total_bp_after),
+                    'depthTwelveHundredFifty_before':
+                        self._get_avg_probeqc('D1250', self.probeqc_before, self.total_bp_before),
+                    'depthTwoThousand': self._get_avg_probeqc('D2000', self.probeqc_after, self.total_bp_after),
+                    'depthTwoThousand_before':
+                        self._get_avg_probeqc('D2000', self.probeqc_before, self.total_bp_before),
+                    'uniformity_of_coverage':
+                        self._get_cov_uniformity(self._get_avg_probeqc('AVGD', self.probeqc_after,
+                                                                       self.total_bp_after)),
+                    'pf_reads': self.raw_mets.picard_summary['PAIR']['PF_READS'] if self.raw_mets.picard_summary else None,
+                    'pf_reads_after': self.raw_mets.picard_summary_umi['PAIR']['PF_READS'] if self.raw_mets.picard_summary_umi else None,
+                    'pct_pf_reads_aligned': self.raw_mets.picard_summary['PAIR']['PCT_PF_READS_ALIGNED'] if self.raw_mets.picard_summary else None,
+                    'pct_pf_reads_aligned_after': self.raw_mets.picard_summary_umi['PAIR']['PCT_PF_READS_ALIGNED'] if self.raw_mets.picard_summary_umi else None,
+                    'allele_balance': self._reduce_sig(self._add_json_mets(lookin=self.raw_mets.json_mets,
+                                                                           metric='allele_balance')),
+                    'allele_balance_het_count': self._add_json_mets(lookin=self.raw_mets.json_mets,
+                                                                    metric='allele_balance_het_count'),
+                    'gatk_cr_on_target': self._reduce_sig_pct(self.gatk_cr_on_target),
+                    'gatk_cr_total': self.raw_mets.gatk_cr_total,
+                    'gatk_cr_ints': self.raw_mets.gatk_cr_ints,
+                    'gatk_pct_mrna_bases': self._reduce_sig_pct(self.gatk_pct_mrna_bases),
+                    'gatk_pct_correct_strand_reads': self._reduce_sig_pct(self.gatk_pct_correct_strand_reads),
+                    'gc_pct_r1': self.raw_mets.gc_pct_1,
+                    'gc_pct_r2': self.raw_mets.gc_pct_2,
+                    'bio_sex_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='bio_sex_check'),
+                    'homozygosity_flag': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='homozygosity_flag'),
+                    'parentage_binom': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_binom'),
+                    'parentage_disc': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_disc'),
+                    'parentage_confirmed': self._add_json_mets(lookin=self.raw_mets.json_mets,
+                                                               metric='parentage_confirmed'),
+                    'parentage_sites': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='parentage_sites'),
+                    'percentOnTarget': self._reduce_sig(self.on_target),
+                    'percentOnTarget_after': self._reduce_sig(self.on_target_after),
+                    'percentUmi': self.pumi,
+                    'rna_count_zero': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_0'),
+                    'rna_count_one': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_1'),
+                    'rna_count_ten': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_10'),
+                    'rna_count_onehundred': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_100'),
+                    'rna_count_onethousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_1000'),
+                    'rna_count_tenthousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_10000'),
+                    'rna_count_hundredthousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='COUNT_100000'),
+                    'rna_tpm_zero': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_0'),
+                    'rna_tpm_hundredth': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_0.01'),
+                    'rna_tpm_tenth': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_0.1'),
+                    'rna_tpm_one': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_1'),
+                    'rna_tpm_ten': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_10'),
+                    'rna_tpm_onehundred': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_100'),
+                    'rna_tpm_onethousand': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='TPM_1000'),
+                    'tmb': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb') if
+                    self._add_json_mets(lookin=self.raw_mets.json_mets, metric='tmb') else 0.0001,
+                    'msi_pct': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_pct'),
+                    'msi_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='total_sites'),
+                    'msi_somatic_sites': self._add_json_mets(lookin=self.raw_mets.msi, metric='somatic_sites'),
+                    'blia_pre_best': self.blia_pre_mets['best'],
+                    'blia_pre_second': self.blia_pre_mets['second'],
+                    'blia_pre_diff': self._reduce_sig(self.blia_pre_mets['diff']),
+                    'blia_post_best': self.blia_post_mets['best'],
+                    'blia_post_second': self.blia_post_mets['second'],
+                    'blia_post_diff': self._reduce_sig(self.blia_post_mets['diff']),
+                    'blia_reportable': self.assess_blia,
+                    'blia_raw_pre': self.raw_mets.blia_pre['blia'],
+                    'blis_raw_pre': self.raw_mets.blia_pre['blis'],
+                    'lar_raw_pre': self.raw_mets.blia_pre['lar'],
+                    'mes_raw_pre': self.raw_mets.blia_pre['mes'],
+                    'blia_raw_post': self.raw_mets.blia_post['blia'],
+                    'blis_raw_post': self.raw_mets.blia_post['blis'],
+                    'lar_raw_post': self.raw_mets.blia_post['lar'],
+                    'mes_raw_post': self.raw_mets.blia_post['mes'],
+                    'total_on_target_transcripts': self.on_primer_frag_count,
+                    'total_on_target_transcripts_pct': self.on_primer_frag_count_pct,
+                    'forced_calls_above': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_above'),
+                    'forced_calls_below': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='forced_calls_below'),
+                    'y_ploidy_check': self._add_json_mets(lookin=self.raw_mets.json_mets, metric='y_ploidy_check'),
+                    'cnv_median_segment_mad_cn':
+                        self._add_json_mets(lookin=self.raw_mets.json_mets, metric='cnv_median_segment_mad_cn'),
+                    'q30_bases_pct': self.raw_mets.dragen_metrics.q30 if self.raw_mets.dragen_metrics else None,
+                    'average_alignment_coverage_over_target_region':
+                        self.raw_mets.dragen_metrics.avg_depth if self.raw_mets.dragen_metrics else None,
+                    'pct_of_target_region_with_coverage_10x_inf':
+                        self.raw_mets.dragen_metrics.depth10 if self.raw_mets.dragen_metrics else None,
+                    'pct_of_target_region_with_coverage_20x_inf':
+                        self.raw_mets.dragen_metrics.depth20 if self.raw_mets.dragen_metrics else None,
+                    'pct_of_target_region_with_coverage_50x_inf':
+                        self.raw_mets.dragen_metrics.depth50 if self.raw_mets.dragen_metrics else None,
+                    'pct_of_target_region_with_coverage_100x_inf':
+                        self.raw_mets.dragen_metrics.depth100 if self.raw_mets.dragen_metrics else None,
+                    'aligned_reads_in_target_region_pct':
+                        self.raw_mets.dragen_metrics.pct_on_target if self.raw_mets.dragen_metrics else None,
+                    'dragen_gc_pct_r1': self.raw_mets.dragen_qc.gc_r1 if self.raw_mets.dragen_metrics else None,
+                    'dragen_gc_pct_r2': self.raw_mets.dragen_qc.gc_r2 if self.raw_mets.dragen_metrics else None,
+                    'number_of_large_roh_gt_eq_3000000':
+                        self.raw_mets.dragen_metrics.roh if self.raw_mets.dragen_metrics else None,
+                    'ploidy_estimation': self.raw_mets.dragen_metrics.ploidy_est if self.raw_mets.dragen_metrics else None
                 }
         return mets
 
