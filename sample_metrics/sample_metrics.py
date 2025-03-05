@@ -189,7 +189,7 @@ class RawMetricCollector:
             self.dragen_metrics = None
 
         if args.dragen_qc:
-            self.dragen_qc = DragenQC(args.dragen_qc)
+            self.dragen_qc = args.dragen_qc
         else:
             self.dragen_qc = None
 
@@ -267,6 +267,9 @@ class SampleMetrics:
             self.total_bp_after = None
             self.header_mets_before = None
 
+        if self.raw_mets.dragen_qc:
+            self.gc_r1, self.gc_r2 = self._dragen_gc_calc(self.raw_mets.dragen_qc)
+
         try:
             self.gatk_depth_cov_prop = self.raw_mets.gatk_depth_cov_prop
         except:
@@ -319,6 +322,33 @@ class SampleMetrics:
             self.blia_pre_mets = {'best': None, 'second': None, 'diff': None}
             self.blia_post_mets = {'best': None, 'second': None, 'diff': None}
             self.assess_blia = None
+
+    def gc_calculator(self, qc_data):
+        """
+        Calculate GC content for R1 and R2 from DRAGEN QC data
+        """
+        r1_total, r2_total = 0, 0
+        r1_gc, r2_gc = 0, 0
+
+        # sum bases from DRAGEN FastQC output file
+        with open(qc_data) as qc_handle:
+            for line in qc_handle:
+                if "POSITIONAL BASE CONTENT" in line:
+                    num = int(line.split(',')[3])
+                    if "Read1" in line:
+                        r1_total += num
+                        if "G Bases" in line or "C Bases" in line:
+                            r1_gc += num
+                    if "Read2" in line:
+                        r2_total += num
+                        if "G Bases" in line or "C Bases" in line:
+                            r2_gc += num
+
+        # compute GC content for R1 and R2
+        gc_r1_pct = round(r1_gc * 100 / r1_total)
+        gc_r2_pct = round(r2_gc * 100 / r2_total)
+
+        return gc_r1_pct, gc_r2_pct
 
     def _blia_blis_map(self, name):
         """
