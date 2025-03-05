@@ -12,7 +12,7 @@ from inputs import FastQcRead
 
 
 # TODO: Update version number in ./README.md
-VERSION = '0.9.2'
+VERSION = '0.9.3'
 
 
 def supply_args():
