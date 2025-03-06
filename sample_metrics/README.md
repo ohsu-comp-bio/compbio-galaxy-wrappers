@@ -1,5 +1,5 @@
 
-# Sample Metrics v0.9.2   
+# Sample Metrics v0.9.3   
 
 **USAGE**  
 sample_metrics.py [-h]  
