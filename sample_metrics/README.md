@@ -1,5 +1,5 @@
 
-# Sample Metrics v0.9.2   
+# Sample Metrics v0.9.3   
 
 **USAGE**  
 sample_metrics.py [-h]  
@@ -177,7 +177,10 @@ ploidy_estimation
 
 
 ----
-**VERSION HISTORY**   
+**VERSION HISTORY**
+0.9.3
+- Add additional metrics to be reported for IlluminaExome_V2-5_PlusMito, restructure DRAGEN related code
+
 0.9.2  
 - Update to pass list of metrics to be provided. (Collected from config file during workflow generation.)  
 
