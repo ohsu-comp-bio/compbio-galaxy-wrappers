@@ -1,39 +1,40 @@
-<tool id="evai_poster" name="eVai Sample Poster" version="1.0.0">
+<tool id="evai_poster" name="eVai Sample Poster" version="1.0.1">
 	<description>Uploads VCFs to eVai to analyze</description>
 	<requirements>
 	</requirements>
 	<command><![CDATA[
-	#if $ped.selector == "family"
-		sed -i "s/.*reference=/\#\#reference=hg19/g" ${dragen_variants} &&
-		sed -i "s/.*reference=/\#\#reference=hg19/g" ${ped.father_vcf} &&
-		sed -i "s/.*reference=/\#\#reference=hg19/g" ${ped.mother_vcf} &&
-		ln -s ${ped.pedigree} family.ped &&
-		ln -s ${dragen_variants} sample.vcf &&
-		ln -s ${ped.father_vcf} father.vcf &&
-		ln -s ${ped.mother_vcf} mother.vcf &&
+	#if $proband.is_true == "yes"
+		sed -i "s/.*reference=/\#\#reference=hg19/g" ${proband.proband_path} &&
+		sed -i "s/.*reference=/\#\#reference=hg19/g" ${proband.father_path} &&
+		sed -i "s/.*reference=/\#\#reference=hg19/g" ${proband.mother_path} &&
+		ln -s ${proband.pedigree_path} family.ped &&
+		ln -s ${proband.proband_path} proband.vcf &&
+		ln -s ${proband.father_path} father.vcf &&
+		ln -s ${proband.mother_path} mother.vcf &&
 		java -jar \${EVAI_JAR_PATH}/eVaiAnalysisExecutor_2.0.0.jar analyze --vcf -f sample.vcf -f father.vcf -f mother.vcf -n ${sample_id} -pd family.ped -tk "`cat ${token_file}`" > ${output_log}
 	#else
-		sed -i "s/.*reference=/\#\#reference=hg19/g" ${dragen_variants} &&
-		ln -s ${dragen_variants} sample.vcf &&
+		sed -i "s/.*reference=/\#\#reference=hg19/g" ${sample_path} &&
+		ln -s ${sample_path} sample.vcf &&
 		java -jar \${EVAI_JAR_PATH}/eVaiAnalysisExecutor_2.0.0.jar analyze --vcf -f sample.vcf -n ${sample_id} -tk "`cat ${token_file}`" > ${output_log}
 	#end if
 	]]>
 	</command>
 	<inputs>
-		<param name="sample_id" type="text" label="Sample ID"/>
 		<param name="token_file" type="data" label="eNgenome token"/>
-		<param name="dragen_variants" type="data" format="vcf" label="DRAGEN VCF"/>
-		<conditional name="ped">
-            <param name="selector" type="select" label="Select to launch family analysis">
-                <option value="individual" selected="True">Individual</option>
-                <option value="family" selected="True">Family</option>
+		<conditional name="proband">
+            <param name="is_true" type="select" label="Select to launch family analysis">
+                <option value="yes" selected="True">Yes</option>
+                <option value="no">No</option>
             </param>
-            <when value="family">
-                 <param type="data" name="pedigree" label="Pedigree file" format="tabular"/>
-				 <param name="father_vcf" type="data" format="vcf" label="Father VCF"/>
-				 <param name="mother_vcf" type="data" format="vcf" label="Mother VCF"/>
+            <when value="yes">
+                 <param type="data" name="pedigree_path" label="Pedigree file" format="tabular"/>
+				 <param name="proband_path" type="data" format="vcf" label="Proband VCF"/>
+				 <param name="mother_path" type="data" format="vcf" label="Mother VCF"/>
+				 <param name="father_path" type="data" format="vcf" label="Father VCF"/>
             </when>
 			<when value="no">
+				<param name="sample_id" type="text" label="Sample ID"/>
+				<param name="sample_path" type="data" format="vcf" label="Sample VCF"/>
         	</when>
 		</conditional>
 	</inputs>
