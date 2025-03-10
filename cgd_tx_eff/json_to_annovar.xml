@@ -6,7 +6,7 @@
   ]]></version_command>
 
  <command detect_errors="exit_code"><![CDATA[
-  python $__tool_directory__/src/edu/ohsu/compbio/txeff/util/json_to_annovar.py --in_json "${in_json}"
+  python $__tool_directory__/src/edu/ohsu/compbio/txeff/util/json_to_annovar.py --in "${in}"
  ]]></command>
 
  <environment_variables>
@@ -14,18 +14,18 @@
  </environment_variables>
 
  <inputs>
-  <param name="in_json" format="json" optional="false" type="data"
+  <param name="in" format="json" optional="false" type="data"
    label="Input json" />
  </inputs>
 
  <outputs>
-  <data format="tsv" name="out_tsv" label="Annovar avinput file" from_work_dir="out.avinput"/>
+  <data format="tsv" name="out" label="Annovar avinput file" from_work_dir="out.avinput"/>
  </outputs>
 
  <tests>
   <test expect_num_outputs="1">
-   <param name="in_json" value="test_in.json" />
-   <output name="out_tsv" ftype="tsv">
+   <param name="in" value="test_json2annovar_in.json" />
+   <output name="out" ftype="tsv">
      <assert_contents>
        <has_n_lines n="4"/>
      </assert_contents>
@@ -34,7 +34,7 @@
  </tests>
 
  <help><![CDATA[
-  usage: json_to_annovar.py [-h] -i IN_JSON [-o OUT_AVINPUT] [--version]
+  usage: json_to_annovar.py [-h] --in IN_JSON [--out OUT_AVINPUT] [--version]
  ]]></help>
  <citations>
   <citation type="bibtex">

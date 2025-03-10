@@ -355,7 +355,8 @@ class TxEffHgvs(object):
 
             try:
                 variant_transcript = VariantTranscript(variant.chromosome, variant.position, variant.reference, variant.alt)
-    
+
+                variant_transcript._id = variant._id
                 variant_transcript.sequence_variant = self.__to_g_dot(var_g)
                 
                 # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function.
@@ -502,6 +503,7 @@ class TxEffHgvs(object):
             Create a new VariantTranscript using the values from an object of parent type AnnovarVariantFunction
             '''
             variant_transcript = VariantTranscript(annovar_transcript.chromosome, annovar_transcript.position, annovar_transcript.reference, annovar_transcript.alt)
+            variant_transcript._id = annovar_transcript._id
             variant_transcript.protein_transcript = None
             variant_transcript.variant_effect = annovar_transcript.variant_effect
             variant_transcript.variant_type = annovar_transcript.variant_type
@@ -553,7 +555,7 @@ class TxEffHgvs(object):
         Combine Annovar and HGVS information relating to the same transcript into a single record.  
         '''
         new_transcript = VariantTranscript(hgvs_transcript.chromosome, hgvs_transcript.position, hgvs_transcript.reference, hgvs_transcript.alt)
-    
+                
         self._merge_into(transcript_key, new_transcript, hgvs_transcript, annovar_transcript)
             
         return new_transcript
@@ -567,6 +569,10 @@ class TxEffHgvs(object):
         assert hgvs_transcript.position == annovar_transcript.position, f"HGVS and Annovar genotype positions are not equal: {hgvs_transcript.position} != {annovar_transcript.position}"
         assert hgvs_transcript.reference == annovar_transcript.reference, f"HGVS and Annovar genotype references are not equal: {hgvs_transcript.reference} != {annovar_transcript.reference}"
         assert hgvs_transcript.alt == annovar_transcript.alt, f"HGVS and Annovar genotype alts are not equal: {hgvs_transcript.alt} != {annovar_transcript.alt}"
+        assert hgvs_transcript._id == annovar_transcript._id, f"External ids don't match: {hgvs_transcript._id} != {annovar_transcript._id}"
+
+        # External id
+        new_transcript._id = hgvs_transcript._id
         
         # Amino Acid Position
         ## Use only the hgvs/uta value, annovar's is ignored.
@@ -794,8 +800,8 @@ class TxEffHgvs(object):
         Take a list of transcripts from Annovar and use them to look up the corresponding variants using the HGVS python lib; and then 
         merge the annovar and hgvs info and return the results. 
         '''
-        disinct_variants = {Variant(x.chromosome, x.position, x.reference, x.alt) for x in annovar_transcripts}
-        
+        disinct_variants = {Variant(x.chromosome, x.position, x.reference, x.alt, x._id) for x in annovar_transcripts} 
+
         self.logger.debug(f'{len(disinct_variants)} distinct variants')
 
         # Lookup the variant in the HGVS/UTA database

@@ -40,7 +40,9 @@ class AnnovarVariantFunction(object):
         
         assert type(position) == int or position.isnumeric(), 'Position must be an integer' 
         assert alt.find(',') == -1, 'ALT may only have one value'
-        
+
+        self._id = None
+
         self.chromosome = str(chromosome)
         self.position = int(position)
         self.reference = ref
@@ -63,7 +65,7 @@ class AnnovarVariantFunction(object):
         '''
         String representation of the AnnovarVariantFunction object
         '''
-        return f'[AnnovarVariantFunction: genotype={self.chromosome}-{self.position}-{self.reference}-{self.alt}, transcript={self.refseq_transcript}, variant_effect={self.variant_effect}, variant_type={self.variant_type}, aap={self.hgvs_amino_acid_position}, bpos={self.hgvs_base_position}, exon={self.exon}, gene={self.hgnc_gene}, c.={self.hgvs_c_dot}, p1.={self.hgvs_p_dot_one}, p3.={self.hgvs_p_dot_three}, splicing={self.splicing}]'
+        return f'[AnnovarVariantFunction: genotype={self.chromosome}-{self.position}-{self.reference}-{self.alt}, transcript={self.refseq_transcript}, variant_effect={self.variant_effect}, variant_type={self.variant_type}, aap={self.hgvs_amino_acid_position}, bpos={self.hgvs_base_position}, exon={self.exon}, gene={self.hgnc_gene}, c.={self.hgvs_c_dot}, p1.={self.hgvs_p_dot_one}, p3.={self.hgvs_p_dot_three}, splicing={self.splicing}, _id={self._id}]'
             
     def __eq__(self, obj):
         if obj is None:
@@ -231,12 +233,11 @@ class AnnovarParser(object):
         ''' 
         annovar_recs = []
         
-        # genotype fields are in positions 3,4,6,7 and 8,9,11,12 and we want the second group because the first group
-        # may have been altered by the convert2annovar.pl script.   
-        chrom = str(annovar_row[8]).replace('chr','')
-        pos = annovar_row[9]
-        ref = annovar_row[11]
-        alt = annovar_row[12]
+        # genotype fields are in positions 3,4,6,7. Index 5 is end position.
+        chrom = str(annovar_row[3]).replace('chr','')
+        pos = annovar_row[4]
+        ref = annovar_row[6]
+        alt = annovar_row[7]
         
         self.logger.debug(f"Parsing variant {chrom}-{pos}-{ref}-{alt}")
         
@@ -249,12 +250,16 @@ class AnnovarParser(object):
         variant_effect = annovar_row[1]
         variant_type = None
         
+        external_id = self._get_external_id(annovar_row)
+        
         transcript_tuples = annovar_row[2].rstrip(',').split(',')
         self.logger.debug(f"row has {len(transcript_tuples)} transcript tuples")
 
         for transcript_tuple in transcript_tuples:
             avf = AnnovarVariantFunction(chrom, pos, ref, alt)
 
+            avf._id = external_id
+            
             avf.variant_effect = variant_effect
             avf.variant_type = variant_type
 
@@ -286,12 +291,11 @@ class AnnovarParser(object):
         '''  
         annovar_recs = []
         
-        # genotype fields are in positions 2,3,5,6 and 7,8,10,11 and we want the second group because the first group
-        # may have been altered by the convert2annovar.pl script.
-        chrom = str(annovar_row[7]).replace('chr','')
-        pos = annovar_row[8]
-        ref = annovar_row[10]
-        alt = annovar_row[11]
+        # genotype fields are in positions 2,3,5,6. Index 4 is end position.  
+        chrom = str(annovar_row[2]).replace('chr','')
+        pos = annovar_row[3]
+        ref = annovar_row[5]
+        alt = annovar_row[6]
         
         self.logger.debug(f"Parsing variant {chrom}-{pos}-{ref}-{alt}")
         
@@ -312,8 +316,12 @@ class AnnovarParser(object):
             
         self.logger.debug(f"row has {len(transcript_tuples)} transcript tuples")
         
+        external_id = self._get_external_id(annovar_row)
+        
         for transcript_tuple in transcript_tuples:
             avf = AnnovarVariantFunction(chrom, pos, ref, alt)
+            
+            avf._id = external_id
             
             # Variant effect is not present in variant_function files 
             avf.variant_effect = None
@@ -422,14 +430,14 @@ class AnnovarParser(object):
             for row in reader:
                 if annovar_file_type == AnnovarFileType.ExonicVariantFunction:
                     assert row[0].startswith('line')
-                    if len(row) != 18:
-                        self.logger.info(f"Exonic variant function file is expected have 18 columns. Found {len(row)}. Make sure you run the annotate_variation.pl script with the '--otherinfo' parameter to include other information from the original VCF")
+                    if len(row) != 9:
+                        self.logger.info(f"Exonic variant function file is expected have 9 columns. Found {len(row)}.")
                     
                     # Parse a row in an exonic_variant_function file
                     annovar_recs.extend(self._parse_exonic_variant_function_row(row))
                 elif annovar_file_type == AnnovarFileType.VariantFunction:
-                    if len(row) != 17:
-                        self.logger.info(f"Variant function file file is expected to have 17 columns. Found {len(row)}. Make sure you run the annotate_variation.pl with the '--otherinfo' parameter to include other information from the original VCF")
+                    if len(row) != 8:
+                        self.logger.info(f"Variant function file is expected to have 17 columns. Found {len(row)}. Make sure you run the annotate_variation.pl with the '--otherinfo' parameter to include other information from the original VCF")
                     
                     # Parse a row in a variant_function file
                     annovar_recs.extend(self._parse_variant_function_row(row))
@@ -468,6 +476,11 @@ class AnnovarParser(object):
                 #  - The transcript is exonic so we get one record in annovar.variant_function and one in annovar.exonic_variant_function 
                 #  - The transcript is intronic, and it is splicing so we get two records from annovar.variant_function
                 right_rec = matching_genotypes[1]
+                
+                # Merged transcripts are from the same variants so the external id is expected to be the same as well. 
+                if left_rec._id != right_rec._id:
+                    raise ValueError(f"Transcripts on the same variant are expected to have the same id: left={left_rec}, right={right_rec}")
+                
                 self.logger.debug(f"Merging left={left_rec} and right={right_rec}")
                 self._merge(left_rec, right_rec)
             elif len(matching_genotypes) == 3:
@@ -475,6 +488,12 @@ class AnnovarParser(object):
                 # and two records from annovar.variant_function where one is 'exonic' and the other is 'splicing'.
                 right1_rec = matching_genotypes[1]
                 right2_rec = matching_genotypes[2]  
+
+                # Merged transcripts are from the same variants so the external id is expected to be the same as well. 
+                if left_rec._id != right1_rec._id:
+                    raise ValueError(f"Transcripts on the same variant are expected to have the same id: left={left_rec}, right1_rec={right1_rec}")
+                elif left_rec._id != right2_rec._id:
+                    raise ValueError(f"Transcripts on the same variant are expected to have the same id: left={left_rec}, right2_rec={right2_rec}")
 
                 # The two records from annovar.variant_function will label one of the records as exonic and one as splicing
                 if not (left_rec.variant_type == 'exonic' or right1_rec.variant_type == 'exonic' or right2_rec.variant_type == 'exonic'):
@@ -518,3 +537,15 @@ class AnnovarParser(object):
         left_rec.hgvs_p_dot_three = (left_rec.hgvs_p_dot_three or right_rec.hgvs_p_dot_three) 
         left_rec.splicing = (left_rec.splicing or right_rec.splicing) 
         left_rec.refseq_transcript = (left_rec.refseq_transcript or right_rec.refseq_transcript)        
+
+    def _get_external_id(self, annovar_line):
+        """
+        Checks the last field an annovar vf or annovar evf line for an "id:nnn" attribute and return the id if it is present or None if it is not.
+        """
+        match = re.search('id:(\d+)', annovar_line[-1])
+        if match:
+            return match.group(1)
+        else:
+            return None
+        
+        

@@ -29,8 +29,14 @@ class JsonToAnnovar(object):
         with open(output_filename, "w") as file:
             tsv_writer = csv.writer(file, delimiter='\t')
             for x in variants:
-                positionEnd =  x['positionStart'] + len(x['referenceBase']) - 1
-                tsv_writer.writerow([self._get_chromosome(x['chromosome']), x['positionStart'], positionEnd, x['referenceBase'], x['variantBase']])
+                position_end =  x['positionStart'] + len(x['referenceBase']) - 1
+                id = f"id:{x['genomicVariantId']}"
+                tsv_writer.writerow([self._get_chromosome(x['chromosome']), 
+                                     x['positionStart'], 
+                                     position_end, 
+                                     x['referenceBase'], 
+                                     x['variantBase'], 
+                                     id])
     
     def _get_chromosome(self, chromosome):
         return chromosome.replace('chr', '')
@@ -38,16 +44,18 @@ class JsonToAnnovar(object):
 def _parse_args():
     parser = argparse.ArgumentParser(description='Read variants from a json formatted file and write out an Annovar input file.')
 
-    parser.add_argument('-i', '--in_json', 
-                help='json list of variants', 
+    parser.add_argument('-i', '--in', 
+                dest="input",
+                help='json list of variants exported from CGD', 
                 type=argparse.FileType('r'), 
                 required=True)
     
-    parser.add_argument('-o', '--out_avinput', 
-                help = 'avinput file', 
-                type = argparse.FileType('w'), 
-                required = False,
-                default = "out.avinput")
+    parser.add_argument('-o', '--out', 
+                dest="output",
+                help='avinput file', 
+                type=argparse.FileType('w'), 
+                required=False,
+                default="out.avinput")
 
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
     
@@ -60,11 +68,11 @@ def _main():
     args = _parse_args()
 
     j2a = JsonToAnnovar()
-    variants = j2a.read(args.in_json.name)
+    variants = j2a.read(args.input.name)
     
-    j2a.write(variants, args.out_avinput.name)
+    j2a.write(variants, args.output.name)
     
-    logger.info(f"Wrote {len(variants)} variants to {args.out_avinput.name}")
+    logger.info(f"Wrote {len(variants)} variants to {args.output.name}")
     
 if __name__ == '__main__':
     _main()    

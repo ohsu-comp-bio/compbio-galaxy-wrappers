@@ -38,6 +38,7 @@ class VariantTranscript(AnnovarVariantFunction):
         Return a copy of this trancript 
         ''' 
         transcript = VariantTranscript(self.chromosome, self.position, self.reference, self.alt)
+        transcript._id = self._id
         transcript.variant_effect = self._noneIfEmpty(self.variant_effect)
         transcript.variant_type = self._noneIfEmpty(self.variant_type)
         transcript.hgvs_amino_acid_position = self._noneIfEmpty(self.hgvs_amino_acid_position)
