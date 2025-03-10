@@ -22,31 +22,31 @@ class AnnovarParserTest(unittest.TestCase):
         '''
     
         # Type I
-        refseq_transcript, exon, hgvs_c_dot, hgvs_basep = self.annovar_parser._unpack_vf_transcript_tuple("NM_001039724.3")
-        self.assertEqual(refseq_transcript, "NM_001039724.3")
+        cdna_transcript, exon, c_dot, hgvs_basep = self.annovar_parser._unpack_vf_transcript_tuple("NM_001039724.3")
+        self.assertEqual(cdna_transcript, "NM_001039724.3")
         self.assertIsNone(exon)
-        self.assertIsNone(hgvs_c_dot)        
+        self.assertIsNone(c_dot)        
         self.assertIsNone(hgvs_basep)
         
         # Type II
-        refseq_transcript, exon, hgvs_c_dot, hgvs_basep = self.annovar_parser._unpack_vf_transcript_tuple("NM_001290354.2(NM_001290354.2:c.-5432_-5431insGCGCTGCGG)")
-        self.assertEqual(refseq_transcript, "NM_001290354.2")
+        cdna_transcript, exon, c_dot, hgvs_basep = self.annovar_parser._unpack_vf_transcript_tuple("NM_001290354.2(NM_001290354.2:c.-5432_-5431insGCGCTGCGG)")
+        self.assertEqual(cdna_transcript, "NM_001290354.2")
         self.assertIsNone(exon)
-        self.assertEqual(hgvs_c_dot, "c.-5432_-5431insGCGCTGCGG")        
+        self.assertEqual(c_dot, "c.-5432_-5431insGCGCTGCGG")        
         self.assertEqual(hgvs_basep, '-5432')
         
         # Type III
-        refseq_transcript, exon, hgvs_c_dot, hgvs_basep = self.annovar_parser._unpack_vf_transcript_tuple("NM_001206844.2(NM_001206844.2:exon5:c.1135-4T>C)")
-        self.assertEqual(refseq_transcript, 'NM_001206844.2')
+        cdna_transcript, exon, c_dot, hgvs_basep = self.annovar_parser._unpack_vf_transcript_tuple("NM_001206844.2(NM_001206844.2:exon5:c.1135-4T>C)")
+        self.assertEqual(cdna_transcript, 'NM_001206844.2')
         self.assertEqual(exon, 5)
-        self.assertEqual(hgvs_c_dot, 'c.1135-4T>C')        
+        self.assertEqual(c_dot, 'c.1135-4T>C')        
         self.assertEqual(hgvs_basep, '1135-4')
         
         # Type V
-        refseq_transcript, exon, hgvs_c_dot, hgvs_basep = self.annovar_parser._unpack_vf_transcript_tuple("NM_001242366.3(NM_001242366.3:exon3:c.1142+1T>-,NM_001242366.3:exon4:c.1143-1T>-)")
-        self.assertEqual(refseq_transcript, 'NM_001242366.3')
+        cdna_transcript, exon, c_dot, hgvs_basep = self.annovar_parser._unpack_vf_transcript_tuple("NM_001242366.3(NM_001242366.3:exon3:c.1142+1T>-,NM_001242366.3:exon4:c.1143-1T>-)")
+        self.assertEqual(cdna_transcript, 'NM_001242366.3')
         self.assertEqual(exon, 3)
-        self.assertEqual(hgvs_c_dot, 'c.1142+1T>-')        
+        self.assertEqual(c_dot, 'c.1142+1T>-')        
         # For some reason hgvs.parser.Parser.parse can't figure out the base pair in that c.
         self.assertEqual(hgvs_basep, None)
         
@@ -54,16 +54,16 @@ class AnnovarParserTest(unittest.TestCase):
         self.assertRaises(ValueError, self.annovar_parser._unpack_vf_transcript_tuple, "")
         
         # Invalid format: delimited but still not a proper Type V  
-        refseq_transcript, exon, hgvs_c_dot, hgvs_basep = self.annovar_parser._unpack_vf_transcript_tuple("a:b:c:d:e:f")
-        self.assertIs(refseq_transcript, None)
+        cdna_transcript, exon, c_dot, hgvs_basep = self.annovar_parser._unpack_vf_transcript_tuple("a:b:c:d:e:f")
+        self.assertIs(cdna_transcript, None)
         self.assertIs(exon, None)
-        self.assertIs(hgvs_c_dot, None)
+        self.assertIs(c_dot, None)
         self.assertIs(hgvs_basep, None)
          
-        refseq_transcript, exon, hgvs_c_dot, hgvs_basep = self.annovar_parser._unpack_vf_transcript_tuple("a:b:c:d:e")
-        self.assertIs(refseq_transcript, None)
+        cdna_transcript, exon, c_dot, hgvs_basep = self.annovar_parser._unpack_vf_transcript_tuple("a:b:c:d:e")
+        self.assertIs(cdna_transcript, None)
         self.assertIs(exon, None)
-        self.assertIs(hgvs_c_dot, None)
+        self.assertIs(c_dot, None)
         self.assertIs(hgvs_basep, None)
                 
     def test__parse_variant_function_row(self):
@@ -82,11 +82,11 @@ class AnnovarParserTest(unittest.TestCase):
         '''        
         data = "NM_001077690.1(NM_001077690.1:exon1:c.60+1C>-,NM_001077690.1:exon2:c.61-1C>-)"
         
-        refseq_transcript, exon, hgvs_c_dot = self.annovar_parser._parse_transcript_tuple_type5(data)
+        cdna_transcript, exon, c_dot = self.annovar_parser._parse_transcript_tuple_type5(data)
         
-        self.assertEqual(refseq_transcript, 'NM_001077690.1', "Incorrect refseq transcript")
+        self.assertEqual(cdna_transcript, 'NM_001077690.1', "Incorrect refseq transcript")
         self.assertEqual(exon, 'exon1', "Incorrect exon")
-        self.assertEqual(hgvs_c_dot, 'c.60+1C>-', "Incorrect c.")
+        self.assertEqual(c_dot, 'c.60+1C>-', "Incorrect c.")
     
     def test__parse_transcript_tuple_type5_invalid(self):
         '''
@@ -103,33 +103,33 @@ class AnnovarParserTest(unittest.TestCase):
         that the correct exon is returned even when there are six exons.     
         ''' 
         data = "NM_1.2(NM_1.2:exon1:c.1+1C>-,NM_1.2:exon2:c.1-1C>-,NM_1.2:exon3:c.1-1C>-,NM_1.2:exon4:c.1-1C>-,NM_1.2:exon5:c.1-1C>-,NM_1.2:exon6:c.1-1C>-)"        
-        refseq_transcript, exon, hgvs_c_dot = self.annovar_parser._parse_transcript_tuple_type5(data)
+        cdna_transcript, exon, c_dot = self.annovar_parser._parse_transcript_tuple_type5(data)
         self.assertEqual(exon, 'exon1', "Incorrect exon")
 
     def test__parse_transcript_tuple_type3(self):
         data = "NM_001289861.1(NM_001289861.1:exon20:c.3002-2A>G)"
         
-        refseq_transcript, exon, hgvs_c_dot = self.annovar_parser._parse_transcript_tuple_type3(data)
+        cdna_transcript, exon, c_dot = self.annovar_parser._parse_transcript_tuple_type3(data)
         
-        self.assertEqual(refseq_transcript, 'NM_001289861.1', "Incorrect refseq transcript")
+        self.assertEqual(cdna_transcript, 'NM_001289861.1', "Incorrect refseq transcript")
         self.assertEqual(exon, 'exon20', "Incorrect exon")
-        self.assertEqual(hgvs_c_dot, 'c.3002-2A>G', "Incorrect c.")
+        self.assertEqual(c_dot, 'c.3002-2A>G', "Incorrect c.")
     
     def test__parse_transcript_tuple_type2(self):
         data = "NM_000791.4(NM_000791.4:c.-417_-416insGCGCTGCGG)"
-        refseq_transcript, hgvs_c_dot = self.annovar_parser._parse_transcript_tuple_type2(data)
+        cdna_transcript, c_dot = self.annovar_parser._parse_transcript_tuple_type2(data)
         
-        self.assertEqual(refseq_transcript, 'NM_000791.4', "Incorrect refseq transcript")        
-        self.assertEqual(hgvs_c_dot, 'c.-417_-416insGCGCTGCGG', "Incorrect c.")
+        self.assertEqual(cdna_transcript, 'NM_000791.4', "Incorrect refseq transcript")        
+        self.assertEqual(c_dot, 'c.-417_-416insGCGCTGCGG', "Incorrect c.")
 
     def test__parse_transcript_tuple_type1(self):
         data = "NM_000791.4"        
-        refseq_transcript = self.annovar_parser._parse_transcript_tuple_type1(data)        
-        self.assertEqual(refseq_transcript, 'NM_000791.4', "Incorrect refseq transcript")        
+        cdna_transcript = self.annovar_parser._parse_transcript_tuple_type1(data)        
+        self.assertEqual(cdna_transcript, 'NM_000791.4', "Incorrect refseq transcript")        
 
         data = "NM_001126117.1(dist=778)"
-        refseq_transcript = self.annovar_parser._parse_transcript_tuple_type1(data)        
-        self.assertEqual(refseq_transcript, None, "Intergenic transcript should be ignored")        
+        cdna_transcript = self.annovar_parser._parse_transcript_tuple_type1(data)        
+        self.assertEqual(cdna_transcript, None, "Intergenic transcript should be ignored")        
 
     # None of the protein information should be collected from annovar 
     def test___parse_exonic_variant_function_row_type4_noProteinInfo(self):
@@ -140,7 +140,7 @@ class AnnovarParserTest(unittest.TestCase):
         
         evf = rec[0]
         
-        self.assertIsNone(evf.hgvs_amino_acid_position, "Amino acid position")
-        self.assertIsNone(evf.hgvs_p_dot_one, "One letter genotype")
-        self.assertIsNone(evf.hgvs_p_dot_three, "Three letter genotype")
+        self.assertIsNone(evf.amino_acid_position, "Amino acid position")
+        self.assertIsNone(evf.p_dot1, "One letter genotype")
+        self.assertIsNone(evf.p_dot3, "Three letter genotype")
         

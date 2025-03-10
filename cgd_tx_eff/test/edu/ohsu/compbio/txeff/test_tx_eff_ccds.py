@@ -12,4 +12,4 @@ class TxEffCcdsTest(unittest.TestCase):
         self.assertIsNotNone(self._tx_eff_ccds.refseq_to_ccds_map, "dict created")
     
     def test_refseq_to_ccds_map(self):
-        self.assertEqual(self._tx_eff_ccds.refseq_to_ccds_map.get('NM_014246.4'), 'CCDS14076.1', 'mapping found')
+        self.assertEqual(self._tx_eff_ccds.refseq_to_ccds_map.get('NM_198576.4'), 'CCDS30551.1', 'mapping found')

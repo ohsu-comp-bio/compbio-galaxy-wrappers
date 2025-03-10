@@ -11,11 +11,11 @@ def create_variant(chromosome, pos, ref, alt, transcript, gene=None, c_dot=None,
         Helper method for creating variant-transcript objects
         ''' 
         variant_transcript = VariantTranscript(chromosome, pos, ref, alt)
-        variant_transcript.refseq_transcript = transcript
-        variant_transcript.hgnc_gene = gene
-        variant_transcript.hgvs_c_dot = c_dot
-        variant_transcript.hgvs_p_dot_one = p_dot_one
-        variant_transcript.hgvs_p_dot_three = p_dot_three
+        variant_transcript.cdna_transcript = transcript
+        variant_transcript.gene = gene
+        variant_transcript.c_dot = c_dot
+        variant_transcript.p_dot1 = p_dot_one
+        variant_transcript.p_dot3 = p_dot_three
         variant_transcript.variant_effect = variant_effect
         variant_transcript.variant_type = variant_type
         variant_transcript.protein_transcript = protein_transcript
