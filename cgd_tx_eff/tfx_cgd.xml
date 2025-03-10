@@ -131,7 +131,7 @@
   	<test expect_num_outputs="2">
         <param name="annovar_variant_function" value="annovar.variant_function"/>
         <param name="annovar_exonic_variant_function" value="annovar.exonic_variant_function"/>  		
-  		<param name="ccds_map" value="refseq_ccds_map.csv"/>
+        <param name="ccds_map" value="refseq_ccds_map.csv"/>
         <param name="reference_source_selector" value="history" />
         <param name="reference_sequence" ftype="fasta" value="test_chr1.fa"/>
         <param name="benchmarking_selector" value="no"/>

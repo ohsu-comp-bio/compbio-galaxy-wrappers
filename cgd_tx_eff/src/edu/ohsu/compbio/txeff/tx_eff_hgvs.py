@@ -350,7 +350,7 @@ class TxEffHgvs(object):
         hgvs_transcripts = []
         
         for uta_row in tx_list:
-            refseq_transcript = uta_row[0]
+            cdna_transcript = uta_row[0]
             refseq_chromosome = uta_row[1]
 
             try:
@@ -361,13 +361,13 @@ class TxEffHgvs(object):
                 
                 # Annovar doesn't provide a gene for UTR and introns, so in those cases the gene information comes from HGVS using this function.
                 self._benchmark_start('hdp.get_tx_info (UTA)')
-                transcript_detail = self.hdp.get_tx_info(refseq_transcript, refseq_chromosome, 'splign')
-                variant_transcript.hgnc_gene = transcript_detail['hgnc']
+                transcript_detail = self.hdp.get_tx_info(cdna_transcript, refseq_chromosome, 'splign')
+                variant_transcript.gene = transcript_detail['hgnc']
                 self._benchmark_stop('hdp.get_tx_info (UTA)')
                 
                 # Determine c. and p.. Non coding transcripts will throw an error. See HGVSUsageError caught below.
                 self._benchmark_start('am.g_to_c (SeqRepo)') 
-                var_c = self.am.g_to_c(var_g, str(refseq_transcript))
+                var_c = self.am.g_to_c(var_g, str(cdna_transcript))
                 self._benchmark_stop('am.g_to_c (SeqRepo)')
 
                 self._benchmark_start('am.c_to_p (SeqRepo)') 
@@ -398,14 +398,14 @@ class TxEffHgvs(object):
                     # Some variants don't have any position information, and that is ok. Most of the time these are indels, as indicated by ``var_p.posedit.type``
                     self.logger.debug(f"HGVS variant does not have a position: ref={var_p.posedit.ref}, alt={var_p.posedit.alt}, type={var_p.posedit.type}, str={str(var_p.posedit)}. Keeping.")                    
                 elif var_p.posedit:
-                    variant_transcript.hgvs_amino_acid_position = var_p.posedit.pos.start.pos
+                    variant_transcript.amino_acid_position = var_p.posedit.pos.start.pos
 
-                variant_transcript.hgvs_base_position = var_c.posedit.pos.start.base
+                variant_transcript.base_position = var_c.posedit.pos.start.base
                 
-                variant_transcript.hgvs_c_dot = c_dot
-                variant_transcript.hgvs_p_dot_one = var_p1
-                variant_transcript.hgvs_p_dot_three = var_p3
-                variant_transcript.refseq_transcript = var_c.ac
+                variant_transcript.c_dot = c_dot
+                variant_transcript.p_dot1 = var_p1
+                variant_transcript.p_dot3 = var_p3
+                variant_transcript.cdna_transcript = var_c.ac
                 variant_transcript.variant_type = variant_type
     
                 # Sometimes the am.c_to_p function returns the protein accession as an MD5 hash 
@@ -414,12 +414,12 @@ class TxEffHgvs(object):
                     variant_transcript.protein_transcript = var_p.ac
     
                 # Data validation. We'd like to know how often this happens.
-                if (variant_transcript.hgvs_p_dot_one or variant_transcript.hgvs_p_dot_three) and not variant_transcript.protein_transcript:
-                    self.logger.warning(f"A protein transcript is expected when there is a p.: {variant}, p1={variant_transcript.hgvs_p_dot_one}, p3={variant_transcript.hgvs_p_dot_three}, pt={variant_transcript.protein_transcript}")                     
-                if (variant_transcript.hgvs_p_dot_one and not variant_transcript.hgvs_p_dot_three) or (variant_transcript.hgvs_p_dot_three and not variant_transcript.hgvs_p_dot_one):
-                    self.logger.warning(f"Both p1 and p3 are expected: {variant}, p1={variant_transcript.hgvs_p_dot_one}, p3={variant_transcript.hgvs_p_dot_three}, pt={variant_transcript.protein_transcript}")
-                if variant_transcript.protein_transcript and (not variant_transcript.hgvs_p_dot_one or not variant_transcript.hgvs_p_dot_three): 
-                    self.logger.warning(f"Protein genotypes are expected when a there is a protein transcript: {variant}, p1={variant_transcript.hgvs_p_dot_one}, p3={variant_transcript.hgvs_p_dot_three}, pt={variant_transcript.protein_transcript}")
+                if (variant_transcript.p_dot1 or variant_transcript.p_dot3) and not variant_transcript.protein_transcript:
+                    self.logger.warning(f"A protein transcript is expected when there is a p.: {variant}, p1={variant_transcript.p_dot1}, p3={variant_transcript.p_dot3}, pt={variant_transcript.protein_transcript}")                     
+                if (variant_transcript.p_dot1 and not variant_transcript.p_dot3) or (variant_transcript.p_dot3 and not variant_transcript.p_dot1):
+                    self.logger.warning(f"Both p1 and p3 are expected: {variant}, p1={variant_transcript.p_dot1}, p3={variant_transcript.p_dot3}, pt={variant_transcript.protein_transcript}")
+                if variant_transcript.protein_transcript and (not variant_transcript.p_dot1 or not variant_transcript.p_dot3): 
+                    self.logger.warning(f"Protein genotypes are expected when a there is a protein transcript: {variant}, p1={variant_transcript.p_dot1}, p3={variant_transcript.p_dot3}, pt={variant_transcript.protein_transcript}")
 
                 hgvs_transcripts.append(variant_transcript)
     
@@ -433,7 +433,7 @@ class TxEffHgvs(object):
                 self.logger.warning(f"Invalid variant {variant}: %s", str(e))
                 raise(e)
             except HGVSUnsupportedOperationError as e:
-                self.logger.warning(f"Invalid parameters while processing variant {variant}, var_g={var_g}, transcript={refseq_transcript}: %s", str(e))
+                self.logger.warning(f"Invalid parameters while processing variant {variant}, var_g={var_g}, transcript={cdna_transcript}: %s", str(e))
                 self._benchmark_cancel()
             except HGVSInvalidIntervalError as e:
                 self.logger.warning(f"Invalid variant interval {variant}: %s", str(e))
@@ -442,8 +442,8 @@ class TxEffHgvs(object):
                 # HGVS throws HGVSDataNotAvailableError for unrecoverable connection errors, and for when a row in the database just wasn't found.
                 # If the RefSeq transcript prefix isn't NM (eg NM_123.3) then it is a transcript type we aren't interested in (eg NR, NP, XM, XR, XP). So we skip
                 # the transcript and continue iterating.
-                if not re.match('^NM_[0-9]+\.[0-9]+$', refseq_transcript):
-                    self.logger.warning(f"Unable to find transcript '{refseq_transcript}': {str(e)})")
+                if not re.match('^NM_[0-9]+\.[0-9]+$', cdna_transcript):
+                    self.logger.warning(f"Unable to find transcript '{cdna_transcript}': {str(e)})")
                     self._benchmark_cancel()
                 elif 'alignment' in str(e).lower():
                     self.logger.info(f"HGVS alignment not found while parsing variant {variant} (see https://hgvs.readthedocs.io/en/stable/faq.html): %s", str(e))
@@ -487,7 +487,8 @@ class TxEffHgvs(object):
             if not hgvs_dict.get(transcript_key):
                 self.logger.debug(f"Adding unmatched Annovar transcript(s) for {transcript_key}")
                 
-                # Convert the AnnovarVariantFunction objects to VariantTranscript so all items in the list are of the VariantTranscript type. 
+                # Even when we aren't adding any information to an annovar record the AnnovarVariantFunction object must be converted 
+                # to VariantTranscript so we won't have to worry about whether the transcript has a member field or not.                    
                 transcripts.append(self.to_variant_transcript(annovar_transcript))
         
         # Iterate through the hgvs transcripts and see if any of them are in the annovar list
@@ -507,15 +508,15 @@ class TxEffHgvs(object):
             variant_transcript.protein_transcript = None
             variant_transcript.variant_effect = annovar_transcript.variant_effect
             variant_transcript.variant_type = annovar_transcript.variant_type
-            variant_transcript.hgvs_amino_acid_position = annovar_transcript.hgvs_amino_acid_position
-            variant_transcript.hgvs_base_position = annovar_transcript.hgvs_base_position
+            variant_transcript.amino_acid_position = annovar_transcript.amino_acid_position
+            variant_transcript.base_position = annovar_transcript.base_position
             variant_transcript.exon = annovar_transcript.exon
-            variant_transcript.hgnc_gene = annovar_transcript.hgnc_gene
-            variant_transcript.hgvs_c_dot = annovar_transcript.hgvs_c_dot
-            variant_transcript.hgvs_p_dot_one = annovar_transcript.hgvs_p_dot_one
-            variant_transcript.hgvs_p_dot_three = annovar_transcript.hgvs_p_dot_three
+            variant_transcript.gene = annovar_transcript.gene
+            variant_transcript.c_dot = annovar_transcript.c_dot
+            variant_transcript.p_dot1 = annovar_transcript.p_dot1
+            variant_transcript.p_dot3 = annovar_transcript.p_dot3
             variant_transcript.splicing = annovar_transcript.splicing
-            variant_transcript.refseq_transcript = annovar_transcript.refseq_transcript
+            variant_transcript.cdna_transcript = annovar_transcript.cdna_transcript
             return variant_transcript
             
     def _merge_annovar_with_hgvs(self, annovar_transcripts: list, hgvs_transcripts: list):
@@ -576,16 +577,16 @@ class TxEffHgvs(object):
         
         # Amino Acid Position
         ## Use only the hgvs/uta value, annovar's is ignored.
-        if self._allow_merge(new_transcript.hgvs_amino_acid_position, hgvs_transcript.hgvs_amino_acid_position, transcript_key, 'hgvs_amino_acid_position'):
-            new_transcript.hgvs_amino_acid_position = hgvs_transcript.hgvs_amino_acid_position 
+        if self._allow_merge(new_transcript.amino_acid_position, hgvs_transcript.amino_acid_position, transcript_key, 'amino_acid_position'):
+            new_transcript.amino_acid_position = hgvs_transcript.amino_acid_position 
         
         # Base Position
         ## Base position may not match what HGVS says; can be empty; or will match between annovar and hgvs    
-        if str(hgvs_transcript.hgvs_base_position) != str(annovar_transcript.hgvs_base_position):
-            self.logger.debug(f"HGVS and Annovar do not agree on base_position for {transcript_key}: {hgvs_transcript.hgvs_base_position} != {annovar_transcript.hgvs_base_position}")    
+        if str(hgvs_transcript.base_position) != str(annovar_transcript.base_position):
+            self.logger.debug(f"HGVS and Annovar do not agree on base_position for {transcript_key}: {hgvs_transcript.base_position} != {annovar_transcript.base_position}")    
         
-        if self._allow_merge(new_transcript.hgvs_base_position, hgvs_transcript.hgvs_base_position, transcript_key, 'hgvs_base_position'):
-            new_transcript.hgvs_base_position = hgvs_transcript.hgvs_base_position
+        if self._allow_merge(new_transcript.base_position, hgvs_transcript.base_position, transcript_key, 'base_position'):
+            new_transcript.base_position = hgvs_transcript.base_position
 
         # Exon number
         ## Only Annovar provides exon, and the value may be empty.
@@ -595,17 +596,17 @@ class TxEffHgvs(object):
 
         # Gene
         # Prefer annovar's gene, but annovar doesn't give us a gene for intron and utr; in those cases use hgvs's.        
-        transcript_gene = annovar_transcript.hgnc_gene
-        if not annovar_transcript.hgnc_gene and not hgvs_transcript.hgnc_gene:
+        transcript_gene = annovar_transcript.gene
+        if not annovar_transcript.gene and not hgvs_transcript.gene:
             self.logger.debug(f"Gene selection: Neither Annovar or HGVS have a gene for {transcript_key}") 
-        elif not annovar_transcript.hgnc_gene:
-            self.logger.debug(f"Gene selection: Annovar did not provide a gene for {transcript_key}, using HGVS's: gene={hgvs_transcript.hgnc_gene}")            
-            transcript_gene = hgvs_transcript.hgnc_gene
-        elif annovar_transcript.hgnc_gene != hgvs_transcript.hgnc_gene:
-            self.logger.info(f"Gene selection: Annovar and HGVS genes don't match for {transcript_key}: {annovar_transcript.hgnc_gene} != {hgvs_transcript.hgnc_gene}")
+        elif not annovar_transcript.gene:
+            self.logger.debug(f"Gene selection: Annovar did not provide a gene for {transcript_key}, using HGVS's: gene={hgvs_transcript.gene}")            
+            transcript_gene = hgvs_transcript.gene
+        elif annovar_transcript.gene != hgvs_transcript.gene:
+            self.logger.info(f"Gene selection: Annovar and HGVS genes don't match for {transcript_key}: {annovar_transcript.gene} != {hgvs_transcript.gene}")
         
-        if self._allow_merge(new_transcript.hgnc_gene, transcript_gene, transcript_key, 'hgnc_gene'):
-            new_transcript.hgnc_gene = transcript_gene
+        if self._allow_merge(new_transcript.gene, transcript_gene, transcript_key, 'gene'):
+            new_transcript.gene = transcript_gene
         
         # g-dot
         ## Always comes from hgvs/uta
@@ -613,27 +614,27 @@ class TxEffHgvs(object):
     
         # c-dot
         ## Use HGVS's c. because Annovar's is not always correct. Non-coding transcripts don't have a c. 
-        assert hgvs_transcript.hgvs_c_dot, "The HGVS c. value is not supposed to be empty"
+        assert hgvs_transcript.c_dot, "The HGVS c. value is not supposed to be empty"
         
-        if hgvs_transcript.hgvs_c_dot != annovar_transcript.hgvs_c_dot:
-            self.logger.debug(f"HGVS and Annovar do not agree on c_dot for {transcript_key}: {hgvs_transcript.hgvs_c_dot} != {annovar_transcript.hgvs_c_dot} ")
+        if hgvs_transcript.c_dot != annovar_transcript.c_dot:
+            self.logger.debug(f"HGVS and Annovar do not agree on c_dot for {transcript_key}: {hgvs_transcript.c_dot} != {annovar_transcript.c_dot} ")
     
-        if self._allow_merge(new_transcript.hgvs_c_dot, hgvs_transcript.hgvs_c_dot, transcript_key, 'hgvs_c_dot'):
-            new_transcript.hgvs_c_dot = hgvs_transcript.hgvs_c_dot
+        if self._allow_merge(new_transcript.c_dot, hgvs_transcript.c_dot, transcript_key, 'c_dot'):
+            new_transcript.c_dot = hgvs_transcript.c_dot
         
         # p-dot (1L)
         ## Use only the hgvs/uta value, annovar's is ignored.
         ## Non-coding transcripts don't have a p.
-        assert hgvs_transcript.hgvs_p_dot_one
-        if self._allow_merge(new_transcript.hgvs_p_dot_one, hgvs_transcript.hgvs_p_dot_one, transcript_key, 'hgvs_p_dot_one'):
-            new_transcript.hgvs_p_dot_one = hgvs_transcript.hgvs_p_dot_one
+        assert hgvs_transcript.p_dot1
+        if self._allow_merge(new_transcript.p_dot1, hgvs_transcript.p_dot1, transcript_key, 'p_dot1'):
+            new_transcript.p_dot1 = hgvs_transcript.p_dot1
     
         # p-dot (3L)
         ## Use only the hgvs/uta value, annovar's is ignored.
         ## Non-coding transcripts don't have a p.
-        assert hgvs_transcript.hgvs_p_dot_three    
-        if self._allow_merge(new_transcript.hgvs_p_dot_three, hgvs_transcript.hgvs_p_dot_three, transcript_key, 'hgvs_p_dot_three'):
-            new_transcript.hgvs_p_dot_three = hgvs_transcript.hgvs_p_dot_three
+        assert hgvs_transcript.p_dot3    
+        if self._allow_merge(new_transcript.p_dot3, hgvs_transcript.p_dot3, transcript_key, 'p_dot3'):
+            new_transcript.p_dot3 = hgvs_transcript.p_dot3
         
         # Splice variant indicator
         ## HGVS never tells us that a variant/transcript is involved in splicing. But Annovar does. 
@@ -642,9 +643,9 @@ class TxEffHgvs(object):
             new_transcript.splicing = annovar_transcript.splicing
     
         # Refseq Transcript
-        assert hgvs_transcript.refseq_transcript == annovar_transcript.refseq_transcript
-        if self._allow_merge(new_transcript.refseq_transcript, annovar_transcript.refseq_transcript, transcript_key, 'refseq_transcript'):
-            new_transcript.refseq_transcript = annovar_transcript.refseq_transcript
+        assert hgvs_transcript.cdna_transcript == annovar_transcript.cdna_transcript
+        if self._allow_merge(new_transcript.cdna_transcript, annovar_transcript.cdna_transcript, transcript_key, 'cdna_transcript'):
+            new_transcript.cdna_transcript = annovar_transcript.cdna_transcript
             
         # Variant Effect 
         ## variant effect is only provided by Annovar, and the value may be empty
@@ -686,7 +687,7 @@ class TxEffHgvs(object):
         else:
             return True
     
-    def get_summary(self, annovar_transcripts: list, annovar_variants: set, hgvs_transcripts: list, merged_transcripts: list, refseq_transcripts: list, ccds_transcripts: list):
+    def get_summary(self, annovar_transcripts: list, annovar_variants: set, hgvs_transcripts: list, merged_transcripts: list, cdna_transcripts: list, ccds_transcripts: list):
         '''
         Return a collection of summary statistics after processing completes. 
         '''
@@ -694,7 +695,7 @@ class TxEffHgvs(object):
         results['annovar_transcript_count'] = len(annovar_transcripts)
         results['annovar_distinct_variant_count'] = len(annovar_variants)
         results['hgvs_transcript_count'] = len(hgvs_transcripts)
-        results['refseq_transcripts'] = len(refseq_transcripts)
+        results['cdna_transcripts'] = len(cdna_transcripts)
         results['ccds_transcripts'] = len(ccds_transcripts)
         
         results['hgvs_distinct_variant_count'] = len(set(map(lambda x: Variant(x.chromosome, x.position, x.reference, x.alt), hgvs_transcripts)))
@@ -770,7 +771,7 @@ class TxEffHgvs(object):
         sanity_check_ccds_a = len(ccds_transcripts) == self._ccds_map_counter['ccds_mapped_to_best_refseq'] + self._ccds_map_counter['other_accession_version_mapped']
         
         # The number of refseq transcripts that couldn't be mapped to a ccds: the no alternatives to consider or the alternatives couldn't be mapped. 
-        sanity_check_ccds_b = len(refseq_transcripts) - len(ccds_transcripts) == self._ccds_map_counter['other_accession_version_not_mapped'] + self._ccds_map_counter['no_alternatives_to_consider']
+        sanity_check_ccds_b = len(cdna_transcripts) - len(ccds_transcripts) == self._ccds_map_counter['other_accession_version_not_mapped'] + self._ccds_map_counter['no_alternatives_to_consider']
         
         sanity_check = sanity_check_hgvs and sanity_check_annovar and sanity_check_ccds_a and sanity_check_ccds_b
         results['sanity_check'] = sanity_check
@@ -790,7 +791,7 @@ class TxEffHgvs(object):
         self.logger.info(f"Number of Annovar transcripts not matched with HGVS transcripts: {results['unmatched_annovar_transcript_count']}")
         self.logger.info(f"Number of HGVS transcripts not matched with Annovar transcripts: {results['unmatched_hgvs_transcript_count']}")
         self.logger.info(f"Number of distinct variants in merged transcript list: {results['merged_distinct_variant_count']}")
-        self.logger.info(f"Number of RefSeq transcripts: {results['refseq_transcripts']}")
+        self.logger.info(f"Number of RefSeq transcripts: {results['cdna_transcripts']}")
         self.logger.info(f"Number of CCDS transcripts: {results['ccds_transcripts']}")
         self.logger.info(f"Results of mapping CCDS: {self._ccds_map_counter}")
         self.logger.info(f"Sanity check: {'Passed' if results['sanity_check'] else 'Failed' }")
@@ -817,26 +818,26 @@ class TxEffHgvs(object):
         
         # When there are multiple versions of a transcript (eg NM_123.1 and NM_123.3) we pick the one that has the most information.
         # We also create copies of refseq transcripts that can be mapped to CCDS accessions.  
-        refseq_transcripts, ccds_transcripts = self._get_the_best_refseq_transcripts_and_make_ccds_copies(all_transcripts)
+        cdna_transcripts, ccds_transcripts = self._get_the_best_cdna_transcripts_and_make_ccds_copies(all_transcripts)
 
         self._log_summary(self.get_summary(annovar_transcripts, 
                                            disinct_variants, 
                                            hgvs_transcripts, 
                                            merged_transcripts,
-                                           refseq_transcripts,
+                                           cdna_transcripts,
                                            ccds_transcripts))
         
-        return refseq_transcripts + ccds_transcripts
+        return cdna_transcripts + ccds_transcripts
             
     def __get_variant_transcript_key(self, transcript: VariantTranscript):
         '''
         Generate a key made up of variant and transcript accession w/o version (eg '7-12345-C-G-NM_123'). 
         '''
         # Take the version off of the transcript
-        unversioned_transcript = transcript.refseq_transcript.split('.')[0]
+        unversioned_transcript = transcript.cdna_transcript.split('.')[0]
         return f"{transcript.chromosome}-{transcript.position}-{transcript.reference}-{transcript.alt}-{unversioned_transcript}"
     
-    def _get_the_best_refseq_transcripts_and_make_ccds_copies(self, transcripts: list):
+    def _get_the_best_cdna_transcripts_and_make_ccds_copies(self, transcripts: list):
         '''
         This function accomplishes two goals:
         1) Only have one version of each refseq accession. When there is more than one version of a transcript with RefSeq accession pick the best one. For example if we have VariantTranscripts with 
@@ -864,26 +865,26 @@ class TxEffHgvs(object):
             transcript_dict[self.__get_variant_transcript_key(transcript)].append(transcript)
 
         # Select the best refseq trasncript where best is determined by which one has the most fields populated. 
-        refseq_transcripts = []
+        cdna_transcripts = []
         ccds_transcripts = []
         
         for key in transcript_dict:
             best_transcript = self._get_best_transcript(transcript_dict[key])
 
             # Annovar doesn't provide a gene for introns and UTR so when that happens lookup the transcript in UTA to see if we can get a gene for it.    
-            if not best_transcript.hgnc_gene:
-                best_transcript.hgnc_gene = self._get_gene_for_transcript(best_transcript.refseq_transcript)
-                if best_transcript.hgnc_gene:
-                    self.logger.debug(f"Found gene for transcript {best_transcript}: {best_transcript.hgnc_gene}")
+            if not best_transcript.gene:
+                best_transcript.gene = self._get_gene_for_transcript(best_transcript.cdna_transcript)
+                if best_transcript.gene:
+                    self.logger.debug(f"Found gene for transcript {best_transcript}: {best_transcript.gene}")
             
-            refseq_transcripts.append(best_transcript)
+            cdna_transcripts.append(best_transcript)
             
             # Find a CCDS transcript equivalent to the refseq      
             ccds_transcript = self._get_ccds_transcript(best_transcript, transcript_dict[key])
             if ccds_transcript:
                 ccds_transcripts.append(ccds_transcript)
 
-        return refseq_transcripts, ccds_transcripts
+        return cdna_transcripts, ccds_transcripts
 
     def _get_ccds_transcript(self, best_transcript, transcripts: list):        
         """
@@ -892,7 +893,7 @@ class TxEffHgvs(object):
         The ``transcripts`` parameter is a list of refseq transcripts with the same accession but different versions (eg NM_123.1 and NM_123.3).  
             If there isn't a CCDS that maps to the ``best_transcript``, then this function looks for CCDS that are mapped to one of the ones in the list of ``transcripts``.  
         """
-        ccds_accession = self._refseq_ccds_map.get(best_transcript.refseq_transcript)
+        ccds_accession = self._refseq_ccds_map.get(best_transcript.cdna_transcript)
 
         # If the transcript maps to a ccds then make a copy of the transcript, swapping out the refseq accession for the ccds 
         if ccds_accession:
@@ -911,7 +912,7 @@ class TxEffHgvs(object):
                 continue
             
             # See if this refseq maps to a ccds accession and add it to our list if it does
-            ccds_accession = self._refseq_ccds_map.get(x.refseq_transcript)
+            ccds_accession = self._refseq_ccds_map.get(x.cdna_transcript)
             if ccds_accession:
                 refseqs_that_map_to_ccds.append(x)
             
@@ -922,18 +923,18 @@ class TxEffHgvs(object):
         # From the list of refseq transcripts in refseqs_that_map_to_ccds choose one
         best_alternative = self._get_best_transcript(refseqs_that_map_to_ccds)
         
-        ccds_accession = self._refseq_ccds_map.get(best_alternative.refseq_transcript)
+        ccds_accession = self._refseq_ccds_map.get(best_alternative.cdna_transcript)
 
         self._ccds_map_counter['other_accession_version_mapped'] += 1
 
         return self._get_ccds_copy_from_refseq(ccds_accession, best_alternative)
 
-    def _get_ccds_copy_from_refseq(self, ccds_accession, refseq_transcript):
+    def _get_ccds_copy_from_refseq(self, ccds_accession, cdna_transcript):
         """
         Take a RefSeq transcript, make a copy, and change the accession from a RefSeq to a CCDS.
         """
-        ccds_transcript = refseq_transcript.get_copy()
-        ccds_transcript.refseq_transcript = ccds_accession
+        ccds_transcript = cdna_transcript.get_copy()
+        ccds_transcript.cdna_transcript = ccds_accession
         return ccds_transcript
         
     def _get_best_transcript(self, transcripts: list):

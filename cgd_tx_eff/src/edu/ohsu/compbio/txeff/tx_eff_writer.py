@@ -11,7 +11,7 @@ from edu.ohsu.compbio.txeff.variant_transcript import VariantTranscript
 class VariantTranscriptEncoder(JSONEncoder):
     def default(self, obj):
         if isinstance(obj, VariantTranscript):
-            return { 
+            return {
                 "id": obj._id,
                 "chromosome": obj.chromosome, 
                 "position": obj.position, 
@@ -19,15 +19,15 @@ class VariantTranscriptEncoder(JSONEncoder):
                 "alt": obj.alt,
                 "variantEffect": obj.variant_effect,
                 "variantType": obj.variant_type,
-                "aminoAcidPosition": obj.hgvs_amino_acid_position,
-                "basePosition": obj.hgvs_base_position,
+                "aminoAcidPosition": obj.amino_acid_position,
+                "basePosition": obj.base_position,
                 "exon": obj.exon,
-                "gene": obj.hgnc_gene,
-                "cDot": obj.hgvs_c_dot,
-                "pDot1": obj.hgvs_p_dot_one,
-                "pDot3": obj.hgvs_p_dot_three,
+                "gene": obj.gene,
+                "cDot": obj.c_dot,
+                "pDot1": obj.p_dot1,
+                "pDot3": obj.p_dot3,
                 "splicing": obj.splicing,
-                "cdnaTranscript": obj.refseq_transcript,
+                "cdnaTranscript": obj.cdna_transcript,
                 "proteinTranscript": obj.protein_transcript,
                 "sequenceVariant": obj.sequence_variant,
                 "referenceContext": obj.reference_context
@@ -49,6 +49,4 @@ class TxEffWriter(object):
         '''
         Write transcripts to output file 
         '''
-        # with open(self._out_file, 'w') as f:
-            # json.dump(info, f, cls=VariantTranscriptEncoder, indent=2)
-        json.dump(variant_transcripts, self._out_file, cls=VariantTranscriptEncoder, indent=2)
+        json.dump(sorted(variant_transcripts), self._out_file, cls=VariantTranscriptEncoder, indent=2)

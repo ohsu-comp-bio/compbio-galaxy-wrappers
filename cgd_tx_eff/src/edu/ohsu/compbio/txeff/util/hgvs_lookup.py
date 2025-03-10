@@ -65,10 +65,10 @@ class HgvsLookup(object):
     def print_result_transcripts(self, transcripts: list):
         for transcript in transcripts:
             print(f'Variant: {transcript.chromosome}-{transcript.position}-{transcript.reference}-{transcript.alt}')
-            print(f'  Gene: {transcript.hgnc_gene}')
+            print(f'  Gene: {transcript.gene}')
             print(f'  g.: {transcript.sequence_variant}')
-            print(f'  c.: {transcript.refseq_transcript}:{transcript.hgvs_c_dot}')
-            print(f'  p.: {transcript.protein_transcript}:{transcript.hgvs_p_dot_one} / {transcript.hgvs_p_dot_three}')
+            print(f'  c.: {transcript.cdna_transcript}:{transcript.c_dot}')
+            print(f'  p.: {transcript.protein_transcript}:{transcript.p_dot1} / {transcript.p_dot3}')
             print(f'  Splicing: {transcript.splicing if transcript.splicing else "No"}')
             print('--------')
         
