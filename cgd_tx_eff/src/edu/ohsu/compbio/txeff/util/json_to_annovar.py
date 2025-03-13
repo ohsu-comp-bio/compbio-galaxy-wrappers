@@ -15,28 +15,26 @@ class JsonToAnnovar(object):
     '''
     Convert a list of variants in json format to an Annovar avinput file 
     '''
-    def read(self, json_file):
+    def read(self, in_stream):
         """
         Read json and return list of variants 
         """
-        with open(json_file, 'r') as file:
-            return json.load(file)
+        return json.load(in_stream)
 
-    def write(self, variants: list, output_filename):
+    def write(self, variants: list, out_stream):
         """
         Write list of variants to tab delimited avinput file 
         """
-        with open(output_filename, "w") as file:
-            tsv_writer = csv.writer(file, delimiter='\t')
-            for x in variants:
-                position_end =  x['positionStart'] + len(x['referenceBase']) - 1
-                id = f"id:{x['genomicVariantId']}"
-                tsv_writer.writerow([self._get_chromosome(x['chromosome']), 
-                                     x['positionStart'], 
-                                     position_end, 
-                                     x['referenceBase'], 
-                                     x['variantBase'], 
-                                     id])
+        tsv_writer = csv.writer(out_stream, delimiter='\t')
+        for x in variants:
+            position_end =  x['positionStart'] + len(x['referenceBase']) - 1
+            id = f"id:{x['genomicVariantId']}"
+            tsv_writer.writerow([self._get_chromosome(x['chromosome']), 
+                                 x['positionStart'], 
+                                 position_end, 
+                                 x['referenceBase'], 
+                                 x['variantBase'], 
+                                 id])
     
     def _get_chromosome(self, chromosome):
         return chromosome.replace('chr', '')
@@ -68,9 +66,9 @@ def _main():
     args = _parse_args()
 
     j2a = JsonToAnnovar()
-    variants = j2a.read(args.input.name)
+    variants = j2a.read(args.input)
     
-    j2a.write(variants, args.output.name)
+    j2a.write(variants, args.output)
     
     logger.info(f"Wrote {len(variants)} variants to {args.output.name}")
     

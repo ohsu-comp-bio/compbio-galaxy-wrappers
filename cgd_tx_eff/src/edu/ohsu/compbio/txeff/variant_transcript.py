@@ -1,6 +1,7 @@
 import re
 
 from edu.ohsu.compbio.annovar.annovar_parser import AnnovarVariantFunction
+from edu.ohsu.compbio.txeff.util import chromosome_map
 
 class VariantTranscript(AnnovarVariantFunction):
     '''
@@ -91,6 +92,10 @@ class VariantTranscript(AnnovarVariantFunction):
         #transcripts are of different type (refseq and ccds) then comparison is presumably for the purpose of sorting rather ranking, 
         # so we compare the string values rather than scores. 
         if self_genotype != other_genotype or self_transcript_type != other_transcript_type:
+            # Perform numerical, rather than string, comparison on chromsome, otherwise 11 will come before 2  
+            if self.chromosome != other.chromosome:
+                return chromosome_map.get_ordinal(self.chromosome) < chromosome_map.get_ordinal(other.chromosome)
+            
             left = f"{self_genotype} {self.cdna_transcript} {self.c_dot} {self.protein_transcript} {self.p_dot3}"
             right = f"{other_genotype} {other.cdna_transcript} {other.c_dot} {other.protein_transcript} {other.p_dot3}"
             return left < right 
