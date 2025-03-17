@@ -5,7 +5,6 @@
 
   <requirements>
     <requirement type="package" version="1.5.4">hgvs</requirement>
-    <requirement type="package" version="0.13.6">vcfpy</requirement>
   </requirements>
 
   <version_command><![CDATA[
@@ -120,7 +119,7 @@
   </inputs>
  
   <outputs>
-    <data format="json" name="out_json" label="${tool.name} on ${on_string}: JSON" />
+    <data format="json" name="out_json" label="${tool.name} on ${on_string}" />
     <data format="txt" name="log_file" label="Log file" from_work_dir="cgd_tx_eff.log"/>
     <data format="csv" name="benchmark_file" label="Benchmark file" from_work_dir="benchmark.csv">
         <filter>benchmarking_selector == 'yes'</filter>

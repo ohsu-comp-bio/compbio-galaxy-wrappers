@@ -109,10 +109,10 @@ def _check_output_for_all_variants(logger, input_variants, transcripts):
     """
     Compare the list of variants exported from CGD with the transcript effects being output, and identify
     any variants that are in the input but not the output. 
-
     """
     output_variants = {x._id: Variant(x.chromosome, x.position, x.reference, x.alt, x._id) for x in transcripts}
 
+    # The input_variants list is the set of variants exported from cgd that need transcript effects add or updated.
     if len(input_variants) != len(output_variants):
         logger.info(f"The number of input variants is not equal to the number of output variants: {len(input_variants)} != {len(output_variants)}")
 
