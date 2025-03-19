@@ -134,7 +134,7 @@ def build_cmd(args):
         pass
     elif args.endpoint == "updatesamplerun" or args.endpoint == "metrics":
         cmd.extend(["-j", args.pipeline_out])
-    elif args.endpoint == "snpProfile" or args.endpoint == "transcriptEffectsVariants" or args.endpoint == "transcriptEffects":
+    elif args.endpoint == "snpProfile":
         cmd.extend(["-j", args.json_out])
     elif args.endpoint == "none":
         cmd = [args.java8_path, "-jar", args.cgd_client, "-f", args.pipeline_out, "-u", args.cgd_url]
