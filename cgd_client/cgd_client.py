@@ -4,14 +4,17 @@
 # JAVA8_PATH and CGD_CLIENT_CONFIG must be defined in the Galaxy contrib/ohsu_exacloud_env.sh file.
 # 1.2.9.5 - Added support for chimeric junctions endpoint
 
-from snp_profile import SnpProfile
 import argparse
 import json
 import logging
 import os
-import requests
-import sys
 import shutil
+import sys
+
+import requests
+
+from snp_profile import SnpProfile
+
 
 # https://docs.python.org/2/library/subprocess.html
 # https://github.com/google/python-subprocess32
@@ -46,8 +49,7 @@ def supply_args():
     parser.add_argument("--cgd_client", help="Location of the cgd_client.")
     parser.add_argument("--cgd_config", help="Location of the cgd_client config file.")
     parser.add_argument("--include_chr", action="store_true", help="Include the chr prefix in reported variant output.")
-    parser.add_argument("--servicebase",
-                        help="The service host name and port + service base. e.g. kdlwebprod02:8080/cgd")
+    parser.add_argument("--servicebase", help="The service host name and port + service base. e.g. kdlwebprod02:8080/cgd")
 
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
 
@@ -74,16 +76,6 @@ def rename_fastqc_output(runid, barcodeid, endpoint, ext):
         return None
 
     return newfile
-
-
-def split_url(url, n):
-    """
-    Split the manual URL and take n elements.
-    Not currently in use, what was this even for?
-    """
-
-    return url.split('/')[-n:]
-
 
 def run_cmd(cmd, rdm):
     """
@@ -142,10 +134,12 @@ def build_cmd(args):
         pass
     elif args.endpoint == "updatesamplerun" or args.endpoint == "metrics":
         cmd.extend(["-j", args.pipeline_out])
-    elif args.endpoint == "snpProfile":
+    elif args.endpoint == "snpProfile" or args.endpoint == "transcriptEffectsVariants" or args.endpoint == "transcriptEffects":
         cmd.extend(["-j", args.json_out])
     elif args.endpoint == "none":
         cmd = [args.java8_path, "-jar", args.cgd_client, "-f", args.pipeline_out, "-u", args.cgd_url]
+    elif not args.pipeline_out:
+        raise ValueError(f"No file specified and endpoint parameter is unknown or missing: {args.endpoint}")
     else:
         cmd.extend(["-f", args.pipeline_out])
 
@@ -275,6 +269,8 @@ def main():
     # Run the command and write command to log.
     logger.info("Running the following command:")
     logger.info('\t'.join(cmd))
+    
+    # TODO: This makes servicebase a required parameter, but cgd client can use its configuration to figure out the host 
     if check_conn(args.servicebase):
         stdout = run_cmd(cmd, rdm)
 
