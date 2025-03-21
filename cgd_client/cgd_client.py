@@ -77,27 +77,40 @@ def rename_fastqc_output(runid, barcodeid, endpoint, ext):
 
     return newfile
 
-def run_cmd(cmd, rdm):
+def run_cmd(logger, cmd, rdm, skip_parsing):
     """
     Run the command via subprocess.
+    Use skip_parsing to indicate that the response is not a simple "message"/"errors" response; it may be large and should just be returned. 
     """
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
+
     if stderr:
         raise Exception(stderr)
-    elif type(json.loads(stdout)) is list:
+    
+    if skip_parsing:
+        logger.info(f"Response from CGD: {stdout[:100]}...")
+        return stdout
+    
+    result = json.loads(stdout)
+    
+    if type(result) is list:
+        logger.info(f"List response from CGD: {result[:100]}...")
         pass
-    elif 'errors' in json.loads(stdout):
-        if json.loads(stdout)['errors']:
-            if json.loads(stdout)['errors'][0] == 'Could not find patient to provide previously reported variants' and rdm:
+    elif 'errors' in result:
+        logger.info(f"Error from CGD: {result}")
+        if result['errors']:            
+            if result['errors'][0] == 'Could not find patient to provide previously reported variants' and rdm:
                 return stdout
             else:
-                raise Exception(json.loads(stdout)['errors'])
-    elif 'message' in json.loads(stdout):
-        if json.loads(stdout)['message'] == 'error_patient_not_found':
+                raise Exception(result['errors'])
+    elif 'message' in result:
+        logger.info(f"Message from CGD: {result}")
+        # TODO: I don't see that this message is being sent from CGD or CGDClient anymore. 
+        if result['message'] == 'error_patient_not_found':
             return None
-    return stdout
 
+    return stdout
 
 def build_cmd(args):
     """
@@ -136,6 +149,8 @@ def build_cmd(args):
         cmd.extend(["-j", args.pipeline_out])
     elif args.endpoint == "snpProfile":
         cmd.extend(["-j", args.json_out])
+    elif args.endpoint == 'transcriptEffectsVariants' or args.endpoint == 'transcriptEffects':
+        cmd.extend(["-j", args.pipeline_out])
     elif args.endpoint == "none":
         cmd = [args.java8_path, "-jar", args.cgd_client, "-f", args.pipeline_out, "-u", args.cgd_url]
     elif not args.pipeline_out:
@@ -272,17 +287,15 @@ def main():
     
     # TODO: This makes servicebase a required parameter, but cgd client can use its configuration to figure out the host 
     if check_conn(args.servicebase):
-        stdout = run_cmd(cmd, rdm)
-
-    # Write CGD return json to log.
-    logger.info("From CGD:")
-    logger.info(json.loads(stdout))
+        stdout = run_cmd(logger, cmd, rdm, skip_parsing = is_json_list_expected(args.endpoint))
 
     if args.endpoint == 'reportedvariants':
         vcf = open(args.report_vcf, 'w')
         regions = open(args.report_bed, 'w')
         write_vcf_header(vcf)
         prepare_reported(vcf, regions, stdout, args.include_chr)
+    elif args.endpoint == 'transcriptEffectsVariants':
+        write_response(stdout, args.json_out)
 
     outfile.close()
 
@@ -292,5 +305,18 @@ def main():
         os.remove(newfile)
 
 
+def is_json_list_expected(endpoint):
+    '''
+    These endpoints return a list of data in json format.    
+    '''
+    return endpoint in ['reportedvariants', 'transcriptEffectsVariants']
+
+def write_response(data, file_name):
+    '''
+    Write data to file 
+    '''
+    with open(file_name, 'wb') as file:
+        file.write(data)
+    
 if __name__ == "__main__":
     main()

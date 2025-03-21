@@ -206,6 +206,10 @@
             --barcodeid $endpoint_choice.barcodeid
         #end if
 
+        #if $endpoint_choice.endpoint=="transcriptEffectsVariants":
+          --pipeline_out $endpoint_choice.pipeline_output
+          --json_out variants.json
+        #end if 
     ]]></command>
 
     <inputs>
@@ -249,7 +253,7 @@
                 <option value="sequenceVariant">RNA Variants</option>
                 <option value="snpProfile">SNP Profile</option>
                 <option value="splicevariant">Splice Variants</option>
-                <option value="requestTfxVariants">Request Variants for Transcript Effects</option>
+                <option value="transcriptEffectsVariants">Request Variants for Transcript Effects</option>
                 <option value="tumornormal">Tumor Normal</option>
                 <option value="updatesamplerun">Sample Metrics [json]</option>
                 <option value="uploadqcsheet">FastQC R1</option>
@@ -258,7 +262,7 @@
                 <option value="none">NONE</option>
             </param>
 
-            <when value="requestTfxVariants">
+            <when value="transcriptEffectsVariants">
                 <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
             </when>
             
@@ -441,6 +445,9 @@
         <data format="json" name="profile_json" label="snpProfile profile JSON" from_work_dir="cgd_profile_to_send.json" >
             <filter>endpoint_choice['endpoint'] == 'snpProfile'</filter>
         </data>
+        <data format="json" name="variant_request" label="Variant request message" from_work_dir="variants.json" >
+            <filter>endpoint_choice['endpoint'] == 'transcriptEffectsVariants'</filter>
+        </data>        
     </outputs>
 
     <help><![CDATA[
