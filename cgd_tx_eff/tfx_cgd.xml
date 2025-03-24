@@ -1,6 +1,6 @@
 <tool id="tfx_cgd" name="Transcript Effects for CGD" version="0.7.9" >
   <description>
-  	Update a VCF with transcript-effects and nomenclature from Annovar and HGVS.
+  	Generate transcript effects for a list of variants
   </description>
 
   <requirements>
@@ -141,8 +141,8 @@
         
         <output name="out_json" ftype="json">
         	<assert_contents>
-        		<has_text text="CCDS30551.1"/>
-                <has_text text="ACCTTCGCCCCGCTGCCGCCT"/>
+        		<has_json_property_with_text property="cdnaTranscript" text="CCDS30551.1"/>
+                <has_json_property_with_text property="referenceContext" text="ACCTTCGCCCCGCTGCCGCCT"/>
         		<has_n_lines n="86"/>
         	</assert_contents>
         </output>

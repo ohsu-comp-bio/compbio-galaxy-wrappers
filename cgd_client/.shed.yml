@@ -11,3 +11,11 @@ repositories:
       - cgd_client.xml
       - snp_profile.py
       - __init__.py
+  cgd_client2:
+    description: "Interact with CGD using API"
+    include:
+      - cgd_client2.xml
+      - src/**/*.py
+      - test-data/variant_request.json
+       
+      

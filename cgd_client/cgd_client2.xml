@@ -1,0 +1,101 @@
+<tool id="cgd_client2" name="CGDClient" version="0.0.1">
+  <description>Interact with CGD using API</description>
+  
+  <version_command>python $__tool_directory__/src/edu/ohsu/compbio/cgd/cgd_client2.py --version</version_command>
+  
+  <command detect_errors="exit_code"><![CDATA[
+      python $__tool_directory__/src/edu/ohsu/compbio/cgd/cgd_client2.py
+      --base_uri $base_uri
+      --path $path
+            
+      #if $input_choice.input_file_type == "json_file":
+          --file $input_choice.input_file
+      #end if 
+      
+      #if $cgd_response == "response_simple"
+          --simple
+      #end if
+      
+      #if $cgd_response == "response_json_list"
+          --out response.json
+      #end if
+  ]]></command>
+  
+  <environment_variables>
+    <environment_variable name="PYTHONPATH">$__tool_directory__/src</environment_variable>
+    <environment_variable name="CGD_OAUTH_SECRET"></environment_variable>
+  </environment_variables>
+  
+  <inputs>
+    <param name="base_uri" label="CGD Uri" type="text" optional="false" help="Base URI for CGD" value="http://localhost:8080/cgd/" />
+    <param name="path" label="API Path" type="text" optional="false" help="API path should not begin with a slash"/>
+        
+    <conditional name="input_choice">
+        <param name="input_file_type" type="select" label="Send file to CGD?">
+            <option value="no_file">No</option>
+            <option value="json_file">JSON file</option>
+            <option value="other_file">Other file type</option>         
+        </param>
+        
+        <when value="no_file">
+        </when>
+        
+        <when value="json_file">
+            <param name="input_file" type="data" format="json" label="JSON file to send to CGD." />
+        </when>
+        
+        <when value="other_file">
+            <param name="input_file" type="data" format="data" label="File to send to CGD." />
+        </when>
+    </conditional>
+    
+    <param name="cgd_response" type="select" label="CGD Response type">
+        <option value="response_simple">Simple</option>
+        <option value="response_json_list">JSON List</option>
+    </param>
+  </inputs>
+  
+  <outputs>
+    <data format="json" name="out_json_file" label="CGD response (json)" from_work_dir="response.json">
+        <filter>cgd_response == 'response_json_list'</filter>
+    </data>
+  </outputs>
+  
+  <tests>
+    <test expect_num_outputs="0">
+          <param name="base_uri" value="http://localhost:8080/cgd/"/>
+          <param name="path" value="service/illumina/jdebug"/>
+          <param name="cgd_response" value="response_simple"/>
+    </test>
+    <test expect_num_outputs="1">
+          <param name="base_uri" value="http://localhost:8080/cgd/"/>
+          <param name="path" value="service/illumina/variants "/>
+          <param name="cgd_response" value="response_json_list"/>
+          <param name="input_file_type" value="json_file"/>
+          <param name="input_file" value="variant_request.json"/>
+          <output name="out_json_file" ftype="json">
+              <assert_contents>
+                  <has_json_property_with_text property="genomicVariantId" text="803298"/>
+                  <has_n_lines n="1"/>
+              </assert_contents>
+          </output>
+    </test>
+  </tests>
+  
+  <help>
+  Communicate with CGD using its API. 
+  Input may include a file.
+  Output may be a file. 
+  </help>
+  <citations>
+    <citation type="bibtex">
+  @misc{CGDCLient2,
+    author = {Pleyte, Jay},
+    year = {2025},
+    title = {CGD Variants Request},
+    publisher = {OHSU},
+    url = {https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff},
+  }
+   </citation>
+  </citations>  
+</tool>

@@ -8,7 +8,22 @@ repositories:
     description: "Update a VCF with transcript-effects and nomenclature from Annovar and HGVS."
     include:
       - tfx_cgd.xml
-      - src/**
+      - src/**/*.py
       - test-data/*
       - tool_data_table_conf.xml.sample
       - tool-data/*
+    exclude:
+      - src/**/__pycache__
+  json_to_annovar:
+    description: "Convert variants in json file to Annovar avinput"
+    include:
+      - json_to_annovar.xml
+      - src/**/*.py 
+      - test-data/test_json2annovar_in.json
+    exclude:
+      - src/**/__pycache__
+  variant_request:
+    description: "Create a json message for requesting variants from CGD that need transcript effects"
+    include:
+      - variant_request.xml      
+      - src/**/*.py 

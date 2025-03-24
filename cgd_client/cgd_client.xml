@@ -206,7 +206,7 @@
             --barcodeid $endpoint_choice.barcodeid
         #end if
 
-        #if $endpoint_choice.endpoint=="transcriptEffectsVariants":
+        #if $endpoint_choice.endpoint=="transcriptEffectsVariants"
           --pipeline_out $endpoint_choice.pipeline_output
           --json_out variants.json
         #end if 
@@ -262,10 +262,6 @@
                 <option value="none">NONE</option>
             </param>
 
-            <when value="transcriptEffectsVariants">
-                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
-            </when>
-            
             <when value="annotate">
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
@@ -428,6 +424,10 @@
             <when value="none">
                 <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="cgd_url" type="text" label="CGD URL: " />
+            </when>
+
+            <when value="transcriptEffectsVariants">
+                <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
             </when>
 
         </conditional>
