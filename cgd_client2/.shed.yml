@@ -1,0 +1,12 @@
+owner: "pleyte"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff"
+type: "unrestricted"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  cgd_client2:
+    description: "Interact with CGD with CGD using API"
+    include:
+      - cgd_client2.xml
+      - src/**/*.py
+      - test-data/*

@@ -1,0 +1,143 @@
+{
+    "summary": {
+        "num_errors": 0,
+        "num_failures": 1,
+        "num_skips": 0,
+        "num_tests": 2
+    },
+    "tests": [
+        {
+            "data": {
+                "inputs": {
+                    "base_uri": "http://localhost:8080/cgd/",
+                    "cgd_response": "response_simple",
+                    "path": "service/illumina/jdebug"
+                },
+                "job": {
+                    "command_line": "python /Users/pleyte/git/compbio-galaxy-wrappers/cgd_client2/src/edu/ohsu/compbio/cgd/cgd_client2.py --base_uri http://localhost:8080/cgd/ --path service/illumina/jdebug   --simple",
+                    "command_version": null,
+                    "copied_from_job_id": null,
+                    "create_time": "2025-03-25T17:17:07.843760",
+                    "dependencies": [],
+                    "exit_code": 0,
+                    "external_id": "59166",
+                    "galaxy_version": "24.2",
+                    "handler": null,
+                    "history_id": "329bf3d827637f92",
+                    "id": "329bf3d827637f92",
+                    "inputs": {},
+                    "job_messages": [],
+                    "job_metrics": [],
+                    "job_runner_name": null,
+                    "job_stderr": "",
+                    "job_stdout": "",
+                    "model_class": "Job",
+                    "output_collections": {},
+                    "outputs": {},
+                    "params": {
+                        "__input_ext": "\"data\"",
+                        "base_uri": "\"http://localhost:8080/cgd/\"",
+                        "cgd_response": "\"response_simple\"",
+                        "chromInfo": "\"/private/var/folders/tv/j94z10vd11qf1njdjgms91znbf54lw/T/tmphjt0fifr/galaxy-dev/tool-data/shared/ucsc/chrom/?.len\"",
+                        "dbkey": "\"?\"",
+                        "input_choice": "{\"__current_case__\": 0, \"input_file_type\": \"no_file\"}",
+                        "path": "\"service/illumina/jdebug\""
+                    },
+                    "state": "ok",
+                    "stderr": "",
+                    "stdout": "INFO: __main__::cgd_client2:43: GET http://localhost:8080/cgd/service/illumina/jdebug result: <Response [200]>\nINFO: __main__::cgd_client2:60: SimpleMessage: {'message': 'Wrote to /tmp/variant_request_cgd.json', 'errors': []}\n",
+                    "tool_id": "cgd_client2",
+                    "tool_stderr": "",
+                    "tool_stdout": "INFO: __main__::cgd_client2:43: GET http://localhost:8080/cgd/service/illumina/jdebug result: <Response [200]>\nINFO: __main__::cgd_client2:60: SimpleMessage: {'message': 'Wrote to /tmp/variant_request_cgd.json', 'errors': []}\n",
+                    "update_time": "2025-03-25T17:17:18.411604",
+                    "user_email": "planemo@galaxyproject.org",
+                    "user_id": "329bf3d827637f92"
+                },
+                "status": "success",
+                "test_index": 0,
+                "time_seconds": 10.719516277313232,
+                "tool_id": "cgd_client2",
+                "tool_version": "0.0.1"
+            },
+            "has_data": true,
+            "id": "cgd_client2-0"
+        },
+        {
+            "data": {
+                "inputs": {
+                    "base_uri": "http://localhost:8080/cgd/",
+                    "cgd_response": "response_json_list",
+                    "input_choice|input_file": {
+                        "id": "329bf3d827637f92",
+                        "src": "hda"
+                    },
+                    "input_choice|input_file_type": "json_file",
+                    "path": "service/illumina/variants "
+                },
+                "job": {
+                    "command_line": "python /Users/pleyte/git/compbio-galaxy-wrappers/cgd_client2/src/edu/ohsu/compbio/cgd/cgd_client2.py --base_uri http://localhost:8080/cgd/ --path service/illumina/variants  --file /private/var/folders/tv/j94z10vd11qf1njdjgms91znbf54lw/T/tmphjt0fifr/files/a/5/0/dataset_a50a15e4-7738-41ce-a97d-278a61888727.dat   --out response.json",
+                    "command_version": "cgd_client2.py 0.0.1",
+                    "copied_from_job_id": null,
+                    "create_time": "2025-03-25T17:17:34.657426",
+                    "dependencies": [],
+                    "exit_code": 0,
+                    "external_id": "59221",
+                    "galaxy_version": "24.2",
+                    "handler": null,
+                    "history_id": "b733cbc5996842af",
+                    "id": "1304906ec75c3ab8",
+                    "inputs": {
+                        "input_choice|input_file": {
+                            "id": "329bf3d827637f92",
+                            "src": "hda",
+                            "uuid": "a50a15e4-7738-41ce-a97d-278a61888727"
+                        }
+                    },
+                    "job_messages": [],
+                    "job_metrics": [],
+                    "job_runner_name": null,
+                    "job_stderr": "",
+                    "job_stdout": "",
+                    "model_class": "Job",
+                    "output_collections": {},
+                    "outputs": {
+                        "out_json_file": {
+                            "id": "b733cbc5996842af",
+                            "src": "hda",
+                            "uuid": "a3745fb7-b468-4b04-bbb1-8b8b2525dec3"
+                        }
+                    },
+                    "params": {
+                        "__input_ext": "\"json\"",
+                        "base_uri": "\"http://localhost:8080/cgd/\"",
+                        "cgd_response": "\"response_json_list\"",
+                        "chromInfo": "\"/private/var/folders/tv/j94z10vd11qf1njdjgms91znbf54lw/T/tmphjt0fifr/galaxy-dev/tool-data/shared/ucsc/chrom/?.len\"",
+                        "dbkey": "\"?\"",
+                        "input_choice": "{\"__current_case__\": 1, \"input_file\": {\"values\": [{\"id\": 1, \"src\": \"hda\"}]}, \"input_file_type\": \"json_file\"}",
+                        "path": "\"service/illumina/variants \""
+                    },
+                    "state": "ok",
+                    "stderr": "",
+                    "stdout": "INFO: __main__::cgd_client2:51: GET http://localhost:8080/cgd/service/illumina/variants result: <Response [200]>\njDebug: result content=b'[{\"genomicVariantId\":803298,\"chromosome\":\"chr1\",\"positionStart\":1198618,\"referenceBase\":\"T\",\"variantBase\":\"A\"}]'\nINFO: __main__::cgd_client2:72: Wrote response to response.json\n",
+                    "tool_id": "cgd_client2",
+                    "tool_stderr": "",
+                    "tool_stdout": "INFO: __main__::cgd_client2:51: GET http://localhost:8080/cgd/service/illumina/variants result: <Response [200]>\njDebug: result content=b'[{\"genomicVariantId\":803298,\"chromosome\":\"chr1\",\"positionStart\":1198618,\"referenceBase\":\"T\",\"variantBase\":\"A\"}]'\nINFO: __main__::cgd_client2:72: Wrote response to response.json\n",
+                    "update_time": "2025-03-25T17:17:45.474627",
+                    "user_email": "planemo@galaxyproject.org",
+                    "user_id": "329bf3d827637f92"
+                },
+                "output_problems": [
+                    "Output out_json_file:  different than expected\nFailed to find property [genomicVariantId] with text [803298]"
+                ],
+                "status": "failure",
+                "test_index": 1,
+                "time_seconds": 26.916203022003174,
+                "tool_id": "cgd_client2",
+                "tool_version": "0.0.1"
+            },
+            "has_data": true,
+            "id": "cgd_client2-1"
+        }
+    ],
+    "version": "0.1"
+}
