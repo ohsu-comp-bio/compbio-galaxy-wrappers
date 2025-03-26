@@ -77,36 +77,38 @@ def rename_fastqc_output(runid, barcodeid, endpoint, ext):
 
     return newfile
 
-def run_cmd(logger, cmd, rdm, skip_parsing):
+def run_cmd(logger, cmd, rdm, is_json_list_expected):
     """
     Run the command via subprocess.
-    Use skip_parsing to indicate that the response is not a simple "message"/"errors" response; it may be large and should just be returned. 
+    
+    The response from CGD can be a SimpleResponse with a message and error(s) or a list of json objects.  When we know 
+    a json list will be received we don't parse it or log it, we just return it. 
     """
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
-
     if stderr:
         raise Exception(stderr)
     
-    if skip_parsing:
+    if is_json_list_expected:
         logger.info(f"Response from CGD: {stdout[:100]}...")
         return stdout
     
     result = json.loads(stdout)
     
     if type(result) is list:
-        logger.info(f"List response from CGD: {result[:100]}...")
-        pass
+        # This shouldn't happen when is_json_list_expected is false.
+        logger.warning("Received list but simple response was expected")
+        logger.info(f"List response from CGD: {result[:100]}...")        
     elif 'errors' in result:
         logger.info(f"Error from CGD: {result}")
-        if result['errors']:            
+        if result['errors']:
             if result['errors'][0] == 'Could not find patient to provide previously reported variants' and rdm:
                 return stdout
             else:
                 raise Exception(result['errors'])
     elif 'message' in result:
         logger.info(f"Message from CGD: {result}")
-        # TODO: I don't see that this message is being sent from CGD or CGDClient anymore. 
+        # TODO: It doesn't look like this message is being sent from CGD or CGDClient anymore.
         if result['message'] == 'error_patient_not_found':
             return None
 
@@ -149,7 +151,7 @@ def build_cmd(args):
         cmd.extend(["-j", args.pipeline_out])
     elif args.endpoint == "snpProfile":
         cmd.extend(["-j", args.json_out])
-    elif args.endpoint == 'transcriptEffectsVariants' or args.endpoint == 'transcriptEffects':
+    elif args.endpoint == 'requestVariants' or args.endpoint == 'uploadTranscriptEffects':
         cmd.extend(["-j", args.pipeline_out])
     elif args.endpoint == "none":
         cmd = [args.java8_path, "-jar", args.cgd_client, "-f", args.pipeline_out, "-u", args.cgd_url]
@@ -254,7 +256,7 @@ def check_sample(samp):
 
 def main():
     args = supply_args()
-    # outfile = open(args.stdout_log, 'w')
+
     # Set up logger.
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
@@ -274,6 +276,9 @@ def main():
     if args.sampleid:
         rdm = check_sample(args.sampleid)
 
+    # TODO: Consider moving SnpProfile into its own tool. Right now the --json_out parameter is used to give a filename to a json file 
+    #       that is created here and then sent to CGD and also passed on to the next tool. This is a little confusing. I think there should
+    #       be a parameter for saving the JSON list response from CGD and it would make sense to use "--json_out" for that. 
     if args.endpoint == 'snpProfile':
         json_to_send = SnpProfile(args.pipeline_out).geno_items
         with open(args.json_out, 'w') as to_cgd:
@@ -285,16 +290,16 @@ def main():
     logger.info("Running the following command:")
     logger.info('\t'.join(cmd))
     
-    # TODO: This makes servicebase a required parameter, but cgd client can use its configuration to figure out the host 
+    # TODO: This makes servicebase a required parameter, but cgd client could use its configuration to figure out the host 
     if check_conn(args.servicebase):
-        stdout = run_cmd(logger, cmd, rdm, skip_parsing = is_json_list_expected(args.endpoint))
+        stdout = run_cmd(logger, cmd, rdm, is_json_list_expected(args.endpoint))
 
     if args.endpoint == 'reportedvariants':
         vcf = open(args.report_vcf, 'w')
         regions = open(args.report_bed, 'w')
         write_vcf_header(vcf)
         prepare_reported(vcf, regions, stdout, args.include_chr)
-    elif args.endpoint == 'transcriptEffectsVariants':
+    elif args.endpoint == 'requestVariants':
         write_response(stdout, args.json_out)
 
     outfile.close()
@@ -304,12 +309,11 @@ def main():
             or args.endpoint == "cnvpdf" or args.endpoint == "geneFusionReport"):
         os.remove(newfile)
 
-
 def is_json_list_expected(endpoint):
     '''
     These endpoints return a list of data in json format.    
     '''
-    return endpoint in ['reportedvariants', 'transcriptEffectsVariants']
+    return endpoint in ['reportedvariants', 'requestVariants']
 
 def write_response(data, file_name):
     '''
@@ -317,6 +321,6 @@ def write_response(data, file_name):
     '''
     with open(file_name, 'wb') as file:
         file.write(data)
-    
+
 if __name__ == "__main__":
     main()
