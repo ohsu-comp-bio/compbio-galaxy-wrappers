@@ -13,8 +13,8 @@
 
   <command detect_errors="exit_code"><![CDATA[
    python $__tool_directory__/src/edu/ohsu/compbio/txeff/util/variant_request.py
-       --run_id $run_id
-       --dna_barcode_id $dna_barcode_id
+       --run_id $runid
+       --dna_barcode_id $barcodeid
        --out variant_request.json
        
        #if $batch_size
@@ -27,19 +27,19 @@
   </environment_variables>
  
   <inputs>
-    <param name="run_id" label="Run id" type="text" optional="false" help="Sample run id" />
-    <param name="dna_barcode_id" label="DNA barcode id" type="text" optional="false" help="Sample DNA barcode id"/>
+    <param name="runid" label="Run id" type="text" optional="false" help="Sample run id" />
+    <param name="barcodeid" label="DNA barcode id" type="text" optional="false" help="Sample DNA barcode id"/>
     <param name="batch_size" label="Batch size" type="integer" optional="true" help="Maximum number of variants to receive"/>
   </inputs>
   
   <outputs>
-    <data format="json" name="out_json" label="Variant request (json) " from_work_dir="variant_request.json"/>
+    <data format="json" name="out_json" label="Variant request" from_work_dir="variant_request.json"/>
   </outputs>
   
   <tests>
     <test expect_num_outputs="1">
-     <param name="run_id" value="aaabbbcccddd"/>
-     <param name="dna_barcode_id" value="A123"/>
+     <param name="runid" value="aaabbbcccddd"/>
+     <param name="dnabarcodeid" value="A123"/>
      <output name="out_json" ftype="json">
        <assert_contents>
          <has_json_property_with_text property="runId" text="aaabbbcccddd"/>

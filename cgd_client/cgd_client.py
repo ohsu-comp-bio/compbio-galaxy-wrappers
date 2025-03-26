@@ -108,7 +108,7 @@ def run_cmd(logger, cmd, rdm, is_json_list_expected):
                 raise Exception(result['errors'])
     elif 'message' in result:
         logger.info(f"Message from CGD: {result}")
-        # TODO: It doesn't look like this message is being sent from CGD or CGDClient anymore.
+        # TODO: I don't see that this message is being sent from CGD or CGDClient anymore.
         if result['message'] == 'error_patient_not_found':
             return None
 
