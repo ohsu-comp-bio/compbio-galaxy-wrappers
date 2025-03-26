@@ -11,3 +11,4 @@ repositories:
       - cgd_client.xml
       - snp_profile.py
       - __init__.py
+      - test-data/*

@@ -4,14 +4,17 @@
 # JAVA8_PATH and CGD_CLIENT_CONFIG must be defined in the Galaxy contrib/ohsu_exacloud_env.sh file.
 # 1.2.9.5 - Added support for chimeric junctions endpoint
 
-from snp_profile import SnpProfile
 import argparse
 import json
 import logging
 import os
-import requests
-import sys
 import shutil
+import sys
+
+import requests
+
+from snp_profile import SnpProfile
+
 
 # https://docs.python.org/2/library/subprocess.html
 # https://github.com/google/python-subprocess32
@@ -46,8 +49,7 @@ def supply_args():
     parser.add_argument("--cgd_client", help="Location of the cgd_client.")
     parser.add_argument("--cgd_config", help="Location of the cgd_client config file.")
     parser.add_argument("--include_chr", action="store_true", help="Include the chr prefix in reported variant output.")
-    parser.add_argument("--servicebase",
-                        help="The service host name and port + service base. e.g. kdlwebprod02:8080/cgd")
+    parser.add_argument("--servicebase", help="The service host name and port + service base. e.g. kdlwebprod02:8080/cgd")
 
     parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
 
@@ -75,37 +77,40 @@ def rename_fastqc_output(runid, barcodeid, endpoint, ext):
 
     return newfile
 
-
-def split_url(url, n):
-    """
-    Split the manual URL and take n elements.
-    Not currently in use, what was this even for?
-    """
-
-    return url.split('/')[-n:]
-
-
-def run_cmd(cmd, rdm):
+def run_cmd(logger, cmd, rdm, is_json_list_expected):
     """
     Run the command via subprocess.
+    The response from CGD can be a SimpleResponse with a message and error(s) or a list of json objects.  
     """
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
     if stderr:
         raise Exception(stderr)
-    elif type(json.loads(stdout)) is list:
-        pass
-    elif 'errors' in json.loads(stdout):
-        if json.loads(stdout)['errors']:
-            if json.loads(stdout)['errors'][0] == 'Could not find patient to provide previously reported variants' and rdm:
+    
+    if is_json_list_expected:
+        logger.info(f"Response from CGD: {stdout[:100]}...")
+        return stdout
+    
+    result = json.loads(stdout)
+    
+    if type(result) is list:
+        # This shouldn't happen when is_json_list_expected is false.
+        logger.warning("Received list but simple response was expected")
+        logger.info(f"List response from CGD: {result[:100]}...")        
+    elif 'errors' in result:
+        logger.info(f"Error from CGD: {result}")
+        if result['errors']:
+            if result['errors'][0] == 'Could not find patient to provide previously reported variants' and rdm:
                 return stdout
             else:
-                raise Exception(json.loads(stdout)['errors'])
-    elif 'message' in json.loads(stdout):
-        if json.loads(stdout)['message'] == 'error_patient_not_found':
+                raise Exception(result['errors'])
+    elif 'message' in result:
+        logger.info(f"Message from CGD: {result}")
+        # TODO: I don't see that this message is being sent from CGD or CGDClient anymore.
+        if result['message'] == 'error_patient_not_found':
             return None
+    
     return stdout
-
 
 def build_cmd(args):
     """
@@ -144,8 +149,12 @@ def build_cmd(args):
         cmd.extend(["-j", args.pipeline_out])
     elif args.endpoint == "snpProfile":
         cmd.extend(["-j", args.json_out])
+    elif args.endpoint == 'requestVariants' or args.endpoint == 'uploadTranscriptEffects':
+        cmd.extend(["-j", args.pipeline_out])
     elif args.endpoint == "none":
         cmd = [args.java8_path, "-jar", args.cgd_client, "-f", args.pipeline_out, "-u", args.cgd_url]
+    elif not args.pipeline_out:
+        raise ValueError(f"No file specified and endpoint parameter is unknown or missing: {args.endpoint}")
     else:
         cmd.extend(["-f", args.pipeline_out])
 
@@ -245,7 +254,7 @@ def check_sample(samp):
 
 def main():
     args = supply_args()
-    # outfile = open(args.stdout_log, 'w')
+
     # Set up logger.
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
@@ -265,6 +274,9 @@ def main():
     if args.sampleid:
         rdm = check_sample(args.sampleid)
 
+    # TODO: Consider moving SnpProfile into its own tool. Right now the --json_out parameter is used to give a filename to a json file 
+    #       that is created here and then sent to CGD and also passed on to the next tool. This is a little confusing. I think there should
+    #       be a parameter for saving the JSON list response from CGD and it would make sense to use "--json_out" for that. 
     if args.endpoint == 'snpProfile':
         json_to_send = SnpProfile(args.pipeline_out).geno_items
         with open(args.json_out, 'w') as to_cgd:
@@ -275,18 +287,18 @@ def main():
     # Run the command and write command to log.
     logger.info("Running the following command:")
     logger.info('\t'.join(cmd))
+    
+    # TODO: This makes servicebase a required parameter, but cgd client could use its configuration to figure out the host 
     if check_conn(args.servicebase):
-        stdout = run_cmd(cmd, rdm)
-
-    # Write CGD return json to log.
-    logger.info("From CGD:")
-    logger.info(json.loads(stdout))
+        stdout = run_cmd(logger, cmd, rdm, is_json_list_expected(args.endpoint))
 
     if args.endpoint == 'reportedvariants':
         vcf = open(args.report_vcf, 'w')
         regions = open(args.report_bed, 'w')
         write_vcf_header(vcf)
         prepare_reported(vcf, regions, stdout, args.include_chr)
+    elif args.endpoint == 'requestVariants':
+        write_response(stdout, args.json_out)
 
     outfile.close()
 
@@ -295,6 +307,18 @@ def main():
             or args.endpoint == "cnvpdf" or args.endpoint == "geneFusionReport"):
         os.remove(newfile)
 
+def is_json_list_expected(endpoint):
+    '''
+    These endpoints return a list of data in json format.    
+    '''
+    return endpoint in ['reportedvariants', 'requestVariants']
+
+def write_response(data, file_name):
+    '''
+    Write data to file 
+    '''
+    with open(file_name, 'wb') as file:
+        file.write(data)
 
 if __name__ == "__main__":
     main()

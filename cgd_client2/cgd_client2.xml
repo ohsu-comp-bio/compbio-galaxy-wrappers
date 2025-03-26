@@ -9,7 +9,7 @@
       --path $path
             
       #if $input_choice.input_file_type == "json_file":
-          --file $input_choice.input_file
+          --in $input_choice.input_file
       #end if 
       
       #if $cgd_response == "response_simple"
@@ -30,9 +30,17 @@
     <param name="base_uri" label="CGD Uri" type="text" optional="false" help="Base URI for CGD" value="http://localhost:8080/cgd/" />
     <param name="path" label="API Path" type="text" optional="false" help="API path should not begin with a slash"/>
 
+    <conditional name="endpoint_choice">
+        <option value="annotateRun">Perform variant annotation</option>
+        <option value="illuminavcf">Send VCF</option>
+        <option value="metrics">Send sample metrics</option>
+        <option value="reportedvariants">Get reported variants</option>
+        <option value="samplesheet">Send sample sheet</option>
+    </conditional>
+    
     <conditional name="input_choice">
         <param name="input_file_type" type="select" label="Send file to CGD?">
-            <option value="no_file">No</option>
+            <option value="no_file">No file</option>
             <option value="json_file">JSON file</option>
             <option value="other_file">Other file type</option>         
         </param>

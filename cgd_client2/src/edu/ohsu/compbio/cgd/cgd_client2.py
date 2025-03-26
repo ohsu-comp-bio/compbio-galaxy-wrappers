@@ -77,8 +77,9 @@ def _parse_args():
     '''
     parser = argparse.ArgumentParser(description='Communicate with CGD')
 
-    parser.add_argument('--file', 
+    parser.add_argument('--in', 
                         help='Send file to CGD',
+                        dest="input_file",
                         type=argparse.FileType('r'),
                         required=False)
 
@@ -95,6 +96,7 @@ def _parse_args():
                     action='store_true')
 
     parser.add_argument('--out', 
+                        dest="output_file",
                         help='Write CGD''s response to file',
                         type=argparse.FileType('wb'),
                         required=False)
@@ -106,7 +108,7 @@ def _parse_args():
     if args.path.startswith('/'):
         logger.warning("The path begins with a forward slash which will cause any path in the base_uri to be removed")
 
-    if not args.simple and not args.out:
+    if not args.simple and not args.output_file:
         logger.warning("Output type not specified")
 
     return args
@@ -151,15 +153,15 @@ if __name__ == '__main__':
 
     cgd_client = CgdClient2(args.base_uri, secret)
 
-    if args.file:
-        cgd_client.post(args.path, args.file)
-        args.file.close()
+    if args.input_file:
+        cgd_client.post(args.path, args.input_file)
+        args.input_file.close()
     else:
         cgd_client.get(args.path)
 
     if args.simple:        
         cgd_client.log_simple_response()
 
-    if args.out:
-        cgd_client.write(args.out)
+    if args.output_file:
+        cgd_client.write(args.output_file)
         args.out.close()

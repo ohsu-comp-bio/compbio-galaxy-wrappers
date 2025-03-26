@@ -1,0 +1,41 @@
+{
+  "tfxVersion": "0.7.9",
+  "transcriptEffects": [
+    {
+      "chromosome": "1",
+      "position": 123,
+      "reference": "C",
+      "alt": "G",
+      "variantEffect": null,
+      "variantType": null,
+      "aminoAcidPosition": null,
+      "basePosition": null,
+      "exon": null,
+      "gene": "ABC",
+      "cDot": "c.483G>A",
+      "pDot1": null,
+      "pDot3": null,
+      "splicing": null,
+      "cdnaTranscript": "NM_123.3",
+      "proteinTranscript": null
+    },
+    {
+      "chromosome": "X",
+      "position": 678,
+      "reference": "T",
+      "alt": "A",
+      "variantEffect": null,
+      "variantType": null,
+      "aminoAcidPosition": null,
+      "basePosition": null,
+      "exon": null,
+      "gene": "DEF",
+      "cDot": "c.2580T>C",
+      "pDot1": null,
+      "pDot3": null,
+      "splicing": null,
+      "cdnaTranscript": "NM_567.3",
+      "proteinTranscript": null
+    }
+  ]
+}
