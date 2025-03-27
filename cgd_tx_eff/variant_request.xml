@@ -39,7 +39,7 @@
   <tests>
     <test expect_num_outputs="1">
      <param name="runid" value="aaabbbcccddd"/>
-     <param name="dnabarcodeid" value="A123"/>
+     <param name="barcodeid" value="A123"/>
      <output name="out_json" ftype="json">
        <assert_contents>
          <has_json_property_with_text property="runId" text="aaabbbcccddd"/>
