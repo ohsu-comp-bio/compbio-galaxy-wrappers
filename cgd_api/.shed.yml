@@ -1,0 +1,12 @@
+name: "cgd_api"
+owner: "pleyte"
+remote_repository_url: "https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_api"
+categories:
+  - "CompBio Galaxy Wrappers"
+repositories:
+  cgd_api:
+    description: "Galaxy tool that interfaces with the CGD API"
+    include:
+      - src/**/*.py
+      - cgd_api.xml
+      - test-data/*

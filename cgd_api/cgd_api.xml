@@ -1,0 +1,142 @@
+<tool id="cgd_api" name="CGD API" version="0.0.0.1">
+    <description>Interface with CGD's API</description>
+
+    <version_command>python '$__tool_directory__/src/edu/ohsu/compbio/cgd/cgd_api.py' --version</version_command>
+
+    <command detect_errors="exit_code"><![CDATA[
+        python $__tool_directory__/src/edu/ohsu/compbio/cgd/cgd_api.py
+               --service_base $service_base
+
+        #if $api_function_choice.api_function=='performTest'
+            --path service/illumina/oauthtest/hello
+        #end if
+
+        #if $api_function_choice.api_function=='performAnnoation' and $api_function_choice.barcodeId
+            --path 'service/illumina/annotate/runId/{runId}/barcodeId/{barcodeId}'
+            --variable runId=$api_function_choice.runId
+            --variable barcodeId=$api_function_choice.barcodeId
+        #elif $api_function_choice.api_function=='performAnnoation'
+            --path 'service/illumina/annotate/runId/{runId}'
+            --variable runId=$api_function_choice.runId
+        #end if
+
+        #if $api_function_choice.api_function=='sendVcf'
+            --path '/vcf/runId/{runId}'
+            --variable runId=$api_function_choice.runId
+            --in_file $api_function_choice.variant_calls
+        #end if
+
+        #if $api_function_choice.api_function=='sendMetrics'
+            --path '/metrics/runId/{runId}/barcodeId/{barcodeId}'
+            --in_file_json $api_function_choice.metrics
+        #end if
+        
+        #if $api_function_choice.api_function=='getTranscriptEffectsvariants'
+            --path service/illumina/variants
+            --in_file_json $api_function_choice.variant_request
+            --out_file transcript_effects_variants.json
+        #end if
+
+        #if $api_function_choice.api_function=='sendSamplesheet'
+            --path '/samplesheet/upload/{runId}'
+            --in_file $api_function_choice.sample_sheet
+        #end if
+        
+        
+    ]]></command>
+
+    <environment_variables>
+        <environment_variable name="PYTHONPATH">$__tool_directory__/src</environment_variable>
+        <environment_variable name="CGD_OAUTH_SECRET">VpXk8+UT*rvPnWzmqWq@</environment_variable>
+    </environment_variables>
+
+    <inputs>
+        <param name="service_base" label="CGD Uri" type="text" optional="false" help="Base URI for CGD" value="http://localhost:8080/cgd/"/>
+
+        <conditional name="api_function_choice">
+            <param name="api_function" type="select" label="API Function">
+                <option value="performTest">Perform test</option>
+                <option value="performAnnoation">Perform variant annotation</option>
+                <option value="sendVcf">Send VCF</option>
+                <option value="sendMetrics">Send sample metrics</option>
+                <option value="getTranscriptEffectsvariants">Get variants that need transcript effects</option>
+                <option value="sendSamplesheet">Send sample sheet</option>
+            </param>
+
+            <when value="performTest">
+            </when>
+
+            <when value="performAnnoation">
+                <param name="runId" type="text" label="Galaxy Run ID:" optional="false"/>
+                <param name="barcodeId" type="text" label="Barcode ID:" optional="true"/>              
+            </when>
+
+            <when value="sendVcf">
+                <param name="runId" type="text" label="Galaxy Run ID:" optional="false"/>
+                <param name="variant_calls" type="data" format="vcf" label="Variant call file" />
+            </when>
+
+            <when value="sendMetrics">
+                <param name="runId" type="text" label="Galaxy Run ID:" optional="false"/>
+                <param name="barcodeId" type="text" label="Barcode ID:" optional="true"/>
+                <param name="metrics" type="data" format="json" label="Metrics file" />
+            </when>
+            
+            <when value="getTranscriptEffectsvariants">
+                <param name="variant_request" type="data" format="json" label="Variant request parameters" />
+            </when>
+            
+            <when value="sendSamplesheet">
+                <param name="runId" type="text" label="Galaxy Run ID:" optional="false"/>
+                <param name="sample_sheet" type="data" format="csv" label="Sample sheet" />
+            </when>
+        </conditional>
+    </inputs>
+
+    <outputs>
+        <data format="json" name="transcript_effects_variants" label="Variant list" from_work_dir="transcript_effects_variants.json" >
+            <filter>api_function_choice['api_function'] == 'getTranscriptEffectsvariants'</filter>
+        </data>
+    </outputs>
+
+   <tests>    
+       <test expect_num_outputs="0">
+           <param name="service_base" value="http://localhost:8080/cgd/"/>
+           <param name="api_function" value="performTest"/>
+       </test>
+
+       <test expect_num_outputs="0">
+           <param name="service_base" value="http://localhost:8080/cgd/"/>
+           <param name="api_function" value="performAnnoation"/>
+           <param name="runId" value="aaa_bbb_000_000000000-0x0B"/>
+           <param name="barcodeId" value="bcid0x0B"/>
+       </test>
+
+       <test expect_num_outputs="1">
+           <param name="service_base" value="http://localhost:8080/cgd/"/>
+           <param name="api_function" value="getTranscriptEffectsvariants"/>
+           <param name="variant_request" value="variant_request.json"/>
+           <output name="transcript_effects_variants" ftype="json">
+                <assert_contents>
+                    <has_n_lines n="1"/>
+                </assert_contents>
+            </output>     
+       </test>
+   </tests>
+
+    <help>
+    This tool provides a way for galaxy workflows to communicate with CGD using the CGD API.     
+    </help>
+    
+    <citations>
+        <citation type="bibtex">
+            @misc{tx_eff_control,
+                author = {Pleyte, Jay},
+                year = {2022},
+                title = {Transcript Effects Tool},
+                publisher = {OHSU},
+                url = {https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff},
+            }
+        </citation>
+    </citations>
+</tool>
