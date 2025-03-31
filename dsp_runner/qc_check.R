@@ -12,6 +12,12 @@ input_qc <- function(){
     message('Error -- Duplicate TMA/samples: ', as.vector(dupes$barcode))
     quit(status=5)
   }
+
+  # Check if Run ID exists
+  if(runid %notin% batch.dt$batch){
+    message('Error -- incorrect Run ID')
+    quit(status=5)
+  }
   
   # Check all batches to ensure they contain at least one clinical sample
   for (i in unique(qc.meta$batch)){
