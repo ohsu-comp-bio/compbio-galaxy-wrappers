@@ -14,7 +14,6 @@ import re
 from hgvs.location import BaseOffsetPosition
 import hgvs.parser
 
-
 def is_annovar_splicing_type(value: str):
     '''
     Return true if the string value matches one of variant types that Annovar uses for splicing variants.  
@@ -127,14 +126,10 @@ class AnnovarParser(object):
             c_dot = transcript_parts[3]
             full_c = ':'.join([cdna_transcript, c_dot])
             
-            # This may thrown an exception of type hgvs.exceptions.HGVSParseError but we don't catch it because 
-            # it isn't possible to recover. 
-            hgvs_basep = self.hgvs_parser.parse(full_c).posedit.pos.start
-            
-            # Sometimes basepair position is an integer, but it can also be an offset (eg c.371-3C>T)
-            if hgvs_basep and type(hgvs_basep) is BaseOffsetPosition:
-                self.logger.debug(f"Converting base pair position to string because it is an offset: {full_c}")
-                hgvs_basep = str(hgvs_basep)
+
+            # The parse function may thrown an exception of type hgvs.exceptions.HGVSParseError and we don't catch it because 
+            # it isn't possible to recover.
+            hgvs_basep = self.hgvs_parser.parse(full_c).posedit.pos.start.base
             
             # the exonic file may have protein info but we ignore it because 1) we don't trust the format of the p.; 2) it never
             # includes a protein transcript.

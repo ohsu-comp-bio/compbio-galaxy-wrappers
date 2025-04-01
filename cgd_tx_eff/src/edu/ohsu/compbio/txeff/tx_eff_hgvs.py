@@ -400,6 +400,7 @@ class TxEffHgvs(object):
                 elif var_p.posedit:
                     variant_transcript.amino_acid_position = var_p.posedit.pos.start.pos
 
+                # CGD only supports base position, not offset                 
                 variant_transcript.base_position = var_c.posedit.pos.start.base
                 
                 variant_transcript.c_dot = c_dot
@@ -1003,7 +1004,7 @@ class TxEffHgvs(object):
          
         # Clear the timers after each log
         self._benchmarking.clear()
-    
+
     def _increment_variant_counter(self):
         """
         Keep track of how many variants have been processed and output a message after every 1000 variants 
@@ -1012,4 +1013,4 @@ class TxEffHgvs(object):
         self._variant_counter = self._variant_counter + 1
         if self._variant_counter % 1000 == 0:
             self.logger.info(f"Processed variant {self._variant_counter}")
-        self._lock.release()        
+        self._lock.release()
