@@ -14,6 +14,7 @@ input_qc <- function(){
   }
 
   # Check if Run ID exists
+  `%notin%` <- Negate(`%in%`)
   if(runid %notin% batch.dt$batch){
     message('Error -- incorrect Run ID')
     quit(status=5)
