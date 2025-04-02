@@ -1,4 +1,4 @@
-<tool id="xhmm_mergeGATKdepths" name="xhmm mergeGATKdepths" version="1.0.2">
+<tool id="xhmm_mergeGATKdepths" name="xhmm mergeGATKdepths" version="1.1.0">
 
   <description>
     Merge the output from GATK into a single read depth matrix of samples (rows) by
@@ -11,6 +11,8 @@
   <expand macro="requirements"/>
 
   <command><![CDATA[
+   #import os
+
     xhmm
     --mergeGATKdepths
 
@@ -19,7 +21,10 @@
     #end if
 
     #if $GATKdepthsSource.GATKdepths == "file_path":
-    --GATKdepths `ls -1 $GATKdepthsSource.file_path_name/* | tr "\n" "," | sed "s/,$/\n/g"`
+      #set $paths = [os.path.join(str($GATKdepthsSource.file_path_name), filename) for filename in os.listdir(str($GATKdepthsSource.file_path_name))]
+      #set $cohort = ','.join($paths)
+      #set $all = ','.join([$cohort, os.path.abspath(str($GATKcase.depths))])
+      --GATKdepths ${all}
     #end if
 
     #if $GATKdepthsSource.GATKdepths == "history":
@@ -66,6 +71,15 @@
       </param>
         <when value="send_dummy">
           <param name="dummy" type="data" format="txt" label="Accept this dummy file." optional="false" />
+        </when>
+    </conditional>
+    <conditional name="GATKcase">
+      <param name="GATKcaseDepths" type="select" label="Send a case GATKdepths input file">
+        <option value="send_case">Send Case GATKdepths File</option>
+        <option value="no_case">Do Not Send Case GATKdepths File</option>
+      </param>
+        <when value="send_case">
+          <param name="depths" type="data" format="txt" label="Accept this case GATKdepths file." optional="false" />
         </when>
     </conditional>
     <conditional name="GATKdepthsSource">
