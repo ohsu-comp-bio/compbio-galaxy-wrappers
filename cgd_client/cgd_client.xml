@@ -464,8 +464,8 @@
 
     <tests>
         <test expect_num_outputs="2">
-            <param name="cgd_client" value="/Users/pleyte/.m2/repository/edu/ohsu/kdl/cgd_client/1.2.10-SNAPSHOT/cgd_client-1.2.10-SNAPSHOT.jar"/>
-            <param name="cgd_config" value="/Users/pleyte/Documents/office/ohsu/cgd_client/cgd_client.properties"/>
+            <param name="cgd_client" value="/home/groups/clinical/clinglxy/installed/cgd_client-1.2.10.jar"/>
+            <param name="cgd_config" value="/home/groups/clinical/clinglxy/installed/cgd_client.properties"/>
             <param name="servicebase" value="http://localhost:8080/cgd/"/>
             <param name="accept_input" value="no"/>
             <param name="endpoint" value="requestVariants"/>
@@ -477,8 +477,8 @@
             </output>           
         </test>    
         <test expect_num_outputs="1">
-            <param name="cgd_client" value="/Users/pleyte/.m2/repository/edu/ohsu/kdl/cgd_client/1.2.10-SNAPSHOT/cgd_client-1.2.10-SNAPSHOT.jar"/>
-            <param name="cgd_config" value="/Users/pleyte/Documents/office/ohsu/cgd_client/cgd_client.properties"/>
+            <param name="cgd_client" value="/home/groups/clinical/clinglxy/installed/cgd_client-1.2.10.jar"/>
+            <param name="cgd_config" value="/home/groups/clinical/clinglxy/installed/cgd_client.properties"/>
             <param name="servicebase" value="http://localhost:8080/cgd/"/>
             <param name="accept_input" value="no"/>
             <param name="endpoint" value="uploadTranscriptEffects"/>
