@@ -27,7 +27,8 @@
   </environment_variables>
  
   <inputs>
-    <param name="runid" label="Run id" type="text" optional="false" help="Sample run id" />
+    <param name="dummy_input" type="data" format="data" label="Dummy input file to control when this tool starts" optional="true"/>
+    <param name="runid" label="Run id" type="text" optional="false" help="Sample run id"/>
     <param name="barcodeid" label="DNA barcode id" type="text" optional="false" help="Sample DNA barcode id"/>
     <param name="batch_size" label="Batch size" type="integer" optional="true" help="Maximum number of variants to receive"/>
   </inputs>
