@@ -45,8 +45,9 @@ class TxEffWriter(object):
         '''
         self._out_file = out_file
     
-    def write(self, variant_transcripts: list):
+    def write(self, tfx_version, variant_transcripts: list):
         '''
         Write transcripts to output file 
         '''
-        json.dump(sorted(variant_transcripts), self._out_file, cls=VariantTranscriptEncoder, indent=2)
+        data = {'tfxVersion': tfx_version, 'transcriptEffects': sorted(variant_transcripts)}
+        json.dump(data, self._out_file, cls=VariantTranscriptEncoder, indent=2)

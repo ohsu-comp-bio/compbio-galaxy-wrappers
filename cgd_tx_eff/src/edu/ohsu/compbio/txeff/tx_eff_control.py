@@ -185,7 +185,7 @@ def _main():
         _check_output_for_all_variants(logger, json.load(args.variants), merged_transcripts)
     
     # Write the transcript effects to file
-    TxEffWriter(args.out).write(merged_transcripts)
+    TxEffWriter(args.out).write(VERSION, merged_transcripts)
     
     print(f"Wrote {len(merged_transcripts)} transcripts to {args.out.name}")
 

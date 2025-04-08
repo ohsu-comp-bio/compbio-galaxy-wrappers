@@ -88,9 +88,9 @@ def run_cmd(logger, cmd, rdm, is_json_list_expected):
     stdout, stderr = p.communicate()
     if stderr:
         raise Exception(stderr)
-    
+
     if is_json_list_expected:
-        logger.info(f"Response from CGD: {stdout[:100]}...")
+        logger.info(f"Response from CGD: {stdout[:200]}...")
         return stdout
     
     result = json.loads(stdout)
@@ -98,7 +98,7 @@ def run_cmd(logger, cmd, rdm, is_json_list_expected):
     if type(result) is list:
         # This shouldn't happen when is_json_list_expected is false.
         logger.warning("Received list but simple response was expected")
-        logger.info(f"List response from CGD: {result[:100]}...")        
+        logger.info(f"List response from CGD: {result[:200]}...")        
     elif 'errors' in result:
         logger.info(f"Error from CGD: {result}")
         if result['errors']:
