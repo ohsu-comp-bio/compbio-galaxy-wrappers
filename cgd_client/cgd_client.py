@@ -31,7 +31,7 @@ def supply_args():
     parser = argparse.ArgumentParser(description='Galaxy wrapper for cgd_client.jar.')
 
     # parser.add_argument('stdout_log', help='Output file, mainly so that you can see if process succeeded in Galaxy.')
-    parser.add_argument('--endpoint', help='CGD endpoint to send data, required.')
+    parser.add_argument('--endpoint', help='CGD endpoint to send data, required.', required=True)
     parser.add_argument('--java8_path', help='Specify java 8 path, in the case you have multiple java installations.')
     parser.add_argument('--report_vcf', help='Output VCF if utilizing '
                                              'reportvariants endpoint.')
@@ -77,7 +77,7 @@ def rename_fastqc_output(runid, barcodeid, endpoint, ext):
 
     return newfile
 
-def run_cmd(logger, cmd, rdm, is_json_list_expected):
+def run_cmd(logger, cmd, rdm):
     """
     Run the command via subprocess.
     
@@ -89,30 +89,29 @@ def run_cmd(logger, cmd, rdm, is_json_list_expected):
     if stderr:
         raise Exception(stderr)
 
-    if is_json_list_expected:
-        logger.info(f"Response from CGD: {stdout[:200]}...")
-        return stdout
-    
     result = json.loads(stdout)
-    
+
     if type(result) is list:
-        # This shouldn't happen when is_json_list_expected is false.
-        logger.warning("Received list but simple response was expected")
-        logger.info(f"List response from CGD: {result[:200]}...")        
+        logger.info(f"List response from CGD: {stdout[:200]}...")
+        return result        
     elif 'errors' in result:
         logger.info(f"Error from CGD: {result}")
         if result['errors']:
             if result['errors'][0] == 'Could not find patient to provide previously reported variants' and rdm:
-                return stdout
+                return result
             else:
                 raise Exception(result['errors'])
+    elif 'message' in result and result['message'] == 'error_case_not_found':
+        logger.warning(f"Case not found: {result}")
+        return None
+    elif 'message' in result and result['message'] == 'error_patient_not_found':
+        # error_patient_not_found was probably changed to error_case_not_found so we should remove this reference
+        raise ValueError(f"We didn't think 'error_patient_not_found' was used any more: {cmd} --> {result}")
     elif 'message' in result:
         logger.info(f"Message from CGD: {result}")
-        # TODO: It doesn't look like this message is sent by either CGD or CGDClient anymore.
-        if result['message'] == 'error_patient_not_found':
-            raise ValueError(f"We didn't think 'error_patient_not_found' was used any more: {cmd} --> {result}")
-
-    return stdout
+        return result
+    else:
+        raise ValueError(f"Response was not a list, message, or error: {result}")
 
 def build_cmd(args):
     """
@@ -183,14 +182,14 @@ def write_vcf_header(outfile):
     outfile.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n")
 
 
-def prepare_reported(outfile, regions, stdout, inc_chr=False):
+def prepare_reported(outfile, regions, json_data, inc_chr=False):
     """
 
     :return:
     """
     empty = '.'
-    for entry in json.loads(stdout):
-        if json.loads(stdout) and entry != 'message' and entry != 'errors':
+    for entry in json_data:
+        if entry != 'message' and entry != 'errors':
             if inc_chr:
                 chrom = entry['chromosome']
             else:
@@ -204,7 +203,7 @@ def prepare_reported(outfile, regions, stdout, inc_chr=False):
             regions.write('\t'.join([chrom, str(start), str(pos)]))
             regions.write('\n')
 
-    if not json.loads(stdout):
+    if not json_data:
         if inc_chr:
             outfile.write('\t'.join(['chr1', '3', empty, 'T', 'C', empty, empty, empty]))
             outfile.write('\n')
@@ -216,8 +215,8 @@ def prepare_reported(outfile, regions, stdout, inc_chr=False):
             regions.write('\t'.join(['1', '1', '2']))
             regions.write('\n')
 
-    if 'errors' in json.loads(stdout):
-        if json.loads(stdout)['errors'][0] == 'Could not find patient to provide previously reported variants':
+    if 'errors' in json_data:
+        if json_data['errors'][0] == 'Could not find patient to provide previously reported variants':
             if inc_chr:
                 outfile.write('\t'.join(['chr1', '3', empty, 'T', 'C', empty, empty, empty]))
                 outfile.write('\n')
@@ -286,21 +285,25 @@ def main():
 
     # Build the command.
     cmd, newfile = build_cmd(args)
+    
     # Run the command and write command to log.
     logger.info("Running the following command:")
     logger.info('\t'.join(cmd))
     
     # TODO: This makes servicebase a required parameter, but cgd client could use its configuration to figure out the host 
     if check_conn(args.servicebase):
-        stdout = run_cmd(logger, cmd, rdm, is_json_list_expected(args.endpoint))
+        json_response = run_cmd(logger, cmd, rdm)
 
-    if args.endpoint == 'reportedvariants':
+    if not json_response:
+        # There must have been a problem, it will have been logged 
+        pass 
+    elif args.endpoint == 'reportedvariants':
         vcf = open(args.report_vcf, 'w')
         regions = open(args.report_bed, 'w')
         write_vcf_header(vcf)
-        prepare_reported(vcf, regions, stdout, args.include_chr)
+        prepare_reported(vcf, regions, json_response, args.include_chr)
     elif args.endpoint == 'requestVariants':
-        write_response(stdout, args.json_out)
+        write_response(json_response, args.json_out)
 
     outfile.close()
 
@@ -309,18 +312,12 @@ def main():
             or args.endpoint == "cnvpdf" or args.endpoint == "geneFusionReport"):
         os.remove(newfile)
 
-def is_json_list_expected(endpoint):
-    '''
-    These endpoints return a list of data in json format.    
-    '''
-    return endpoint in ['reportedvariants', 'requestVariants']
-
 def write_response(data, file_name):
     '''
-    Write data to file 
+    Write data to file
     '''
-    with open(file_name, 'wb') as file:
-        file.write(data)
+    with open(file_name, 'w') as file:
+        json.dump(data, file, indent=2)
 
 if __name__ == "__main__":
     main()
