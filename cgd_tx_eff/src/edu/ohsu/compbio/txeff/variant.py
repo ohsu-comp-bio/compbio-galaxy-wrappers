@@ -10,11 +10,12 @@ class Variant(object):
     '''
     A simple variant  
     '''
-    def __init__(self, chromosome: str, position: int, ref: str, alt: str):
+    def __init__(self, chromosome: str, position: int, ref: str, alt: str, _id = None):
         self.chromosome = chromosome
         self.position = int(position)
         self.reference = ref
         self.alt = alt
+        self._id = _id
 
     def __str__(self):
         '''
@@ -30,5 +31,4 @@ class Variant(object):
             self.alt == other.alt
     
     def __hash__(self):
-  
         return hash((self.chromosome, self.position, self.reference, self.alt))

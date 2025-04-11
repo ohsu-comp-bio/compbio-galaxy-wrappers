@@ -1,0 +1,69 @@
+<tool id="variant_request" name="Variant Request" version="0.0.1" >
+  <description>
+   Create a json message for requesting variants from CGD that need transcript effects
+  </description>
+  
+  <requirements>
+    <requirement type="package" version="1.5.4">hgvs</requirement>
+  </requirements>
+  
+  <version_command><![CDATA[
+    python $__tool_directory__/src/edu/ohsu/compbio/txeff/variant_request.py --version
+  ]]></version_command>
+
+  <command detect_errors="exit_code"><![CDATA[
+   python $__tool_directory__/src/edu/ohsu/compbio/txeff/util/variant_request.py
+       --run_id $runid
+       --dna_barcode_id $barcodeid
+       --out variant_request.json
+       
+       #if $batch_size
+         --batch_size $batch_size
+       #end if        
+  ]]></command>
+  
+  <environment_variables>
+    <environment_variable name="PYTHONPATH">$__tool_directory__/src</environment_variable>
+  </environment_variables>
+ 
+  <inputs>
+    <param name="dummy_input" type="data" format="data" label="Dummy input file to control when this tool starts" optional="true"/>
+    <param name="runid" label="Run id" type="text" optional="false" help="Sample run id"/>
+    <param name="barcodeid" label="DNA barcode id" type="text" optional="false" help="Sample DNA barcode id"/>
+    <param name="batch_size" label="Batch size" type="integer" optional="true" help="Maximum number of variants to receive"/>
+  </inputs>
+  
+  <outputs>
+    <data format="json" name="out_json" label="Variant request" from_work_dir="variant_request.json"/>
+  </outputs>
+  
+  <tests>
+    <test expect_num_outputs="1">
+     <param name="runid" value="aaabbbcccddd"/>
+     <param name="barcodeid" value="A123"/>
+     <output name="out_json" ftype="json">
+       <assert_contents>
+         <has_json_property_with_text property="runId" text="aaabbbcccddd"/>
+         <has_n_lines n="6"/>
+       </assert_contents>
+     </output>
+    </test>
+  </tests>
+  
+  <help>
+    Takes as input a run id and barcode id. The python script gets the latest transcript effects version from the transcript effects control script. 
+    The run id, barcode id, and transcript effects version are then written out to a json file.    
+  </help>
+  
+  <citations>
+    <citation type="bibtex">
+  @misc{tx_eff_control,
+    author = {Pleyte, Jay},
+    year = {2025},
+    title = {CGD Variants Request},
+    publisher = {OHSU},
+    url = {https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_tx_eff},
+  }
+   </citation>
+  </citations>
+</tool>

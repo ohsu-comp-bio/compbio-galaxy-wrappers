@@ -27,8 +27,8 @@ class TxEffHgvsTest(unittest.TestCase):
         annovar_a = self._create_variant('1', 1, 'A', 'T', 'aaa.1', gene='gene_a', variant_effect='stoploss', variant_type='exonic')
         annovar_b = self._create_variant('2', 2, 'A', 'T', 'bbb.1', gene='gene_b', variant_effect='nonsynonymous SNV', variant_type='intronic')
 
-        hgvs_b = self._create_variant('2', 2, 'A', 'T', 'bbb.1', c_dot='c.1A>T', p_dot_one='p.L1P', p_dot_three='p.Leu1Pro', protein_transcript='NP_001')
-        hgvs_c = self._create_variant('3', 3, 'A', 'T', 'ccc.1', c_dot='c.3A>T', p_dot_one='p.L3P', p_dot_three='p.Leu3Pro', protein_transcript='NP_003')
+        hgvs_b = self._create_variant('2', 2, 'A', 'T', 'bbb.1', c_dot='c.1A>T', p_dot1='p.L1P', p_dot3='p.Leu1Pro', protein_transcript='NP_001')
+        hgvs_c = self._create_variant('3', 3, 'A', 'T', 'ccc.1', c_dot='c.3A>T', p_dot1='p.L3P', p_dot3='p.Leu3Pro', protein_transcript='NP_003')
 
         merged_transcripts, unmerged_transcripts = TxEffHgvs(pysam = self._pysam, refseq_ccds_map = self._tx_eff_ccds.refseq_to_ccds_map)._merge_annovar_with_hgvs([annovar_a, annovar_b], [hgvs_b,hgvs_c])
         
@@ -72,36 +72,36 @@ class TxEffHgvsTest(unittest.TestCase):
         '''
         Given three versions of a transcript return then one with the most values and the latest version
         '''
-        merged_transcripts = [self._create_variant('1', 1, 'A', 'T', 'NM_000.1', gene='AAA', p_dot_one='p.L1P', p_dot_three='p.Leu1Pro', protein_transcript='NP_123.1', variant_effect='X'),
+        merged_transcripts = [self._create_variant('1', 1, 'A', 'T', 'NM_000.1', gene='AAA', p_dot1='p.L1P', p_dot3='p.Leu1Pro', protein_transcript='NP_123.1', variant_effect='X'),
                               self._create_variant('1', 1, 'A', 'T', 'NM_000.3', gene='AAA'),
-                              self._create_variant('1', 1, 'A', 'T', 'NM_000.2', gene='AAA', p_dot_one='p.L1P', p_dot_three='p.Leu1Pro', protein_transcript='NP_123.1', variant_effect='Y')]
+                              self._create_variant('1', 1, 'A', 'T', 'NM_000.2', gene='AAA', p_dot1='p.L1P', p_dot3='p.Leu1Pro', protein_transcript='NP_123.1', variant_effect='Y')]
 
-        best = TxEffHgvs(pysam = self._pysam, refseq_ccds_map = self._tx_eff_ccds.refseq_to_ccds_map)._get_the_best_transcripts(merged_transcripts)
-        
-        self.assertEqual(len(best), 1, 'Only one transcript expected')
-        self.assertEqual(best[0].get_label(), '1-1-A-T-NM_000.2', 'Most complete, lastest version')
+        #best = TxEffHgvs(pysam = self._pysam, refseq_ccds_map = self._tx_eff_ccds.refseq_to_ccds_map)._get_the_best_transcripts(merged_transcripts)
+        cdna_transcripts, _ = TxEffHgvs(pysam = self._pysam, refseq_ccds_map = self._tx_eff_ccds.refseq_to_ccds_map)._get_the_best_cdna_transcripts_and_make_ccds_copies(merged_transcripts)
+        self.assertEqual(len(cdna_transcripts), 1, 'Only one transcript expected')
+        self.assertEqual(cdna_transcripts[0].get_label(), '1-1-A-T-NM_000.2', 'Most complete, latest version')
     
     def test__get_the_best_transcripts_onlyOnePdot_zeroPoints(self):
         vt = VariantTranscript('1', 123, 'C', 'G')
-        vt.hgvs_p_dot_one = 'p.E447del'
+        vt.p_dot1 = 'p.E447del'
         vt.protein_transcript = 'NP_123.1'
-        vt.hgvs_amino_acid_position = 447
-        vt.hgvs_p_dot_three = ''        
+        vt.amino_acid_position = 447
+        vt.p_dot3 = ''        
         self.assertEqual(vt._get_self_score(), 0, "Score without p3")
         
     def test___get_self_score_allProteinFields_onePoint(self):
         vt = VariantTranscript('1', 123, 'C', 'G')
-        vt.hgvs_p_dot_one = 'p.E447del'
+        vt.p_dot1 = 'p.E447del'
         vt.protein_transcript = 'NP_123.1'
-        vt.hgvs_p_dot_three = 'p.Glu447del'
-        vt.hgvs_amino_acid_position = 447
+        vt.p_dot3 = 'p.Glu447del'
+        vt.amino_acid_position = 447
         self.assertEqual(vt._get_self_score(), 1, "Score with all protein fields")
         
     def test___get_self_score_pDotNoProteinTranscript_zeroPoints(self):
         vt = VariantTranscript('1', 123, 'C', 'G')
-        vt.hgvs_p_dot_one = 'p.E447del'
-        vt.hgvs_p_dot_three = 'p.Glu447del'
-        vt.hgvs_amino_acid_position = 447
+        vt.p_dot1 = 'p.E447del'
+        vt.p_dot3 = 'p.Glu447del'
+        vt.amino_acid_position = 447
         vt.protein_transcript = ''                
         self.assertEqual(vt._get_self_score(), 0, "Score without protein transcript")
         
@@ -163,16 +163,16 @@ class TxEffHgvsTest(unittest.TestCase):
         pos_part = TxEffHgvs(pysam = self._pysam, refseq_ccds_map = self._tx_eff_ccds.refseq_to_ccds_map)._correct_indel_coords(chromosome, int(position), ref, alt)
         self.assertEqual(pos_part, '153924033del', "g. is incorrect")
         
-    def _create_variant(self, chromosome, pos, ref, alt, transcript, gene=None, c_dot=None, p_dot_one=None, p_dot_three=None, variant_effect=None, variant_type=None, protein_transcript=None):
+    def _create_variant(self, chromosome, pos, ref, alt, cdna_transcript, gene=None, c_dot=None, p_dot1=None, p_dot3=None, variant_effect=None, variant_type=None, protein_transcript=None):
         '''
         Helper method for creating variant-transcript objects
         ''' 
         variant_transcript = VariantTranscript(chromosome, pos, ref, alt)
-        variant_transcript.refseq_transcript = transcript
-        variant_transcript.hgnc_gene = gene
-        variant_transcript.hgvs_c_dot = c_dot
-        variant_transcript.hgvs_p_dot_one = p_dot_one
-        variant_transcript.hgvs_p_dot_three = p_dot_three
+        variant_transcript.cdna_transcript = cdna_transcript
+        variant_transcript.gene = gene
+        variant_transcript.c_dot = c_dot
+        variant_transcript.p_dot1 = p_dot1
+        variant_transcript.p_dot3 = p_dot3
         variant_transcript.variant_effect = variant_effect
         variant_transcript.variant_type = variant_type
         variant_transcript.protein_transcript = protein_transcript

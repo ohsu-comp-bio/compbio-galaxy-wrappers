@@ -1,4 +1,4 @@
-<tool id="cgd_client" name="CGD Import Client" version="1.2.9.5" profile="16.01">
+<tool id="cgd_client" name="CGD Import Client" version="1.2.10.0" profile="16.01">
 
     <description>Send a pipeline output file to the CGD via cgd_client.jar.</description>
 
@@ -59,6 +59,10 @@
             --qcversion $endpoint_choice.qcversion
         #end if
 
+        #if $endpoint_choice.endpoint=="uploadTranscriptEffects"
+            --pipeline_out $endpoint_choice.pipeline_output
+        #end if
+        
         #if $endpoint_choice.endpoint=="none"
             --pipeline_out $endpoint_choice.pipeline_output
             --cgd_url $endpoint_choice.cgd_url
@@ -163,6 +167,11 @@
             --runid $endpoint_choice.runid
             --barcodeid $endpoint_choice.barcodeid
         #end if
+        
+        #if $endpoint_choice.endpoint=="requestVariants"
+            --pipeline_out $endpoint_choice.pipeline_output
+            --json_out variants.json
+        #end if
 
         #if $endpoint_choice.endpoint=="annotateRun"
             --runid $endpoint_choice.runid
@@ -222,6 +231,8 @@
             <when value="yes">
                 <param name="dummy_input" type="data" format="data" label="Dummy Input File" />
             </when>
+            <when value="no">
+            </when>            
         </conditional>
 
         <conditional name="endpoint_choice">
@@ -246,9 +257,11 @@
                 <option value="reportedvariants">Reported Variants</option>
                 <option value="samplesheet">SampleSheet</option>
                 <option value="seattleseq">SeattleSeq .tsv</option>
+                <option value="uploadTranscriptEffects">Send Transcript Effects</option>
                 <option value="sequenceVariant">RNA Variants</option>
                 <option value="snpProfile">SNP Profile</option>
                 <option value="splicevariant">Splice Variants</option>
+                <option value="requestVariants">Request Transcript Effects</option>
                 <option value="tumornormal">Tumor Normal</option>
                 <option value="updatesamplerun">Sample Metrics [json]</option>
                 <option value="uploadqcsheet">FastQC R1</option>
@@ -304,6 +317,10 @@
                 <param name="qcversion" type="text" label="SeattleSeq version: " />
             </when>
 
+            <when value="uploadTranscriptEffects">
+                <param name="pipeline_output" type="data" format="json" label="Pipeline output to send to CGD." />
+            </when>
+
             <when value="intervalqc">
                 <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
@@ -354,6 +371,10 @@
                 <param name="pipeline_output" type="data" format="data" label="Pipeline output to send to CGD." />
                 <param name="runid" type="text" label="Galaxy Run ID: " />
                 <param name="barcodeid" type="text" label="Barcode ID: " />
+            </when>
+
+            <when value="requestVariants">
+                <param name="pipeline_output" type="data" format="json" label="Pipeline output to send to CGD." />
             </when>
 
             <when value="genefusion">
@@ -436,7 +457,34 @@
         <data format="json" name="profile_json" label="snpProfile profile JSON" from_work_dir="cgd_profile_to_send.json" >
             <filter>endpoint_choice['endpoint'] == 'snpProfile'</filter>
         </data>
+        <data format="json" name="transcript_effects_variants" label="Variant list" from_work_dir="variants.json" >
+            <filter>endpoint_choice['endpoint'] == 'requestVariants'</filter>
+        </data>
     </outputs>
+
+    <tests>
+        <test expect_num_outputs="2">
+            <param name="cgd_client" value="/home/groups/clinical/clinglxy/installed/cgd_client-1.2.10.jar"/>
+            <param name="cgd_config" value="/home/groups/clinical/clinglxy/installed/cgd_client.properties"/>
+            <param name="servicebase" value="http://localhost:8080/cgd/"/>
+            <param name="accept_input" value="no"/>
+            <param name="endpoint" value="requestVariants"/>
+            <param name="pipeline_output" value="variant_request.json"/>
+            <output name="transcript_effects_variants" ftype="json">
+                <assert_contents>
+                    <has_n_lines n="1"/>
+                </assert_contents>
+            </output>           
+        </test>    
+        <test expect_num_outputs="1">
+            <param name="cgd_client" value="/home/groups/clinical/clinglxy/installed/cgd_client-1.2.10.jar"/>
+            <param name="cgd_config" value="/home/groups/clinical/clinglxy/installed/cgd_client.properties"/>
+            <param name="servicebase" value="http://localhost:8080/cgd/"/>
+            <param name="accept_input" value="no"/>
+            <param name="endpoint" value="uploadTranscriptEffects"/>
+            <param name="pipeline_output" value="transcript_effect.json"/>
+        </test>
+    </tests>        
 
     <help><![CDATA[
 Usage: java -jar cgd_client-1.2.9.jar
@@ -485,6 +533,15 @@ Usage: java -jar cgd_client-1.2.9.jar
 
 Support URL: https://bridge.ohsu.edu/cs/itg/projects/kdl-genomics/Genimics%20Data%20Wiki/CGD%20Client.aspx
     ]]></help>
-
+    <citations>
+        <citation type="bibtex">
+  @misc{CGDCLient2,
+    author = {Letaw, John},
+    year = {2025},
+    title = {CGDClient},
+    publisher = {OHSU},
+    url = {https://github.com/ohsu-comp-bio/compbio-galaxy-wrappers/tree/master/cgd_client},
+  }
+   </citation>
+  </citations>
 </tool>
-

@@ -86,4 +86,18 @@ def get_ncbi(chromosome_in_refseq_format: str, include_chr_prefix = False) -> st
     if not ncbi_chromosome:
         raise ValueError('Unrecognized NCBI chromosome ' + chromosome_in_refseq_format)
     
-    return 'chr'+ncbi_chromosome if include_chr_prefix else ncbi_chromosome 
+    return 'chr'+ncbi_chromosome if include_chr_prefix else ncbi_chromosome
+
+def get_ordinal(chromosome: str): 
+    """
+    Return the chromosome as an integer 
+    """
+    if chromosome == 'X':
+        return 23
+    elif chromosome == 'Y':
+        return 24
+    elif chromosome == 'MT':
+        return 25
+    else:
+        return int(chromosome)
+    
